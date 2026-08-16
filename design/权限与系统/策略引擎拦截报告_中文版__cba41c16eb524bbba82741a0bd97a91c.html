@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Policy Interception Report</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1c",
+                        "on-secondary-container": "#007070",
+                        "status-thinking": "#566ab2",
+                        "secondary": "#006a6a",
+                        "primary-container": "#566ab2",
+                        "secondary-fixed": "#6ef7f6",
+                        "on-secondary-fixed": "#002020",
+                        "status-failed": "#D32F2F",
+                        "status-completed": "#2E7D32",
+                        "on-primary-container": "#f0f0ff",
+                        "surface-bright": "#f8faf9",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dada",
+                        "on-tertiary-container": "#e2f4ff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "outline": "#757682",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-secondary": "#ffffff",
+                        "primary": "#3d5198",
+                        "risk-high": "#BA1A1A",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#3d5a67",
+                        "terminal-bg": "#0D0F0F",
+                        "background": "#f8faf9",
+                        "on-surface": "#191c1c",
+                        "tertiary-container": "#557280",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#edeeed",
+                        "inverse-surface": "#2e3131",
+                        "on-primary-fixed": "#001550",
+                        "inverse-primary": "#b6c4ff",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#e7e8e8",
+                        "primary-fixed": "#dce1ff",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed-dim": "#4cdada",
+                        "secondary-container": "#6ef7f6",
+                        "status-executing": "#FFB300",
+                        "surface-tint": "#465aa1",
+                        "on-surface-variant": "#444651",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-variant": "#e1e3e2",
+                        "inverse-on-surface": "#eff1f0",
+                        "surface": "#f8faf9",
+                        "outline-variant": "#c5c5d2",
+                        "surface-container-low": "#f2f4f3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "md": "16px",
+                        "margin-tablet": "24px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "baseline": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "label-mono": ["JetBrains Mono"],
+                        "title-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen font-body-lg">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim w-full top-0 sticky z-40">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-tablet h-16 w-full">
+<button class="text-on-surface-variant hover:bg-surface-variant/50 transition-colors duration-200 ease-in-out p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">策略引擎拦截报告</h1>
+<div class="w-10"></div> <!-- Placeholder for alignment -->
+</div>
+</header>
+<main class="px-margin-mobile md:px-margin-tablet py-lg max-w-screen-md mx-auto space-y-lg pb-32 md:pb-lg">
+<!-- Interception Summary Header -->
+<div class="bg-error-container rounded-xl p-md flex flex-col items-center text-center space-y-md border border-error/20">
+<div class="w-20 h-20 bg-error/10 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[48px] text-error" data-icon="shield_lock" style="font-variation-settings: 'FILL' 1;">shield_lock</span>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-error-container mb-xs">高风险工具调用已阻止</h2>
+<p class="font-body-md text-body-md text-on-error-container/80">Waku Core 策略引擎 (Policy Engine) 已成功拦截一次潜在的高风险数据出境行为。</p>
+</div>
+<div class="flex gap-sm items-center font-label-mono text-label-mono text-on-error-container/70 bg-error/5 px-3 py-1 rounded-full">
+<span class="material-symbols-outlined text-[16px]" data-icon="history">history</span>
+                Task ID: waku-task-8f92a-091
+            </div>
+</div>
+<!-- Bento Grid Layout for Details -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Policy Violation Details -->
+<div class="bg-surface-container-low rounded-xl p-md flex flex-col space-y-sm shadow-sm border border-outline-variant/30">
+<div class="flex items-center gap-sm mb-sm">
+<span class="material-symbols-outlined text-primary" data-icon="gavel">gavel</span>
+<h3 class="font-title-md text-title-md text-on-surface">触发策略</h3>
+</div>
+<div class="bg-surface-container rounded-lg p-sm">
+<span class="font-label-mono text-label-mono text-error">RiskLevel L3: Explicit Confirmation Required</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">尝试使用 TapSwipeTool 进行未授权的界面滑动，可能导致敏感视图泄漏。</p>
+</div>
+<div class="bg-surface-container rounded-lg p-sm mt-xs">
+<span class="font-label-mono text-label-mono text-secondary">EgressPolicy: Local-First Mode</span>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">拦截将本地内存上下文通过 API 发送至外部服务器 (api.untrusted.net)。</p>
+</div>
+</div>
+<!-- Risk Analysis Card -->
+<div class="bg-surface-container-low rounded-xl p-md flex flex-col space-y-sm shadow-sm border border-outline-variant/30">
+<div class="flex items-center gap-sm mb-sm">
+<span class="material-symbols-outlined text-primary" data-icon="troubleshoot">troubleshoot</span>
+<h3 class="font-title-md text-title-md text-on-surface">风险分析</h3>
+</div>
+<ul class="space-y-sm">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-status-failed text-[20px]" data-icon="warning">warning</span>
+<div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">未经信任的数据源</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-[12px]">Agent 试图读取未包含在当前上下文白名单中的应用数据。</p>
+</div>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-status-executing text-[20px]" data-icon="data_leakage_prevention">tap_and_play</span>
+<div>
+<span class="font-body-md text-body-md font-semibold text-on-surface">潜在数据泄漏</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-[12px]">工具参数包含疑似用户私人凭证的模式匹配。</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Tool/Action Context -->
+<div class="bg-terminal-bg rounded-xl p-md flex flex-col shadow-sm">
+<div class="flex items-center justify-between mb-sm border-b border-surface-dim/30 pb-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="code">code</span>
+<h3 class="font-title-md text-title-md text-on-tertiary">拦截上下文 (Tool Call)</h3>
+</div>
+<span class="px-2 py-1 bg-surface-tint/20 text-inverse-primary rounded text-xs font-label-mono">14:23:45 UTC</span>
+</div>
+<pre class="font-code-block text-code-block text-secondary-fixed-dim overflow-x-auto p-sm"><code>{
+  "tool": "TapSwipeTool",
+  "arguments": {
+    "action": "swipe",
+    "direction": "up",
+    "distance": 800,
+    "target_view_id": "com.bank.app:id/account_balance_hidden"
+  },
+  "intent": "Extract hidden balance for summary report.",
+  "risk_score": 0.85
+}</code></pre>
+</div>
+<!-- Security Recommendations (CTAs) -->
+<div class="flex flex-col md:flex-row gap-sm pt-sm">
+<button class="flex-1 bg-primary text-on-primary font-title-md text-title-md py-3 rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+                保持拦截
+            </button>
+<button class="flex-1 bg-surface-container-high text-on-surface font-title-md text-title-md py-3 rounded-full hover:bg-surface-variant transition-colors border border-outline-variant/50">
+                前往设置调整策略
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Hidden on desktop, shown on mobile) -->
+<nav class="md:hidden flex justify-around items-center w-full h-20 pb-safe px-4 bg-surface-container dark:bg-surface-container-lowest fixed bottom-0 z-50 rounded-t-xl shadow-sm border-t-0">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 rounded-lg">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-label-mono text-label-mono mt-xs">Chat</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 rounded-lg">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="font-label-mono text-label-mono mt-xs">Memory</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 rounded-lg">
+<span class="material-symbols-outlined" data-icon="handyman">handyman</span>
+<span class="font-label-mono text-label-mono mt-xs">Tools</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-2xl px-5 py-1 scale-95 active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined" data-icon="shield_with_heart" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+<span class="font-label-mono text-label-mono mt-xs">Safety</span>
+</button>
+</nav>
+</body></html>

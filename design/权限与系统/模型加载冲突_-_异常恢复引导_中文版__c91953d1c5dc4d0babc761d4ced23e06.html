@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Exception Recovery Flow - Waku</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "risk-high": "#BA1A1A",
+                        "on-tertiary-fixed": "#001f2a",
+                        "status-executing": "#FFB300",
+                        "error-container": "#ffdad6",
+                        "background": "#f8faf9",
+                        "on-surface-variant": "#444651",
+                        "inverse-primary": "#b6c4ff",
+                        "tertiary": "#3d5a67",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#6ef7f6",
+                        "secondary-fixed": "#6ef7f6",
+                        "surface-container-high": "#e7e8e8",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "surface-container-low": "#f2f4f3",
+                        "outline": "#757682",
+                        "on-background": "#191c1c",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#007070",
+                        "surface-bright": "#f8faf9",
+                        "secondary": "#006a6a",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e2",
+                        "terminal-bg": "#0D0F0F",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#e2f4ff",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#eff1f0",
+                        "primary-container": "#566ab2",
+                        "on-secondary-fixed": "#002020",
+                        "status-failed": "#D32F2F",
+                        "surface": "#f8faf9",
+                        "surface-dim": "#d9dada",
+                        "inverse-surface": "#2e3131",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "status-thinking": "#566ab2",
+                        "primary": "#3d5198",
+                        "tertiary-container": "#557280",
+                        "secondary-fixed-dim": "#4cdada",
+                        "outline-variant": "#c5c5d2",
+                        "on-primary-container": "#f0f0ff",
+                        "surface-container": "#edeeed",
+                        "surface-container-highest": "#e1e3e2",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-surface": "#191c1c",
+                        "surface-tint": "#465aa1",
+                        "on-error": "#ffffff",
+                        "status-completed": "#2E7D32",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-primary-fixed": "#001550",
+                        "primary-fixed": "#dce1ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "margin-tablet": "24px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "baseline": "8px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-mono": ["JetBrains Mono"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col items-center justify-start p-margin-mobile md:p-margin-tablet">
+<!-- Top App Bar equivalent for standalone screen -->
+<header class="w-full max-w-2xl flex items-center justify-between h-16 mb-6">
+<button aria-label="Go back" class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">异常恢复</h1>
+<div class="w-10"></div> <!-- Placeholder for balance -->
+</header>
+<main class="w-full max-w-2xl flex flex-col gap-lg">
+<!-- Error State Header -->
+<section class="bg-error-container text-on-error-container p-md rounded-xl flex flex-col items-center text-center gap-sm">
+<span class="material-symbols-outlined fill text-5xl text-error mb-2">memory</span>
+<h2 class="font-title-lg text-title-lg">模型加载失败：内存不足</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">系统没有足够的可用内存 (OOM) 来加载所请求的模型变体。请审查以下诊断信息并选择恢复操作。</p>
+</section>
+<!-- Conflict Diagnosis -->
+<section class="bg-surface-container-low rounded-xl p-md flex flex-col gap-md">
+<h3 class="font-title-md text-title-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-status-executing">analytics</span>
+                冲突诊断
+            </h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-sm">
+<!-- Total RAM -->
+<div class="bg-surface rounded-lg p-sm border border-outline-variant flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">总 RAM</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-1">8.0 GB</span>
+</div>
+<!-- System/Apps -->
+<div class="bg-surface rounded-lg p-sm border border-outline-variant flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">系统 &amp; 应用分配</span>
+<span class="font-title-lg text-title-lg text-on-surface mt-1">5.2 GB</span>
+</div>
+<!-- Needed -->
+<div class="bg-error-container rounded-lg p-sm border border-error flex flex-col">
+<span class="font-label-mono text-label-mono text-error uppercase">模型需求</span>
+<span class="font-title-lg text-title-lg text-on-error-container mt-1">2.8 GB</span>
+</div>
+</div>
+<!-- Progress Bar Visualization -->
+<div class="w-full h-4 bg-surface-container-highest rounded-full overflow-hidden flex mt-2">
+<div class="h-full bg-primary" style="width: 65%;" title="System: 5.2GB"></div>
+<div class="h-full bg-error opacity-80" style="width: 35%;" title="Needed: 2.8GB (Overflow)"></div>
+</div>
+<div class="flex justify-between font-label-mono text-label-mono text-on-surface-variant mt-1">
+<span>0GB</span>
+<span>当前分配 (65%)</span>
+<span>需要超过限制 100%</span>
+</div>
+</section>
+<!-- Suggested Recovery Actions -->
+<section class="bg-surface-container-low rounded-xl p-md flex flex-col gap-md">
+<h3 class="font-title-md text-title-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">healing</span>
+                建议的恢复操作
+            </h3>
+<div class="flex flex-col gap-sm">
+<!-- Action 1: Switch to Lite Model -->
+<button class="w-full bg-surface hover:bg-surface-container-high transition-colors p-md rounded-lg border border-primary-container flex items-start gap-md text-left active:scale-[0.98]">
+<div class="bg-primary-container text-on-primary-container p-2 rounded-full shrink-0">
+<span class="material-symbols-outlined">compress</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">切换至轻量级模型 (推荐)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">加载压缩版本 (Q4_K_S) 替代高精度版本 (Q8_0)。需要 ~1.8GB 内存。</p>
+</div>
+<span class="material-symbols-outlined text-primary self-center">chevron_right</span>
+</button>
+<!-- Action 2: Free Memory -->
+<button class="w-full bg-surface hover:bg-surface-container-high transition-colors p-md rounded-lg border border-outline-variant flex items-start gap-md text-left active:scale-[0.98]">
+<div class="bg-surface-variant text-on-surface-variant p-2 rounded-full shrink-0">
+<span class="material-symbols-outlined">cleaning_services</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">释放系统内存</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">请求系统清理后台任务并释放未使用的 RAM。可能影响其他应用的性能。</p>
+</div>
+</button>
+<!-- Action 3: Disable Tools -->
+<button class="w-full bg-surface hover:bg-surface-container-high transition-colors p-md rounded-lg border border-outline-variant flex items-start gap-md text-left active:scale-[0.98]">
+<div class="bg-surface-variant text-on-surface-variant p-2 rounded-full shrink-0">
+<span class="material-symbols-outlined">block</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-md text-title-md text-on-surface">禁用非必要工具</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">暂时禁用需要大量内存的扩展功能，如离线 TTS 或图像匹配引擎。</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Auto-Recovery Toggle & Secondary Actions -->
+<section class="flex flex-col gap-sm mt-4">
+<!-- Toggle -->
+<label class="flex items-center justify-between bg-surface-container-lowest p-md rounded-lg border border-outline-variant cursor-pointer">
+<div>
+<span class="font-title-md text-title-md text-on-surface block">自动恢复</span>
+<span class="font-body-md text-body-md text-on-surface-variant">当系统资源可用时，自动重试加载流程</span>
+</div>
+<div class="relative inline-block w-12 h-6 rounded-full bg-outline-variant">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<span class="absolute inset-y-1 left-1 w-4 h-4 bg-on-primary rounded-full transition-all peer-checked:left-7 peer-checked:bg-primary-container"></span>
+</div>
+</label>
+<!-- Secondary Links -->
+<div class="flex flex-wrap items-center justify-center gap-md mt-4">
+<button class="text-primary hover:text-primary-container font-title-md text-title-md transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">terminal</span>
+                    查看详细日志
+                </button>
+<span class="text-outline-variant hidden md:inline">|</span>
+<button class="text-on-surface-variant hover:text-on-surface font-title-md text-title-md transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">settings</span>
+                    高级设置
+                </button>
+</div>
+</section>
+</main>
+<footer class="mt-auto pt-xl w-full max-w-2xl text-center pb-margin-mobile">
+<p class="font-label-mono text-label-mono text-outline flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">lock</span>
+            Local-first: 数据不会离开您的设备
+        </p>
+</footer>
+</body></html>

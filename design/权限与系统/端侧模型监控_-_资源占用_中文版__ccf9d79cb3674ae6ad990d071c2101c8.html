@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>端侧模型监控 - Waku-Android</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#4cdada",
+                        "surface-container": "#edeeed",
+                        "inverse-primary": "#b6c4ff",
+                        "on-surface-variant": "#444651",
+                        "risk-high": "#BA1A1A",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#f0f0ff",
+                        "surface": "#f8faf9",
+                        "secondary-container": "#6ef7f6",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "terminal-bg": "#0D0F0F",
+                        "tertiary-fixed": "#c9e7f7",
+                        "status-thinking": "#566ab2",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "primary-container": "#566ab2",
+                        "on-surface": "#191c1c",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f2f4f3",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "on-primary-fixed": "#001550",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8faf9",
+                        "surface-bright": "#f8faf9",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-secondary-container": "#007070",
+                        "status-failed": "#D32F2F",
+                        "on-tertiary-container": "#e2f4ff",
+                        "surface-container-high": "#e7e8e8",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e1e3e2",
+                        "primary": "#3d5198",
+                        "secondary-fixed": "#6ef7f6",
+                        "primary-fixed": "#dce1ff",
+                        "status-completed": "#2E7D32",
+                        "on-tertiary-fixed": "#001f2a",
+                        "surface-dim": "#d9dada",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-background": "#191c1c",
+                        "inverse-on-surface": "#eff1f0",
+                        "secondary": "#006a6a",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-secondary-fixed": "#002020",
+                        "outline-variant": "#c5c5d2",
+                        "surface-tint": "#465aa1",
+                        "tertiary": "#3d5a67",
+                        "on-secondary": "#ffffff",
+                        "outline": "#757682",
+                        "tertiary-container": "#557280",
+                        "inverse-surface": "#2e3131",
+                        "status-executing": "#FFB300"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-tablet": "24px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "baseline": "8px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "xs": "4px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .pulse-dot {
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1.05); }
+        }
+        .chart-placeholder {
+            background: linear-gradient(to right, transparent, rgba(86, 106, 178, 0.1));
+            border-bottom: 2px solid theme('colors.primary');
+            position: relative;
+            overflow: hidden;
+        }
+        .chart-placeholder::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; top: 0;
+            background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(86, 106, 178, 0.05) 10px, rgba(86, 106, 178, 0.05) 11px);
+        }
+        .chart-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 30" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 30 L10 25 L20 28 L30 15 L40 20 L50 5 L60 12 L70 8 L80 18 L90 10 L100 15 V30 Z" fill="rgba(86, 106, 178, 0.2)" stroke="%23566ab2" stroke-width="1"/></svg>') no-repeat;
+            background-size: 100% 100%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col pt-[64px] pb-[72px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-40 bg-surface-container flex justify-between items-center px-4 md:px-8 h-[64px]">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="robot_2" data-weight="fill" style="font-variation-settings: 'FILL' 1;">robot_2</span>
+<span class="text-headline-md font-headline-md font-extrabold text-primary">Waku-Android</span>
+</div>
+<button class="p-2 rounded-full hover:bg-surface-variant transition-all duration-200">
+<span class="material-symbols-outlined text-primary" data-icon="shield_with_heart">shield_with_heart</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 w-full max-w-7xl mx-auto px-margin-mobile md:px-margin-tablet py-lg flex flex-col gap-lg">
+<!-- Page Title & Status Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface tracking-tight">端侧模型监控</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-xs">Local Edge Inference Dashboard</p>
+</div>
+<!-- Status Indicators -->
+<div class="flex gap-sm">
+<div class="flex items-center gap-xs px-3 py-1 bg-surface-container-low rounded-full border border-outline-variant">
+<div class="w-2 h-2 rounded-full bg-status-completed pulse-dot"></div>
+<span class="text-label-mono font-label-mono text-on-surface uppercase">系统就绪</span>
+</div>
+<div class="flex items-center gap-xs px-3 py-1 bg-surface-container-low rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-status-executing" data-icon="local_fire_department">local_fire_department</span>
+<span class="text-label-mono font-label-mono text-on-surface uppercase">热加载 (HOT)</span>
+</div>
+</div>
+</div>
+<!-- Active Model Info Card -->
+<section class="bg-surface-container-low rounded-xl p-md flex flex-col md:flex-row items-start md:items-center justify-between gap-md border border-outline-variant/30">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container shrink-0">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</div>
+<div>
+<h2 class="text-title-lg font-title-lg text-on-surface">Qwen3-0.6B-Instruct</h2>
+<p class="text-code-block font-code-block text-on-surface-variant mt-xs">GGUF Q4_K_M | Context: 4096</p>
+</div>
+</div>
+<div class="flex gap-sm w-full md:w-auto">
+<button class="flex-1 md:flex-none flex items-center justify-center gap-xs px-4 py-2 bg-surface-container rounded-sm hover:bg-surface-variant transition-colors text-body-md font-body-md font-medium text-on-surface">
+<span class="material-symbols-outlined text-[18px]" data-icon="tune">tune</span>
+                    切换量化
+                </button>
+<button class="flex-1 md:flex-none flex items-center justify-center gap-xs px-4 py-2 bg-error-container text-on-error-container rounded-sm hover:bg-risk-high hover:text-on-error transition-colors text-body-md font-body-md font-medium">
+<span class="material-symbols-outlined text-[18px]" data-icon="delete_sweep">delete_sweep</span>
+                    释放内存
+                </button>
+</div>
+</section>
+<!-- Metrics Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- CPU Load Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 flex flex-col shadow-sm">
+<div class="flex justify-between items-start mb-sm">
+<h3 class="text-title-md font-title-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="speed">speed</span>
+                        CPU 负载
+                    </h3>
+<span class="text-headline-md font-headline-md font-code-block text-primary">68%</span>
+</div>
+<div class="h-24 w-full chart-placeholder rounded-sm mb-sm relative">
+<div class="chart-line"></div>
+</div>
+<div class="flex justify-between items-center text-code-block font-code-block text-on-surface-variant mt-auto">
+<span>推理线程: <span class="text-on-surface font-medium">4</span></span>
+<span>Freq: 2.1GHz</span>
+</div>
+</div>
+<!-- Memory Usage Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 flex flex-col shadow-sm">
+<div class="flex justify-between items-start mb-md">
+<h3 class="text-title-md font-title-md text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]" data-icon="memory_alt">memory_alt</span>
+                        内存占用
+                    </h3>
+<span class="text-headline-md font-headline-md font-code-block text-secondary">2.8 <span class="text-body-md font-body-md">GB</span></span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-3 flex rounded-full overflow-hidden mb-sm bg-surface-container-highest">
+<div class="bg-primary" style="width: 45%;" title="模型权重"></div>
+<div class="bg-secondary-container" style="width: 25%;" title="KV Cache"></div>
+</div>
+<div class="flex flex-col gap-xs mt-auto">
+<div class="flex justify-between text-code-block font-code-block">
+<span class="flex items-center gap-xs text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-primary inline-block"></span> 模型权重</span>
+<span class="text-on-surface">1.2 GB</span>
+</div>
+<div class="flex justify-between text-code-block font-code-block">
+<span class="flex items-center gap-xs text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-secondary-container inline-block"></span> KV Cache</span>
+<span class="text-on-surface">0.8 GB</span>
+</div>
+<div class="flex justify-between text-code-block font-code-block mt-xs pt-xs border-t border-outline-variant/20">
+<span class="text-on-surface-variant">剩余可用</span>
+<span class="text-status-completed font-medium">4.2 GB</span>
+</div>
+</div>
+</div>
+<!-- Performance Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 flex flex-col shadow-sm">
+<h3 class="text-title-md font-title-md text-on-surface-variant flex items-center gap-xs mb-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="bolt">bolt</span>
+                    推理性能
+                </h3>
+<div class="flex flex-col gap-md flex-1 justify-center">
+<div>
+<div class="text-label-mono font-label-mono text-outline uppercase mb-xs">生成速度 (Token/s)</div>
+<div class="flex items-end gap-sm">
+<span class="text-headline-lg font-headline-lg font-code-block text-on-surface">24.5</span>
+<span class="text-body-md font-body-md text-status-completed flex items-center">
+<span class="material-symbols-outlined text-[16px]" data-icon="arrow_upward">arrow_upward</span>
+                                稳态
+                            </span>
+</div>
+</div>
+<div class="w-full h-px bg-outline-variant/30"></div>
+<div>
+<div class="text-label-mono font-label-mono text-outline uppercase mb-xs">首字延迟 (TTFT)</div>
+<div class="flex items-end gap-sm">
+<span class="text-headline-md font-headline-md font-code-block text-on-surface">320</span>
+<span class="text-body-md font-body-md text-on-surface-variant">ms</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Security / Local Execution Note -->
+<div class="mt-auto pt-md flex items-center justify-center gap-sm text-outline">
+<span class="material-symbols-outlined text-[20px]" data-icon="lock">lock</span>
+<span class="text-label-mono font-label-mono">所有计算均在本地 NPU/CPU 执行，无数据出境</span>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-surface flex justify-around items-center px-margin-mobile py-2 h-[72px]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all duration-200 rounded-xl group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 transition-transform" data-icon="chat">chat</span>
+<span class="text-label-mono font-label-mono mt-1">Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all duration-200 rounded-xl group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 transition-transform" data-icon="history">history</span>
+<span class="text-label-mono font-label-mono mt-1">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-container-high transition-all duration-200 rounded-xl group" href="#">
+<span class="material-symbols-outlined group-hover:scale-95 transition-transform" data-icon="database">database</span>
+<span class="text-label-mono font-label-mono mt-1">Memory</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl px-4 py-1 hover:bg-surface-container-high transition-all duration-200 transform scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="settings" data-weight="fill" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-label-mono font-label-mono mt-1 font-bold">Settings</span>
+</a>
+</nav>
+</body></html>

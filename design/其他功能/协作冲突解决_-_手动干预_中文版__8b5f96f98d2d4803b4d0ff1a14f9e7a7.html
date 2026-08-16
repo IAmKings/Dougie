@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android - Conflict Resolution</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-container": "#e2f4ff",
+                        "status-completed": "#2E7D32",
+                        "on-surface-variant": "#444651",
+                        "surface-container-highest": "#e1e3e2",
+                        "surface-bright": "#f8faf9",
+                        "secondary-container": "#6ef7f6",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "terminal-bg": "#0D0F0F",
+                        "on-background": "#191c1c",
+                        "primary-container": "#566ab2",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-secondary-container": "#007070",
+                        "surface-container-low": "#f2f4f3",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "secondary": "#006a6a",
+                        "surface": "#f8faf9",
+                        "tertiary": "#3d5a67",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#002020",
+                        "tertiary-container": "#557280",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "surface-container": "#edeeed",
+                        "on-primary-container": "#f0f0ff",
+                        "status-failed": "#D32F2F",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "primary-fixed": "#dce1ff",
+                        "surface-variant": "#e1e3e2",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "secondary-fixed-dim": "#4cdada",
+                        "surface-tint": "#465aa1",
+                        "outline": "#757682",
+                        "on-surface": "#191c1c",
+                        "error": "#ba1a1a",
+                        "status-thinking": "#566ab2",
+                        "surface-container-high": "#e7e8e8",
+                        "inverse-primary": "#b6c4ff",
+                        "outline-variant": "#c5c5d2",
+                        "secondary-fixed": "#6ef7f6",
+                        "primary": "#3d5198",
+                        "on-secondary": "#ffffff",
+                        "status-executing": "#FFB300",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8faf9",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eff1f0",
+                        "surface-dim": "#d9dada",
+                        "risk-high": "#BA1A1A",
+                        "on-primary-fixed": "#001550",
+                        "inverse-surface": "#2e3131"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "gutter": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "margin-tablet": "24px",
+                        "margin-mobile": "16px",
+                        "baseline": "8px",
+                        "xs": "4px",
+                        "md": "16px"
+                    },
+                    fontFamily: {
+                        "code-block": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    fontSize: {
+                        "code-block": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "title-md": ["16px", { lineHeight: "24px", fontWeight: "500" }],
+                        "label-mono": ["12px", { lineHeight: "16px", letterSpacing: "0.5px", fontWeight: "500" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "title-lg": ["20px", { lineHeight: "28px", fontWeight: "500" }],
+                        "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .pulse-warning {
+            animation: pulse-warn 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-warn {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim flex justify-between items-center h-16 px-margin-mobile">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" style="font-variation-settings: 'FILL' 0;">memory</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed tracking-tight">Waku Runtime</h1>
+</div>
+<div class="flex items-center">
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden" data-alt="A macro shot of a sleek, minimalist metallic sphere reflecting soft, high-key studio lighting against a bright white background. The image evokes a sense of modern precision and clean, local-first intelligence." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDe-GL6nBq4H9ECMxGNIrtBX7NdBDpTw2MgBtryDyJ1L85QLRG2Cn3KubhP-MvF-9gO3R_0QUq5TFO6QOc7H2XtVjr9PA_-LemgH8QVAOK1ofxTyUP6FRi-ylKdg9AW2qRiqjgPaDcFVknPcvnn-qSX9EuNmwv_9Z9fByef_Kt6w7aXpYR6plpywjRh9l1sUy9jnsGAi7DyRjYUJw_xh-HbcHrMKNMrYvnyyDCVGYKgtwCMhkCgEK-u')"></div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 px-margin-mobile md:px-margin-tablet max-w-4xl mx-auto space-y-lg">
+<!-- Page Header -->
+<div class="space-y-xs">
+<h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-status-executing" style="font-variation-settings: 'FILL' 1;">warning</span>
+                Conflict Resolution <span class="font-title-md text-title-md text-outline">(冲突解决)</span>
+</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+                State Machine has paused execution. Multiple agents have returned contradictory data for the current Task. Manual intervention required.
+            </p>
+</div>
+<!-- Task Info Banner -->
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant flex flex-col md:flex-row md:items-center justify-between gap-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline">data_object</span>
+<div>
+<span class="font-label-mono text-label-mono text-outline uppercase tracking-wider block">Task ID</span>
+<span class="font-code-block text-code-block text-on-surface">waku-task-f92a</span>
+</div>
+</div>
+<div class="flex items-center gap-xs bg-error-container text-on-error-container px-3 py-1 rounded-full">
+<span class="material-symbols-outlined pulse-warning text-sm" style="font-variation-settings: 'FILL' 1;">pause_circle</span>
+<span class="font-label-mono text-label-mono font-bold">Awaiting Intervention (等待干预)</span>
+</div>
+</div>
+<!-- Conflict Diagnostic Area -->
+<div class="grid md:grid-cols-2 gap-md">
+<!-- Agent A Card -->
+<div class="bg-surface-container rounded-xl p-lg border-2 border-transparent focus-within:border-primary transition-colors relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined">forum</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Agent A</h3>
+<p class="font-label-mono text-label-mono text-primary">IntentClassifier</p>
+</div>
+</div>
+<div class="flex items-center gap-xs bg-surface-bright px-2 py-1 rounded-sm border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-status-completed">check_circle</span>
+<span class="font-code-block text-code-block text-on-surface-variant">Conf: 0.94</span>
+</div>
+</div>
+<div class="space-y-sm">
+<div>
+<span class="font-label-mono text-label-mono text-outline block mb-xs">Target Field (会议时间)</span>
+<div class="bg-surface-bright font-code-block text-code-block text-on-surface p-sm rounded-sm border border-outline-variant">
+                            Meeting Time: <strong class="text-primary text-lg">14:00</strong>
+</div>
+</div>
+<div>
+<span class="font-label-mono text-label-mono text-outline block mb-xs">Source Data</span>
+<div class="bg-surface-bright font-body-md text-body-md text-on-surface-variant p-sm rounded-sm border border-outline-variant italic">
+                            "Current User Message"
+                        </div>
+</div>
+</div>
+</div>
+<!-- Agent B Card -->
+<div class="bg-surface-container rounded-xl p-lg border-2 border-transparent focus-within:border-secondary transition-colors relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined">database</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">Agent B</h3>
+<p class="font-label-mono text-label-mono text-secondary">FactRetriever</p>
+</div>
+</div>
+<div class="flex items-center gap-xs bg-surface-bright px-2 py-1 rounded-sm border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-status-completed">check_circle</span>
+<span class="font-code-block text-code-block text-on-surface-variant">Conf: 0.88</span>
+</div>
+</div>
+<div class="space-y-sm">
+<div>
+<span class="font-label-mono text-label-mono text-outline block mb-xs">Target Field (会议时间)</span>
+<div class="bg-surface-bright font-code-block text-code-block text-on-surface p-sm rounded-sm border border-outline-variant">
+                            Meeting Time: <strong class="text-secondary text-lg">15:00</strong>
+</div>
+</div>
+<div>
+<span class="font-label-mono text-label-mono text-outline block mb-xs">Source Data</span>
+<div class="bg-surface-bright font-body-md text-body-md text-on-surface-variant p-sm rounded-sm border border-outline-variant italic flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">history</span>
+                            "Semantic Memory: Project UNO Sync"
+                        </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Logic Diagnostic Bar -->
+<div class="bg-surface-container-highest rounded-lg p-md border-l-4 border-status-executing flex items-start gap-md">
+<span class="material-symbols-outlined text-status-executing mt-1">analytics</span>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">Diagnostic Analysis</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">
+                    Discrepancy detected between <strong class="text-primary">Real-time Intent</strong> (explicit user instruction) and <strong class="text-secondary">Historical Fact</strong> (previously stored context). Please select the authoritative value to proceed with the task loop.
+                </p>
+</div>
+</div>
+<!-- Action Panel -->
+<div class="bg-surface rounded-xl p-lg border border-outline-variant flex flex-col sm:flex-row items-center justify-center gap-md shadow-sm mt-xl">
+<button class="w-full sm:w-auto bg-primary text-on-primary font-title-md text-title-md px-6 py-3 rounded-full hover:bg-primary/90 transition-colors flex items-center justify-center gap-xs shadow-sm">
+<span class="material-symbols-outlined">check</span>
+                Trust Intent (14:00)
+            </button>
+<button class="w-full sm:w-auto border-2 border-outline text-on-surface font-title-md text-title-md px-6 py-3 rounded-full hover:bg-surface-container-low transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined">history</span>
+                Trust Memory (15:00)
+            </button>
+<button class="w-full sm:w-auto text-primary font-title-md text-title-md px-4 py-3 rounded-full hover:bg-primary-container/20 transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined">help_center</span>
+                Ask User to Clarify
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface dark:bg-surface-dim shadow-lg bg-surface-container-low dark:bg-surface-container-lowest flex justify-around items-center h-20 pb-safe px-sm md:hidden">
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-2xl px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="font-label-mono text-label-mono mt-1">Tasks</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-container-high rounded-full transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">psychology</span>
+<span class="font-label-mono text-label-mono mt-1">Memory</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-container-high rounded-full transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">handyman</span>
+<span class="font-label-mono text-label-mono mt-1">Tools</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-container-high rounded-full transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-label-mono text-label-mono mt-1">Settings</span>
+</div>
+</nav>
+</body></html>

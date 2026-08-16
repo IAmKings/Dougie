@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>地理位置隐私围栏引导</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#3d5a67",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2e3131",
+                        "surface-container": "#edeeed",
+                        "surface-container-high": "#e7e8e8",
+                        "secondary": "#006a6a",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#444651",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-tertiary-container": "#e2f4ff",
+                        "inverse-primary": "#b6c4ff",
+                        "outline-variant": "#c5c5d2",
+                        "error-container": "#ffdad6",
+                        "background": "#f8faf9",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "surface-variant": "#e1e3e2",
+                        "secondary-fixed-dim": "#4cdada",
+                        "risk-high": "#BA1A1A",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f0",
+                        "secondary-container": "#6ef7f6",
+                        "primary": "#3d5198",
+                        "status-failed": "#D32F2F",
+                        "primary-container": "#566ab2",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "surface": "#f8faf9",
+                        "status-completed": "#2E7D32",
+                        "outline": "#757682",
+                        "surface-container-highest": "#e1e3e2",
+                        "tertiary-container": "#557280",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#007070",
+                        "on-secondary-fixed": "#002020",
+                        "surface-dim": "#d9dada",
+                        "on-background": "#191c1c",
+                        "surface-bright": "#f8faf9",
+                        "surface-tint": "#465aa1",
+                        "primary-fixed": "#dce1ff",
+                        "on-surface": "#191c1c",
+                        "on-primary-container": "#f0f0ff",
+                        "secondary-fixed": "#6ef7f6",
+                        "terminal-bg": "#0D0F0F",
+                        "surface-container-low": "#f2f4f3",
+                        "status-thinking": "#566ab2",
+                        "on-primary-fixed": "#001550",
+                        "on-tertiary-fixed": "#001f2a",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "status-executing": "#FFB300"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "margin-tablet": "24px",
+                        "baseline": "8px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased flex flex-col h-screen overflow-hidden max-w-[600px] mx-auto relative border-x border-surface-variant/30">
+<!-- TopAppBar from JSON -->
+<header class="w-full top-0 sticky bg-surface text-primary font-title-lg text-title-lg flex items-center justify-between px-margin-mobile h-16 w-full z-10">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-highest transition-colors duration-200 ease-in-out">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Waku-Android</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-highest transition-colors duration-200 ease-in-out">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+</button>
+</header>
+<!-- Main Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-mobile pb-32">
+<!-- Header Section -->
+<div class="mt-sm mb-lg text-center flex flex-col items-center">
+<div class="w-16 h-16 rounded-full bg-error-container text-on-error-container flex items-center justify-center mb-sm">
+<span class="material-symbols-outlined text-4xl" data-icon="location_off" data-weight="fill">location_off</span>
+</div>
+<h2 class="font-headline-md text-headline-md mb-xs">隐私拦截：位置感知</h2>
+<div class="flex items-center gap-2 mt-xs bg-surface-container px-3 py-1 rounded-full border border-surface-variant">
+<span class="material-symbols-outlined text-status-executing text-sm" data-icon="warning" data-weight="fill">warning</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">敏感数据 L2 风险</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-md max-w-[300px] mx-auto">
+                Agent 正在请求访问您的设备位置。您可以配置“隐私围栏”以限制其感知范围。
+            </p>
+</div>
+<!-- Map Geofence Card -->
+<div class="bg-surface-container-low rounded-xl border border-surface-variant overflow-hidden mb-lg shadow-sm">
+<div class="p-md border-b border-surface-variant bg-surface-container flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="my_location">my_location</span>
+<h3 class="font-title-md text-title-md text-on-surface">隐私围栏：仅在这些区域内启用位置感知</h3>
+</div>
+<div class="relative h-48 w-full bg-surface-variant overflow-hidden">
+<!-- Map Map Placeholder -->
+<div class="absolute inset-0 bg-cover bg-center opacity-60" data-alt="A clean, minimalist digital map visualization showing street grids in soft blues and greys. The lighting is bright and modern, suggesting a high-tech tracking interface. The overall aesthetic is strictly professional, adhering to a light-mode corporate UI style with precise geometric lines." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDWuSLq1mP3HfRj9O3qgK7NP4A3YI4dIpLcjfhrDZlbo00mNUs2IC4Us54OXSO3ih0mjV0KRj64_SLfOgZhC5CKlujBodVcCstoYMsCwFQtvd34ASg6_LL9t2-xtIZqGco0Ry9ZXKAJfr-AYdxp22AB7mW6QgA_rnIkd80zCJaftDie1nsebj2-bQX2O80pxJUytVqNWz6Jvn5s0wzdI-K-HwtHlUETUfcnqb6WaTeZZppXcnSuNrS1')"></div>
+<!-- Geofence Overlay -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="relative flex items-center justify-center">
+<div class="absolute w-32 h-32 bg-primary/20 rounded-full border-2 border-primary/50"></div>
+<div class="absolute w-32 h-32 bg-primary/10 rounded-full pulse-ring"></div>
+<div class="w-4 h-4 bg-primary rounded-full border-2 border-surface shadow-sm z-10"></div>
+<div class="absolute -bottom-8 bg-surface-container px-2 py-1 rounded-sm text-xs font-label-mono text-label-mono text-primary shadow-sm border border-outline-variant">家 (半径 500m)</div>
+</div>
+</div>
+</div>
+<!-- Active Fences List -->
+<div class="p-md">
+<h4 class="font-label-mono text-label-mono text-on-surface-variant mb-sm uppercase">活跃围栏</h4>
+<div class="space-y-sm">
+<div class="flex items-center justify-between bg-surface p-sm rounded-lg border border-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="home">home</span>
+<span class="font-body-md text-body-md">家 (Home)</span>
+</div>
+<div class="w-10 h-6 bg-primary rounded-full relative">
+<div class="absolute right-1 top-1 w-4 h-4 bg-surface rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between bg-surface p-sm rounded-lg border border-surface-variant">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="work">work</span>
+<span class="font-body-md text-body-md text-on-surface-variant">办公室 (Office)</span>
+</div>
+<div class="w-10 h-6 bg-surface-variant rounded-full relative border border-outline-variant">
+<div class="absolute left-1 top-1 w-4 h-4 bg-outline rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Compliance Declaration -->
+<div class="bg-surface p-md rounded-lg border border-outline-variant mb-lg flex gap-md items-start">
+<span class="material-symbols-outlined text-secondary mt-1" data-icon="gavel">gavel</span>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface mb-xs">合规声明</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">
+                    根据 PRD §6.3 和 §9.3 规定，所有 GPS 坐标在进入 Agent 上下文之前，均在<strong>本地进行模糊处理/混淆</strong>。
+                </p>
+<div class="bg-terminal-bg text-[#00ff00] font-code-block text-code-block p-sm rounded-sm overflow-x-auto">
+                    &gt; Obfuscating GPS data...
+                    &gt; Locality precision reduced to 1.5km
+                    &gt; Raw coord scrub: SUCCESS
+                </div>
+</div>
+</div>
+</main>
+<!-- Fixed Action Buttons at Bottom -->
+<div class="fixed bottom-0 left-0 w-full bg-surface/90 backdrop-blur-md border-t border-surface-variant p-margin-mobile z-20 max-w-[600px] left-1/2 -translate-x-1/2">
+<div class="flex flex-col gap-sm mb-sm">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-3 rounded-lg hover:bg-primary-container transition-colors shadow-sm">
+                仅允许围栏内访问
+            </button>
+<div class="flex gap-sm">
+<button class="flex-1 bg-surface-container text-on-surface font-title-md text-title-md py-3 rounded-lg hover:bg-surface-container-high transition-colors border border-outline-variant">
+                    禁止访问位置
+                </button>
+<button class="flex-1 bg-error-container text-error font-title-md text-title-md py-3 rounded-lg hover:bg-[#ffc2bc] transition-colors border border-[#ffb4ab]">
+                    总是允许
+                </button>
+</div>
+</div>
+<div class="flex justify-between items-center mt-md text-on-surface-variant">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" data-icon="verified_user">verified_user</span>
+<span class="font-label-mono text-label-mono">本地优先执行</span>
+</div>
+<span class="font-label-mono text-label-mono opacity-50">Audit ID: L2-GEO-89A1</span>
+</div>
+</div>
+</body></html>

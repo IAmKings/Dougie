@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku 任务拓扑</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed-variant": "#2e4b57",
+                      "secondary-fixed": "#6ef7f6",
+                      "surface-bright": "#f8faf9",
+                      "status-thinking": "#566ab2",
+                      "on-tertiary": "#ffffff",
+                      "background": "#f8faf9",
+                      "primary": "#3d5198",
+                      "on-error-container": "#93000a",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed": "#001f2a",
+                      "on-error": "#ffffff",
+                      "tertiary": "#3d5a67",
+                      "status-executing": "#FFB300",
+                      "on-secondary-fixed": "#002020",
+                      "surface-container-high": "#e7e8e8",
+                      "outline": "#757682",
+                      "inverse-on-surface": "#eff1f0",
+                      "surface-container-highest": "#e1e3e2",
+                      "surface-container-low": "#f2f4f3",
+                      "surface-variant": "#e1e3e2",
+                      "status-completed": "#2E7D32",
+                      "on-tertiary-container": "#e2f4ff",
+                      "tertiary-fixed-dim": "#adcbda",
+                      "primary-fixed": "#dce1ff",
+                      "surface": "#f8faf9",
+                      "secondary-fixed-dim": "#4cdada",
+                      "tertiary-fixed": "#c9e7f7",
+                      "terminal-bg": "#0D0F0F",
+                      "on-primary-fixed": "#001550",
+                      "outline-variant": "#c5c5d2",
+                      "primary-container": "#566ab2",
+                      "inverse-primary": "#b6c4ff",
+                      "on-surface-variant": "#444651",
+                      "risk-high": "#BA1A1A",
+                      "on-primary-container": "#f0f0ff",
+                      "on-background": "#191c1c",
+                      "status-failed": "#D32F2F",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#557280",
+                      "on-secondary-container": "#007070",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed-variant": "#004f50",
+                      "secondary": "#006a6a",
+                      "on-primary": "#ffffff",
+                      "surface-container": "#edeeed",
+                      "primary-fixed-dim": "#b6c4ff",
+                      "error-container": "#ffdad6",
+                      "surface-dim": "#d9dada",
+                      "on-primary-fixed-variant": "#2d4288",
+                      "on-surface": "#191c1c",
+                      "surface-tint": "#465aa1",
+                      "secondary-container": "#6ef7f6",
+                      "inverse-surface": "#2e3131"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-tablet": "24px",
+                      "baseline": "8px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "margin-mobile": "16px",
+                      "lg": "24px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "code-block": [
+                              "JetBrains Mono"
+                      ],
+                      "title-md": [
+                              "Inter"
+                      ],
+                      "title-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "code-block": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "title-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.5px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .blueprint-bg {
+            background-image: 
+                linear-gradient(to right, rgba(86, 106, 178, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(86, 106, 178, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: #f8faf9;
+        }
+        .dark .blueprint-bg {
+             background-image: 
+                linear-gradient(to right, rgba(86, 106, 178, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(86, 106, 178, 0.2) 1px, transparent 1px);
+            background-color: #0D0F0F;
+        }
+        
+        .pulse-thinking {
+            animation: pulse-border 1.5s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(86, 106, 178, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(86, 106, 178, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(86, 106, 178, 0); }
+        }
+
+        .data-flow-line {
+            stroke-dasharray: 4;
+            animation: dash 20s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased dark min-h-screen flex flex-col relative overflow-hidden pb-24">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-margin-mobile w-full h-16 bg-surface dark:bg-surface w-full top-0 sticky z-10 border-b border-surface-container dark:border-surface-container">
+<div class="flex items-center gap-xs">
+<button class="p-sm rounded-full hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200 text-primary dark:text-inverse-primary">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-inverse-primary tracking-tight">Waku 任务拓扑</h1>
+</div>
+<button class="p-sm rounded-full hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200 text-primary dark:text-inverse-primary">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+</button>
+</header>
+<!-- Main Content Canvas (Topology Graph) -->
+<main class="flex-grow blueprint-bg relative flex items-center justify-center p-margin-mobile overflow-hidden">
+<!-- SVG Connections -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0" style="min-height: 500px;">
+<!-- Orchestrator to Intent Classifier -->
+<path class="data-flow-line" d="M 50% 50% L 20% 30%" fill="none" stroke="#4cdada" stroke-width="2"></path>
+<circle cx="35%" cy="40%" fill="#0D0F0F" r="12" stroke="#4cdada" stroke-width="1"></circle>
+<text dominant-baseline="middle" fill="#4cdada" font-family="JetBrains Mono" font-size="10" text-anchor="middle" transform="translate(0, 15)" x="35%" y="40%">上下文</text>
+<!-- Orchestrator to Calendar Agent -->
+<path class="data-flow-line" d="M 50% 50% L 80% 30%" fill="none" stroke="#FFB300" stroke-width="2"></path>
+<circle cx="65%" cy="40%" fill="#0D0F0F" r="12" stroke="#FFB300" stroke-width="1"></circle>
+<text dominant-baseline="middle" fill="#FFB300" font-family="JetBrains Mono" font-size="10" text-anchor="middle" transform="translate(0, 15)" x="65%" y="40%">工具调用</text>
+<!-- Orchestrator to Memory Retriever -->
+<path d="M 50% 50% L 50% 80%" fill="none" stroke="#757682" stroke-dasharray="2,2" stroke-width="2"></path>
+<text fill="#757682" font-family="JetBrains Mono" font-size="10" text-anchor="middle" transform="translate(25, 0)" x="50%" y="65%">事实</text>
+</svg>
+<!-- Node: Orchestrator Agent (Center) -->
+<div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
+<div class="bg-surface-container-high dark:bg-[#1a1d1e] border-2 border-primary rounded-xl p-md shadow-lg pulse-thinking flex flex-col items-center w-40">
+<div class="w-12 h-12 rounded-full overflow-hidden mb-sm border border-outline-variant bg-white">
+<img alt="Doge AI Icon" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLsfeCFjMe2MCzuyfwskhn77Xcskryi8z372e55d8M61kAXJun53Y54LfMBxsBY-xQ7yA71axFqTkbF7PRy_VN8Sj0Q-9Ro2YLYGZMsWJ5V-1a2Wi1xUbJv_xPZUbZ6O5Oh6PqbGVg_dm1J58INUGKvAXGvyS_FkBNri60xxoqcWHX6Zjct7Qkq5YmwYkqsft7gnk5zPAt56fOHtS3HWDiVjwa0LQ-iJY8COjgwElgV4jFZopXgf65FgI9Y"/>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface dark:text-inverse-on-surface text-center leading-tight">编排智能体</h3>
+<div class="mt-xs flex items-center gap-xs bg-primary-container/20 text-primary dark:text-inverse-primary px-2 py-1 rounded-sm">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+<span class="font-label-mono text-label-mono uppercase tracking-wider">思考中</span>
+</div>
+</div>
+</div>
+<!-- Node: Intent Classifier (Top Left) -->
+<div class="absolute top-[20%] left-[10%] md:left-[20%] z-10 flex flex-col items-center">
+<div class="bg-surface-container-low dark:bg-[#151717] border border-status-completed/50 rounded-xl p-md shadow-md flex flex-col items-center w-32">
+<div class="w-10 h-10 rounded-full bg-status-completed/10 flex items-center justify-center mb-sm text-status-completed">
+<span class="material-symbols-outlined text-2xl" data-icon="smart_toy">smart_toy</span>
+</div>
+<h3 class="font-body-md text-body-md text-on-surface-variant dark:text-outline text-center leading-tight">意图分类器</h3>
+<div class="mt-xs flex items-center gap-xs bg-status-completed/10 text-status-completed px-2 py-1 rounded-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span class="font-label-mono text-label-mono uppercase tracking-wider text-[10px]">已完成</span>
+</div>
+</div>
+</div>
+<!-- Node: Calendar Agent (Top Right) -->
+<div class="absolute top-[20%] right-[10%] md:right-[20%] z-10 flex flex-col items-center">
+<div class="bg-surface-container-low dark:bg-[#151717] border border-status-executing rounded-xl p-md shadow-md flex flex-col items-center w-32">
+<div class="w-10 h-10 rounded-full bg-status-executing/10 flex items-center justify-center mb-sm text-status-executing">
+<span class="material-symbols-outlined text-2xl" data-icon="event">event</span>
+</div>
+<h3 class="font-body-md text-body-md text-on-surface-variant dark:text-outline text-center leading-tight">日历智能体</h3>
+<div class="mt-xs flex items-center gap-xs bg-status-executing/20 text-status-executing px-2 py-1 rounded-sm">
+<span class="material-symbols-outlined text-[14px] animate-spin">build</span>
+<span class="font-label-mono text-label-mono uppercase tracking-wider text-[10px]">执行中</span>
+</div>
+</div>
+</div>
+<!-- Node: Memory Retriever (Bottom Center) -->
+<div class="absolute bottom-[10%] left-1/2 transform -translate-x-1/2 z-10 flex flex-col items-center">
+<div class="bg-surface-container-low dark:bg-[#151717] border border-outline-variant/30 rounded-xl p-md shadow-md flex flex-col items-center w-36 opacity-70">
+<div class="w-10 h-10 rounded-full bg-surface-variant dark:bg-surface-variant/30 flex items-center justify-center mb-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl" data-icon="database">database</span>
+</div>
+<h3 class="font-body-md text-body-md text-on-surface-variant dark:text-outline text-center leading-tight">记忆检索器</h3>
+<div class="mt-xs flex items-center gap-xs bg-surface-variant/50 dark:bg-surface-variant/20 text-on-surface-variant px-2 py-1 rounded-sm">
+<span class="material-symbols-outlined text-[14px]">pause_circle</span>
+<span class="font-label-mono text-label-mono uppercase tracking-wider text-[10px]">空闲</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Info Panel -->
+<div class="fixed bottom-24 left-margin-mobile right-margin-mobile md:left-auto md:w-96 z-40 bg-surface-container dark:bg-[#1e2122] rounded-xl p-md shadow-lg border border-outline-variant/20 flex flex-col gap-sm">
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-outline uppercase tracking-widest">全局任务状态</span>
+<div class="flex items-center gap-2 font-code-block text-code-block text-on-surface dark:text-inverse-on-surface text-xs">
+<span class="text-outline">空闲</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span class="text-primary dark:text-inverse-primary font-bold">思考中</span>
+<span class="material-symbols-outlined text-[12px] text-outline">arrow_forward</span>
+<span class="text-status-executing">工具执行</span>
+</div>
+</div>
+<div class="h-px w-full bg-outline-variant/20"></div>
+<div class="flex justify-between items-center font-code-block text-code-block">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>循环次数: <span class="text-on-surface dark:text-white">3/8</span></span>
+</div>
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+<span>响应延迟: <span class="text-on-surface dark:text-white">1.2s</span></span>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 pb-safe px-2 bg-surface-container-low dark:bg-surface-container-low z-50">
+<!-- Topology (Active) -->
+<div class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-4 py-1 scale-95 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="account_tree" data-weight="fill" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+<span class="font-label-mono text-label-mono mt-1">任务拓扑</span>
+</div>
+<!-- Agents (Inactive) -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant rounded-xl transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-mono text-label-mono mt-1">智能体库</span>
+</div>
+<!-- Logs (Inactive) -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant rounded-xl transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-label-mono text-label-mono mt-1">审计日志</span>
+</div>
+<!-- Policy (Inactive) -->
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant rounded-xl transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+<span class="font-label-mono text-label-mono mt-1">出境策略</span>
+</div>
+</nav>
+</body></html>

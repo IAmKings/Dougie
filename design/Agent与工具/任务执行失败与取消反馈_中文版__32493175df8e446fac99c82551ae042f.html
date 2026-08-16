@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>任务异常与打断 - Waku-Android</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#c9e7f7",
+                        "secondary": "#006a6a",
+                        "tertiary-container": "#557280",
+                        "secondary-container": "#6ef7f6",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "primary": "#3d5198",
+                        "surface-variant": "#e1e3e2",
+                        "on-secondary-fixed": "#002020",
+                        "risk-high": "#BA1A1A",
+                        "on-primary-container": "#f0f0ff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#001f2a",
+                        "secondary-fixed-dim": "#4cdada",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeed",
+                        "primary-fixed": "#dce1ff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "error": "#ba1a1a",
+                        "outline": "#757682",
+                        "terminal-bg": "#0D0F0F",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#465aa1",
+                        "surface-container-low": "#f2f4f3",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "background": "#f8faf9",
+                        "status-thinking": "#566ab2",
+                        "surface-bright": "#f8faf9",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "inverse-primary": "#b6c4ff",
+                        "on-surface-variant": "#444651",
+                        "tertiary": "#3d5a67",
+                        "on-surface": "#191c1c",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-tertiary-container": "#e2f4ff",
+                        "surface-dim": "#d9dada",
+                        "status-completed": "#2E7D32",
+                        "on-secondary-container": "#007070",
+                        "surface": "#f8faf9",
+                        "status-failed": "#D32F2F",
+                        "inverse-surface": "#2e3131",
+                        "secondary-fixed": "#6ef7f6",
+                        "status-executing": "#FFB300",
+                        "outline-variant": "#c5c5d2",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-primary-fixed": "#001550",
+                        "on-background": "#191c1c",
+                        "surface-container-high": "#e7e8e8",
+                        "inverse-on-surface": "#eff1f0",
+                        "primary-container": "#566ab2",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "baseline": "8px",
+                        "xs": "4px",
+                        "margin-tablet": "24px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-lg">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface flex justify-between items-center px-margin-mobile h-16 border-b border-surface-container-high z-40">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-surface-container-high transition-colors rounded-full p-2" data-icon="arrow_back">arrow_back</span>
+<div class="flex items-center gap-xs">
+<img alt="Doge AI Icon" class="w-8 h-8 object-cover rounded-full bg-white shadow-sm" src="https://lh3.googleusercontent.com/aida/AP1WRLsfeCFjMe2MCzuyfwskhn77Xcskryi8z372e55d8M61kAXJun53Y54LfMBxsBY-xQ7yA71axFqTkbF7PRy_VN8Sj0Q-9Ro2YLYGZMsWJ5V-1a2Wi1xUbJv_xPZUbZ6O5Oh6PqbGVg_dm1J58INUGKvAXGvyS_FkBNri60xxoqcWHX6Zjct7Qkq5YmwYkqsft7gnk5zPAt56fOHtS3HWDiVjwa0LQ-iJY8COjgwElgV4jFZopXgf65FgI9Y"/>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">Waku-Android</h1>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high transition-colors rounded-full p-2" data-icon="more_vert">more_vert</span>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-margin-mobile md:p-margin-tablet max-w-3xl mx-auto w-full flex flex-col gap-lg pb-xl">
+<!-- Task Info Header -->
+<div class="flex flex-col gap-xs pt-sm">
+<h2 class="font-title-lg text-title-lg text-on-surface">任务异常报告</h2>
+<div class="flex items-center gap-sm text-on-surface-variant">
+<span class="font-label-mono text-label-mono bg-surface-container-high px-2 py-1 rounded">Task: #942</span>
+<span class="font-body-md text-body-md">• 2024-05-18 14:32:05</span>
+</div>
+</div>
+<!-- Error Card (Timeout) -->
+<section class="bg-error-container text-on-error-container p-md rounded-xl shadow-sm border border-[#ffb4ab] flex flex-col gap-sm">
+<div class="flex items-start gap-md">
+<div class="bg-[#ffb4ab] text-[#410002] rounded-full p-2 flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined" data-icon="error" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex flex-col gap-xs flex-1">
+<h3 class="font-title-md text-title-md font-bold text-[#410002]">任务执行超时</h3>
+<p class="font-body-md text-body-md text-[#410002]/90">
+                        Agent 在尝试调用日历工具时未能在预设时间内获得响应 (120s)。这通常是由于网络连接不稳定或模型服务商响应缓慢导致的。
+                    </p>
+<div class="mt-sm bg-surface-container-lowest/50 rounded-lg p-sm border border-[#ffb4ab]/50 flex flex-col gap-xs">
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-[#410002]/70">Task ID</span>
+<span class="font-code-block text-code-block text-[#410002]">task_942_error</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-[#410002]/70">Error Code</span>
+<span class="font-code-block text-code-block font-semibold text-[#93000a]">LLM_TIMEOUT</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- User Cancelled Card -->
+<section class="bg-surface-container-low border border-outline-variant p-md rounded-xl flex flex-col gap-sm">
+<div class="flex items-start gap-md">
+<div class="bg-surface-container-highest text-on-surface-variant rounded-full p-2 flex items-center justify-center shrink-0 mt-1">
+<span class="material-symbols-outlined" data-icon="cancel" style="font-variation-settings: 'FILL' 1;">cancel</span>
+</div>
+<div class="flex flex-col gap-xs flex-1">
+<h3 class="font-title-md text-title-md font-medium text-on-surface">任务已由用户取消</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        当前推理循环 (Loop 3/8) 已安全中止，所有已产生的系统副作用均已通过幂等键锁定。
+                    </p>
+<div class="mt-xs flex items-center gap-2">
+<span class="inline-flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-on-surface-variant font-label-mono text-label-mono">
+<span class="material-symbols-outlined text-[14px]" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+                            Idempotency Locked
+                        </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Area -->
+<div class="flex flex-col sm:flex-row gap-sm mt-md">
+<button class="bg-status-thinking hover:bg-status-thinking/90 text-white font-title-md text-title-md px-md py-sm rounded-full transition-colors flex items-center justify-center gap-2 flex-1 shadow-sm active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+                重新尝试执行
+            </button>
+<button class="border border-outline text-primary hover:bg-primary/5 font-title-md text-title-md px-md py-sm rounded-full transition-colors flex items-center justify-center gap-2 flex-1 active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+                返回对话
+            </button>
+</div>
+<div class="flex justify-center mt-sm">
+<button class="text-primary hover:text-primary-fixed-variant font-title-md text-title-md px-md py-sm rounded-full hover:bg-surface-container transition-colors flex items-center justify-center gap-2 active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+                查看审计日志
+            </button>
+</div>
+</main>
+</body></html>

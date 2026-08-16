@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>意图路由 - Waku-Android</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-fixed-variant": "#004f50",
+                      "on-background": "#191c1c",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#e1e3e2",
+                      "status-failed": "#D32F2F",
+                      "primary-fixed-dim": "#b6c4ff",
+                      "tertiary-fixed-dim": "#adcbda",
+                      "surface-container": "#edeeed",
+                      "tertiary-container": "#557280",
+                      "primary": "#3d5198",
+                      "error-container": "#ffdad6",
+                      "on-primary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "error": "#ba1a1a",
+                      "on-surface-variant": "#444651",
+                      "on-primary-fixed": "#001550",
+                      "background": "#f8faf9",
+                      "secondary-fixed-dim": "#4cdada",
+                      "on-tertiary-container": "#e2f4ff",
+                      "inverse-surface": "#2e3131",
+                      "on-tertiary-fixed-variant": "#2e4b57",
+                      "surface-bright": "#f8faf9",
+                      "on-tertiary-fixed": "#001f2a",
+                      "secondary": "#006a6a",
+                      "risk-high": "#BA1A1A",
+                      "secondary-fixed": "#6ef7f6",
+                      "primary-container": "#566ab2",
+                      "surface-dim": "#d9dada",
+                      "on-secondary-container": "#007070",
+                      "status-thinking": "#566ab2",
+                      "surface-tint": "#465aa1",
+                      "inverse-primary": "#b6c4ff",
+                      "on-primary-container": "#f0f0ff",
+                      "terminal-bg": "#0D0F0F",
+                      "on-surface": "#191c1c",
+                      "secondary-container": "#6ef7f6",
+                      "status-executing": "#FFB300",
+                      "on-primary-fixed-variant": "#2d4288",
+                      "outline-variant": "#c5c5d2",
+                      "primary-fixed": "#dce1ff",
+                      "on-secondary-fixed": "#002020",
+                      "outline": "#757682",
+                      "surface-container-low": "#f2f4f3",
+                      "surface-container-high": "#e7e8e8",
+                      "surface": "#f8faf9",
+                      "surface-container-highest": "#e1e3e2",
+                      "inverse-on-surface": "#eff1f0",
+                      "on-secondary": "#ffffff",
+                      "tertiary": "#3d5a67",
+                      "tertiary-fixed": "#c9e7f7",
+                      "on-tertiary": "#ffffff",
+                      "status-completed": "#2E7D32",
+                      "surface-container-lowest": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "xs": "4px",
+                      "margin-tablet": "24px",
+                      "margin-mobile": "16px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "xl": "32px",
+                      "gutter": "16px",
+                      "baseline": "8px"
+              },
+              "fontFamily": {
+                      "code-block": [
+                              "JetBrains Mono"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "title-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "title-lg": [
+                              "Inter"
+                      ],
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "code-block": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "title-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.5px",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        .animate-breathe {
+            animation: breathe 1.5s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.98); }
+        }
+        .animate-slide-up {
+            animation: slideUp 250ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased min-h-screen flex flex-col relative">
+<!-- TopAppBar -->
+<header class="bg-surface-container dark:bg-surface-container-high w-full flex justify-between items-center px-4 md:px-8 h-16 sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<button aria-label="Go back" class="text-on-surface hover:bg-surface-variant rounded-full p-2 transition-all duration-200 hover:scale-95">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex items-center gap-3">
+<img alt="Waku Doge Icon" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida/AP1WRLuorH53_m_CKdxURAwF-PvK0jc_aFhXcELRhIDH8Urd5erbH8b8UN5PdrUyhzuB1MrzG5sS8N5Ls4s6YtOVin3ElT6CQOu0MYyE42K6k8WkYq35r9B7q0W8b3ZRVwVgoZJTGgW2DXcshR6q80DvVmiFb1NBHqItiDoMrUhHYpKGW91clNs-QYfb2vgNouGfbBYCkpZoCzcZT9MsXUw3T0T5HXmPjfKf1S7iFJssbnduhb_QE4RAY5HwltU"/>
+<h1 class="text-headline-md font-headline-md font-extrabold text-primary dark:text-inverse-primary tracking-tight">意图路由</h1>
+</div>
+</div>
+<button aria-label="Help" class="text-on-surface-variant hover:bg-surface-variant rounded-full p-2 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-mobile md:px-margin-tablet py-lg flex flex-col gap-lg max-w-4xl mx-auto w-full pb-32">
+<!-- 2. User Input Summary -->
+<section class="flex flex-col items-end gap-2 w-full">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-label-mono font-label-mono text-on-surface-variant">ASR 已转录</span>
+<span class="material-symbols-outlined text-status-completed text-[16px]" data-icon="check_circle" data-weight="fill">check_circle</span>
+</div>
+<div class="bg-surface-container border border-primary text-on-surface px-md py-sm rounded-2xl rounded-tr-sm shadow-sm max-w-[85%] text-body-lg font-body-lg">
+                "提醒我明天下午三点有个会"
+            </div>
+</section>
+<!-- Bento Grid Layout for Analysis & Routing -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- 3. Intent Analysis Card -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant p-md flex flex-col gap-4 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container opacity-10 rounded-bl-full"></div>
+<header class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="psychology">psychology</span>
+<h2 class="text-title-md font-title-md text-on-surface font-semibold">意图分类器</h2>
+</div>
+<span class="text-label-mono font-label-mono bg-surface-variant text-on-surface-variant px-2 py-1 rounded-sm">本地 Qwen3-0.6B</span>
+</header>
+<div class="flex items-center gap-2 bg-surface px-3 py-2 rounded-lg border border-outline-variant/50">
+<span class="material-symbols-outlined text-secondary" data-icon="event">event</span>
+<div class="flex-1">
+<div class="text-body-md font-body-md font-medium">日历 / 提醒</div>
+<div class="text-label-mono font-label-mono text-on-surface-variant">置信度: 98.2%</div>
+</div>
+<span class="material-symbols-outlined text-status-completed" data-icon="verified" data-weight="fill">verified</span>
+</div>
+<div>
+<h3 class="text-label-mono font-label-mono text-on-surface-variant mb-2">已提取槽位</h3>
+<div class="bg-terminal-bg text-on-primary rounded-lg p-3 font-code-block text-code-block overflow-x-auto shadow-inner">
+<div class="flex flex-col gap-1">
+<div><span class="text-secondary-fixed">"动作"</span>: <span class="text-tertiary-fixed-dim">"创建会议"</span>,</div>
+<div><span class="text-secondary-fixed">"时间"</span>: <span class="text-tertiary-fixed-dim">"2026-08-15 15:00"</span>,</div>
+<div><span class="text-secondary-fixed">"主题"</span>: <span class="text-tertiary-fixed-dim">"项目评审"</span></div>
+</div>
+</div>
+</div>
+</section>
+<div class="flex flex-col gap-md">
+<!-- 4. Routing Decision -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant p-md flex flex-col gap-4 flex-1">
+<header class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary" data-icon="route">route</span>
+<h2 class="text-title-md font-title-md text-on-surface font-semibold">路由决策</h2>
+</header>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center py-2 border-b border-surface-variant">
+<span class="text-body-md font-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="build">build</span> 建议工具
+                            </span>
+<span class="text-title-md font-title-md font-semibold text-primary">CalendarTool</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-surface-variant">
+<span class="text-body-md font-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="play_arrow">play_arrow</span> 执行动作
+                            </span>
+<span class="text-body-md font-body-md font-medium text-on-surface">Schedule Event</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-body-md font-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="dns">dns</span> 执行路径
+                            </span>
+<span class="text-label-mono font-label-mono bg-surface-container-highest text-on-surface px-2 py-1 rounded">本地系统 API</span>
+</div>
+</div>
+</section>
+<!-- 5. Policy & Safety -->
+<section class="bg-surface-container-low rounded-xl border border-outline-variant p-md flex flex-col gap-3">
+<header class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-secondary" data-icon="security">security</span>
+<h2 class="text-title-md font-title-md text-on-surface font-semibold">策略与安全</h2>
+</header>
+<div class="flex items-center justify-between bg-surface-container px-3 py-2 rounded-lg">
+<span class="text-body-md font-body-md text-on-surface-variant">状态</span>
+<span class="flex items-center gap-1 text-status-completed font-medium text-body-md font-body-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="check" data-weight="fill">check</span> Schema 已验证
+                        </span>
+</div>
+<div class="flex items-center justify-between bg-error-container/30 border border-error-container px-3 py-2 rounded-lg">
+<span class="text-body-md font-body-md text-on-surface-variant">风险等级</span>
+<span class="flex items-center gap-1 text-status-executing font-medium text-body-md font-body-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning">warning</span> L2 (需要确认)
+                        </span>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Bottom Scrim & Action Area (L2 Confirmation) -->
+<div class="fixed bottom-0 left-0 w-full z-50 pointer-events-none">
+<div class="bg-gradient-to-t from-surface to-transparent h-12 w-full"></div>
+<div class="bg-surface border-t border-outline-variant p-margin-mobile md:p-margin-tablet flex flex-col sm:flex-row gap-4 items-center justify-end pointer-events-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] animate-slide-up">
+<button class="w-full sm:w-auto px-6 py-3 rounded-full border border-outline text-on-surface hover:bg-surface-variant transition-colors text-title-md font-title-md font-medium flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="edit">edit</span>
+                修改 / 校正
+            </button>
+<button class="w-full sm:w-auto px-6 py-3 rounded-full bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm text-title-md font-title-md font-medium flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                确认并执行
+            </button>
+</div>
+</div>
+</body></html>

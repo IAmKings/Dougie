@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android Offline ASR</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "terminal-bg": "#0D0F0F",
+                        "on-primary-container": "#f0f0ff",
+                        "on-secondary-fixed": "#002020",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "primary-fixed": "#dce1ff",
+                        "surface-container-low": "#f2f4f3",
+                        "surface-bright": "#f8faf9",
+                        "on-error-container": "#93000a",
+                        "status-executing": "#FFB300",
+                        "primary": "#3d5198",
+                        "background": "#f8faf9",
+                        "status-failed": "#D32F2F",
+                        "secondary-fixed": "#6ef7f6",
+                        "surface-dim": "#d9dada",
+                        "surface-tint": "#465aa1",
+                        "status-completed": "#2E7D32",
+                        "secondary-fixed-dim": "#4cdada",
+                        "status-thinking": "#566ab2",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001550",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-surface": "#191c1c",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-container-high": "#e7e8e8",
+                        "on-background": "#191c1c",
+                        "inverse-primary": "#b6c4ff",
+                        "inverse-surface": "#2e3131",
+                        "on-tertiary-fixed": "#001f2a",
+                        "tertiary-container": "#557280",
+                        "outline": "#757682",
+                        "risk-high": "#BA1A1A",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "outline-variant": "#c5c5d2",
+                        "surface-variant": "#e1e3e2",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "secondary-container": "#6ef7f6",
+                        "tertiary-fixed": "#c9e7f7",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#444651",
+                        "secondary": "#006a6a",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#e1e3e2",
+                        "primary-container": "#566ab2",
+                        "on-tertiary-container": "#e2f4ff",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8faf9",
+                        "error": "#ba1a1a",
+                        "surface-container": "#edeeed",
+                        "tertiary": "#3d5a67",
+                        "inverse-on-surface": "#eff1f0",
+                        "on-secondary-container": "#007070"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "baseline": "8px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "margin-tablet": "24px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "title-md": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom animations for waveform */
+        @keyframes waveform {
+            0%, 100% { transform: scaleY(0.2); }
+            50% { transform: scaleY(1); }
+        }
+        
+        .wave-bar {
+            animation: waveform 1.2s ease-in-out infinite;
+            transform-origin: center;
+        }
+        
+        /* Staggered animation delays */
+        .wave-bar:nth-child(1) { animation-delay: 0.0s; height: 24px; }
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 36px; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 48px; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 32px; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 56px; }
+        .wave-bar:nth-child(6) { animation-delay: 0.5s; height: 40px; }
+        .wave-bar:nth-child(7) { animation-delay: 0.6s; height: 28px; }
+        .wave-bar:nth-child(8) { animation-delay: 0.7s; height: 44px; }
+        .wave-bar:nth-child(9) { animation-delay: 0.8s; height: 20px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md h-screen w-full overflow-hidden flex flex-col relative antialiased">
+<!-- BACKGROUND CONTEXT: Chat History (Dimmed) -->
+<div class="absolute inset-0 z-0 flex flex-col blur-[3px] opacity-40 transition-all duration-300 pointer-events-none select-none">
+<!-- TopAppBar (Simulated Background) -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 py-3 bg-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-variant"></div>
+<span class="text-headline-md font-headline-md font-extrabold text-primary">Waku-Android</span>
+</div>
+</header>
+<!-- Fake Chat Content -->
+<main class="flex-1 p-margin-mobile md:p-margin-tablet flex flex-col gap-lg">
+<div class="self-end max-w-[80%] bg-surface-container-high rounded-2xl rounded-tr-sm p-4 text-body-lg font-body-lg text-on-surface">
+                Hi SOUL, I need to arrange my schedule for tomorrow.
+            </div>
+<div class="self-start max-w-[80%] bg-surface-container-low rounded-2xl rounded-tl-sm p-4 border border-outline-variant">
+<p class="text-body-lg font-body-lg text-on-surface">I'm ready. What would you like to schedule?</p>
+</div>
+</main>
+</div>
+<!-- ACTIVE STATE: Voice Input Overlay -->
+<div class="fixed inset-0 z-50 flex flex-col bg-surface-container-lowest/20 backdrop-blur-sm">
+<!-- Authentic TopAppBar Overlaid for clear context -->
+<header class="flex justify-between items-center w-full px-4 md:px-8 py-4 bg-transparent">
+<div class="flex items-center gap-3 bg-surface-container/80 backdrop-blur-md px-3 py-2 rounded-full shadow-sm border border-surface-container-high">
+<img alt="SOUL Agent Persona" class="w-8 h-8 rounded-full border border-primary-container object-cover bg-surface-variant" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+<span class="text-title-md font-title-md font-bold text-primary">Waku-Android</span>
+</div>
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container/80 backdrop-blur-md text-on-surface-variant">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 0;">shield_with_heart</span>
+</div>
+</header>
+<div class="flex-1"></div> <!-- Spacer -->
+<!-- Bottom Sheet / Focus Area -->
+<div class="w-full max-w-3xl mx-auto bg-surface rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.08)] flex flex-col items-center pt-8 pb-10 px-6 md:px-12 border-t border-surface-container-high relative overflow-hidden">
+<!-- Handle (Visual Cue) -->
+<div class="w-12 h-1.5 bg-outline-variant rounded-full absolute top-4 left-1/2 -translate-x-1/2 opacity-50"></div>
+<!-- Status Header -->
+<div class="flex items-center gap-2 mb-6 bg-surface-container-low px-4 py-1.5 rounded-full border border-outline-variant/30">
+<div class="w-2 h-2 rounded-full bg-status-thinking animate-pulse"></div>
+<span class="text-label-mono font-label-mono text-status-thinking tracking-wide">
+                    正在进行本地识别 (Offline Recognition)...
+                </span>
+</div>
+<!-- Transcription Display -->
+<div class="min-h-[100px] w-full flex items-center justify-center mb-8 px-4">
+<p class="text-headline-lg font-headline-lg text-on-surface text-center leading-tight tracking-tight">
+                    "明天下午三点提醒我开会"
+                    <span class="inline-block w-1 h-8 bg-primary ml-1 animate-pulse align-middle"></span>
+</p>
+</div>
+<!-- Waveform Visualization -->
+<div class="flex items-center justify-center gap-1.5 h-[60px] w-full max-w-[280px] mb-12">
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-2 rounded-full bg-primary"></div> <!-- Center accent -->
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+<div class="wave-bar w-1.5 rounded-full bg-primary-container"></div>
+</div>
+<!-- Controls -->
+<div class="flex items-center justify-center w-full gap-8 relative z-10">
+<!-- Cancel -->
+<button aria-label="Cancel input" class="w-14 h-14 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors duration-200">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 0;">close</span>
+</button>
+<!-- Active Mic Button -->
+<div class="relative flex items-center justify-center">
+<!-- Pulsing rings -->
+<div class="absolute inset-0 bg-primary-container rounded-full animate-ping opacity-75"></div>
+<div class="absolute -inset-4 bg-primary-container/20 rounded-full animate-pulse"></div>
+<!-- Core Button -->
+<button class="relative w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 active:scale-95 transition-transform duration-200 z-10">
+<span class="material-symbols-outlined text-4xl text-on-primary" style="font-variation-settings: 'FILL' 1;">mic</span>
+</button>
+</div>
+<!-- Done/Send -->
+<button aria-label="Confirm input" class="w-14 h-14 rounded-full flex items-center justify-center text-primary bg-primary-fixed/50 hover:bg-primary-fixed transition-colors duration-200">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">check</span>
+</button>
+</div>
+<!-- Privacy Note Footer -->
+<div class="mt-10 flex items-center justify-center gap-1.5 text-on-surface-variant opacity-80">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="text-label-mono font-label-mono text-xs">音频仅在本地处理，不会离开设备</span>
+</div>
+</div>
+</div>
+</body></html>

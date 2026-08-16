@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent KISS - 任务历史 (Empty State)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#3d5198",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "status-completed": "#2E7D32",
+                        "on-surface": "#191c1c",
+                        "outline-variant": "#c5c5d2",
+                        "outline": "#757682",
+                        "surface-variant": "#e1e3e2",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d9dada",
+                        "on-secondary-container": "#007070",
+                        "on-secondary-fixed": "#002020",
+                        "surface": "#f8faf9",
+                        "surface-tint": "#465aa1",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#566ab2",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#dce1ff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-tertiary-container": "#e2f4ff",
+                        "on-background": "#191c1c",
+                        "secondary-fixed-dim": "#4cdada",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#b6c4ff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "surface-container-high": "#e7e8e8",
+                        "on-surface-variant": "#444651",
+                        "secondary-fixed": "#6ef7f6",
+                        "surface-container-low": "#f2f4f3",
+                        "inverse-on-surface": "#eff1f0",
+                        "secondary-container": "#6ef7f6",
+                        "tertiary-container": "#557280",
+                        "error-container": "#ffdad6",
+                        "background": "#f8faf9",
+                        "surface-bright": "#f8faf9",
+                        "on-primary-fixed": "#001550",
+                        "status-executing": "#FFB300",
+                        "risk-high": "#BA1A1A",
+                        "surface-container": "#edeeed",
+                        "status-thinking": "#566ab2",
+                        "tertiary-fixed": "#c9e7f7",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-primary-container": "#f0f0ff",
+                        "terminal-bg": "#0D0F0F",
+                        "tertiary": "#3d5a67",
+                        "inverse-surface": "#2e3131",
+                        "status-failed": "#D32F2F",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "secondary": "#006a6a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-tablet": "24px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "baseline": "8px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-md antialiased pb-24 md:pb-0 selection:bg-primary/20">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile h-16 z-40 transition-colors duration-200 ease-in-out">
+<button class="text-primary dark:text-primary-fixed-dim hover:bg-surface-variant/50 dark:hover:bg-surface-container-high/50 p-2 rounded-full transition-colors flex items-center justify-center">
+<span aria-hidden="true" class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim tracking-tight">Agent KISS</h1>
+<div class="h-8 w-8 rounded-full overflow-hidden bg-surface-variant border border-outline-variant flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A small, professional user avatar portrait showing a clean, modern aesthetic with neutral background lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpkiQ7I4Oajrfld2BnCO897jFIf_Im7-T67MRwXcT2rz2_T3YRwkCYl_30QTcU36bm4dHGxLhfSZ1J4OR6_69YcmetRCGjddcDB8vYLx_Ta-r99rZ8OlPUORoTgFQf6ZWWLmJXszsMP5CY9PVvrBTwUfQ5uwO5AdbodMfPIRpF6BaOikFi7I65SjmFFBHQzCownP9MIYcXANVQTED4cA4sKrB5hfPU0Y6VbDI7uPc4nYu8loLOHVTG"/>
+</div>
+</header>
+<!-- Main Canvas: Empty State -->
+<main class="flex-grow flex flex-col items-center justify-center px-margin-mobile md:px-margin-tablet py-xl max-w-2xl mx-auto w-full text-center">
+<!-- Desaturated Brand Icon -->
+<div class="mb-lg opacity-40 grayscale mix-blend-multiply w-48 h-48 md:w-64 md:h-64 flex items-center justify-center pointer-events-none">
+<img alt="Doge AI Icon desaturated" class="w-full h-full object-contain" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+<!-- Headline & Context -->
+<div class="mb-xl max-w-md">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-sm">暂无活跃任务</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">当你发出指令后，任务的执行进度、状态和审计日志会出现在这里。</p>
+</div>
+<!-- Suggested Command Action -->
+<button class="w-full max-w-md bg-surface-container-low border border-outline-variant rounded-xl p-md flex items-center gap-md hover:bg-surface-container transition-colors duration-200 group text-left shadow-sm active:scale-[0.98]">
+<div class="h-10 w-10 rounded-full bg-primary-container/20 flex items-center justify-center flex-shrink-0 text-primary group-hover:bg-primary-container/30 transition-colors">
+<span aria-hidden="true" class="material-symbols-outlined text-[20px]">tips_and_updates</span>
+</div>
+<div class="flex-grow">
+<span class="block font-label-mono text-label-mono text-primary mb-xs uppercase">尝试问我</span>
+<span class="block font-title-md text-title-md text-on-surface">明天下午三点提醒我开会</span>
+</div>
+<span aria-hidden="true" class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward</span>
+</button>
+</main>
+<!-- BottomNavBar (Mobile Shell) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container dark:bg-surface-container-lowest shadow-sm flex justify-around items-center h-20 pb-safe px-4">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 rounded-xl">
+<span aria-hidden="true" class="material-symbols-outlined mb-1">chat_bubble</span>
+<span class="font-label-mono text-label-mono">Chat</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 rounded-xl">
+<span aria-hidden="true" class="material-symbols-outlined mb-1">psychology</span>
+<span class="font-label-mono text-label-mono">Memory</span>
+</button>
+<!-- Active Tab: Assuming 'Tools/Tasks' maps closest to the intent of an 'Agent Tasks' history screen -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-2xl px-5 py-1 scale-95 active:scale-90 transition-transform duration-150">
+<span aria-hidden="true" class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">handyman</span>
+<span class="font-label-mono text-label-mono">Tools</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 rounded-xl">
+<span aria-hidden="true" class="material-symbols-outlined mb-1">shield_with_heart</span>
+<span class="font-label-mono text-label-mono">Safety</span>
+</button>
+</nav>
+</body></html>

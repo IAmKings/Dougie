@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android - Sideload Update</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "status-thinking": "#566ab2",
+                        "primary-container": "#566ab2",
+                        "on-error": "#ffffff",
+                        "primary-fixed": "#dce1ff",
+                        "error": "#ba1a1a",
+                        "terminal-bg": "#0D0F0F",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#4cdada",
+                        "inverse-primary": "#b6c4ff",
+                        "surface-container-low": "#f2f4f3",
+                        "surface": "#f8faf9",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-tertiary-container": "#e2f4ff",
+                        "primary": "#3d5198",
+                        "on-secondary-container": "#007070",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#557280",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-secondary-fixed": "#002020",
+                        "on-primary-fixed": "#001550",
+                        "status-completed": "#2E7D32",
+                        "surface-container-high": "#e7e8e8",
+                        "surface-container-highest": "#e1e3e2",
+                        "background": "#f8faf9",
+                        "inverse-on-surface": "#eff1f0",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-surface-variant": "#444651",
+                        "risk-high": "#BA1A1A",
+                        "on-background": "#191c1c",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#465aa1",
+                        "status-failed": "#D32F2F",
+                        "surface-variant": "#e1e3e2",
+                        "surface-container": "#edeeed",
+                        "secondary-container": "#6ef7f6",
+                        "tertiary": "#3d5a67",
+                        "on-primary-container": "#f0f0ff",
+                        "secondary": "#006a6a",
+                        "surface-dim": "#d9dada",
+                        "outline": "#757682",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-surface": "#191c1c",
+                        "status-executing": "#FFB300",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "outline-variant": "#c5c5d2",
+                        "surface-bright": "#f8faf9",
+                        "inverse-surface": "#2e3131",
+                        "tertiary-fixed": "#c9e7f7",
+                        "secondary-fixed": "#6ef7f6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "baseline": "8px",
+                        "lg": "24px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "margin-tablet": "24px",
+                        "xl": "32px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen font-body-md antialiased">
+<!-- TopAppBar -->
+<header class="bg-surface w-full top-0 sticky flex justify-between items-center px-margin-mobile h-16 z-40 border-b border-surface-container">
+<div class="flex items-center gap-sm">
+<button class="p-sm rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant active:opacity-80">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex items-center gap-xs">
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Waku-Android</h1>
+<span class="bg-primary-container text-on-primary-container font-label-mono text-label-mono px-sm py-xs rounded-sm ml-sm">SIDELOAD</span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[20px]">person</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="px-margin-mobile pt-lg pb-[100px] max-w-2xl mx-auto flex flex-col gap-lg">
+<!-- Version Info Card -->
+<section class="bg-surface-container-low rounded-xl p-md flex flex-col gap-md">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-lg bg-surface-container overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLsfeCFjMe2MCzuyfwskhn77Xcskryi8z372e55d8M61kAXJun53Y54LfMBxsBY-xQ7yA71axFqTkbF7PRy_VN8Sj0Q-9Ro2YLYGZMsWJ5V-1a2Wi1xUbJv_xPZUbZ6O5Oh6PqbGVg_dm1J58INUGKvAXGvyS_FkBNri60xxoqcWHX6Zjct7Qkq5YmwYkqsft7gnk5zPAt56fOHtS3HWDiVjwa0LQ-iJY8COjgwElgV4jFZopXgf65FgI9Y"/>
+</div>
+<div>
+<h2 class="font-title-lg text-title-lg text-on-surface">Agent Core Update</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Sideload Channel release available.</p>
+</div>
+</div>
+<div class="flex items-center justify-between bg-surface p-sm rounded-lg border border-surface-variant">
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant mb-xs">CURRENT</span>
+<span class="font-code-block text-code-block text-on-surface">v2.1.0</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">arrow_forward</span>
+<div class="flex flex-col text-right">
+<span class="font-label-mono text-label-mono text-primary mb-xs">AVAILABLE</span>
+<span class="font-code-block text-code-block text-primary font-bold">v2.2.0-SL</span>
+</div>
+</div>
+</section>
+<!-- Security & Integrity Panel -->
+<section class="bg-surface-container-low rounded-xl p-md flex flex-col gap-md">
+<h3 class="font-title-md text-title-md text-on-surface">Security &amp; Integrity</h3>
+<div class="flex flex-col gap-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-status-completed text-[20px]">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Secure Connection (HTTPS)</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-status-completed text-[20px]">verified</span>
+<span class="font-body-md text-body-md text-on-surface">Source: Official Release</span>
+</div>
+</div>
+<div class="mt-xs bg-surface p-sm rounded-lg border border-surface-variant">
+<div class="flex items-center gap-xs mb-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">tag</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">SHA-256 HASH VERIFICATION</span>
+</div>
+<div class="font-code-block text-code-block text-on-surface break-all bg-surface-container-lowest p-xs rounded-sm">
+                    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+                </div>
+</div>
+</section>
+<!-- Warning Note -->
+<section class="flex items-start gap-md p-md bg-surface-container rounded-xl border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant mt-xs">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                Sideload updates are handled locally on your device and bypass Google Play. This ensures rapid deployment of necessary agent capabilities while maintaining the KISS Loop integrity.
+            </p>
+</section>
+<!-- Action Area -->
+<div class="mt-sm">
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-md rounded-full hover:bg-surface-tint active:opacity-80 transition-all flex items-center justify-center gap-sm shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">download</span>
+                Download Update
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe px-xs bg-surface-container-low">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-colors active:scale-95 transition-transform duration-150 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-label-mono text-label-mono mt-1">Chat</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-colors active:scale-95 transition-transform duration-150 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined">assignment_turned_in</span>
+<span class="font-label-mono text-label-mono mt-1">Tasks</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high transition-colors active:scale-95 transition-transform duration-150 rounded-xl cursor-pointer">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-mono text-label-mono mt-1">Memory</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-1 hover:bg-surface-container-high transition-colors active:scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-mono text-label-mono mt-1">Settings</span>
+</div>
+</nav>
+</body></html>

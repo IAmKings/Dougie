@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>任务执行回滚与幂等性</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#4cdada",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001550",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-primary": "#b6c4ff",
+                        "surface-bright": "#f8faf9",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "background": "#f8faf9",
+                        "on-primary-container": "#f0f0ff",
+                        "secondary-container": "#6ef7f6",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f2f4f3",
+                        "status-executing": "#FFB300",
+                        "primary-container": "#566ab2",
+                        "surface-tint": "#465aa1",
+                        "surface-dim": "#d9dada",
+                        "terminal-bg": "#0D0F0F",
+                        "on-surface-variant": "#444651",
+                        "on-secondary-container": "#007070",
+                        "on-background": "#191c1c",
+                        "status-thinking": "#566ab2",
+                        "surface-container-highest": "#e1e3e2",
+                        "tertiary": "#3d5a67",
+                        "inverse-surface": "#2e3131",
+                        "on-tertiary-container": "#e2f4ff",
+                        "primary-fixed": "#dce1ff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-error-container": "#93000a",
+                        "status-completed": "#2E7D32",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#edeeed",
+                        "on-surface": "#191c1c",
+                        "primary": "#3d5198",
+                        "secondary-fixed": "#6ef7f6",
+                        "surface": "#f8faf9",
+                        "tertiary-container": "#557280",
+                        "status-failed": "#D32F2F",
+                        "secondary": "#006a6a",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-secondary-fixed": "#002020",
+                        "inverse-on-surface": "#eff1f0",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "tertiary-fixed": "#c9e7f7",
+                        "outline-variant": "#c5c5d2",
+                        "on-tertiary": "#ffffff",
+                        "risk-high": "#BA1A1A",
+                        "surface-container-high": "#e7e8e8",
+                        "surface-variant": "#e1e3e2",
+                        "outline": "#757682"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "margin-tablet": "24px",
+                        "md": "16px",
+                        "baseline": "8px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "code-block": ["JetBrains Mono"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #f8faf9; color: #191c1c; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface fixed top-0 w-full z-50 bg-surface-container-low flex justify-between items-center h-16 px-margin-mobile md:hidden">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">memory</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Waku Runtime</h1>
+</div>
+<div>
+<span class="material-symbols-outlined text-on-surface-variant">account_circle</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-20 pb-24 px-margin-mobile md:px-margin-tablet max-w-2xl mx-auto w-full">
+<!-- Header Section -->
+<div class="mb-lg">
+<div class="flex items-center justify-between mb-sm">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">任务执行回滚</h2>
+<div class="bg-surface-container-high rounded-full px-sm py-xs flex items-center gap-xs">
+<span class="material-symbols-outlined text-outline text-[16px]">tag</span>
+<span class="font-code-block text-code-block text-on-surface-variant">task_f92a_call_03</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">检测到异常中断。幂等性协议正在保护系统状态以允许安全恢复。</p>
+</div>
+<!-- Status Card -->
+<div class="bg-surface-container-low rounded-xl p-md mb-lg border border-outline-variant">
+<div class="flex items-start gap-md">
+<div class="bg-primary-container rounded-full p-sm flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface mb-xs">幂等性保护已激活</h3>
+<p class="font-body-sm text-body-md text-on-surface-variant">
+                        系统记录了未完成的调用签名 <span class="font-code-block text-code-block bg-surface-container-high px-xs rounded">task_f92a_call_03</span>。
+                        重试此操作时，如果系统检测到该操作实际上已经在中断前部分生效，将直接返回上次的结果，避免重复创建日历事件。
+                    </p>
+</div>
+</div>
+</div>
+<!-- Execution Flow Visualization -->
+<div class="bg-surface-container-low rounded-xl p-md mb-lg border border-outline-variant">
+<h3 class="font-title-md text-title-md text-on-surface mb-md">执行流日志 (KISS Loop)</h3>
+<div class="relative pl-md border-l-2 border-surface-container-high ml-sm pb-sm space-y-md">
+<!-- Step 1 -->
+<div class="relative">
+<div class="absolute -left-[25px] top-1 bg-surface-container-low rounded-full">
+<span class="material-symbols-outlined text-status-completed text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant mb-xs">[0ms] 意图解析 (NLU)</span>
+<div class="bg-surface-container p-sm rounded-lg border border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface">"下周三下午两点开周会" -&gt; CreateCalendarEvent(title="周会", start="2023-11-01T14:00")</span>
+</div>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative">
+<div class="absolute -left-[25px] top-1 bg-surface-container-low rounded-full">
+<span class="material-symbols-outlined text-status-completed text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant mb-xs">[120ms] 权限检查 (Policy Engine)</span>
+<div class="bg-surface-container p-sm rounded-lg border border-outline-variant flex items-center justify-between">
+<span class="font-body-md text-body-md text-on-surface">WRITE_CALENDAR</span>
+<span class="font-code-block text-code-block text-status-completed">GRANTED</span>
+</div>
+</div>
+</div>
+<!-- Step 3 (Failed) -->
+<div class="relative">
+<div class="absolute -left-[25px] top-1 bg-surface-container-low rounded-full z-10 shadow-[0_0_0_4px_#f8faf9]">
+<span class="material-symbols-outlined text-status-failed text-[20px]" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="absolute -left-[24px] top-6 bottom-0 w-0.5 bg-status-failed bg-opacity-30"></div>
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-status-failed mb-xs">[450ms] 日历创建 (Tool Execution)</span>
+<div class="bg-error-container p-sm rounded-lg border border-error border-opacity-50">
+<div class="flex items-center gap-xs mb-xs">
+<span class="material-symbols-outlined text-on-error-container text-[16px]">calendar_add_on</span>
+<span class="font-body-md text-body-md text-on-error-container font-medium">CreateCalendarEvent</span>
+</div>
+<span class="font-code-block text-code-block text-on-error-container block mb-xs">idempotency_key: "task_f92a_call_03"</span>
+<div class="bg-surface-container-lowest bg-opacity-50 p-xs rounded font-code-block text-code-block text-error">
+                                FATAL_EXCEPTION: ProcessDeath<br/>
+                                E/WakuRuntime: SIGKILL received during RPC call to CalendarProvider.
+                            </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="flex flex-col gap-sm">
+<button class="bg-primary hover:bg-surface-tint text-on-primary font-title-md text-title-md rounded-full py-sm px-lg w-full flex items-center justify-center gap-xs transition-colors shadow-sm">
+<span class="material-symbols-outlined">restart_alt</span>
+                重试执行 (遵循幂等)
+            </button>
+<button class="bg-transparent border border-outline hover:bg-surface-container text-on-surface font-title-md text-title-md rounded-full py-sm px-lg w-full flex items-center justify-center transition-colors">
+                取消任务并清理
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="bg-surface-container-low fixed bottom-0 w-full z-50 rounded-t-xl shadow-lg flex justify-around items-center h-20 pb-safe px-sm md:hidden">
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl px-5 py-1 active:scale-90 duration-200 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="font-label-mono text-label-mono mt-1">Tasks</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest rounded-full active:scale-90 duration-200 transition-all">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-mono text-label-mono mt-1">Memory</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest rounded-full active:scale-90 duration-200 transition-all">
+<span class="material-symbols-outlined">handyman</span>
+<span class="font-label-mono text-label-mono mt-1">Tools</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest rounded-full active:scale-90 duration-200 transition-all">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-mono text-label-mono mt-1">Settings</span>
+</button>
+</nav>
+</body></html>

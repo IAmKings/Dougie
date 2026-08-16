@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>系统权限白名单 - Waku-Android</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary": "#ffffff",
+                      "surface-container": "#edeeed",
+                      "on-error": "#ffffff",
+                      "secondary-fixed": "#6ef7f6",
+                      "inverse-surface": "#2e3131",
+                      "on-tertiary-container": "#e2f4ff",
+                      "secondary-container": "#6ef7f6",
+                      "on-error-container": "#93000a",
+                      "status-executing": "#FFB300",
+                      "status-failed": "#D32F2F",
+                      "surface-container-low": "#f2f4f3",
+                      "background": "#f8faf9",
+                      "on-secondary-container": "#007070",
+                      "on-tertiary-fixed-variant": "#2e4b57",
+                      "surface-container-highest": "#e1e3e2",
+                      "primary-container": "#566ab2",
+                      "on-secondary-fixed": "#002020",
+                      "inverse-on-surface": "#eff1f0",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f8faf9",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed": "#001550",
+                      "tertiary-fixed": "#c9e7f7",
+                      "on-primary-container": "#f0f0ff",
+                      "primary": "#3d5198",
+                      "tertiary": "#3d5a67",
+                      "risk-high": "#BA1A1A",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#2d4288",
+                      "terminal-bg": "#0D0F0F",
+                      "on-surface-variant": "#444651",
+                      "surface-tint": "#465aa1",
+                      "surface-variant": "#e1e3e2",
+                      "status-thinking": "#566ab2",
+                      "surface": "#f8faf9",
+                      "secondary": "#006a6a",
+                      "secondary-fixed-dim": "#4cdada",
+                      "primary-fixed": "#dce1ff",
+                      "tertiary-fixed-dim": "#adcbda",
+                      "primary-fixed-dim": "#b6c4ff",
+                      "on-secondary-fixed-variant": "#004f50",
+                      "on-secondary": "#ffffff",
+                      "status-completed": "#2E7D32",
+                      "outline-variant": "#c5c5d2",
+                      "on-surface": "#191c1c",
+                      "surface-container-high": "#e7e8e8",
+                      "outline": "#757682",
+                      "inverse-primary": "#b6c4ff",
+                      "on-tertiary-fixed": "#001f2a",
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#191c1c",
+                      "surface-dim": "#d9dada",
+                      "tertiary-container": "#557280"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "16px",
+                      "baseline": "8px",
+                      "sm": "8px",
+                      "md": "16px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "xl": "32px",
+                      "margin-tablet": "24px",
+                      "margin-mobile": "16px",
+                      "safe": "env(safe-area-inset-bottom, 0px)"
+              },
+              "fontFamily": {
+                      "headline-md": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "label-mono": ["JetBrains Mono"],
+                      "body-md": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "code-block": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "code-block": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3d5198; /* primary */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3d5198; /* primary */
+        }
+        .toggle-checkbox-danger:checked {
+            border-color: #ba1a1a; /* error */
+        }
+        .toggle-checkbox-danger:checked + .toggle-label {
+            background-color: #ba1a1a; /* error */
+        }
+        
+        .pulse-shield {
+            animation: pulse-border 2s infinite;
+        }
+        
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(86, 106, 178, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(86, 106, 178, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(86, 106, 178, 0); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24 font-body-md">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim font-title-lg text-title-lg w-full top-0 sticky bg-surface-container-low dark:bg-surface-container-lowest flat no shadows flex items-center justify-between px-margin-mobile h-16 w-full z-40 transition-colors duration-200 ease-in-out">
+<button class="text-on-surface-variant hover:bg-surface-container-highest rounded-full p-2 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Waku-Android</h1>
+<span class="font-label-mono text-label-mono text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-full mt-1 border border-outline-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-status-thinking"></span> SIDELOAD
+            </span>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container-highest rounded-full p-2 flex items-center justify-center transition-colors">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+</button>
+</header>
+<main class="max-w-4xl mx-auto px-margin-mobile md:px-margin-tablet py-lg flex flex-col gap-lg">
+<div class="flex items-center gap-sm mt-sm">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">系统权限白名单</h2>
+</div>
+<!-- Overview Card (Bento style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="md:col-span-2 bg-surface-container-low rounded-xl p-md border border-outline-variant flex items-center justify-between">
+<div>
+<h3 class="font-title-md text-title-md text-on-surface mb-xs">Active Whitelist</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Applications permitted for Agent interaction.</p>
+</div>
+<div class="flex items-center gap-sm">
+<span class="font-headline-lg text-headline-lg text-primary">12</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Apps</span>
+</div>
+</div>
+<div class="bg-primary-container rounded-xl p-md flex flex-col items-center justify-center pulse-shield text-on-primary-container">
+<span class="material-symbols-outlined mb-xs" data-icon="shield_locked" style="font-variation-settings: 'FILL' 1; font-size: 32px;">shield_locked</span>
+<span class="font-title-md text-title-md">Privacy Shield ON</span>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+</div>
+<input class="block w-full pl-10 pr-3 py-3 border border-outline-variant rounded-lg bg-surface text-on-surface placeholder-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary font-body-md text-body-md transition-shadow" placeholder="Search installed apps..." type="text"/>
+</div>
+<!-- High Risk Alert -->
+<div class="bg-error-container border border-error rounded-xl p-md flex items-start gap-md">
+<span class="material-symbols-outlined text-error mt-0.5" data-icon="warning">warning</span>
+<div>
+<h4 class="font-title-md text-title-md text-on-error-container">L3 Permissions Active</h4>
+<p class="font-body-md text-body-md text-on-error-container mt-xs">2 apps currently hold full Tap/Swipe automation permissions. Monitor AgentTasks closely.</p>
+</div>
+</div>
+<!-- App List -->
+<div class="flex flex-col gap-md">
+<!-- App Item 1 (High Risk) -->
+<div class="bg-surface-container-low rounded-xl border border-error p-md flex flex-col gap-md transition-colors hover:bg-surface-container">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface rounded-lg border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A modern, high-quality, professional app icon featuring a stylized green speech bubble with a white phone receiver inside, set against a clean white background. The lighting is soft and even, highlighting the sleek curves of the icon design. The aesthetic is clean, flat UI, suitable for a light mode system interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlxTXmxZ18PprPqkFgD3wuaYR6M8RGiWWI7Pm_F4dYM2lUxRmsGP8ktGMDIcp_ZwGsz5T0fM6AK5ntOKqX-_avztCOApXovNETZIIjmds8lZYcwaa_m3DeRpG5USDjW-oGGMlTwbJMdIDvaBwsVHIcsVzROHf3kJIjHVjHsjhEpuoFsLJ5i6ll2pu6KdtDvHUKh-qsHgO7zy0tBvn9yZVepfupkHRYjG2sFjhUY1OXvZCDHjBASMPf"/>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface flex items-center gap-sm">
+                                WeChat
+                                <span class="bg-error text-on-error font-label-mono text-label-mono px-1.5 py-0.5 rounded text-[10px]">L3</span>
+</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">com.tencent.mm</p>
+</div>
+</div>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out" id="toggle1" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-200 ease-in-out" for="toggle1"></label>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-md grid grid-cols-1 md:grid-cols-3 gap-sm">
+<div class="flex items-center justify-between bg-surface p-sm rounded border border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="visibility">visibility</span> Read Screen
+                        </span>
+<input checked="" class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between bg-error-container p-sm rounded border border-error">
+<span class="font-body-md text-body-md text-on-error-container flex items-center gap-xs">
+<span class="material-symbols-outlined text-error text-sm" data-icon="touch_app">touch_app</span> Tap/Swipe
+                        </span>
+<input checked="" class="rounded text-error focus:ring-error h-4 w-4 border-error" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between bg-surface p-sm rounded border border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="notifications">notifications</span> Notifications
+                        </span>
+<input checked="" class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant" type="checkbox"/>
+</div>
+</div>
+<div class="bg-terminal-bg rounded p-sm flex items-center gap-sm mt-xs">
+<span class="material-symbols-outlined text-secondary-fixed text-sm" data-icon="terminal">terminal</span>
+<span class="font-code-block text-code-block text-secondary-fixed">Last Accessed: 12m ago | Audit ID: ax-9821</span>
+</div>
+</div>
+<!-- App Item 2 (Standard) -->
+<div class="bg-surface-container-low rounded-xl border border-outline-variant p-md flex flex-col gap-md transition-colors hover:bg-surface-container">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface rounded-lg border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A clean, minimalist calendar app icon showing the number 15 on a white page with a red header. The design is modern, professional, and suited for a bright, light-mode user interface. Soft drop shadows give it a subtle 3D effect within the flat UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAS1TefRiKlKQukRabS5cQAlaTjfFKQ58msCmZWAbri6ZWfJhd4p8p7pw5qgQfOeFoNP4Y9534Uf_4TPBCesetgRSr6mQrcyeJwgMRzXuPI-PMvqF1-K2_cxs-jw5TU0GGwgsLbgw2c9uylRgmCMAviB93fxDqcvhX0HitlAoI3f-KalpP2AN5i0ba_anKDuIBZn35FScKPfMEgofgagJWb_vUVxNonmY6YSKxiUBwdT_Ql00vZxO6e"/>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface flex items-center gap-sm">
+                                Calendar
+                                <span class="bg-surface-variant text-on-surface-variant font-label-mono text-label-mono px-1.5 py-0.5 rounded text-[10px]">L1</span>
+</h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">com.android.calendar</p>
+</div>
+</div>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out" id="toggle2" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-200 ease-in-out" for="toggle2"></label>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-md grid grid-cols-1 md:grid-cols-3 gap-sm">
+<div class="flex items-center justify-between bg-surface p-sm rounded border border-outline-variant opacity-50">
+<span class="font-body-md text-body-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="visibility">visibility</span> Read Screen
+                        </span>
+<input class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant bg-surface-variant" disabled="" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between bg-surface p-sm rounded border border-outline-variant opacity-50">
+<span class="font-body-md text-body-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="touch_app">touch_app</span> Tap/Swipe
+                        </span>
+<input class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant bg-surface-variant" disabled="" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between bg-surface p-sm rounded border border-outline-variant">
+<span class="font-body-md text-body-md text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="notifications">notifications</span> Notifications
+                        </span>
+<input checked="" class="rounded text-primary focus:ring-primary h-4 w-4 border-outline-variant" type="checkbox"/>
+</div>
+</div>
+<div class="bg-terminal-bg rounded p-sm flex items-center gap-sm mt-xs opacity-70">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="history">history</span>
+<span class="font-code-block text-code-block text-on-surface-variant">Last Accessed: 3d ago | Audit ID: ax-8112</span>
+</div>
+</div>
+<!-- App Item 3 (Disabled) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-md flex flex-col gap-md opacity-60">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 bg-surface rounded-lg border border-outline-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A sleek, modern settings app icon featuring a metallic gray gear on a white background. The aesthetic is clean, corporate, and fits perfectly within a light mode system interface, emphasizing technical precision and local-first control." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZxvXDFtstDRyHAzTZaPXymknkHdB3EFmvd26i1ywmWDTBV2SO4_e38se36cvY68PsUznR9iUOvl6R7o6kT_1tBx73TDGAnuqRMNPbv15Mu5qJv3FzVNqugc5YVd1ikTHYXpQNebI_0LGY8MTwxui1hXzD9M4vsLqmv9DpvUBiAxSHD-_qF4c2khE_n1DbreCx5NgUQYaFencJjfQ1fc8LYnsc-NIjyJtQj6edT_yqSvBylMP-mnV6"/>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface flex items-center gap-sm">
+                                System Settings
+                            </h4>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">com.android.settings</p>
+</div>
+</div>
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-200 ease-in-out" id="toggle3" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-outline-variant cursor-pointer transition-colors duration-200 ease-in-out" for="toggle3"></label>
+</div>
+</div>
+</div>
+<button class="w-full py-3 mt-sm border-2 border-dashed border-primary rounded-xl text-primary font-title-md text-title-md flex items-center justify-center gap-sm hover:bg-primary-container hover:border-transparent transition-colors">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                Add App to Whitelist
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-low text-primary dark:text-primary-fixed-dim font-label-mono text-label-mono fixed bottom-0 w-full rounded-t-xl flat no shadows fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-2 pb-safe md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-variant scale-95 active:scale-90 transition-transform duration-150 rounded-xl">
+<span class="material-symbols-outlined mb-1" data-icon="chat">chat</span>
+<span>Chat</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-variant scale-95 active:scale-90 transition-transform duration-150 rounded-xl">
+<span class="material-symbols-outlined mb-1" data-icon="checklist">checklist</span>
+<span>Tasks</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-variant scale-95 active:scale-90 transition-transform duration-150 rounded-xl">
+<span class="material-symbols-outlined mb-1" data-icon="database">database</span>
+<span>Memory</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-full px-5 py-1 hover:bg-surface-container-highest dark:hover:bg-surface-variant scale-95 active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined mb-1" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span>Settings</span>
+</button>
+</nav>
+<!-- Web Desktop Nav Shell Fallback (Hidden on Mobile) -->
+<div class="hidden md:flex fixed left-0 top-16 h-[calc(100vh-64px)] w-64 bg-surface-container-low flex-col px-md py-lg border-r border-outline-variant z-30">
+<div class="flex flex-col gap-sm">
+<a class="flex items-center gap-md px-md py-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+<span class="font-title-md text-title-md">Chat</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="checklist">checklist</span>
+<span class="font-title-md text-title-md">Tasks</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="font-title-md text-title-md">Memory</span>
+</a>
+<a class="flex items-center gap-md px-md py-3 rounded-lg bg-secondary-container text-on-secondary-container transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-title-md text-title-md font-medium">Settings</span>
+</a>
+</div>
+</div>
+<style>
+        @media (min-width: 768px) {
+            main {
+                padding-left: calc(16rem + 24px) !important; /* 64 (nav width) + spacing */
+            }
+        }
+    </style>
+</body></html>

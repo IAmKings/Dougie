@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>语音灵敏度调节 - Waku-Android</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#e2f4ff",
+                        "surface-tint": "#465aa1",
+                        "on-error-container": "#93000a",
+                        "primary": "#3d5198",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-background": "#191c1c",
+                        "surface-container-low": "#f2f4f3",
+                        "surface-container-high": "#e7e8e8",
+                        "tertiary": "#3d5a67",
+                        "surface": "#f8faf9",
+                        "on-secondary-fixed": "#002020",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eff1f0",
+                        "on-primary-container": "#f0f0ff",
+                        "inverse-surface": "#2e3131",
+                        "status-completed": "#2E7D32",
+                        "primary-fixed": "#dce1ff",
+                        "on-surface": "#191c1c",
+                        "outline": "#757682",
+                        "secondary-container": "#6ef7f6",
+                        "secondary-fixed": "#6ef7f6",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "status-executing": "#FFB300",
+                        "primary-container": "#566ab2",
+                        "on-surface-variant": "#444651",
+                        "background": "#f8faf9",
+                        "inverse-primary": "#b6c4ff",
+                        "outline-variant": "#c5c5d2",
+                        "on-primary": "#ffffff",
+                        "terminal-bg": "#0D0F0F",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "secondary-fixed-dim": "#4cdada",
+                        "surface-dim": "#d9dada",
+                        "on-primary-fixed": "#001550",
+                        "risk-high": "#BA1A1A",
+                        "surface-container": "#edeeed",
+                        "on-tertiary": "#ffffff",
+                        "status-thinking": "#566ab2",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8faf9",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#e1e3e2",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-secondary-container": "#007070",
+                        "status-failed": "#D32F2F",
+                        "secondary": "#006a6a",
+                        "tertiary-container": "#557280"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "baseline": "8px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "margin-tablet": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .waveform-bar {
+            width: 8px;
+            background-color: theme('colors.primary-container');
+            border-radius: 4px;
+            transition: height 0.1s ease;
+        }
+        
+        .threshold-line {
+            border-top: 2px dashed theme('colors.error');
+            position: absolute;
+            width: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: theme('colors.primary');
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: theme('colors.surface-variant');
+            border-radius: 2px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col pb-20">
+<!-- TopAppBar -->
+<header class="bg-surface w-full top-0 sticky bg-surface-container-low flat no shadows flex items-center px-4 h-16 w-full z-40">
+<button class="material-symbols-outlined text-primary text-title-lg font-title-lg mr-4 hover:bg-surface-variant/50 transition-colors rounded-full p-2 active:opacity-80">arrow_back</button>
+<h1 class="font-title-lg text-title-lg text-on-surface flex-1">语音灵敏度调节</h1>
+</header>
+<main class="flex-1 p-margin-mobile flex flex-col gap-lg">
+<!-- Info Card -->
+<section class="bg-surface-container-low p-md rounded-lg border border-surface-variant">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    语音活动检测 (VAD) 帮助 Waku Agent 自动判断您何时开始说话及何时结束，避免记录背景噪音并提高离线 Paraformer-zh 模型的识别效率。
+                </p>
+</div>
+</section>
+<!-- VAD Monitor Section -->
+<section class="bg-surface-container-low p-md rounded-xl shadow-sm border border-surface-variant">
+<h2 class="font-title-md text-title-md text-on-surface mb-sm flex justify-between items-center">
+                实时环境声级 (VAD)
+                <span class="font-label-mono text-label-mono text-status-executing flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-status-executing animate-pulse"></span>
+                    监听中
+                </span>
+</h2>
+<div class="relative h-48 bg-surface-container rounded-lg p-sm flex items-end justify-between gap-1 overflow-hidden" id="waveform-container">
+<!-- Threshold Line -->
+<div class="threshold-line" id="visual-threshold" style="bottom: 40%;"></div>
+<div class="absolute right-2 text-xs font-label-mono text-error bg-surface-container-lowest/80 px-1 rounded z-20" id="threshold-label" style="bottom: calc(40% + 4px);">40 dB</div>
+<!-- Waveform Bars (Generated via JS) -->
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm text-center">
+                当前音量: <span class="font-label-mono font-bold text-primary" id="current-db">32 dB</span>
+</p>
+</section>
+<!-- Threshold Slider -->
+<section>
+<label class="font-title-md text-title-md text-on-surface block mb-sm">VAD 启动阈值</label>
+<div class="flex items-center justify-between mb-xs">
+<span class="font-body-md text-body-md text-on-surface-variant text-xs">低 (安静环境)</span>
+<span class="font-body-md text-body-md text-on-surface-variant text-xs">高 (嘈杂环境)</span>
+</div>
+<input class="w-full" id="threshold-slider" max="90" min="10" type="range" value="40"/>
+<div class="flex justify-between mt-sm">
+<span class="font-label-mono text-label-mono text-on-surface-variant">10dB</span>
+<span class="font-label-mono text-label-mono text-primary font-bold" id="slider-val">40dB</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">90dB</span>
+</div>
+</section>
+<!-- Silence Detection -->
+<section class="mt-sm pb-lg border-t border-surface-variant pt-lg">
+<label class="font-title-md text-title-md text-on-surface block mb-sm">末端静音检测时长</label>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md text-sm">
+                说话结束后等待多长时间认为任务结束。
+            </p>
+<input class="w-full" id="silence-slider" max="2000" min="500" step="100" type="range" value="1200"/>
+<div class="flex justify-between mt-sm">
+<span class="font-label-mono text-label-mono text-on-surface-variant">500ms</span>
+<span class="font-label-mono text-label-mono text-primary font-bold" id="silence-val">1200ms</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">2000ms</span>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full flex justify-around items-center px-2 py-3 bg-surface-container z-50 flat no shadows">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg p-2" href="#">
+<span class="material-symbols-outlined">task_alt</span>
+<span class="font-label-mono text-label-mono mt-1">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg p-2" href="#">
+<span class="material-symbols-outlined">memory</span>
+<span class="font-label-mono text-label-mono mt-1">Memory</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all rounded-lg p-2" href="#">
+<span class="material-symbols-outlined">build</span>
+<span class="font-label-mono text-label-mono mt-1">Tools</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-5 py-1 hover:bg-surface-variant transition-all Active: scale-95 duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-label-mono text-label-mono mt-1">Settings</span>
+</a>
+</nav>
+<script>
+        // Waveform Animation Logic
+        const container = document.getElementById('waveform-container');
+        const numBars = 30;
+        const bars = [];
+        
+        for(let i = 0; i < numBars; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'waveform-bar';
+            bar.style.height = '10%';
+            container.appendChild(bar);
+            bars.push(bar);
+        }
+
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const visualThreshold = document.getElementById('visual-threshold');
+        const thresholdLabel = document.getElementById('threshold-label');
+        const sliderVal = document.getElementById('slider-val');
+        const currentDbLabel = document.getElementById('current-db');
+
+        thresholdSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            visualThreshold.style.bottom = `${val}%`;
+            thresholdLabel.style.bottom = `calc(${val}% + 4px)`;
+            thresholdLabel.textContent = `${val} dB`;
+            sliderVal.textContent = `${val}dB`;
+        });
+
+        const silenceSlider = document.getElementById('silence-slider');
+        const silenceVal = document.getElementById('silence-val');
+        
+        silenceSlider.addEventListener('input', (e) => {
+            silenceVal.textContent = `${e.target.value}ms`;
+        });
+
+        // Simulate audio input
+        setInterval(() => {
+            // Shift bars left
+            for(let i = 0; i < bars.length - 1; i++) {
+                bars[i].style.height = bars[i+1].style.height;
+                bars[i].style.backgroundColor = bars[i+1].style.backgroundColor;
+            }
+            
+            // Generate new value for rightmost bar
+            const threshold = parseInt(thresholdSlider.value);
+            // Bias noise generally lower, occasional spikes
+            let newDb = Math.floor(Math.random() * 40) + 10; 
+            if(Math.random() > 0.8) newDb += Math.floor(Math.random() * 40); // speak spike
+            
+            if(newDb > 100) newDb = 100;
+
+            const lastBar = bars[bars.length - 1];
+            lastBar.style.height = `${newDb}%`;
+            
+            // Color based on threshold
+            if(newDb >= threshold) {
+                lastBar.style.backgroundColor = 'var(--tw-colors-status-completed, #2E7D32)';
+            } else {
+                lastBar.style.backgroundColor = 'var(--tw-colors-primary-container, #566ab2)';
+            }
+
+            currentDbLabel.textContent = `${newDb} dB`;
+            
+        }, 150);
+    </script>
+</body></html>

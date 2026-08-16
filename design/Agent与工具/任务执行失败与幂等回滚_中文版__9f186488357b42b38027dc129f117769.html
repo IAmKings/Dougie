@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>任务逻辑回滚与恢复 - Waku-Android</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#d9dada",
+                    "tertiary-container": "#557280",
+                    "surface-tint": "#465aa1",
+                    "error": "#ba1a1a",
+                    "primary-fixed": "#dce1ff",
+                    "on-secondary-fixed-variant": "#004f50",
+                    "primary-fixed-dim": "#b6c4ff",
+                    "inverse-surface": "#2e3131",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#adcbda",
+                    "status-failed": "#D32F2F",
+                    "on-background": "#191c1c",
+                    "status-executing": "#FFB300",
+                    "on-secondary-fixed": "#002020",
+                    "primary": "#3d5198",
+                    "surface-container": "#edeeed",
+                    "surface-bright": "#f8faf9",
+                    "terminal-bg": "#0D0F0F",
+                    "on-primary-fixed-variant": "#2d4288",
+                    "tertiary-fixed": "#c9e7f7",
+                    "on-error": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary": "#3d5a67",
+                    "background": "#f8faf9",
+                    "on-tertiary-fixed": "#001f2a",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#eff1f0",
+                    "surface-container-high": "#e7e8e8",
+                    "surface-variant": "#e1e3e2",
+                    "surface-container-low": "#f2f4f3",
+                    "secondary-fixed-dim": "#4cdada",
+                    "risk-high": "#BA1A1A",
+                    "on-tertiary-fixed-variant": "#2e4b57",
+                    "status-thinking": "#566ab2",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-container": "#e2f4ff",
+                    "outline-variant": "#c5c5d2",
+                    "secondary": "#006a6a",
+                    "secondary-container": "#6ef7f6",
+                    "on-surface": "#191c1c",
+                    "status-completed": "#2E7D32",
+                    "on-primary-fixed": "#001550",
+                    "surface-container-highest": "#e1e3e2",
+                    "outline": "#757682",
+                    "on-secondary-container": "#007070",
+                    "inverse-primary": "#b6c4ff",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#6ef7f6",
+                    "surface": "#f8faf9",
+                    "on-surface-variant": "#444651",
+                    "primary-container": "#566ab2",
+                    "error-container": "#ffdad6",
+                    "on-primary-container": "#f0f0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "sm": "8px",
+                    "xl": "32px",
+                    "margin-mobile": "16px",
+                    "gutter": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "margin-tablet": "24px",
+                    "baseline": "8px"
+            },
+            "fontFamily": {
+                    "label-mono": [
+                            "JetBrains Mono"
+                    ],
+                    "title-md": [
+                            "Inter"
+                    ],
+                    "title-lg": [
+                            "Inter"
+                    ],
+                    "body-lg": [
+                            "Inter"
+                    ],
+                    "code-block": [
+                            "JetBrains Mono"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-mono": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.5px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "title-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "title-lg": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-lg": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "code-block": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8faf9; /* bg-background */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Spin Animation for the loading indicator */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin 3s linear infinite;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface h-screen flex flex-col antialiased">
+<!-- TopAppBar -->
+<header class="bg-surface-container flex justify-between items-center w-full px-4 md:px-8 py-3 sticky top-0 z-10">
+<button aria-label="Go back" class="text-on-surface hover:bg-surface-variant p-2 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+<h1 class="text-headline-md font-headline-md font-extrabold text-primary flex-1 text-center truncate">任务回滚诊断</h1>
+<button aria-label="History" class="text-on-surface hover:bg-surface-variant p-2 rounded-full transition-all duration-200">
+<span class="material-symbols-outlined text-[24px]">history</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-mobile py-lg pb-[120px] space-y-lg">
+<!-- Failure Summary Card -->
+<section class="bg-error-container text-on-error-container rounded-xl p-md border border-error/20 flex flex-col gap-sm relative overflow-hidden">
+<!-- Subtle background pattern for error state -->
+<div class="absolute -right-4 -top-4 opacity-10">
+<span class="material-symbols-outlined text-[120px] fill">warning</span>
+</div>
+<div class="flex items-center gap-sm relative z-10">
+<span class="material-symbols-outlined text-error fill text-[24px]">error</span>
+<h2 class="text-title-lg font-title-lg font-bold">创建日历事件失败</h2>
+</div>
+<div class="bg-surface-container-lowest/50 rounded-lg p-sm flex flex-col gap-xs relative z-10 mt-xs">
+<div class="flex justify-between items-center">
+<span class="text-body-md font-body-md text-on-surface-variant">错误代码</span>
+<span class="text-label-mono font-label-mono text-error font-bold">TOOL_TIMEOUT</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-body-md font-body-md text-on-surface-variant">发生时间</span>
+<span class="text-label-mono font-label-mono text-on-surface">2023-10-27 14:32:45</span>
+</div>
+</div>
+</section>
+<!-- Idempotency Section -->
+<section class="bg-surface-container-low rounded-xl p-md border border-outline-variant flex flex-col gap-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">key</span>
+<h3 class="text-title-md font-title-md text-on-surface">幂等键 (Idempotency Key)</h3>
+</div>
+<div class="bg-surface-container-highest rounded-lg p-sm border border-outline-variant flex items-center justify-between">
+<code class="text-label-mono font-label-mono text-on-surface-variant select-all">task_827_call_03</code>
+<button aria-label="Copy Key" class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant text-sm leading-relaxed mt-1">
+                此唯一标识符确保在系统尝试恢复或重试任务时，不会产生重复的副作用（如重复创建日程）。
+            </p>
+</section>
+<!-- Rollback Visualizer -->
+<section class="bg-surface-container-low rounded-xl p-md border border-outline-variant flex flex-col gap-md">
+<h3 class="text-title-md font-title-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">route</span>
+                执行流与状态追踪
+            </h3>
+<div class="relative pl-6 space-y-6 mt-sm border-l-2 border-outline-variant ml-2">
+<!-- Step 1: LLM 规划 (Completed) -->
+<div class="relative">
+<div class="absolute -left-[35px] top-0.5 bg-surface-container-low w-6 h-6 rounded-full flex items-center justify-center border-2 border-status-completed">
+<span class="material-symbols-outlined text-status-completed text-[14px] fill">check</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-title-md text-on-surface">LLM 规划</span>
+<span class="text-label-mono font-label-mono text-status-completed mt-xs">Completed</span>
+</div>
+</div>
+<!-- Step 2: 权限校验 (Completed) -->
+<div class="relative">
+<div class="absolute -left-[35px] top-0.5 bg-surface-container-low w-6 h-6 rounded-full flex items-center justify-center border-2 border-status-completed">
+<span class="material-symbols-outlined text-status-completed text-[14px] fill">check</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-title-md text-on-surface">权限校验</span>
+<span class="text-label-mono font-label-mono text-status-completed mt-xs">Completed</span>
+</div>
+</div>
+<!-- Step 3: 工具调用 (Failed) -->
+<div class="relative">
+<div class="absolute -left-[35px] top-0.5 bg-surface-container-low w-6 h-6 rounded-full flex items-center justify-center border-2 border-error">
+<span class="material-symbols-outlined text-error text-[14px] fill">close</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-title-md text-on-surface">工具调用 (Calendar API)</span>
+<span class="text-label-mono font-label-mono text-error mt-xs">Failed - Timeout</span>
+</div>
+</div>
+<!-- Step 4: 逻辑回滚 (Executing) -->
+<div class="relative">
+<div class="absolute -left-[35px] top-0.5 bg-surface-container-low w-6 h-6 rounded-full flex items-center justify-center border-2 border-status-executing">
+<span class="material-symbols-outlined text-status-executing text-[14px] animate-spin-slow">sync</span>
+</div>
+<div class="flex flex-col">
+<span class="text-title-md font-title-md text-on-surface font-semibold text-primary">逻辑回滚</span>
+<div class="bg-surface-container rounded-lg p-sm mt-sm border border-status-executing/30 flex items-start gap-sm">
+<span class="material-symbols-outlined text-status-executing text-[18px] mt-0.5">cleaning_services</span>
+<span class="text-body-md font-body-md text-on-surface-variant">正在清理未完成的副作用... 释放资源锁并撤销临时状态。</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Actions & Metadata Fixed Footer -->
+<footer class="fixed bottom-0 left-0 w-full bg-surface/90 backdrop-blur-md border-t border-outline-variant/30 px-margin-mobile py-md flex flex-col gap-sm z-50">
+<div class="flex gap-sm w-full">
+<button class="flex-1 bg-surface-container text-on-surface border border-outline-variant hover:bg-surface-variant font-title-md text-title-md py-3 rounded-lg flex items-center justify-center gap-xs transition-colors">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+                取消并清理
+            </button>
+<button class="flex-1 bg-primary text-on-primary hover:bg-primary/90 font-title-md text-title-md py-3 rounded-lg flex items-center justify-center gap-xs transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">replay</span>
+                恢复任务 (重试)
+            </button>
+</div>
+<div class="flex justify-between items-center px-xs mt-xs">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span class="text-label-mono font-label-mono text-[10px]">Local-first Execution</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">receipt_long</span>
+<span class="text-label-mono font-label-mono text-[10px]">Audit Log ID: A-992B-4F</span>
+</div>
+</div>
+</footer>
+</body></html>

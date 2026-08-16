@@ -1,0 +1,147 @@
+# Waku-Android
+
+Waku-Android 是一个运行在 Android 手机上的 Local-first Agent Runtime：本地理解用户上下文、检索本地记忆、调用 Android 原生 Tool，并在授权后使用云端或端侧 LLM 完成任务。本文件是该上下文的领域术语表（ubiquitous language），不含实现细节。
+
+## Language
+
+### 产品与运行时
+
+**Local-first Agent**:
+控制流、记忆、Tool 注册表与权限状态默认都在设备本地，仅经显式授权才发生数据出境。
+_Avoid_: 隐私绝对安全、云端 Agent
+
+**Agent Runtime**:
+负责 Task 调度、Loop 执行、Policy 校验与 Context 组装的核心运行时。
+_Avoid_: 引擎、框架
+
+**KISS Loop**:
+极简的 ReAct（Reason + Act）推理循环，摒弃图/树结构，保持核心循环最小。
+_Avoid_: 复杂编排、工作流引擎
+
+**AgentTask**:
+一次用户请求对应的一级执行单位，可持久化、可恢复、可取消、可进入失败态。
+_Avoid_: 会话、对话、消息
+
+**SOUL**:
+Agent 的性格设定、SOP 技能库与执行规则，启动时加载并注入 System Prompt。
+_Avoid_: 系统提示词、人设
+
+**Loop Engine**:
+执行 KISS Loop 的核心引擎，负责"构建 Context → 调用 LLM → 执行 Tool → 回填结果"的循环直至 Final Answer 或达到 `MAX_LOOPS`。
+_Avoid_: 推理引擎、执行器
+
+**State Machine**:
+AgentTask 的显式状态流转（IDLE → PREPARING → THINKING → TOOL_* → COMPLETED/FAILED），使任务生命周期可审计、可恢复。
+_Avoid_: 状态变量、状态标志
+
+**Context Builder**:
+组装 LLM 上下文的组件，按优先级（SOUL → 用户输入 → 相关记忆 → 近期对话 → Tool 结果）拼装并执行 Token 预算、滑动窗口与脱敏过滤。
+_Avoid_: Prompt 模板、上下文拼装
+
+**Process Death Recovery**:
+进程被杀死后的任务恢复语义——Task 状态可恢复、Tool 副作用可幂等；不承诺 LLM 流断点续传。
+_Avoid_: 断点续传、无缝恢复
+
+### Tool 与 Policy
+
+**Tool**:
+Agent 与系统交互的唯一通道；Agent 不直接修改系统状态，只能通过 Tool。
+_Avoid_: 动作、插件、能力
+
+**Tool Registry**:
+Tool 的注册表，按渠道（play/sideload）过滤可用 Tool。
+_Avoid_: 工具列表
+
+**Tool Descriptor**:
+描述 Tool 的元数据：名称、输入 Schema、风险等级、所需权限、是否需用户确认。
+_Avoid_: 工具元数据
+
+**Policy Engine**:
+LLM 请求 Tool 后的强制校验链（Sanitize → Schema → Permission → Risk → Confirmation → Audit），任何 Tool 调用都不可绕过。
+_Avoid_: 权限检查器、安全中间件
+
+**ToolCallSanitizer**:
+Policy 链的最前置防御层——在 Schema 校验前对 LLM 输出的 Tool 调用做参数类型强制转换与默认值填充，容忍 Tool Calling 幻觉而非直接失败。
+_Avoid_: 参数校验、容错层
+
+**Risk Level（L0–L4）**:
+Tool 的风险分级；L0 免确认，L3 每次确认，L4 在 MVP 阶段禁止。
+_Avoid_: 危险等级
+
+**Idempotency**:
+创建型 Tool 的可重复执行安全性，以 `idempotencyKey = taskId + toolCallId` 保证恢复时不再产生重复副作用。
+_Avoid_: 去重
+
+### 数据与记忆
+
+**Explicit Data Egress**:
+数据出境必须显式声明并经过策略检查的规则；默认 `allowCloud = false`。
+_Avoid_: 隐私保护、数据加密
+
+**EgressPolicy**:
+每次请求生成的数据出境策略，声明是否允许上云、允许的数据类型、排除的记忆与 Tool、用户同意状态。
+_Avoid_: 出境规则
+
+**数据分类（Public / Personal / Sensitive / Secret）**:
+四档数据分级；Secret（Token、密码等）禁止进入 Prompt。
+_Avoid_: 敏感级别
+
+**Conversation Memory**:
+用户与 Agent 历史对话的存储（conversations / messages / tool_calls 等表），支持时间戳与 FTS5 全文检索。
+_Avoid_: Episodic Memory、历史记录
+
+**Semantic Memory**:
+从对话中提取的长期事实（实体、偏好、用户事实），带来源与置信度；MVP 用 FTS5 关键词匹配实现，向量检索后置 Beta。
+_Avoid_: 向量数据库、知识库
+
+**Procedural Memory**:
+即 SOUL——Agent 的规则与技能，本地配置文件形式。
+_Avoid_: 配置、规则文件
+
+**Memory Gate**:
+对话结束后判断是否沉淀长期事实的流程（过滤 → 抽取 → 去重 → 置信度 → 持久化）。
+_Avoid_: 记忆写入、记忆沉淀
+
+**Fact**:
+一条可追溯的长期记忆，记录内容、来源、置信度、创建与更新时间。
+_Avoid_: 记忆条目、知识点
+
+### 渠道与能力
+
+**play 包**:
+上架 Google Play 的合规渠道包，无 Accessibility 功能（无 `TapSwipeTool`），面向轻度用户。
+_Avoid_: 正式版、上架版
+
+**sideload 包**:
+侧载发布的完整能力渠道包，含 Accessibility 操作（`TapSwipeTool`），用户手动赋权并完全知情。
+_Avoid_: 破解版、完整版
+
+**TapSwipeTool**:
+基于 Accessibility 的屏幕点击/滑动操作 Tool，风险 L3，仅存在于 sideload 包。
+_Avoid_: 无障碍自动化
+
+**ScreenCaptureTool / ScreenMatchTool**:
+屏幕截图（MediaProjection）与图像模板匹配（OpenCV）的感知型 Tool，read-only，属 MVP。
+_Avoid_: 截屏、图像识别
+
+**SpeechInputTool / SpeechOutputTool**:
+离线语音输入（ASR）与语音输出（TTS）的 Tool，共同构成离线语音闭环。
+_Avoid_: 语音识别、语音合成
+
+**IntentClassifierTool**:
+基于 Qwen3-0.6B-Instruct 的本地意图理解 Tool，离线做意图分类、槽位初提取与任务路由；不作为主 LLM 的替代。
+_Avoid_: 意图识别、语义路由
+
+**UNTRUSTED_DATA**:
+来自网页、通知、第三方 App 的内容标记，Tool Result 不得默认视为可信指令。
+_Avoid_: 外部数据、不可信输入
+
+### 验收
+
+**Definition of Done**:
+一个 Feature 进入 Release 前必须同时满足的 12 项条件（测试、错误/权限处理、取消/超时、日志、隐私、UI 空/错态、进程死亡、文档）。
+_Avoid_: 完成标准、验收清单
+
+**定标规则（A–E）**:
+语音与意图能力的量化验收阈值：A 包体预算 ≤400MB（语音闭环）、B Kokoro 实机 RTF ≤1.0 门槛、C 系统 TTS 降级边界、D ASR CER ≤5% + 端到端成功率 ≥95%、E 意图分类准确率 ≥90% + 单次推理 P95 ≤500ms。
+_Avoid_: 阈值、验收指标

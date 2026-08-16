@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent KISS - Permissions Empty State</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<!-- Tailwind Setup -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary": "#3d5198",
+                      "on-tertiary-fixed-variant": "#2e4b57",
+                      "status-completed": "#2E7D32",
+                      "on-surface": "#191c1c",
+                      "outline-variant": "#c5c5d2",
+                      "outline": "#757682",
+                      "surface-variant": "#e1e3e2",
+                      "tertiary-fixed-dim": "#adcbda",
+                      "on-primary": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-dim": "#d9dada",
+                      "on-secondary-container": "#007070",
+                      "on-secondary-fixed": "#002020",
+                      "surface": "#f8faf9",
+                      "surface-tint": "#465aa1",
+                      "on-secondary": "#ffffff",
+                      "primary-container": "#566ab2",
+                      "error": "#ba1a1a",
+                      "primary-fixed": "#dce1ff",
+                      "primary-fixed-dim": "#b6c4ff",
+                      "on-tertiary-container": "#e2f4ff",
+                      "on-background": "#191c1c",
+                      "secondary-fixed-dim": "#4cdada",
+                      "on-tertiary": "#ffffff",
+                      "on-error": "#ffffff",
+                      "inverse-primary": "#b6c4ff",
+                      "on-tertiary-fixed": "#001f2a",
+                      "surface-container-high": "#e7e8e8",
+                      "on-surface-variant": "#444651",
+                      "secondary-fixed": "#6ef7f6",
+                      "surface-container-low": "#f2f4f3",
+                      "inverse-on-surface": "#eff1f0",
+                      "secondary-container": "#6ef7f6",
+                      "tertiary-container": "#557280",
+                      "error-container": "#ffdad6",
+                      "background": "#f8faf9",
+                      "surface-bright": "#f8faf9",
+                      "on-primary-fixed": "#001550",
+                      "status-executing": "#FFB300",
+                      "risk-high": "#BA1A1A",
+                      "surface-container": "#edeeed",
+                      "status-thinking": "#566ab2",
+                      "tertiary-fixed": "#c9e7f7",
+                      "surface-container-highest": "#e1e3e2",
+                      "on-primary-container": "#f0f0ff",
+                      "terminal-bg": "#0D0F0F",
+                      "tertiary": "#3d5a67",
+                      "inverse-surface": "#2e3131",
+                      "status-failed": "#D32F2F",
+                      "on-primary-fixed-variant": "#2d4288",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#004f50",
+                      "secondary": "#006a6a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-tablet": "24px",
+                      "xl": "32px",
+                      "md": "16px",
+                      "gutter": "16px",
+                      "lg": "24px",
+                      "sm": "8px",
+                      "margin-mobile": "16px",
+                      "baseline": "8px",
+                      "xs": "4px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "body-md": ["Inter"],
+                      "title-lg": ["Inter"],
+                      "title-md": ["Inter"],
+                      "code-block": ["JetBrains Mono"],
+                      "headline-lg": ["Inter"],
+                      "label-mono": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "500"}],
+                      "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "code-block": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-lg min-h-screen flex flex-col overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile h-16 w-full z-40 transition-colors duration-200 ease-in-out">
+<button class="flex items-center justify-center p-sm rounded-full hover:bg-surface-variant/50 dark:hover:bg-surface-container-high/50 text-on-surface-variant dark:text-outline transition-colors duration-200 ease-in-out">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex-1 text-center">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Agent KISS</h1>
+</div>
+<button class="flex items-center justify-center rounded-full w-10 h-10 overflow-hidden bg-surface-variant hover:bg-surface-variant/50 dark:hover:bg-surface-container-high/50 transition-colors duration-200 ease-in-out">
+<span class="material-symbols-outlined text-outline">account_circle</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin-mobile md:px-margin-tablet py-lg pb-[100px] flex flex-col items-center justify-center relative">
+<!-- Contextual Header for User (Not replacing TopAppBar Brand) -->
+<div class="w-full max-w-lg mb-lg text-center md:text-left">
+<h2 class="font-title-lg text-title-lg text-on-surface-variant">权限中心</h2>
+</div>
+<!-- Empty State Container -->
+<div class="w-full max-w-lg flex flex-col items-center text-center">
+<!-- Graphic Area -->
+<div class="relative w-48 h-48 mb-lg flex items-center justify-center">
+<!-- Background decorative glow -->
+<div class="absolute inset-0 bg-primary-container/20 rounded-full blur-2xl"></div>
+<!-- Main Illustration -->
+<img class="w-40 h-40 object-contain relative z-10 drop-shadow-sm" data-alt="A clean, flat-vector illustration of a stylized dog head wearing high-tech smart glasses, set against a pristine light-mode background. Behind the dog, a subtle glowing blue shield icon represents cybersecurity and privacy. The color palette features corporate professional tones like deep navy blue (#3d5198) and cool tech greys. The style is modern, trust-inspiring, and suitable for an enterprise AI dashboard empty state." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVTWcXYF1NMD_NWR4S9tVTXUjEQQtrlufqZXsMXGoIBOfCaFS8ZeihWLkyqissk3f3aQN_ZW3JUvHsyYh13jPeLvHmbfLL35RNmtZKdS2c-mfbx8mq6QMmwxxhrUwg-EprXm-JPfLYXn-wQQBKfyaekj3mrg-FyrjozSPflHudrxRXyGU2WVc756AiWyNd7N-Bi9KS5LCUkIr10R8W5QntpYZ5KDNKkMaBzrQH3j_QIiUilgHxe9cc"/>
+<!-- Overlay badge for status -->
+<div class="absolute bottom-4 right-4 bg-surface rounded-full p-1 shadow-sm border border-surface-variant z-20">
+<span class="material-symbols-outlined text-outline text-[24px]">lock</span>
+</div>
+</div>
+<!-- Typography Content -->
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-sm">尚未授权任何工具</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md mx-auto mb-xl">
+                为了完成任务，我需要访问日历、定位等系统权限。你可以点击下方按钮进行批量授权引导。
+            </p>
+<!-- Primary Action Button -->
+<button class="bg-primary text-on-primary font-label-mono text-label-mono px-xl py-md rounded-sm hover:bg-primary/90 active:scale-95 transition-all duration-200 ease-in-out shadow-sm flex items-center gap-sm">
+<span class="material-symbols-outlined fill-icon text-[18px]">admin_panel_settings</span>
+                查看权限授权引导
+            </button>
+<!-- Secondary Info Card (Egress Policy Explanation) -->
+<div class="mt-xl w-full text-left bg-surface-container-low rounded-xl p-md border border-surface-variant">
+<div class="flex items-center gap-sm mb-md pb-sm border-b border-surface-variant">
+<span class="material-symbols-outlined text-primary">policy</span>
+<h4 class="font-title-md text-title-md text-on-surface">为什么需要权限？</h4>
+</div>
+<ul class="space-y-md font-body-md text-body-md text-on-surface-variant">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-status-completed text-[20px] mt-0.5">check_circle</span>
+<div>
+<span class="font-title-md text-title-md text-on-surface block">本地优先处理 (Local-First)</span>
+                            系统将优先使用本地算力进行数据分析，在未明确获得「授权出境」许可前，绝不将敏感数据上传至云端。
+                        </div>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-status-thinking text-[20px] mt-0.5">visibility</span>
+<div>
+<span class="font-title-md text-title-md text-on-surface block">透明可控 (Observable)</span>
+                            每一次工具调用和权限行使都将被记录。你可以随时在「Tools」面板审查 Agent 的行为轨迹。
+                        </div>
+</li>
+</ul>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl bg-surface-container dark:bg-surface-container-lowest shadow-sm flex justify-around items-center h-20 pb-safe px-4 md:hidden">
+<!-- Chat Tab (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 w-16">
+<span class="material-symbols-outlined mb-1">chat_bubble</span>
+<span class="font-label-mono text-label-mono">Chat</span>
+</button>
+<!-- Memory Tab (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 w-16">
+<span class="material-symbols-outlined mb-1">psychology</span>
+<span class="font-label-mono text-label-mono">Memory</span>
+</button>
+<!-- Tools Tab (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-variant dark:hover:bg-on-surface-variant/10 scale-95 active:scale-90 transition-transform duration-150 w-16">
+<span class="material-symbols-outlined mb-1">handyman</span>
+<span class="font-label-mono text-label-mono">Tools</span>
+</button>
+<!-- Safety Tab (Active - Mapped conceptually to Privacy/Permissions) -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-2xl px-5 py-1 scale-95 active:scale-90 transition-transform duration-150">
+<span class="material-symbols-outlined fill-icon mb-1">shield_with_heart</span>
+<span class="font-label-mono text-label-mono">Safety</span>
+</button>
+</nav>
+<!-- Side Nav for Desktop (Following the rules mapping) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-16 bottom-0 w-64 bg-surface-container border-r border-surface-variant px-sm py-lg z-30">
+<ul class="space-y-sm w-full">
+<li>
+<button class="w-full flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors text-left">
+<span class="material-symbols-outlined">chat_bubble</span>
+<span class="font-title-md text-title-md">Chat</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors text-left">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-title-md text-title-md">Memory</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors text-left">
+<span class="material-symbols-outlined">handyman</span>
+<span class="font-title-md text-title-md">Tools</span>
+</button>
+</li>
+<li>
+<button class="w-full flex items-center gap-md px-md py-sm rounded-lg bg-primary-container text-on-primary-container transition-colors text-left">
+<span class="material-symbols-outlined fill-icon">shield_with_heart</span>
+<span class="font-title-md text-title-md">Safety</span>
+</button>
+</li>
+</ul>
+</nav>
+<!-- Add padding to main for desktop sidebar -->
+<style>
+        @media (min-width: 768px) {
+            main {
+                padding-left: calc(16rem + 24px); /* 64 (w-64) = 16rem + margin */
+            }
+        }
+    </style>
+</body></html>

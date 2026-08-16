@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html lang="zh"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android Sideload 引导</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#edeeed",
+                        "on-secondary-fixed": "#002020",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#e1e3e2",
+                        "tertiary-container": "#557280",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "tertiary": "#3d5a67",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f8faf9",
+                        "surface-dim": "#d9dada",
+                        "status-failed": "#D32F2F",
+                        "surface-container-high": "#e7e8e8",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-tertiary-container": "#e2f4ff",
+                        "surface": "#f8faf9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#191c1c",
+                        "on-surface-variant": "#444651",
+                        "error": "#ba1a1a",
+                        "background": "#f8faf9",
+                        "status-thinking": "#566ab2",
+                        "on-secondary-container": "#007070",
+                        "inverse-primary": "#b6c4ff",
+                        "on-primary-fixed": "#001550",
+                        "secondary-container": "#6ef7f6",
+                        "status-executing": "#FFB300",
+                        "surface-tint": "#465aa1",
+                        "on-surface": "#191c1c",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#f0f0ff",
+                        "primary-fixed": "#dce1ff",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "primary": "#3d5198",
+                        "secondary-fixed-dim": "#4cdada",
+                        "surface-container-low": "#f2f4f3",
+                        "terminal-bg": "#0D0F0F",
+                        "risk-high": "#BA1A1A",
+                        "inverse-surface": "#2e3131",
+                        "secondary-fixed": "#6ef7f6",
+                        "secondary": "#006a6a",
+                        "outline-variant": "#c5c5d2",
+                        "primary-container": "#566ab2",
+                        "status-completed": "#2E7D32",
+                        "outline": "#757682",
+                        "inverse-on-surface": "#eff1f0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "baseline": "8px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "margin-tablet": "24px",
+                        "md": "16px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "label-mono": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "title-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-lg text-body-lg">
+<!-- Main Content Area (Suppressed Navigation for Transactional Onboarding) -->
+<main class="flex-grow flex flex-col items-center justify-center p-margin-mobile md:p-margin-tablet">
+<div class="w-full max-w-2xl bg-surface-container-low rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+<!-- Header Section -->
+<div class="p-lg md:p-xl bg-surface-container flex flex-col items-center text-center border-b border-surface-variant relative overflow-hidden">
+<!-- Abstract local-first subtle background -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 50% 0%, var(--tw-colors-primary) 0%, transparent 70%);"></div>
+<div class="w-20 h-20 bg-primary-container rounded-full flex items-center justify-center mb-md relative z-10">
+<span class="material-symbols-outlined text-on-primary-container text-5xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-xs relative z-10">Waku-Android Sideload</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md relative z-10">本地优先。安全控制。您正在配置高级侧载版本的核心权限。</p>
+</div>
+<!-- Content Section -->
+<div class="p-lg md:p-xl flex flex-col gap-lg">
+<!-- Trust & Local First Banner -->
+<div class="bg-surface-container border border-outline-variant rounded-lg p-md flex items-start gap-md">
+<span class="material-symbols-outlined text-status-completed" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">本地优先架构</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">所有执行逻辑默认在本地运行。除您明确授权的外部 API 外，数据不会离开您的设备。</p>
+</div>
+</div>
+<div class="border-t border-surface-variant pt-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface mb-md">高风险权限授权与披露</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-lg">为实现完整的 Agent 功能，特别是屏幕自动化操作，需开启以下无障碍服务。请仔细阅读相关风险。</p>
+<!-- L3 Risk Item: Tap & Swipe Tool -->
+<div class="border-2 border-error-container bg-surface rounded-lg p-md relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-risk-high"></div>
+<div class="flex items-start gap-md">
+<div class="bg-error-container rounded-full p-2 flex-shrink-0">
+<span class="material-symbols-outlined text-on-error-container" style="font-variation-settings: 'FILL' 1;">touch_app</span>
+</div>
+<div class="flex-grow">
+<div class="flex justify-between items-center mb-xs">
+<h3 class="font-title-md text-title-md text-on-surface flex items-center gap-2">
+                                        TapSwipeTool (触控与滑动)
+                                        <span class="bg-risk-high text-on-error px-2 py-0.5 rounded font-label-mono text-label-mono">L3 风险级别</span>
+</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">允许 Agent 通过无障碍 API 模拟点击和滑动操作。此功能对于自动执行复杂应用内任务至关重要。</p>
+<div class="bg-surface-container-highest p-md rounded-md font-body-md text-body-md mb-md">
+<strong class="text-on-surface block mb-sm">安全边界 (Policy Engine 强制约束):</strong>
+<ul class="list-disc list-inside text-on-surface-variant space-y-1">
+<li>绝不会在金融、银行或支付类应用中激活此工具。</li>
+<li>操作期间屏幕边缘会有明显的闪烁指示器。</li>
+<li>您随时可以通过物理按键组合 (音量上+下) 强行中断操作。</li>
+</ul>
+</div>
+<!-- Acknowledgement Checkbox -->
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-center justify-center mt-1">
+<input class="peer sr-only" id="ack-tapswipe" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-outline rounded-sm peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-sm opacity-0 peer-checked:opacity-100 scale-50 peer-checked:scale-100 transition-all" style="font-variation-settings: 'wght' 700;">check</span>
+</div>
+</div>
+<span class="font-body-md text-body-md text-on-surface">我已了解并同意授权无障碍服务进行模拟触控。我明白我可以随时在系统设置中撤销此权限。</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Area -->
+<div class="p-lg bg-surface-container border-t border-surface-variant flex flex-col md:flex-row justify-between items-center gap-md">
+<button class="w-full md:w-auto px-6 py-2.5 rounded-sm font-title-md text-title-md text-primary border border-outline-variant hover:bg-surface-variant transition-colors">
+                    稍后配置
+                </button>
+<button class="w-full md:w-auto px-8 py-2.5 rounded-sm font-title-md text-title-md bg-surface-variant text-on-surface-variant cursor-not-allowed transition-colors duration-200" disabled="" id="btn-accept">
+                    接受并启用 (需先确认)
+                </button>
+</div>
+</div>
+</main>
+<script>
+        // Simple logic to handle the consent checkbox
+        const checkbox = document.getElementById('ack-tapswipe');
+        const acceptBtn = document.getElementById('btn-accept');
+
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                acceptBtn.disabled = false;
+                acceptBtn.classList.remove('bg-surface-variant', 'text-on-surface-variant', 'cursor-not-allowed');
+                acceptBtn.classList.add('bg-primary', 'text-on-primary', 'hover:bg-primary-container', 'hover:text-on-primary-container', 'cursor-pointer');
+                acceptBtn.textContent = '接受并启用';
+            } else {
+                acceptBtn.disabled = true;
+                acceptBtn.classList.add('bg-surface-variant', 'text-on-surface-variant', 'cursor-not-allowed');
+                acceptBtn.classList.remove('bg-primary', 'text-on-primary', 'hover:bg-primary-container', 'hover:text-on-primary-container', 'cursor-pointer');
+                acceptBtn.textContent = '接受并启用 (需先确认)';
+            }
+        });
+    </script>
+</body></html>

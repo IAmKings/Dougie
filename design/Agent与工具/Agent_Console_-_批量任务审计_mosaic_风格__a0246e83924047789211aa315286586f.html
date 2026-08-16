@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WAKU AGENT CONSOLE - BATCH AUDIT</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#f0f0ff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "surface-dim": "#d9dada",
+                        "surface-bright": "#f8faf9",
+                        "tertiary": "#3d5a67",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "on-background": "#191c1c",
+                        "on-primary": "#ffffff",
+                        "surface-container-highest": "#e1e3e2",
+                        "outline-variant": "#c5c5d2",
+                        "on-tertiary-container": "#e2f4ff",
+                        "inverse-primary": "#b6c4ff",
+                        "surface-container-low": "#f2f4f3",
+                        "on-secondary-fixed": "#002020",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "on-secondary": "#ffffff",
+                        "outline": "#757682",
+                        "surface": "#f8faf9",
+                        "secondary": "#006a6a",
+                        "terminal-bg": "#0D0F0F",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "status-executing": "#FFB300",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "inverse-on-surface": "#eff1f0",
+                        "surface-container-high": "#e7e8e8",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#dce1ff",
+                        "background": "#f8faf9",
+                        "primary": "#3d5198",
+                        "tertiary-fixed": "#c9e7f7",
+                        "status-thinking": "#566ab2",
+                        "primary-container": "#566ab2",
+                        "on-primary-fixed": "#001550",
+                        "surface-container": "#edeeed",
+                        "status-failed": "#D32F2F",
+                        "secondary-fixed-dim": "#4cdada",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#557280",
+                        "inverse-surface": "#2e3131",
+                        "status-completed": "#2E7D32",
+                        "risk-high": "#BA1A1A",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1c",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#007070",
+                        "error-container": "#ffdad6",
+                        "surface-tint": "#465aa1",
+                        "secondary-fixed": "#6ef7f6",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-variant": "#e1e3e2",
+                        "on-surface-variant": "#444651",
+                        "secondary-container": "#6ef7f6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "margin-tablet": "24px",
+                        "margin-mobile": "16px",
+                        "baseline": "8px",
+                        "xl": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "title-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #0D0F0F;
+            color: #d9dada;
+        }
+        .term-border {
+            border: 1px solid #3d5a67;
+        }
+        .pulse-text {
+            animation: pulse-op 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-op {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+    </style>
+</head>
+<body class="font-code-block text-code-block h-screen overflow-hidden flex flex-col p-4">
+<!-- Top Navigation (Topology Active) -->
+<header class="flex justify-between items-center px-margin-mobile w-full h-16 bg-surface-container dark:bg-[#1a1c1c] mb-4 term-border rounded-DEFAULT">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">hub</span>
+<span class="font-headline-md text-headline-md font-bold text-primary-container">WAKU AGENT CONSOLE</span>
+<span class="ml-4 px-2 py-1 bg-surface-dim text-on-surface-variant rounded-sm text-xs">BATCH AUDIT</span>
+</div>
+<nav class="hidden md:flex gap-4">
+<a class="text-primary-container border-b-2 border-primary-container pb-1 font-label-mono text-label-mono" href="#">Topology</a>
+<a class="text-on-surface-variant hover:text-surface-dim transition-colors duration-200 font-label-mono text-label-mono" href="#">Agents</a>
+<a class="text-on-surface-variant hover:text-surface-dim transition-colors duration-200 font-label-mono text-label-mono" href="#">Logs</a>
+<a class="text-on-surface-variant hover:text-surface-dim transition-colors duration-200 font-label-mono text-label-mono" href="#">Policy</a>
+</nav>
+<div class="flex items-center">
+<span class="material-symbols-outlined text-on-surface-variant">monitoring</span>
+</div>
+</header>
+<!-- Metrics Bar -->
+<div class="grid grid-cols-4 gap-4 mb-4">
+<div class="term-border p-3 rounded-DEFAULT bg-[#1a1c1c] flex items-center justify-between">
+<span class="text-on-surface-variant">Active Tasks</span>
+<span class="text-secondary-fixed text-lg">5</span>
+</div>
+<div class="term-border p-3 rounded-DEFAULT bg-[#1a1c1c] flex items-center justify-between">
+<span class="text-on-surface-variant">Success Rate</span>
+<span class="text-status-completed text-lg">94%</span>
+</div>
+<div class="term-border p-3 rounded-DEFAULT bg-[#1a1c1c] flex items-center justify-between">
+<span class="text-on-surface-variant">Avg Latency</span>
+<span class="text-surface-dim text-lg">1.2s</span>
+</div>
+<div class="term-border p-3 rounded-DEFAULT bg-[#1a1c1c] flex items-center justify-between">
+<span class="text-on-surface-variant">Total Tokens</span>
+<span class="text-primary-container text-lg">12.4k</span>
+</div>
+</div>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col min-h-0">
+<!-- Table -->
+<div class="flex-1 term-border rounded-DEFAULT bg-[#1a1c1c] overflow-auto mb-4">
+<table class="w-full text-left border-collapse">
+<thead class="sticky top-0 bg-[#2e3131] z-10">
+<tr>
+<th class="p-2 border-b border-[#3d5a67] text-on-surface-variant font-normal">ID</th>
+<th class="p-2 border-b border-[#3d5a67] text-on-surface-variant font-normal">STATUS</th>
+<th class="p-2 border-b border-[#3d5a67] text-on-surface-variant font-normal">INTENT</th>
+<th class="p-2 border-b border-[#3d5a67] text-on-surface-variant font-normal">TOOLS</th>
+<th class="p-2 border-b border-[#3d5a67] text-on-surface-variant font-normal">LATENCY</th>
+<th class="p-2 border-b border-[#3d5a67] text-on-surface-variant font-normal">EGRESS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-[#3d5a67]/30 hover:bg-[#2e3131] cursor-pointer bg-primary-fixed-dim text-on-primary-fixed">
+<td class="p-2">T-0814-01</td>
+<td class="p-2"><span class="pulse-text text-[#001550]">THINKING</span></td>
+<td class="p-2">Query Memory</td>
+<td class="p-2 flex gap-1 items-center">
+<span class="material-symbols-outlined text-[16px]">database</span>
+</td>
+<td class="p-2">1200ms</td>
+<td class="p-2"><span class="text-on-surface-variant">LOCAL</span></td>
+</tr>
+<tr class="border-b border-[#3d5a67]/30 hover:bg-[#2e3131] cursor-pointer">
+<td class="p-2">T-0814-02</td>
+<td class="p-2"><span class="text-status-completed">COMPLETED</span></td>
+<td class="p-2">Create Calendar Event</td>
+<td class="p-2 flex gap-1 items-center">
+<span class="material-symbols-outlined text-[16px]">calendar_month</span>
+</td>
+<td class="p-2">850ms</td>
+<td class="p-2"><span class="text-status-executing">CLOUD</span></td>
+</tr>
+<tr class="border-b border-[#3d5a67]/30 hover:bg-[#2e3131] cursor-pointer">
+<td class="p-2">T-0814-03</td>
+<td class="p-2"><span class="text-status-failed">FAILED</span></td>
+<td class="p-2">Update System Settings</td>
+<td class="p-2 flex gap-1 items-center">
+<span class="material-symbols-outlined text-[16px]">settings</span>
+<span class="material-symbols-outlined text-[16px]">build</span>
+</td>
+<td class="p-2">2400ms</td>
+<td class="p-2"><span class="text-on-surface-variant">LOCAL</span></td>
+</tr>
+<tr class="border-b border-[#3d5a67]/30 hover:bg-[#2e3131] cursor-pointer">
+<td class="p-2">T-0814-04</td>
+<td class="p-2"><span class="text-status-completed">COMPLETED</span></td>
+<td class="p-2">Analyze Image</td>
+<td class="p-2 flex gap-1 items-center">
+<span class="material-symbols-outlined text-[16px]">image</span>
+</td>
+<td class="p-2">1800ms</td>
+<td class="p-2"><span class="text-status-executing">CLOUD</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Detail Panel -->
+<div class="h-64 term-border rounded-DEFAULT bg-[#1a1c1c] p-4 flex flex-col">
+<div class="flex justify-between items-center mb-2 border-b border-[#3d5a67] pb-2">
+<span class="text-secondary-fixed">KISS Loop Logs - T-0814-01</span>
+<span class="text-on-surface-variant text-xs">Idempotency Key: IDK-9a8b7c</span>
+</div>
+<div class="flex-1 overflow-auto text-sm space-y-1">
+<div class="text-on-surface-variant">[10:45:01.123] <span class="text-primary-container">REASON:</span> Assessing intent for 'Query Memory'</div>
+<div class="text-on-surface-variant">[10:45:01.345] <span class="text-primary-container">ACT:</span> Preparing MemoryTool</div>
+<div class="text-surface-dim ml-4">↳ Args: {"context": "recent_projects", "limit": 5}</div>
+<div class="text-on-surface-variant">[10:45:01.890] <span class="text-status-executing">EXECUTE:</span> MemoryTool (Local Agent)</div>
+<div class="text-surface-dim ml-4">↳ Status: Awaiting response...</div>
+<div class="text-secondary-fixed ml-4 pulse-text">_</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="mt-4 flex justify-between items-center text-on-surface-variant text-xs border-t border-[#3d5a67] pt-2">
+<div class="flex gap-4">
+<span><strong class="text-surface-bright">[Q]</strong> Quit</span>
+<span><strong class="text-surface-bright">[R]</strong> Refresh</span>
+<span><strong class="text-surface-bright">[S]</strong> Sort by Latency</span>
+<span><strong class="text-surface-bright">[D]</strong> Download Logs</span>
+</div>
+<div>Waku Console v2.1.4</div>
+</footer>
+</body></html>

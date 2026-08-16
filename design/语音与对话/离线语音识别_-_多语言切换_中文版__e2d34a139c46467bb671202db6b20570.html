@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android - 语音识别设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#191c1c",
+                        "inverse-primary": "#b6c4ff",
+                        "on-secondary-container": "#007070",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "surface-container": "#edeeed",
+                        "secondary": "#006a6a",
+                        "on-tertiary-container": "#e2f4ff",
+                        "secondary-fixed": "#6ef7f6",
+                        "on-secondary": "#ffffff",
+                        "risk-high": "#BA1A1A",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "primary": "#3d5198",
+                        "background": "#f8faf9",
+                        "terminal-bg": "#0D0F0F",
+                        "surface": "#f8faf9",
+                        "on-surface-variant": "#444651",
+                        "primary-container": "#566ab2",
+                        "tertiary": "#3d5a67",
+                        "surface-container-low": "#f2f4f3",
+                        "secondary-container": "#6ef7f6",
+                        "surface-variant": "#e1e3e2",
+                        "surface-container-high": "#e7e8e8",
+                        "status-completed": "#2E7D32",
+                        "on-primary-fixed": "#001550",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1c",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "tertiary-fixed": "#c9e7f7",
+                        "status-executing": "#FFB300",
+                        "secondary-fixed-dim": "#4cdada",
+                        "surface-dim": "#d9dada",
+                        "on-primary-container": "#f0f0ff",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#f8faf9",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-tertiary": "#ffffff",
+                        "surface-tint": "#465aa1",
+                        "inverse-surface": "#2e3131",
+                        "primary-fixed": "#dce1ff",
+                        "status-thinking": "#566ab2",
+                        "outline": "#757682",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-container-highest": "#e1e3e2",
+                        "tertiary-container": "#557280",
+                        "outline-variant": "#c5c5d2",
+                        "on-tertiary-fixed": "#001f2a",
+                        "status-failed": "#D32F2F",
+                        "on-secondary-fixed": "#002020",
+                        "inverse-on-surface": "#eff1f0",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "xs": "4px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "margin-tablet": "24px",
+                        "baseline": "8px",
+                        "md": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "title-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill-icon {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e1e3e2; /* surface-variant */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c5c5d2; /* outline-variant */
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col items-center">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky bg-surface dark:bg-surface-dim z-40 transition-colors duration-200">
+<div class="max-w-2xl mx-auto w-full flex items-center justify-between px-margin-mobile h-16">
+<button class="p-2 -ml-2 rounded-full hover:bg-surface-container-low transition-colors duration-200 active:scale-95 text-on-surface-variant flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-title-lg text-title-lg text-primary flex-1 text-center pr-8 truncate">语音识别设置</h1>
+<!-- Branding icon hidden visually in header but present for layout balance if needed, or replace with invisible div -->
+<div class="w-10 h-10 opacity-0 pointer-events-none"></div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-2xl mx-auto px-margin-mobile flex-1 pb-xl">
+<!-- Branding Section -->
+<div class="flex flex-col items-center justify-center py-lg animate-fade-in">
+<img alt="Doge AI Icon" class="w-24 h-24 rounded-2xl shadow-sm mb-md object-cover" data-alt="A minimalist application icon of the Doge character with smart glasses, using DeepSeek blue (#566ab2) vector lines, set against a solid pure white background. The illustration is clean, modern, and high-tech, representing an AI assistant." src="https://lh3.googleusercontent.com/aida/AP1WRLsfeCFjMe2MCzuyfwskhn77Xcskryi8z372e55d8M61kAXJun53Y54LfMBxsBY-xQ7yA71axFqTkbF7PRy_VN8Sj0Q-9Ro2YLYGZMsWJ5V-1a2Wi1xUbJv_xPZUbZ6O5Oh6PqbGVg_dm1J58INUGKvAXGvyS_FkBNri60xxoqcWHX6Zjct7Qkq5YmwYkqsft7gnk5zPAt56fOHtS3HWDiVjwa0LQ-iJY8COjgwElgV4jFZopXgf65FgI9Y"/>
+<p class="font-label-mono text-label-mono text-outline">Waku-Android Core</p>
+</div>
+<!-- Current Model Status Card -->
+<section class="bg-surface-container-low rounded-xl p-md mb-lg border border-surface-variant shadow-sm relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary opacity-5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+<h2 class="font-title-md text-title-md text-on-surface mb-xs flex items-center">
+<span class="material-symbols-outlined text-primary mr-sm text-[20px]">memory</span>
+                当前运行模型
+            </h2>
+<div class="flex flex-col md:flex-row md:items-center justify-between mt-sm gap-sm">
+<div>
+<p class="font-headline-md text-headline-md text-primary tracking-tight">Paraformer-zh</p>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">识别语言: 普通话 (Mandarin)</p>
+</div>
+<div class="bg-primary-container text-on-primary-container px-3 py-1.5 rounded-md flex items-center self-start md:self-auto shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary-fixed mr-2 animate-pulse"></span>
+<span class="font-label-mono text-label-mono">Active Local</span>
+</div>
+</div>
+<!-- Technical Detail Bar -->
+<div class="mt-md pt-sm border-t border-surface-variant flex items-center justify-between text-on-surface-variant font-label-mono text-label-mono">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">speed</span> 延迟: ~85ms</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">storage</span> 内存占用: 180MB</span>
+</div>
+</section>
+<!-- Language Selection List -->
+<section class="mb-lg">
+<h3 class="font-title-md text-title-md text-on-surface mb-md pl-xs">可用离线语言包</h3>
+<div class="flex flex-col gap-sm">
+<!-- Item 1: Active Model -->
+<div class="bg-surface-container rounded-lg p-md border-2 border-primary cursor-pointer hover:bg-surface-container-high transition-colors relative">
+<div class="flex items-start justify-between">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+<span class="font-headline-md text-headline-md text-lg">普</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">普通话 (Mandarin)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xs">Paraformer-zh</p>
+<div class="flex items-center gap-2 font-label-mono text-label-mono">
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">215 MB</span>
+<span class="text-status-completed flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Ready</span>
+</div>
+</div>
+</div>
+<div class="text-primary p-2">
+<span class="material-symbols-outlined fill-icon text-[28px]">check_circle</span>
+</div>
+</div>
+</div>
+<!-- Item 2: Downloaded but inactive -->
+<div class="bg-surface-container-low rounded-lg p-md border border-surface-variant cursor-pointer hover:bg-surface-container transition-colors group">
+<div class="flex items-start justify-between">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center shrink-0 group-hover:bg-surface-variant transition-colors">
+<span class="font-headline-md text-headline-md text-lg">EN</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">英语 (English)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xs">SenseVoice-en</p>
+<div class="flex items-center gap-2 font-label-mono text-label-mono">
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">280 MB</span>
+<span class="text-status-completed flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Ready</span>
+</div>
+</div>
+</div>
+<div class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="font-label-mono text-label-mono text-primary px-3 py-1 rounded bg-primary-container/20 hover:bg-primary-container/40 transition-colors">SWITCH</button>
+</div>
+</div>
+</div>
+<!-- Item 3: Downloading -->
+<div class="bg-surface-container-low rounded-lg p-md border border-surface-variant">
+<div class="flex items-start justify-between mb-sm">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="font-headline-md text-headline-md text-lg">粤</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface">粤语 (Cantonese)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xs">SenseVoice-yue</p>
+<div class="flex items-center gap-2 font-label-mono text-label-mono">
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">230 MB</span>
+<span class="text-status-executing flex items-center gap-1"><span class="material-symbols-outlined text-[14px] animate-spin">sync</span> Downloading... 45%</span>
+</div>
+</div>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-error transition-colors rounded-full hover:bg-surface-container-highest" title="Cancel Download">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-surface-variant rounded-full h-1.5 mt-2 overflow-hidden">
+<div class="bg-status-executing h-1.5 rounded-full transition-all duration-300 ease-out" style="width: 45%"></div>
+</div>
+</div>
+<!-- Item 4: Not Downloaded -->
+<div class="bg-surface-container-low rounded-lg p-md border border-surface-variant hover:bg-surface-container transition-colors group">
+<div class="flex items-center justify-between">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center shrink-0 opacity-70">
+<span class="font-headline-md text-headline-md text-lg">日</span>
+</div>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface opacity-80">日语 (Japanese)</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xs opacity-80">SenseVoice-ja</p>
+<div class="flex items-center gap-2 font-label-mono text-label-mono opacity-80">
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-on-surface-variant">310 MB</span>
+<span class="text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">cloud_off</span> Not Downloaded</span>
+</div>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full bg-surface-container-highest text-primary hover:bg-primary-container hover:text-on-primary-container flex items-center justify-center transition-colors active:scale-95 shrink-0 focus:outline-none focus:ring-2 focus:ring-primary">
+<span class="material-symbols-outlined">download</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Technical Footer Note -->
+<footer class="mt-xl pt-md border-t border-surface-variant text-center pb-xl">
+<div class="inline-flex items-center justify-center gap-sm px-4 py-2 bg-surface-container-lowest rounded-full border border-surface-variant shadow-sm mx-auto">
+<span class="material-symbols-outlined text-status-completed text-[18px]">verified_user</span>
+<p class="font-body-md text-body-md text-on-surface-variant">所有识别均在本地执行，音频不落盘</p>
+</div>
+<p class="font-label-mono text-label-mono text-outline mt-md">Local-First Architecture · Offline Inference</p>
+</footer>
+</main>
+<script>
+        // Simple script to demonstrate active states for UI design purposes
+        document.addEventListener('DOMContentLoaded', () => {
+            const listItems = document.querySelectorAll('section:nth-of-type(2) > div > div');
+            
+            listItems.forEach((item, index) => {
+                // Ignore the downloading and not-downloaded items for simple click toggling in this demo
+                if(index > 1) return;
+
+                item.addEventListener('click', function(e) {
+                    // Prevent button clicks from triggering parent click
+                    if(e.target.tagName.toLowerCase() === 'button' || e.target.closest('button')) return;
+
+                    // Reset all switchable items
+                    listItems[0].className = "bg-surface-container-low rounded-lg p-md border border-surface-variant cursor-pointer hover:bg-surface-container transition-colors group";
+                    listItems[0].innerHTML = listItems[0].innerHTML.replace('border-2 border-primary', '').replace('bg-surface-container', 'bg-surface-container-low').replace(/fill-icon.*check_circle/, '').replace('SWITCH', 'SWITCH'); // crude reset for demo
+                    
+                    // The actual implementation would re-render the components. 
+                    // This is just a minimal visual indication for the HTML demo.
+                    // In a real framework, state management handles this cleanly.
+                });
+            });
+        });
+    </script>
+</body></html>

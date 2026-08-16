@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android - 任务恢复引导</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config injected from guidelines -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#465aa1",
+                        "primary-fixed": "#dce1ff",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-tertiary-container": "#e2f4ff",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "surface-container-highest": "#e1e3e2",
+                        "surface-dim": "#d9dada",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-primary-fixed": "#001550",
+                        "on-secondary-container": "#007070",
+                        "surface-bright": "#f8faf9",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#444651",
+                        "surface-container-low": "#f2f4f3",
+                        "on-error": "#ffffff",
+                        "terminal-bg": "#0D0F0F",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "tertiary-container": "#557280",
+                        "on-background": "#191c1c",
+                        "on-secondary": "#ffffff",
+                        "status-executing": "#FFB300",
+                        "secondary-fixed-dim": "#4cdada",
+                        "inverse-surface": "#2e3131",
+                        "background": "#f8faf9",
+                        "secondary-fixed": "#6ef7f6",
+                        "status-completed": "#2E7D32",
+                        "outline": "#757682",
+                        "status-failed": "#D32F2F",
+                        "inverse-primary": "#b6c4ff",
+                        "on-primary-container": "#f0f0ff",
+                        "on-surface": "#191c1c",
+                        "surface-container": "#edeeed",
+                        "outline-variant": "#c5c5d2",
+                        "tertiary": "#3d5a67",
+                        "on-error-container": "#93000a",
+                        "secondary": "#006a6a",
+                        "surface": "#f8faf9",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#6ef7f6",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "status-thinking": "#566ab2",
+                        "primary-container": "#566ab2",
+                        "surface-variant": "#e1e3e2",
+                        "error-container": "#ffdad6",
+                        "primary": "#3d5198",
+                        "on-secondary-fixed": "#002020",
+                        "inverse-on-surface": "#eff1f0",
+                        "risk-high": "#BA1A1A",
+                        "surface-container-high": "#e7e8e8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-tablet": "24px",
+                        "margin-mobile": "16px",
+                        "md": "16px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "baseline": "8px",
+                        "xl": "32px",
+                        "lg": "24px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-entrance {
+            animation: slideUpFade 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen flex flex-col font-body-md text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopAppBar (Generated from Shared Components JSON) -->
+<header class="bg-surface-container flex justify-between items-center w-full px-4 md:px-8 py-3 shadow-sm z-10 sticky top-0">
+<!-- Leading: Avatar -->
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-high overflow-hidden shrink-0">
+<img alt="SOUL Agent Persona" class="w-full h-full object-cover" data-alt="A clean, modern geometric logo of a stylized Shiba Inu dog acting as an AI agent persona. Rendered in a sleek, minimalist vector style using primary blue (#3d5198) and white tones. Professional and approachable, suitable for an enterprise-grade mobile application. Soft, even studio lighting with a clean white background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFpvL-DEdIz3cl4SH89kv7Ld7weYwQL1GlL71HKrK8gxgEJFYPl0hv6zqLQ7u7vq-8BiTGOlPD-1tu3AxvLvNZlgWauhlHuf9ddWfNMZTH6r3nk7qzbYAMv-qm8Xn8HPxSLFEgE--OZ7Qe1XVNTiSRxCVbodfqqnT4ktnothzsor5DYhvMUdDa5bRJ4JwKefTMcAdbAiW4nxMs4may2-x-SQHDOXrVy0ziYag9zOl1wE4y3y5z1cr7"/>
+</div>
+<!-- Headline -->
+<h1 class="font-headline-md text-headline-md font-extrabold text-primary truncate flex-1 text-center px-4">
+            Waku-Android
+        </h1>
+<!-- Trailing: Icon -->
+<div class="flex items-center justify-center w-10 h-10 text-on-surface hover:bg-surface-variant rounded-full transition-colors cursor-pointer shrink-0">
+<span class="material-symbols-outlined text-[24px]">shield_with_heart</span>
+</div>
+</header>
+<!-- Main Content Area: Transactional Recovery Screen -->
+<!-- Suppressed BottomNavBar as this is a linear/transactional screen focused on task recovery -->
+<main class="flex-1 flex flex-col items-center justify-center p-margin-mobile md:p-margin-tablet relative overflow-hidden">
+<!-- Subtle background pattern for technical feel -->
+<div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, #3d5198 1px, transparent 0); background-size: 24px 24px;"></div>
+<!-- Recovery Card Container -->
+<div class="w-full max-w-md bg-surface-container-low rounded-xl p-lg flex flex-col gap-lg shadow-md border border-outline-variant/30 relative z-10 animate-entrance">
+<!-- Header Section -->
+<div class="flex flex-col items-center text-center gap-sm">
+<div class="w-16 h-16 rounded-full bg-error-container/20 flex items-center justify-center mb-2">
+<span class="material-symbols-outlined text-[32px] text-error">build_circle</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">任务恢复引导</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">系统检测到您有一个未完成的智能体任务。</p>
+</div>
+<!-- Task Details Section (Technical Rigor) -->
+<div class="bg-surface-container rounded-lg p-md flex flex-col gap-md border border-outline-variant/50">
+<!-- Status Row -->
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Status</span>
+<div class="flex items-center gap-xs bg-error-container text-on-error-container px-2 py-1 rounded-sm">
+<span class="material-symbols-outlined text-[14px]">pause_circle</span>
+<span class="font-label-mono text-label-mono font-bold">已中断</span>
+</div>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- Task ID Row -->
+<div class="flex justify-between items-center">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Task ID</span>
+<span class="font-code-block text-code-block text-on-surface tracking-wide">task_827_react</span>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- Last Action Row -->
+<div class="flex justify-between items-start flex-col gap-xs">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Last Known State</span>
+<div class="flex items-center gap-sm w-full bg-surface py-2 px-3 rounded text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary">calendar_month</span>
+<span class="font-code-block text-code-block truncate">正在执行: CalendarTool</span>
+</div>
+</div>
+</div>
+<!-- Safety Note Banner -->
+<div class="bg-primary-fixed text-on-primary-fixed p-md rounded-lg flex items-start gap-sm border border-primary-fixed-dim/50">
+<span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-body-md text-body-md leading-snug">
+                    得益于幂等性设计，恢复执行不会导致重复操作。
+                </p>
+</div>
+<!-- Actions -->
+<div class="flex flex-col sm:flex-row gap-md pt-sm mt-xs">
+<button class="w-full bg-primary text-on-primary rounded-lg py-3 px-4 font-title-md text-title-md text-center cursor-pointer hover:bg-primary/90 transition-colors shadow-sm focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background outline-none flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                    继续执行
+                </button>
+<button class="w-full border-2 border-outline text-on-surface rounded-lg py-3 px-4 font-title-md text-title-md text-center cursor-pointer hover:bg-surface-variant hover:text-on-surface transition-colors focus:ring-2 focus:ring-outline focus:ring-offset-2 focus:ring-offset-background outline-none flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+                    放弃任务
+                </button>
+</div>
+</div>
+</main>
+</body></html>

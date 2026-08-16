@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android Console</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#f0f0ff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-tertiary-container": "#e2f4ff",
+                        "tertiary-container": "#557280",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-surface": "#191c1c",
+                        "surface-dim": "#d9dada",
+                        "surface": "#f8faf9",
+                        "outline": "#757682",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "primary-container": "#566ab2",
+                        "surface-bright": "#f8faf9",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#465aa1",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f2f4f3",
+                        "inverse-surface": "#2e3131",
+                        "on-background": "#191c1c",
+                        "primary": "#3d5198",
+                        "secondary-fixed": "#6ef7f6",
+                        "status-failed": "#D32F2F",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "surface-container-highest": "#e1e3e2",
+                        "secondary-fixed-dim": "#4cdada",
+                        "background": "#f8faf9",
+                        "secondary-container": "#6ef7f6",
+                        "risk-high": "#BA1A1A",
+                        "primary-fixed": "#dce1ff",
+                        "secondary": "#006a6a",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "surface-variant": "#e1e3e2",
+                        "on-surface-variant": "#444651",
+                        "tertiary-fixed": "#c9e7f7",
+                        "status-completed": "#2E7D32",
+                        "on-secondary-container": "#007070",
+                        "outline-variant": "#c5c5d2",
+                        "surface-container-high": "#e7e8e8",
+                        "on-primary-fixed": "#001550",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "tertiary": "#3d5a67",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-container": "#edeeed",
+                        "on-secondary-fixed": "#002020",
+                        "terminal-bg": "#0D0F0F",
+                        "inverse-on-surface": "#eff1f0",
+                        "inverse-primary": "#b6c4ff",
+                        "status-executing": "#FFB300",
+                        "status-thinking": "#566ab2",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "baseline": "8px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "margin-tablet": "24px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "title-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "title-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .terminal-text { text-shadow: 0 0 2px rgba(255,255,255,0.2); }
+        .blinking-cursor { animation: blink 1s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        .breathe { animation: breathe 1.5s infinite ease-in-out alternate; }
+        @keyframes breathe { 0% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        /* Custom Scrollbar for Terminal */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0D0F0F; }
+        ::-webkit-scrollbar-thumb { background: #444651; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #757682; }
+    </style>
+</head>
+<body class="bg-terminal-bg text-inverse-on-surface h-screen w-screen overflow-hidden flex flex-col font-label-mono text-label-mono selection:bg-primary-container selection:text-on-primary-container">
+<!-- Header -->
+<header class="flex justify-between items-center w-full px-md py-sm bg-inverse-surface border-b border-surface-variant/20 z-10 shrink-0">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="terminal">terminal</span>
+<span class="font-headline-md text-headline-md text-primary-fixed-dim tracking-tight">Waku-Android Agent Console</span>
+<span class="text-outline ml-sm">[v2.1.10]</span>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-xs">
+<span class="text-outline">CPU:</span>
+<span class="text-status-completed">12%</span>
+<div class="w-8 h-2 bg-inverse-surface border border-outline/30 rounded-sm overflow-hidden ml-1">
+<div class="h-full bg-status-completed w-[12%]"></div>
+</div>
+</div>
+<div class="flex items-center gap-xs">
+<span class="text-outline">MEM:</span>
+<span class="text-status-executing">1.4GB</span>
+<div class="w-8 h-2 bg-inverse-surface border border-outline/30 rounded-sm overflow-hidden ml-1">
+<div class="h-full bg-status-executing w-[45%]"></div>
+</div>
+</div>
+<div class="flex items-center gap-xs">
+<span class="text-outline">NET:</span>
+<span class="text-secondary-fixed">OK</span>
+<span class="material-symbols-outlined text-[14px] text-secondary-fixed" data-icon="wifi">wifi</span>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex overflow-hidden p-xs gap-xs">
+<!-- Left Panel: State Machine -->
+<aside class="w-64 bg-inverse-surface/50 border border-surface-variant/20 rounded-sm flex flex-col overflow-hidden shrink-0">
+<div class="bg-inverse-surface p-sm border-b border-surface-variant/20 flex items-center justify-between">
+<span class="text-outline-variant uppercase">State Machine</span>
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="account_tree">account_tree</span>
+</div>
+<div class="p-md flex-1 overflow-y-auto">
+<div class="flex flex-col gap-sm relative">
+<!-- Timeline Line -->
+<div class="absolute left-3 top-4 bottom-4 w-px bg-surface-variant/30 z-0"></div>
+<!-- States -->
+<div class="flex items-center gap-sm relative z-10">
+<div class="w-6 h-6 rounded-full bg-inverse-surface border border-status-completed flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-status-completed" data-icon="check">check</span>
+</div>
+<span class="text-outline">IDLE</span>
+</div>
+<div class="flex items-center gap-sm relative z-10">
+<div class="w-6 h-6 rounded-full bg-inverse-surface border border-status-completed flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-status-completed" data-icon="check">check</span>
+</div>
+<span class="text-outline">PREPARING</span>
+</div>
+<div class="flex items-center gap-sm relative z-10 mt-sm">
+<div class="w-6 h-6 rounded-full bg-primary-container border border-primary-fixed flex items-center justify-center breathe shadow-[0_0_8px_rgba(86,106,178,0.5)]">
+<span class="material-symbols-outlined text-[12px] text-on-primary-container" data-icon="psychology">psychology</span>
+</div>
+<span class="text-primary-fixed-dim font-bold">THINKING</span>
+</div>
+<div class="flex items-center gap-sm relative z-10 mt-sm opacity-50">
+<div class="w-6 h-6 rounded-full bg-inverse-surface border border-outline flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-outline" data-icon="build">build</span>
+</div>
+<span class="text-outline">TOOL_EXECUTING</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Central Panel: Execution Trace -->
+<section class="flex-1 bg-inverse-surface/80 border border-surface-variant/20 rounded-sm flex flex-col overflow-hidden">
+<div class="bg-inverse-surface p-sm border-b border-surface-variant/20 flex items-center justify-between">
+<span class="text-outline-variant uppercase">Execution Trace</span>
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="list_alt">list_alt</span>
+</div>
+<div class="flex-1 overflow-y-auto p-md font-code-block text-code-block space-y-md">
+<!-- Log Entry 1 -->
+<div class="flex gap-sm">
+<span class="text-outline whitespace-nowrap">[10:42:01.104]</span>
+<div class="flex-1">
+<span class="text-primary-fixed-dim">INFO</span> [KISS_Loop] Loop 1: <span class="text-tertiary-fixed-dim">THINKING</span> started. Evaluating user intent: "Book a meeting with Sarah for tomorrow at 2pm."
+                    </div>
+</div>
+<!-- Log Entry 2 -->
+<div class="flex gap-sm">
+<span class="text-outline whitespace-nowrap">[10:42:02.450]</span>
+<div class="flex-1">
+<span class="text-secondary-fixed">TOOL_CALL</span> Initiating CalendarTool
+                        <div class="bg-terminal-bg/50 border border-surface-variant/30 rounded-sm p-sm mt-xs text-outline-variant">
+<pre><code>{
+  "tool": "CalendarTool",
+  "action": "check_availability",
+  "parameters": {
+    "date": "2024-05-24",
+    "time": "14:00",
+    "participants": ["sarah@example.com"]
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+<!-- Log Entry 3 -->
+<div class="flex gap-sm">
+<span class="text-outline whitespace-nowrap">[10:42:02.455]</span>
+<div class="flex-1">
+<span class="text-status-executing">POLICY_CHECK</span> Validating data egress... 
+                        <span class="text-status-completed ml-sm">PASSED</span> (Risk Level: L0)
+                    </div>
+</div>
+<!-- Log Entry 4: Active -->
+<div class="flex gap-sm border-l-2 border-primary-fixed pl-sm bg-primary-container/10 py-xs -ml-[2px]">
+<span class="text-outline whitespace-nowrap">[10:42:03.112]</span>
+<div class="flex-1">
+<span class="text-tertiary-fixed-dim breathe">AWAITING_RESPONSE</span> Polling Android Calendar Provider...
+                        <span class="blinking-cursor">_</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Overview & Audit -->
+<aside class="w-80 flex flex-col gap-xs shrink-0">
+<!-- Metadata Card -->
+<div class="bg-inverse-surface/50 border border-surface-variant/20 rounded-sm flex flex-col overflow-hidden shrink-0">
+<div class="bg-inverse-surface p-sm border-b border-surface-variant/20">
+<span class="text-outline-variant uppercase">Task Overview</span>
+</div>
+<div class="p-sm space-y-xs">
+<div class="flex justify-between">
+<span class="text-outline">Task ID:</span>
+<span class="text-secondary-fixed">tsk_8a9b2c</span>
+</div>
+<div class="flex justify-between">
+<span class="text-outline">Session:</span>
+<span class="text-inverse-on-surface">sess_xyz123</span>
+</div>
+<div class="flex justify-between">
+<span class="text-outline">Tokens (In/Out):</span>
+<span class="text-status-executing">452 / 128</span>
+</div>
+<div class="flex justify-between items-center mt-sm pt-sm border-t border-surface-variant/20">
+<span class="text-outline">Device Battery:</span>
+<div class="flex items-center gap-xs">
+<span class="text-status-completed">84%</span>
+<span class="material-symbols-outlined text-[16px] text-status-completed" data-icon="battery_full">battery_full</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Audit Log -->
+<div class="bg-inverse-surface/50 border border-surface-variant/20 rounded-sm flex-1 flex flex-col overflow-hidden">
+<div class="bg-inverse-surface p-sm border-b border-surface-variant/20 flex justify-between items-center">
+<span class="text-outline-variant uppercase">Live Audit</span>
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="policy">policy</span>
+</div>
+<div class="p-sm flex-1 overflow-y-auto space-y-sm">
+<div class="bg-terminal-bg/50 border border-surface-variant/20 p-xs rounded-sm">
+<div class="flex justify-between items-start">
+<span class="text-outline-variant text-[10px]">10:41:59</span>
+<span class="text-status-completed text-[10px] bg-status-completed/10 px-1 rounded">L0 SAFE</span>
+</div>
+<div class="text-inverse-on-surface mt-xs">Memory_Read</div>
+<div class="text-outline text-[10px]">Accessed User Profile</div>
+</div>
+<div class="bg-terminal-bg/50 border border-surface-variant/20 p-xs rounded-sm">
+<div class="flex justify-between items-start">
+<span class="text-outline-variant text-[10px]">10:42:02</span>
+<span class="text-status-executing text-[10px] bg-status-executing/10 px-1 rounded">L1 INFO</span>
+</div>
+<div class="text-inverse-on-surface mt-xs">Calendar_Query</div>
+<div class="text-outline text-[10px]">Read availability</div>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer: Command Line -->
+<footer class="bg-inverse-surface border-t border-surface-variant/20 p-sm shrink-0 flex items-center gap-md">
+<div class="flex-1 flex items-center gap-sm bg-terminal-bg border border-outline/30 rounded-sm px-sm py-xs focus-within:border-primary-fixed transition-colors">
+<span class="text-primary-fixed font-bold">&gt;</span>
+<input class="bg-transparent border-none outline-none text-inverse-on-surface w-full p-0 text-label-mono focus:ring-0 placeholder:text-outline-variant" placeholder="Enter command..." type="text"/>
+</div>
+<div class="flex gap-md text-outline">
+<span class="hover:text-inverse-on-surface cursor-pointer transition-colors"><span class="text-secondary-fixed">[C]</span>ancel</span>
+<span class="hover:text-inverse-on-surface cursor-pointer transition-colors"><span class="text-secondary-fixed">[R]</span>estart</span>
+<span class="hover:text-inverse-on-surface cursor-pointer transition-colors"><span class="text-secondary-fixed">[P]</span>ause</span>
+<span class="hover:text-inverse-on-surface cursor-pointer transition-colors"><span class="text-secondary-fixed">[D]</span>ump State</span>
+</div>
+</footer>
+</body></html>

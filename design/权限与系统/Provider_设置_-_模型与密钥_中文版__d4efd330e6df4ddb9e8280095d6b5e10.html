@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android - 提供商设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#edeeed",
+                        "terminal-bg": "#0D0F0F",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "surface-container-high": "#e7e8e8",
+                        "on-primary-container": "#f0f0ff",
+                        "secondary-fixed-dim": "#4cdada",
+                        "error-container": "#ffdad6",
+                        "on-surface": "#191c1c",
+                        "on-surface-variant": "#444651",
+                        "inverse-on-surface": "#eff1f0",
+                        "risk-high": "#BA1A1A",
+                        "surface-variant": "#e1e3e2",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "status-executing": "#FFB300",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "outline-variant": "#c5c5d2",
+                        "inverse-surface": "#2e3131",
+                        "secondary-fixed": "#6ef7f6",
+                        "on-error": "#ffffff",
+                        "primary": "#3d5198",
+                        "on-secondary-container": "#007070",
+                        "secondary": "#006a6a",
+                        "on-tertiary-container": "#e2f4ff",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "status-failed": "#D32F2F",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "surface-container-low": "#f2f4f3",
+                        "on-background": "#191c1c",
+                        "surface": "#f8faf9",
+                        "outline": "#757682",
+                        "inverse-primary": "#b6c4ff",
+                        "tertiary-fixed": "#c9e7f7",
+                        "tertiary-container": "#557280",
+                        "surface-bright": "#f8faf9",
+                        "secondary-container": "#6ef7f6",
+                        "surface-tint": "#465aa1",
+                        "error": "#ba1a1a",
+                        "status-thinking": "#566ab2",
+                        "background": "#f8faf9",
+                        "primary-container": "#566ab2",
+                        "surface-dim": "#d9dada",
+                        "on-primary-fixed": "#001550",
+                        "status-completed": "#2E7D32",
+                        "surface-container-highest": "#e1e3e2",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed": "#002020",
+                        "primary-fixed": "#dce1ff",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#3d5a67"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "baseline": "8px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "margin-tablet": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-md": ["Inter"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom range slider styling for M3 look */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3d5198; /* primary */
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e1e3e2; /* surface-variant */
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        /* M3 Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3d5198; /* primary */
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3d5198; /* primary */
+        }
+        .toggle-checkbox:checked + .toggle-label:after {
+            transform: translateX(100%);
+            border-color: white;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-lg min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface-container flex justify-between items-center w-full px-4 md:px-8 py-3 fixed top-0 z-50 transition-all duration-200 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant flex items-center justify-center">
+<img alt="SOUL Agent Persona" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLsfeCFjMe2MCzuyfwskhn77Xcskryi8z372e55d8M61kAXJun53Y54LfMBxsBY-xQ7yA71axFqTkbF7PRy_VN8Sj0Q-9Ro2YLYGZMsWJ5V-1a2Wi1xUbJv_xPZUbZ6O5Oh6PqbGVg_dm1J58INUGKvAXGvyS_FkBNri60xxoqcWHX6Zjct7Qkq5YmwYkqsft7gnk5zPAt56fOHtS3HWDiVjwa0LQ-iJY8COjgwElgV4jFZopXgf65FgI9Y"/>
+</div>
+<h1 class="text-headline-md font-headline-md font-extrabold text-primary">Waku-Android</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="shield_with_heart" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 mt-[72px] mb-[80px] px-4 md:px-8 py-6 max-w-2xl w-full mx-auto space-y-6">
+<div class="space-y-1">
+<h2 class="text-headline-md font-headline-md text-on-surface">提供商设置</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">配置您的 AI 模型服务提供商和代理行为参数。</p>
+</div>
+<!-- Provider Selection (Segmented Control) -->
+<div class="bg-surface-container rounded-xl p-1 flex">
+<button class="flex-1 py-2 rounded-lg bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.1)] text-on-surface font-title-md text-title-md flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-primary">cloud</span>
+                云端服务
+            </button>
+<button class="flex-1 py-2 rounded-lg text-on-surface-variant font-title-md text-title-md flex items-center justify-center gap-2 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined">memory</span>
+                本地模型
+            </button>
+</div>
+<!-- Connection Configuration Card -->
+<section class="bg-surface-container-low rounded-xl p-md border border-surface-variant space-y-5 shadow-sm">
+<div class="flex items-center gap-2 border-b border-surface-variant pb-3">
+<span class="material-symbols-outlined text-primary">api</span>
+<h3 class="text-title-lg font-title-lg text-on-surface">连接配置</h3>
+</div>
+<!-- API Key -->
+<div class="space-y-2">
+<label class="text-label-mono font-label-mono text-on-surface-variant uppercase tracking-wider flex justify-between items-center">
+                    API 密钥
+                    <span class="text-[10px] bg-tertiary-container text-on-tertiary-container px-2 py-0.5 rounded-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">lock</span>
+                        Android Keystore 加密
+                    </span>
+</label>
+<div class="relative">
+<input class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-code-block font-code-block text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary font-mono tracking-widest" placeholder="输入您的 API Key" type="password" value="sk-xxxxxxxxxxxxxxxxxxxxxxxx"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">visibility_off</span>
+</button>
+</div>
+</div>
+<!-- Base URL -->
+<div class="space-y-2">
+<label class="text-label-mono font-label-mono text-on-surface-variant uppercase tracking-wider">基础 URL (Base URL)</label>
+<input class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-body-md font-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary" type="text" value="https://api.openai.com/v1"/>
+</div>
+<!-- Model Selection -->
+<div class="space-y-2">
+<label class="text-label-mono font-label-mono text-on-surface-variant uppercase tracking-wider">模型选择</label>
+<div class="relative">
+<select class="w-full bg-surface border border-outline-variant rounded-lg px-4 py-3 text-body-md font-body-md text-on-surface appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+<option value="gpt-4o">gpt-4o (推荐)</option>
+<option value="gpt-4-turbo">gpt-4-turbo</option>
+<option value="qwen-2.5">qwen-2.5-72b-instruct</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</section>
+<!-- Agent Behavior Card -->
+<section class="bg-surface-container-low rounded-xl p-md border border-surface-variant space-y-5 shadow-sm">
+<div class="flex items-center gap-2 border-b border-surface-variant pb-3">
+<span class="material-symbols-outlined text-primary">smart_toy</span>
+<h3 class="text-title-lg font-title-lg text-on-surface">代理行为参数 (KISS Loop)</h3>
+</div>
+<!-- Token Budget -->
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-label-mono font-label-mono text-on-surface-variant uppercase tracking-wider">上下文 Token 预算</label>
+<span class="text-code-block font-code-block text-primary bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded-sm">8192 Tokens</span>
+</div>
+<input class="w-full" max="128000" min="1024" step="1024" type="range" value="8192"/>
+<div class="flex justify-between text-[11px] text-outline font-label-mono">
+<span>1K</span>
+<span>32K</span>
+<span>128K</span>
+</div>
+</div>
+<!-- Max Loops -->
+<div class="space-y-3 pt-2">
+<div class="flex justify-between items-center">
+<label class="text-label-mono font-label-mono text-on-surface-variant uppercase tracking-wider">最大推理循环次数 (Max Loops)</label>
+<span class="text-code-block font-code-block text-primary bg-primary-fixed text-on-primary-fixed px-2 py-1 rounded-sm">8 次</span>
+</div>
+<input class="w-full" max="20" min="1" step="1" type="range" value="8"/>
+<div class="flex justify-between text-[11px] text-outline font-label-mono">
+<span>1</span>
+<span>10</span>
+<span>20</span>
+</div>
+</div>
+</section>
+<!-- Security & Policy Card -->
+<section class="bg-surface-container-low rounded-xl p-md border border-surface-variant space-y-4 shadow-sm">
+<div class="flex items-center gap-2 border-b border-surface-variant pb-3">
+<span class="material-symbols-outlined text-risk-high">policy</span>
+<h3 class="text-title-lg font-title-lg text-on-surface">安全策略</h3>
+</div>
+<div class="flex items-center justify-between py-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="text-body-lg font-body-lg text-on-surface font-medium">允许显式数据出站</span>
+<span class="material-symbols-outlined text-[16px] text-outline" title="允许代理向云端模型发送数据进行推理">info</span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant">授权 Waku 将本地状态数据发送至云端提供商进行任务推理。</p>
+</div>
+<!-- Toggle Switch -->
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 top-0 right-0 border-primary" id="egress-toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-primary cursor-pointer" for="egress-toggle"></label>
+</div>
+</div>
+</section>
+<div class="pt-4 flex justify-end">
+<button class="bg-primary text-on-primary px-6 py-2 rounded-full text-title-md font-title-md hover:opacity-90 transition-opacity flex items-center gap-2 shadow-md">
+<span class="material-symbols-outlined text-[20px]">save</span>
+                保存配置
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile py-2 shadow-[0_-1px_3px_rgba(0,0,0,0.05)] pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all p-2 rounded-xl group w-16" href="#">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="chat">chat</span>
+<span class="text-label-mono font-label-mono text-[10px]">Chat</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all p-2 rounded-xl group w-16" href="#">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="history">history</span>
+<span class="text-label-mono font-label-mono text-[10px]">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all p-2 rounded-xl group w-16" href="#">
+<span class="material-symbols-outlined mb-1 group-hover:scale-110 transition-transform" data-icon="database">database</span>
+<span class="text-label-mono font-label-mono text-[10px]">Memory</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl px-4 py-1.5 w-16 scale-95 origin-bottom transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-label-mono font-label-mono text-[10px] font-bold">Settings</span>
+</a>
+</nav>
+<style>
+        /* iOS Safe Area Padding for Bottom Nav */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .pb-safe {
+                padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+            }
+        }
+    </style>
+</body></html>

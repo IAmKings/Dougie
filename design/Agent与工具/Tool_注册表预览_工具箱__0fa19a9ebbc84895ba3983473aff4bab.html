@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku - 工具箱 (Tool Registry)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#6ef7f6",
+                        "status-thinking": "#566ab2",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-primary-fixed": "#001550",
+                        "on-surface": "#191c1c",
+                        "on-surface-variant": "#444651",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#eff1f0",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "outline": "#757682",
+                        "status-completed": "#2E7D32",
+                        "primary": "#3d5198",
+                        "on-primary-container": "#f0f0ff",
+                        "on-error": "#ffffff",
+                        "surface-container": "#edeeed",
+                        "surface-variant": "#e1e3e2",
+                        "surface": "#f8faf9",
+                        "on-background": "#191c1c",
+                        "status-executing": "#FFB300",
+                        "background": "#f8faf9",
+                        "risk-high": "#BA1A1A",
+                        "error": "#ba1a1a",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "secondary-fixed-dim": "#4cdada",
+                        "primary-fixed": "#dce1ff",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "on-secondary-fixed": "#002020",
+                        "surface-container-high": "#e7e8e8",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "surface-bright": "#f8faf9",
+                        "secondary-fixed": "#6ef7f6",
+                        "surface-dim": "#d9dada",
+                        "surface-container-low": "#f2f4f3",
+                        "tertiary": "#3d5a67",
+                        "inverse-surface": "#2e3131",
+                        "secondary": "#006a6a",
+                        "tertiary-fixed": "#c9e7f7",
+                        "primary-container": "#566ab2",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "surface-tint": "#465aa1",
+                        "on-secondary-container": "#007070",
+                        "error-container": "#ffdad6",
+                        "status-failed": "#D32F2F",
+                        "terminal-bg": "#0D0F0F",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-container": "#e2f4ff",
+                        "inverse-primary": "#b6c4ff",
+                        "tertiary-container": "#557280",
+                        "on-tertiary": "#ffffff",
+                        "outline-variant": "#c5c5d2",
+                        "surface-container-highest": "#e1e3e2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "margin-tablet": "24px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "xs": "4px",
+                        "baseline": "8px"
+                    },
+                    "fontFamily": {
+                        "title-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "title-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .doge-bg {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.03"><path d="M50 10 C30 10 15 30 15 50 C15 70 30 90 50 90 C70 90 85 70 85 50 C85 30 70 10 50 10 Z" fill="none" stroke="%23566ab2" stroke-width="2"/><path d="M30 40 Q40 45 50 40 Q60 45 70 40" fill="none" stroke="%23566ab2" stroke-width="2"/><circle cx="35" cy="45" r="3" fill="%23566ab2"/><circle cx="65" cy="45" r="3" fill="%23566ab2"/><path d="M45 60 Q50 65 55 60" fill="none" stroke="%23566ab2" stroke-width="2"/></svg>');
+            background-repeat: repeat;
+            background-size: 150px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased doge-bg">
+<!-- TopAppBar -->
+<header class="bg-surface w-full top-0 z-10 sticky shadow-sm">
+<div class="flex justify-between items-center px-margin-mobile w-full h-16 max-w-7xl mx-auto">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">build_circle</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">工具箱</h1>
+</div>
+<div class="flex items-center gap-sm bg-surface-container rounded-full px-sm py-xs">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] ml-xs">search</span>
+<input class="bg-transparent border-none text-body-md text-on-surface focus:ring-0 w-32 md:w-64 placeholder-on-surface-variant" placeholder="Search tools..." type="text"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow w-full max-w-7xl mx-auto px-margin-mobile py-lg pb-32">
+<!-- Filter Controls -->
+<div class="flex flex-wrap items-center gap-sm mb-lg">
+<span class="font-title-md text-title-md text-on-surface-variant mr-xs">Filter by:</span>
+<!-- Risk Levels -->
+<button class="px-md py-xs rounded-full border border-outline-variant text-body-md text-on-surface hover:bg-surface-variant transition-colors flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-status-completed"></span>
+                L0 Safe
+            </button>
+<button class="px-md py-xs rounded-full border border-outline-variant text-body-md text-on-surface hover:bg-surface-variant transition-colors flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-status-executing"></span>
+                L1/L2 Elev
+            </button>
+<button class="px-md py-xs rounded-full border border-error text-body-md text-error bg-error-container/30 hover:bg-error-container/50 transition-colors flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-risk-high"></span>
+                L3 Critical
+            </button>
+<div class="h-6 w-px bg-outline-variant mx-xs hidden md:block"></div>
+<!-- Channels -->
+<button class="px-md py-xs rounded-full bg-secondary-container text-on-secondary-container text-body-md font-medium flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+                Play Channel
+            </button>
+<button class="px-md py-xs rounded-full border border-outline-variant text-body-md text-on-surface hover:bg-surface-variant transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+                Sideload
+            </button>
+</div>
+<!-- Tool Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+<!-- Tool Card 1 (L0 - Play) -->
+<div class="bg-surface-container-low rounded-xl p-md border border-outline-variant hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-sm group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-primary-container/20 to-transparent rounded-bl-full pointer-events-none"></div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">event</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">CalendarTool</h3>
+<span class="font-label-mono text-label-mono text-on-surface-variant">com.waku.tools.calendar</span>
+</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs line-clamp-2">Reads current user events and schedule information for context awareness.</p>
+<div class="mt-auto pt-sm flex flex-wrap gap-xs items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-status-completed/20 text-status-completed flex items-center gap-1 border border-status-completed/30">
+                        L0 Safe
+                    </span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-secondary-container/50 text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">verified</span> Play
+                    </span>
+</div>
+<div class="mt-xs bg-surface-container p-xs rounded border border-outline-variant/50">
+<p class="font-label-mono text-label-mono text-[10px] text-on-surface-variant break-all">Req: READ_CALENDAR</p>
+</div>
+</div>
+<!-- Tool Card 2 (L3 - Play) -->
+<div class="bg-surface-container-low rounded-xl p-md border border-risk-high/30 hover:border-risk-high/60 transition-colors cursor-pointer flex flex-col gap-sm group relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-error-container/40 to-transparent rounded-bl-full pointer-events-none"></div>
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-error-container flex items-center justify-center text-risk-high group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[24px]">touch_app</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">TapSwipeTool</h3>
+<span class="font-label-mono text-label-mono text-on-surface-variant">com.waku.tools.accessibility</span>
+</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs line-clamp-2">Executes hardware-level touch gestures and interactions on screen.</p>
+<div class="mt-auto pt-sm flex flex-wrap gap-xs items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-risk-high/20 text-risk-high flex items-center gap-1 border border-risk-high/30">
+<span class="material-symbols-outlined text-[12px]">warning</span> L3 Critical
+                    </span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-secondary-container/50 text-on-secondary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">verified</span> Play
+                    </span>
+</div>
+<div class="mt-xs bg-surface-container p-xs rounded border border-outline-variant/50">
+<p class="font-label-mono text-label-mono text-[10px] text-on-surface-variant break-all">Req: BIND_ACCESSIBILITY_SERVICE</p>
+</div>
+</div>
+<!-- Tool Card 3 (L1 - Sideload) -->
+<div class="bg-surface-container-low rounded-xl p-md border border-outline-variant hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-sm group relative overflow-hidden">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">battery_charging_full</span>
+</div>
+<div>
+<h3 class="font-title-md text-title-md text-on-surface">DeviceBatteryTool</h3>
+<span class="font-label-mono text-label-mono text-on-surface-variant">local.sideload.battery</span>
+</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs line-clamp-2">Monitors device battery state to prevent intensive agent operations during low power.</p>
+<div class="mt-auto pt-sm flex flex-wrap gap-xs items-center">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-status-executing/20 text-status-executing flex items-center gap-1 border border-status-executing/30">
+                        L1 Elev
+                    </span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-surface-container-high text-on-surface-variant flex items-center gap-1 border border-outline-variant">
+<span class="material-symbols-outlined text-[12px]">file_download</span> Sideload
+                    </span>
+</div>
+<div class="mt-xs bg-surface-container p-xs rounded border border-outline-variant/50">
+<p class="font-label-mono text-label-mono text-[10px] text-on-surface-variant break-all">Req: BATTERY_STATS</p>
+</div>
+</div>
+</div>
+<!-- Detail View Overlay (Hidden by default, shown for demo purposes) -->
+<div class="fixed inset-0 z-50 bg-on-surface/50 hidden items-end sm:items-center justify-center backdrop-blur-sm" id="detail-modal">
+<div class="bg-surface w-full sm:w-[500px] max-h-[795px] sm:max-h-[707px] rounded-t-xl sm:rounded-xl shadow-xl flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+<!-- Modal Header -->
+<div class="px-md py-sm border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-error-container flex items-center justify-center text-risk-high">
+<span class="material-symbols-outlined text-[18px]">touch_app</span>
+</div>
+<h2 class="font-title-lg text-title-lg text-on-surface">TapSwipeTool Details</h2>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="document.getElementById('detail-modal').style.display='none'">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body -->
+<div class="p-md overflow-y-auto flex-grow flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<span class="px-3 py-1 rounded text-xs font-bold uppercase tracking-wide bg-risk-high text-on-error flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> L3 Critical Risk
+                        </span>
+<span class="text-label-mono text-on-surface-variant">com.waku.tools.accessibility</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface">This tool allows the agent to synthesize raw touch events. It requires explicit user authorization via the Policy Engine before execution.</p>
+<div>
+<h4 class="font-title-md text-title-md text-on-surface mb-xs">JSON Schema Input</h4>
+<div class="bg-terminal-bg rounded-lg p-sm border border-outline-variant/30 overflow-x-auto">
+<pre class="font-code-block text-code-block text-primary-fixed-dim">{
+  "name": "tap",
+  "description": "Tap at (x,y)",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "x": {
+        "type": "integer",
+        "description": "X coordinate"
+      },
+      "y": {
+        "type": "integer",
+        "description": "Y coordinate"
+      }
+    },
+    "required": ["x", "y"]
+  }
+}
+</pre>
+</div>
+</div>
+</div>
+<!-- Modal Footer -->
+<div class="p-md border-t border-outline-variant bg-surface-container-lowest flex justify-end gap-sm">
+<button class="px-lg py-sm rounded border border-outline text-on-surface font-title-md hover:bg-surface-variant transition-colors" onclick="document.getElementById('detail-modal').style.display='none'">Close</button>
+<button class="px-lg py-sm rounded bg-primary text-on-primary font-title-md hover:bg-surface-tint transition-colors">Edit Policy</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 pb-safe px-2 bg-surface-container-low dark:bg-surface-container-low border-t-0 shadow-[0_-1px_3px_rgba(0,0,0,0.05)] z-40 md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mb-1">account_tree</span>
+<span class="font-label-mono text-label-mono">Topology</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container dark:text-on-primary-container rounded-xl px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="font-label-mono text-label-mono">Agents</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mb-1">terminal</span>
+<span class="font-label-mono text-label-mono">Logs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mb-1">gavel</span>
+<span class="font-label-mono text-label-mono">Policy</span>
+</a>
+</nav>
+<!-- Demo Script to trigger modal -->
+<script>
+        // Quick hack to make tool cards open the detail modal for demonstration
+        document.querySelectorAll('.grid > div').forEach(card => {
+            card.addEventListener('click', () => {
+                const modal = document.getElementById('detail-modal');
+                modal.style.display = 'flex';
+            });
+        });
+    </script>
+</body></html>

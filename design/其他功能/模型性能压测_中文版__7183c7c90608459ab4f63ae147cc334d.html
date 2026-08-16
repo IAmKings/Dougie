@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>模型性能压测</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "error": "#ba1a1a",
+                      "surface-tint": "#465aa1",
+                      "on-secondary": "#ffffff",
+                      "tertiary-fixed": "#c9e7f7",
+                      "status-thinking": "#566ab2",
+                      "on-surface": "#191c1c",
+                      "on-primary-fixed": "#001550",
+                      "surface-container-highest": "#e1e3e2",
+                      "status-completed": "#2E7D32",
+                      "on-secondary-container": "#007070",
+                      "on-tertiary-fixed": "#001f2a",
+                      "inverse-primary": "#b6c4ff",
+                      "status-executing": "#FFB300",
+                      "primary": "#3d5198",
+                      "on-primary-fixed-variant": "#2d4288",
+                      "surface-container-high": "#e7e8e8",
+                      "secondary-fixed-dim": "#4cdada",
+                      "surface-variant": "#e1e3e2",
+                      "on-error-container": "#93000a",
+                      "on-tertiary": "#ffffff",
+                      "secondary": "#006a6a",
+                      "on-secondary-fixed": "#002020",
+                      "terminal-bg": "#0D0F0F",
+                      "on-primary": "#ffffff",
+                      "inverse-on-surface": "#eff1f0",
+                      "secondary-fixed": "#6ef7f6",
+                      "status-failed": "#D32F2F",
+                      "risk-high": "#BA1A1A",
+                      "on-surface-variant": "#444651",
+                      "surface-dim": "#d9dada",
+                      "surface": "#f8faf9",
+                      "primary-fixed-dim": "#b6c4ff",
+                      "secondary-container": "#6ef7f6",
+                      "surface-container": "#edeeed",
+                      "outline-variant": "#c5c5d2",
+                      "tertiary-fixed-dim": "#adcbda",
+                      "on-error": "#ffffff",
+                      "on-primary-container": "#f0f0ff",
+                      "on-background": "#191c1c",
+                      "primary-container": "#566ab2",
+                      "on-secondary-fixed-variant": "#004f50",
+                      "tertiary-container": "#557280",
+                      "on-tertiary-container": "#e2f4ff",
+                      "outline": "#757682",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f8faf9",
+                      "background": "#f8faf9",
+                      "primary-fixed": "#dce1ff",
+                      "tertiary": "#3d5a67",
+                      "inverse-surface": "#2e3131",
+                      "surface-container-low": "#f2f4f3",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-fixed-variant": "#2e4b57"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "baseline": "8px",
+                      "margin-tablet": "24px",
+                      "lg": "24px",
+                      "xs": "4px",
+                      "sm": "8px",
+                      "xl": "32px",
+                      "gutter": "16px",
+                      "md": "16px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "title-lg": [
+                              "Inter"
+                      ],
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "code-block": [
+                              "JetBrains Mono"
+                      ],
+                      "title-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-lg": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.5px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "code-block": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "title-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+      </style>
+</head>
+<body class="font-body-md text-body-md bg-surface min-h-screen pb-24 pt-16">
+<!-- Background Watermark -->
+<div class="fixed inset-0 pointer-events-none flex items-center justify-center opacity-[0.03] z-0 overflow-hidden">
+<img alt="Doge Watermark" class="w-[150%] max-w-none opacity-50 blur-[2px] rotate-[-15deg]" src="https://lh3.googleusercontent.com/aida/AP1WRLtBWHRs-hyG6bAFQpHAgpcCtsgkxh9K3CZjphfM20Ll8owQ95SDkLnadgb4G4PWua_Uz3MNPSlvuVdblmKUHHwzm3IHV99DCvBhkAToGBHboSR2HBGKaYsoQrWtzM8u8lVbVxA1V2n3-sAMRBaMeejT3VQPPb03bptdZyvqjtDVRvnjDYl8SSwPkcZtvj2ALSkxHAlxlaMj8asMjPyv1UVQ12KS4fTWGtE-Wc7l-cMsCK-7oEn_zLPJKA"/>
+</div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface dark:bg-surface-container-high z-50 bg-surface-container-low dark:bg-surface-container-highest flat no shadows">
+<div class="flex items-center justify-between px-md w-full h-16">
+<button class="text-on-surface-variant hover:bg-surface-variant/50 transition-colors p-2 rounded-full active:opacity-70 flex items-center justify-center">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">模型性能压测</h1>
+<button class="text-on-surface-variant hover:bg-surface-variant/50 transition-colors p-2 rounded-full active:opacity-70 flex items-center justify-center">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</header>
+<main class="relative z-10 px-margin-mobile flex flex-col gap-lg max-w-2xl mx-auto w-full">
+<!-- Model Selector -->
+<section class="bg-surface-container-low rounded-xl p-md shadow-sm border border-outline-variant/30 mt-sm">
+<h2 class="font-title-md text-title-md text-on-surface mb-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">memory</span> 模型配置
+            </h2>
+<div class="flex flex-col gap-4">
+<div>
+<label class="font-label-mono text-label-mono text-on-surface-variant block mb-1">Target Model</label>
+<select class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 font-body-md text-on-surface focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none">
+<option>Qwen3-0.6B (Local)</option>
+<option>DeepSeek-Coder-1.3B</option>
+<option>Llama-3-8B-Instruct</option>
+</select>
+</div>
+<div>
+<label class="font-label-mono text-label-mono text-on-surface-variant block mb-2">Quantization Level</label>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary-container text-on-primary-container font-title-md text-title-md py-2 px-3 rounded-lg border border-primary text-center">
+                            Q4_K_M (推荐)
+                        </button>
+<button class="flex-1 bg-surface border border-outline-variant text-on-surface-variant font-title-md text-title-md py-2 px-3 rounded-lg text-center hover:bg-surface-container transition-colors">
+                            Q8_0 (全精度)
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Real-time Metrics Dashboard -->
+<section class="grid grid-cols-2 gap-sm">
+<div class="bg-surface-container-low rounded-xl p-md flex flex-col gap-1 border border-outline-variant/30">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">speed</span>
+<span class="font-label-mono text-label-mono">推理速度 (Tokens/s)</span>
+</div>
+<div class="font-headline-lg text-headline-lg font-label-mono text-on-surface flex items-baseline gap-1">
+                    0.0 <span class="font-label-mono text-label-mono text-outline">/ Peak 42.1</span>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-md flex flex-col gap-1 border border-outline-variant/30">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">timer</span>
+<span class="font-label-mono text-label-mono">首字延迟 TTFT (ms)</span>
+</div>
+<div class="font-headline-lg text-headline-lg font-label-mono text-on-surface">
+                    0
+                </div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-md flex flex-col gap-1 border border-outline-variant/30">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">memory_alt</span>
+<span class="font-label-mono text-label-mono">内存占用 (RAM)</span>
+</div>
+<div class="font-headline-lg text-headline-lg font-label-mono text-on-surface flex items-baseline gap-1">
+                    0<span class="font-title-md text-title-md">MB</span> <span class="font-label-mono text-label-mono text-outline">/ 12GB</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1 mt-2">
+<div class="bg-primary h-1 rounded-full w-[0%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-xl p-md flex flex-col gap-1 border border-outline-variant/30">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">device_thermostat</span>
+<span class="font-label-mono text-label-mono">电池温度</span>
+</div>
+<div class="font-headline-lg text-headline-lg font-label-mono text-on-surface flex items-center gap-2">
+                    32°C <span class="material-symbols-outlined text-status-completed text-[20px] fill">check_circle</span>
+</div>
+</div>
+</section>
+<!-- Benchmark Control -->
+<section class="flex flex-col gap-3">
+<button class="w-full bg-primary text-on-primary font-title-lg text-title-lg py-4 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-sm">
+<span class="material-symbols-outlined">play_arrow</span>
+                开始压力测试
+            </button>
+<div class="flex items-center justify-between bg-surface-container px-md py-3 rounded-lg border border-outline-variant/30 cursor-pointer active:bg-surface-variant transition-colors">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">dataset</span>
+<span class="font-title-md text-title-md text-on-surface">选择测试集</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="font-body-md text-body-md text-on-surface-variant">General Knowledge</span>
+<span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Hardware Info Footer -->
+<footer class="mt-auto pt-lg pb-md flex flex-col items-center justify-center gap-1 opacity-70">
+<div class="font-label-mono text-label-mono text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">smartphone</span> Snapdragon 8 Gen 3 | Hexagon NPU Available
+            </div>
+<div class="font-label-mono text-label-mono text-on-surface-variant">
+                Waku-Android Sideload v1.2.0-beta
+            </div>
+</footer>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 border-t border-outline-variant dark:border-outline bg-surface dark:bg-surface-container-low z-50 flat no shadows bg-surface-container-low dark:bg-surface-container-highest">
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant dark:hover:bg-surface-container-high active:scale-95 transition-transform duration-150 rounded-xl">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-label-mono text-label-mono mt-1">Tasks</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant dark:hover:bg-surface-container-high active:scale-95 transition-transform duration-150 rounded-xl">
+<span class="material-symbols-outlined">database</span>
+<span class="font-label-mono text-label-mono mt-1">Memory</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl p-2 active:scale-95 transition-transform duration-150 hover:bg-surface-variant dark:hover:bg-surface-container-high">
+<span class="material-symbols-outlined fill">build</span>
+<span class="font-label-mono text-label-mono mt-1">Tools</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant dark:hover:bg-surface-container-high active:scale-95 transition-transform duration-150 rounded-xl">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-mono text-label-mono mt-1">Settings</span>
+</button>
+</nav>
+</body></html>

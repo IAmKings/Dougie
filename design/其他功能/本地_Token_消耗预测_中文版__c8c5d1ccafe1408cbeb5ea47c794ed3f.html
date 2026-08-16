@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Token Budget Estimator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "on-tertiary-container": "#e2f4ff",
+                        "surface-container-high": "#e7e8e8",
+                        "outline": "#757682",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-container-highest": "#e1e3e2",
+                        "status-completed": "#2E7D32",
+                        "status-thinking": "#566ab2",
+                        "on-secondary-fixed": "#002020",
+                        "inverse-on-surface": "#eff1f0",
+                        "background": "#f8faf9",
+                        "on-surface-variant": "#444651",
+                        "surface-variant": "#e1e3e2",
+                        "tertiary-fixed": "#c9e7f7",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "surface-container-low": "#f2f4f3",
+                        "surface-bright": "#f8faf9",
+                        "inverse-surface": "#2e3131",
+                        "on-tertiary": "#ffffff",
+                        "secondary": "#006a6a",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1c",
+                        "primary-container": "#566ab2",
+                        "surface-dim": "#d9dada",
+                        "tertiary": "#3d5a67",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "inverse-primary": "#b6c4ff",
+                        "terminal-bg": "#0D0F0F",
+                        "on-primary": "#ffffff",
+                        "risk-high": "#BA1A1A",
+                        "secondary-container": "#6ef7f6",
+                        "status-failed": "#D32F2F",
+                        "surface-container": "#edeeed",
+                        "secondary-fixed": "#6ef7f6",
+                        "on-primary-container": "#f0f0ff",
+                        "tertiary-container": "#557280",
+                        "surface-tint": "#465aa1",
+                        "on-secondary-container": "#007070",
+                        "primary-fixed": "#dce1ff",
+                        "on-background": "#191c1c",
+                        "secondary-fixed-dim": "#4cdada",
+                        "outline-variant": "#c5c5d2",
+                        "on-primary-fixed": "#001550",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface": "#f8faf9",
+                        "primary": "#3d5198",
+                        "status-executing": "#FFB300",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#001f2a",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "md": "16px",
+                        "baseline": "8px",
+                        "margin-mobile": "16px",
+                        "sm": "8px",
+                        "gutter": "16px",
+                        "margin-tablet": "24px",
+                        "xs": "4px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "title-md": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "title-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .circular-progress {
+            transform: rotate(-90deg);
+        }
+        .circular-progress-bg {
+            stroke: #e1e3e2; /* surface-variant */
+            stroke-width: 12;
+            fill: none;
+        }
+        .circular-progress-value {
+            stroke: #566ab2; /* primary-container / tech-blue highlight */
+            stroke-width: 12;
+            fill: none;
+            stroke-dasharray: 440; /* 2 * pi * r (r=70) ~= 440 */
+            stroke-dashoffset: 308; /* 440 - (440 * (2456/8192)) ~= 308 */
+            transition: stroke-dashoffset 1s ease-in-out;
+            stroke-linecap: round;
+        }
+        
+        /* Segmented bar classes */
+        .bar-soul { background-color: #3d5198; } /* primary */
+        .bar-input { background-color: #006a6a; } /* secondary */
+        .bar-memory { background-color: #3d5a67; } /* tertiary */
+        .bar-tools { background-color: #ba1a1a; } /* error / truncation target */
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim font-title-lg text-title-lg text-primary dark:text-primary-fixed-dim docked full-width top-0 bg-surface dark:bg-surface-dim flat no shadows flex justify-between items-center px-margin-mobile w-full h-16 sticky z-40">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-full p-2 cursor-pointer transition-colors duration-200 ease-in-out" data-icon="menu">menu</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Token 预算</h1>
+</div>
+<span class="material-symbols-outlined hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-full p-2 cursor-pointer transition-colors duration-200 ease-in-out" data-icon="settings">settings</span>
+</header>
+<main class="px-margin-mobile md:px-margin-tablet py-lg max-w-3xl mx-auto space-y-lg">
+<!-- Overview Section: Circular Progress -->
+<section class="bg-surface-container-low rounded-xl p-md flex flex-col items-center shadow-sm">
+<h2 class="font-title-md text-title-md text-on-surface mb-sm self-start">使用概览</h2>
+<div class="relative w-48 h-48 flex items-center justify-center">
+<svg class="circular-progress w-full h-full" viewbox="0 0 160 160">
+<circle class="circular-progress-bg" cx="80" cy="80" r="70"></circle>
+<circle class="circular-progress-value" cx="80" cy="80" r="70"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-headline-lg text-headline-lg text-primary">2,456</span>
+<span class="font-label-mono text-label-mono text-on-surface-variant">/ 8,192 MAX</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-sm text-center">当前占用上下文窗口的 30%</p>
+</section>
+<!-- Breakdown Section: Segmented Bar & Details -->
+<section class="bg-surface-container-low rounded-xl p-md shadow-sm space-y-md">
+<h2 class="font-title-md text-title-md text-on-surface">上下文分配</h2>
+<!-- Visual Bar -->
+<div class="h-6 w-full rounded-full overflow-hidden flex">
+<div class="bar-soul h-full" style="width: 25%;" title="System SOUL"></div>
+<div class="bar-input h-full" style="width: 15%;" title="User Input"></div>
+<div class="bar-memory h-full" style="width: 40%;" title="Semantic Memory"></div>
+<div class="bar-tools h-full bg-opacity-50" style="width: 20%; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 20px);" title="Tool Results (Truncatable)"></div>
+</div>
+<!-- List of Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">
+<!-- SOUL -->
+<div class="bg-surface p-sm rounded-lg border-l-4 border-primary flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="psychology">psychology</span>
+<div>
+<p class="font-title-md text-title-md text-on-surface">系统 SOUL</p>
+<p class="font-label-mono text-label-mono text-on-surface-variant">固定 • 高优先级</p>
+</div>
+</div>
+<span class="font-code-block text-code-block text-on-surface">850 T</span>
+</div>
+<!-- Input -->
+<div class="bg-surface p-sm rounded-lg border-l-4 border-secondary flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="keyboard">keyboard</span>
+<div>
+<p class="font-title-md text-title-md text-on-surface">用户输入</p>
+<p class="font-label-mono text-label-mono text-on-surface-variant">当前轮次</p>
+</div>
+</div>
+<span class="font-code-block text-code-block text-on-surface">320 T</span>
+</div>
+<!-- Memory -->
+<div class="bg-surface p-sm rounded-lg border-l-4 border-tertiary flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary" data-icon="database">database</span>
+<div>
+<p class="font-title-md text-title-md text-on-surface">语义记忆</p>
+<p class="font-label-mono text-label-mono text-on-surface-variant">已排序事实</p>
+</div>
+</div>
+<span class="font-code-block text-code-block text-on-surface">1,024 T</span>
+</div>
+<!-- Tools -->
+<div class="bg-surface p-sm rounded-lg border-l-4 border-error flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-error" data-icon="terminal">terminal</span>
+<div>
+<p class="font-title-md text-title-md text-on-surface">工具返回结果</p>
+<p class="font-label-mono text-label-mono text-error">可截断 • 低优先级</p>
+</div>
+</div>
+<span class="font-code-block text-code-block text-on-surface">262 T</span>
+</div>
+</div>
+</section>
+<!-- Truncation Preview -->
+<section class="bg-error-container text-on-error-container rounded-xl p-md border border-error bg-opacity-20">
+<div class="flex items-start gap-sm mb-sm">
+<span class="material-symbols-outlined text-error" data-icon="content_cut">content_cut</span>
+<div>
+<h3 class="font-title-md text-title-md font-bold text-error">自动截断策略 (滑动窗口)</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">如果超出 8,192 限制，系统将优先丢弃最旧的工具调用结果和对话历史记录，以保证系统 SOUL 的完整性 (PRD §8.3)。</p>
+</div>
+</div>
+<div class="bg-surface p-sm rounded-lg mt-sm shadow-inner opacity-75">
+<p class="font-label-mono text-label-mono text-outline mb-xs uppercase tracking-wider">即将截断的条目预览:</p>
+<div class="font-code-block text-code-block text-on-surface-variant space-y-xs line-through decoration-error decoration-2">
+<p>&gt; [History] 昨天关于天气的提问 (120 Tokens)</p>
+<p>&gt; [Tool_Result] check_calendar_availability (80 Tokens)</p>
+</div>
+</div>
+</section>
+<!-- Actions -->
+<section class="flex flex-col sm:flex-row gap-sm justify-center pt-sm">
+<button class="bg-primary text-on-primary font-title-md text-title-md px-lg py-sm rounded-full hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+                模拟下一轮
+            </button>
+<button class="bg-surface-variant text-on-surface-variant font-title-md text-title-md px-lg py-sm rounded-full hover:bg-outline-variant transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="delete_sweep">delete_sweep</span>
+                清除上下文缓存
+            </button>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container-low dark:bg-inverse-surface font-label-mono text-label-mono text-primary dark:text-primary-fixed-dim docked full-width bottom-0 rounded-t-xl bg-surface-container-low dark:bg-inverse-surface flat no shadows fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-2 hidden md:hidden">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-on-surface-variant scale-95 transition-transform duration-150 p-1 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="terminal">terminal</span>
+<span>Tasks</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-on-surface-variant scale-95 transition-transform duration-150 p-1 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="database">database</span>
+<span>Memory</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-secondary-fixed rounded-full px-4 py-1 scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="toll" data-weight="fill" style="font-variation-settings: 'FILL' 1;">toll</span>
+<span>Tokens</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-on-surface-variant scale-95 transition-transform duration-150 p-1 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="psychology">psychology</span>
+<span>SOUL</span>
+</div>
+</nav>
+<!-- BottomNavBar for Mobile (Visible on small screens) -->
+<nav class="md:hidden bg-surface-container-low dark:bg-inverse-surface font-label-mono text-label-mono text-primary dark:text-primary-fixed-dim docked full-width bottom-0 rounded-t-xl bg-surface-container-low dark:bg-inverse-surface flat no shadows fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-2">
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-on-surface-variant scale-95 transition-transform duration-150 p-1 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="terminal">terminal</span>
+<span>Tasks</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-on-surface-variant scale-95 transition-transform duration-150 p-1 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="database">database</span>
+<span>Memory</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-container text-on-secondary-container dark:text-secondary-fixed rounded-full px-4 py-1 scale-95 transition-transform duration-150 cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="toll" data-weight="fill" style="font-variation-settings: 'FILL' 1;">toll</span>
+<span>Tokens</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-on-surface-variant scale-95 transition-transform duration-150 p-1 rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="psychology">psychology</span>
+<span>SOUL</span>
+</div>
+</nav>
+</body></html>

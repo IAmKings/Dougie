@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Waku-Android Chat Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c5c5d2",
+                        "on-primary-fixed-variant": "#2d4288",
+                        "risk-high": "#BA1A1A",
+                        "inverse-on-surface": "#eff1f0",
+                        "secondary-fixed": "#6ef7f6",
+                        "on-secondary-fixed-variant": "#004f50",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#006a6a",
+                        "tertiary-fixed": "#c9e7f7",
+                        "inverse-primary": "#b6c4ff",
+                        "error-container": "#ffdad6",
+                        "primary": "#3d5198",
+                        "status-failed": "#D32F2F",
+                        "surface-container": "#edeeed",
+                        "tertiary-container": "#557280",
+                        "surface": "#f8faf9",
+                        "surface-bright": "#f8faf9",
+                        "on-tertiary-fixed-variant": "#2e4b57",
+                        "surface-container-high": "#e7e8e8",
+                        "on-background": "#191c1c",
+                        "on-tertiary-container": "#e2f4ff",
+                        "inverse-surface": "#2e3131",
+                        "tertiary-fixed-dim": "#adcbda",
+                        "surface-dim": "#d9dada",
+                        "on-secondary": "#ffffff",
+                        "status-executing": "#FFB300",
+                        "background": "#f8faf9",
+                        "secondary-container": "#6ef7f6",
+                        "surface-container-highest": "#e1e3e2",
+                        "status-thinking": "#566ab2",
+                        "error": "#ba1a1a",
+                        "on-primary-container": "#f0f0ff",
+                        "on-surface-variant": "#444651",
+                        "primary-fixed": "#dce1ff",
+                        "primary-container": "#566ab2",
+                        "on-secondary-container": "#007070",
+                        "secondary-fixed-dim": "#4cdada",
+                        "surface-tint": "#465aa1",
+                        "terminal-bg": "#0D0F0F",
+                        "on-tertiary-fixed": "#001f2a",
+                        "outline": "#757682",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1c",
+                        "status-completed": "#2E7D32",
+                        "tertiary": "#3d5a67",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f2f4f3",
+                        "on-secondary-fixed": "#002020",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "surface-variant": "#e1e3e2",
+                        "on-primary-fixed": "#001550",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "baseline": "8px",
+                        "margin-tablet": "24px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "code-block": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-mono": ["JetBrains Mono"],
+                        "title-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "title-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "code-block": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "label-mono": ["12px", { "lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500" }],
+                        "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        @keyframes breathing {
+            0%, 100% { opacity: 0.5; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        .breathing-chip {
+            animation: breathing 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="bg-surface-container dark:bg-surface-container-high flex justify-between items-center w-full px-4 md:px-8 py-3 sticky top-0 z-40 transition-shadow">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-surface-container-lowest border border-outline-variant">
+<img alt="Doge AI icon" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLsfeCFjMe2MCzuyfwskhn77Xcskryi8z372e55d8M61kAXJun53Y54LfMBxsBY-xQ7yA71axFqTkbF7PRy_VN8Sj0Q-9Ro2YLYGZMsWJ5V-1a2Wi1xUbJv_xPZUbZ6O5Oh6PqbGVg_dm1J58INUGKvAXGvyS_FkBNri60xxoqcWHX6Zjct7Qkq5YmwYkqsft7gnk5zPAt56fOHtS3HWDiVjwa0LQ-iJY8COjgwElgV4jFZopXgf65FgI9Y"/>
+</div>
+<div class="flex flex-col">
+<h1 class="text-headline-md font-headline-md font-extrabold text-primary dark:text-inverse-primary tracking-tight">Waku 对话 - AI 交互</h1>
+<span class="text-label-mono font-label-mono text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">psychology</span> 灵魂: 默认 | <span class="material-symbols-outlined text-[14px] ml-1">lock</span> 出境策略: 仅本地
+                 | <span class="material-symbols-outlined text-[14px] ml-1">data_usage</span> 上下文: 12% (1.2k/10k)</span>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-primary dark:text-inverse-primary hover:bg-surface-variant dark:hover:bg-inverse-surface transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+</button>
+</header>
+<!-- Chat Feed Canvas -->
+<main class="flex-1 overflow-y-auto px-margin-mobile md:px-margin-tablet py-lg flex flex-col gap-lg pb-32">
+<!-- User Message -->
+<div class="flex justify-end w-full">
+<div class="bg-surface-container-lowest border border-primary text-on-surface rounded-2xl rounded-tr-sm px-md py-sm max-w-[85%] md:max-w-[70%] shadow-sm">
+<p class="font-body-lg text-body-lg">我现在手机还有多少电？</p>
+</div>
+</div><div class="flex items-center gap-sm ml-md mt-xs mb-sm">
+<div class="bg-surface-container-high px-2 py-0.5 rounded-md border border-outline-variant/30 flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-primary">route</span>
+<span class="text-[10px] font-label-mono text-on-surface-variant uppercase tracking-wider">意图: 查询设备状态 (98%)</span>
+</div>
+<div class="text-[10px] font-label-mono text-outline">识别源: 本地模型 (Qwen3-0.6B)</div>
+</div>
+<!-- Agent Grouping -->
+<div class="flex flex-col items-start w-full gap-sm">
+<!-- Agent Thinking Status -->
+<div class="flex items-center gap-xs pl-xs text-status-thinking font-label-mono text-label-mono breathing-chip">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>思考中... [KISS 循环 1]</span>
+</div>
+<!-- Tool Call Card (L0) -->
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-sm max-w-[90%] md:max-w-[75%] flex flex-col gap-xs w-full shadow-sm ml-md relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-completed"></div>
+<div class="flex items-center justify-between pl-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-status-completed text-[18px]">build</span>
+<span class="font-label-mono text-label-mono text-on-surface">调用 BatteryTool (耗时 0.2s)</span>
+</div>
+</div>
+<div class="bg-terminal-bg rounded-lg p-sm mt-xs overflow-x-auto border border-outline-variant/30 pl-md ml-sm">
+<code class="font-code-block text-code-block text-secondary-fixed">
+                        &gt; 正在执行 DeviceBatteryTool...<br/>
+                        result: { "batteryLevel": 63, "isCharging": false, "health": "GOOD" }
+                    </code>
+</div>
+<div class="pl-sm text-status-completed font-label-mono text-label-mono flex items-center gap-xs mt-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                    63%, charging: false
+                </div>
+</div>
+<!-- Agent Answer -->
+<div class="bg-surface-container text-on-surface rounded-2xl rounded-tl-sm px-md py-sm max-w-[85%] md:max-w-[70%] mt-xs shadow-sm ml-md">
+<p class="font-body-lg text-body-lg">你现在的手机电量是 63%，目前没有在充电。</p>
+</div><div class="flex items-center gap-xs ml-md mt-1 text-tertiary-container font-label-mono text-[11px] cursor-help hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">link</span>
+<span>引用自语义记忆：用户偏好实时电量监控</span>
+</div>
+</div>
+</main>
+<!-- Input Area -->
+<div class="fixed bottom-[72px] md:bottom-0 left-0 w-full bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 px-margin-mobile py-sm z-30">
+<div class="max-w-3xl mx-auto flex items-end gap-sm relative">
+<div class="flex-1 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all flex flex-col">
+<textarea class="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 font-body-lg text-body-lg text-on-surface placeholder-on-surface-variant max-h-32" placeholder="给 Waku 发消息..." rows="1"></textarea>
+<div class="flex justify-between items-center px-2 pb-2">
+<div class="flex items-center gap-2">
+<button aria-label="Microphone" class="p-2 text-on-surface-variant hover:text-primary hover:bg-primary-container/20 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined">mic</span>
+</button>
+<div class="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-md cursor-help group">
+<span class="material-symbols-outlined text-[14px] text-tertiary-container">memory</span>
+<span class="font-label-mono text-[10px] text-tertiary-container uppercase tracking-wider">记忆门控: 开启</span>
+</div>
+</div>
+<button aria-label="Send" class="p-2 bg-primary text-on-primary rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-margin-mobile py-2 bg-surface dark:bg-surface-dim md:hidden shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
+<!-- Chat (Active) -->
+<button class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary rounded-2xl px-4 py-1 hover:bg-surface-container-high transition-transform duration-200 active:scale-95 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="text-label-mono font-label-mono mt-1">对话</span>
+</button>
+<!-- Tasks -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high rounded-xl transition-all duration-200 active:scale-95 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">history</span>
+<span class="text-label-mono font-label-mono mt-1">任务</span>
+</button>
+<!-- Memory -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high rounded-xl transition-all duration-200 active:scale-95 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">database</span>
+<span class="text-label-mono font-label-mono mt-1">记忆</span>
+</button>
+<!-- Settings -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline p-2 hover:bg-surface-container-high rounded-xl transition-all duration-200 active:scale-95 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+<span class="text-label-mono font-label-mono mt-1">设置</span>
+</button>
+</nav>
+</body></html>
