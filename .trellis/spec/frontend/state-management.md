@@ -6,7 +6,7 @@
 
 Single source of truth is `TaskManager.task: StateFlow<AgentTask?>`. Compose collects it via `ChatViewModel.uiState`.
 
-Provider settings are a separate store: `PreferenceStore.settings: StateFlow<ProviderSettings>`. Settings form is local until **保存配置**; the next `submit` reads current `allowCloud` / key via lambdas on `EgressGateway` and `OpenAICompatibleProvider`.
+Provider settings are a separate store: `PreferenceStore.settings: StateFlow<ProviderSettings>`. Settings form is local until **保存配置**; the next `submit` reads current `allowCloud` / key via lambdas on `EgressGateway` and `OpenAICompatibleProvider`. `memoryEnabled` (default `true`) is toggled on the Memory screen via `PreferenceStore.setMemoryEnabled`; Settings **保存配置** must copy the current flag so it is not reset.
 
 ## Pattern
 

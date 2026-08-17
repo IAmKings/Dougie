@@ -10,6 +10,7 @@ data class AgentTask(
     val finalAnswer: String? = null,
     val lastError: String? = null,
     val streamingText: String? = null,
+    val retrievedMemories: List<MemoryEntry> = emptyList(),
 )
 
 enum class TaskStatus {

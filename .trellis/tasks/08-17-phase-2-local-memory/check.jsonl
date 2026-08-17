@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "Retrieve one fact; no embeddings"}
+{"file": ".trellis/tasks/08-17-phase-2-local-memory/prd.md", "reason": "Acceptance"}
+{"file": ".trellis/tasks/08-17-phase-2-local-memory/design.md", "reason": "Module boundaries"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Room not in core"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No memory dumps"}

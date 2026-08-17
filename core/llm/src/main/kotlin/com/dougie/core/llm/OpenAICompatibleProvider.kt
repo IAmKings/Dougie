@@ -118,7 +118,7 @@ class OpenAICompatibleProvider(
             add(
                 buildJsonObject {
                     put("role", "system")
-                    put("content", SYSTEM_PROMPT)
+                    put("content", systemPrompt(task))
                 },
             )
             add(
@@ -250,6 +250,12 @@ class OpenAICompatibleProvider(
         if (element == null || element is JsonNull) return ""
         if (element is JsonPrimitive) return element.content
         return element.toString()
+    }
+
+    private fun systemPrompt(task: AgentTask): String {
+        if (task.retrievedMemories.isEmpty()) return SYSTEM_PROMPT
+        val facts = task.retrievedMemories.joinToString(separator = "\n") { "- ${it.content}" }
+        return "$SYSTEM_PROMPT\n\nKnown facts:\n$facts"
     }
 
     companion object {

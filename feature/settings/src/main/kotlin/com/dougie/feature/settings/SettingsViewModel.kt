@@ -48,6 +48,7 @@ class SettingsViewModel(
                 model = current.model.trim().ifBlank { ProviderSettings.DEFAULT_MODEL },
                 apiKey = current.apiKey.trim(),
                 egressConsentAt = store.settings.value.egressConsentAt,
+                memoryEnabled = store.settings.value.memoryEnabled,
             ),
         )
         _form.update { store.settings.value.toForm().copy(saved = true) }

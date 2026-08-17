@@ -14,8 +14,8 @@ This directory contains guidelines for backend development. Fill in each file wi
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | `:core:*` JVM-pure, EgressGateway, `:tool:system` | Filled (Phase 1a) |
-| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
+| [Directory Structure](./directory-structure.md) | `:core:*` JVM-pure, `:core:memory`, `:data:memory` | Filled (Phase 2) |
+| [Database Guidelines](./database-guidelines.md) | SQLite FTS4 `memory_facts` | Filled (Phase 2) |
 | [Error Handling](./error-handling.md) | `UserFacingErrors` → Chat FAILED | Filled (Phase 1a) |
 | [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
 | [Logging Guidelines](./logging-guidelines.md) | No prompts/keys/HTTP bodies | Filled (Phase 1a) |

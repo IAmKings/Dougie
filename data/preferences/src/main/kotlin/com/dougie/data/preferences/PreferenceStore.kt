@@ -40,6 +40,7 @@ class PreferenceStore(context: Context) {
             .putString(KEY_BASE_URL, stored.baseUrl)
             .putString(KEY_MODEL, stored.model)
             .putString(KEY_API_KEY, stored.apiKey)
+            .putBoolean(KEY_MEMORY_ENABLED, stored.memoryEnabled)
             .apply {
                 if (stored.egressConsentAt != null) {
                     putLong(KEY_CONSENT_AT, stored.egressConsentAt)
@@ -49,6 +50,10 @@ class PreferenceStore(context: Context) {
             }
             .apply()
         _settings.value = stored
+    }
+
+    fun setMemoryEnabled(enabled: Boolean) {
+        save(settings.value.copy(memoryEnabled = enabled))
     }
 
     private fun read(): ProviderSettings {
@@ -61,6 +66,7 @@ class PreferenceStore(context: Context) {
                 ?: ProviderSettings.DEFAULT_MODEL,
             apiKey = prefs.getString(KEY_API_KEY, "").orEmpty(),
             egressConsentAt = consent?.takeIf { it > 0L },
+            memoryEnabled = prefs.getBoolean(KEY_MEMORY_ENABLED, true),
         )
     }
 
@@ -71,5 +77,6 @@ class PreferenceStore(context: Context) {
         const val KEY_MODEL = "model"
         const val KEY_API_KEY = "api_key"
         const val KEY_CONSENT_AT = "egress_consent_at"
+        const val KEY_MEMORY_ENABLED = "memory_enabled"
     }
 }

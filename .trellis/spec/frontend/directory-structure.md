@@ -19,6 +19,10 @@ feature/settings/src/main/kotlin/com/dougie/feature/settings/
   SettingsScreen.kt
   SettingsViewModel.kt
   DougieColors.kt
+feature/memory/src/main/kotlin/com/dougie/feature/memory/
+  MemoryScreen.kt
+  MemoryViewModel.kt
+  DougieColors.kt
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
@@ -30,13 +34,14 @@ app/src/main/kotlin/com/dougie/app/
 |--------|------|
 | `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping; navigate to settings |
 | `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore` |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + `DeviceBatteryTool` on `Dispatchers.Default`; Chat↔Settings route |
+| `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + `DeviceBatteryTool` + `RoomMemoryStore` on `Dispatchers.Default`; Chat↔Settings↔Memory routes |
 
 `:feature:*` must not call `BatteryManager` or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
 ## Naming Conventions
 
-- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`
+- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`, `MemoryScreen` / `MemoryRoute`
 - Mapping: `AgentTask?.toChatUiState()` in `ChatUiState.kt`
 - Product copy: **Dougie**, never Waku
 - Chat colors: Stitch tokens `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`DougieColors`)

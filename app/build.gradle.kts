@@ -43,7 +43,9 @@ android {
 dependencies {
     implementation(project(":feature:chat"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:memory"))
     implementation(project(":data:preferences"))
+    implementation(project(":data:memory"))
     implementation(project(":tool:system"))
     implementation(project(":core:runtime"))
     implementation(project(":core:llm"))

@@ -17,6 +17,7 @@ dependencies {
     api(project(":core:model"))
     api(project(":core:llm"))
     api(project(":core:tool"))
+    api(project(":core:memory"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)

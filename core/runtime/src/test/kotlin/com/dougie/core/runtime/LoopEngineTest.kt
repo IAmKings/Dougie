@@ -2,10 +2,13 @@ package com.dougie.core.runtime
 
 import com.dougie.core.llm.FakeLlmProvider
 import com.dougie.core.llm.LlmProvider
+import com.dougie.core.memory.InMemoryMemoryStore
+import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
+import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.ToolContext
@@ -14,6 +17,7 @@ import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.SystemTimeTool
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -336,5 +340,145 @@ class LoopEngineTest {
         assertEquals(UserFacingErrors.CANCELLED, task.lastError)
         assertEquals(null, task.streamingText)
         assertEquals(null, task.finalAnswer)
+    }
+
+    @Test
+    fun searchesMemoryBeforeLlmWhenEnabled() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryMemoryStore()
+        store.upsert(
+            MemoryEntry(
+                id = "m1",
+                content = "我叫小明，住在上海",
+                source = "task-0",
+                confidence = 0.8f,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        var seenFacts: List<String> = emptyList()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seenFacts = context.task.retrievedMemories.map { it.content }
+                return LlmResponse.FinalAnswer("你好，小明。")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            memoryStore = store,
+            memoryEnabled = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "mem", input = "我叫什么")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(listOf("我叫小明，住在上海"), seenFacts)
+        assertEquals(listOf("我叫小明，住在上海"), result.retrievedMemories.map { it.content })
+    }
+
+    @Test
+    fun skipsMemoryInjectWhenDisabledAndIngestsOnComplete() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryMemoryStore()
+        store.upsert(
+            MemoryEntry(
+                id = "m1",
+                content = "我叫小明，住在上海",
+                source = "old",
+                confidence = 0.8f,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        var enabled = false
+        var seenCount = -1
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seenCount = context.task.retrievedMemories.size
+                return LlmResponse.FinalAnswer("记下了。")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            memoryStore = store,
+            memoryEnabled = { enabled },
+        )
+        val skipped = engine.run(AgentTask(taskId = "skip", input = "我叫什么")) {}
+        assertEquals(0, seenCount)
+        assertTrue(skipped.retrievedMemories.isEmpty())
+
+        enabled = true
+        val ingested = engine.run(AgentTask(taskId = "new", input = "我喜欢喝茶")) {}
+        assertEquals(TaskStatus.COMPLETED, ingested.status)
+        assertTrue(store.list().any { it.content == "我喜欢喝茶" && it.source.contains("new") })
+    }
+
+    @Test
+    fun ingestFailureDoesNotFailCompletedTask() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = object : MemoryStore {
+            override suspend fun search(query: String, limit: Int) = emptyList<MemoryEntry>()
+            override suspend fun upsert(entry: MemoryEntry) = throw IllegalStateException("disk")
+            override suspend fun list() = emptyList<MemoryEntry>()
+            override suspend fun delete(id: String) = false
+            override suspend fun clear() = Unit
+        }
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.FinalAnswer("好的")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            memoryStore = store,
+            memoryEnabled = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "ok", input = "我叫小明")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("好的", result.finalAnswer)
+    }
+
+    @Test
+    fun memorySearchCancellationIsNotSwallowed() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = object : MemoryStore {
+            override suspend fun search(query: String, limit: Int): List<MemoryEntry> {
+                throw CancellationException("search cancelled")
+            }
+            override suspend fun upsert(entry: MemoryEntry) = Unit
+            override suspend fun list() = emptyList<MemoryEntry>()
+            override suspend fun delete(id: String) = false
+            override suspend fun clear() = Unit
+        }
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.FinalAnswer("不应到达")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            memoryStore = store,
+            memoryEnabled = { true },
+        )
+        try {
+            engine.run(AgentTask(taskId = "c", input = "我叫什么")) {}
+            throw AssertionError("expected CancellationException")
+        } catch (e: CancellationException) {
+            assertEquals("search cancelled", e.message)
+        }
     }
 }

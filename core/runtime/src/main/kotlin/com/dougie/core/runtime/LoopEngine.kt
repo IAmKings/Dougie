@@ -1,10 +1,13 @@
 package com.dougie.core.runtime
 
 import com.dougie.core.llm.LlmProvider
+import com.dougie.core.memory.MemoryGate
+import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LoopContext
+import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolContext
 import com.dougie.core.model.ToolTraceEntry
@@ -26,8 +29,11 @@ class LoopEngine(
     private val gateway: EgressGateway = EgressGateway(),
     private val llmTimeoutMs: Long = 60_000L,
     private val toolTimeoutMs: Long = 15_000L,
+    private val memoryStore: MemoryStore? = null,
+    private val memoryEnabled: () -> Boolean = { true },
 ) {
     private val sanitizer = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
+    private val memoryGate = memoryStore?.let { MemoryGate(it, memoryEnabled) }
 
     suspend fun run(initial: AgentTask, emit: suspend (AgentTask) -> Unit): AgentTask {
         return withContext(dispatcher) {
@@ -38,6 +44,7 @@ class LoopEngine(
                 streamingText = null,
             )
             emit(task)
+            task = retrieveMemories(task, emit)
             stepDelay()
 
             while (task.loopCount < task.maxLoops) {
@@ -68,6 +75,7 @@ class LoopEngine(
                         finalAnswer = turn.streamingText.orEmpty(),
                         streamingText = null,
                     )
+                    ingestMemory(task)
                     emit(task)
                     return@withContext task
                 }
@@ -162,6 +170,48 @@ class LoopEngine(
         }
     }
 
+    private suspend fun retrieveMemories(
+        task: AgentTask,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask {
+        val store = memoryStore ?: return task
+        if (!memoryEnabled()) return task
+        val hits = try {
+            budgetMemories(store.search(task.input, limit = MAX_MEMORY_FACTS))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return task
+        }
+        if (hits.isEmpty()) return task
+        val next = task.copy(retrievedMemories = hits)
+        emit(next)
+        return next
+    }
+
+    private suspend fun ingestMemory(task: AgentTask) {
+        val gate = memoryGate ?: return
+        try {
+            gate.ingest(task.input, task.finalAnswer, task.taskId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Loop still completes if Gate throws.
+        }
+    }
+
+    private fun budgetMemories(entries: List<MemoryEntry>): List<MemoryEntry> {
+        val out = ArrayList<MemoryEntry>(entries.size.coerceAtMost(MAX_MEMORY_FACTS))
+        var chars = 0
+        for (entry in entries.take(MAX_MEMORY_FACTS)) {
+            val nextChars = chars + entry.content.length
+            if (out.isNotEmpty() && nextChars > MAX_MEMORY_CHARS) break
+            out += entry
+            chars = nextChars
+        }
+        return out
+    }
+
     private suspend fun collectLlmTurn(
         start: AgentTask,
         emit: suspend (AgentTask) -> Unit,
@@ -210,4 +260,9 @@ class LoopEngine(
         val toolCall: LlmEvent.ToolCall?,
         val streamingText: String?,
     )
+
+    companion object {
+        private const val MAX_MEMORY_FACTS = 5
+        private const val MAX_MEMORY_CHARS = 800
+    }
 }

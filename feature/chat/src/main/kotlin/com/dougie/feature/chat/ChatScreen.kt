@@ -77,6 +77,7 @@ fun ChatRoute(
     viewModel: ChatViewModel,
     allowCloud: Boolean = false,
     onOpenSettings: () -> Unit = {},
+    onOpenMemory: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
@@ -84,6 +85,7 @@ fun ChatRoute(
         onSend = viewModel::send,
         allowCloud = allowCloud,
         onOpenSettings = onOpenSettings,
+        onOpenMemory = onOpenMemory,
     )
 }
 
@@ -93,6 +95,7 @@ fun ChatScreen(
     onSend: (String) -> Unit,
     allowCloud: Boolean = false,
     onOpenSettings: () -> Unit = {},
+    onOpenMemory: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -114,7 +117,7 @@ fun ChatScreen(
             enabled = uiState.inputEnabled,
             onSend = onSend,
         )
-        DougieBottomBar(onOpenSettings = onOpenSettings)
+        DougieBottomBar(onOpenSettings = onOpenSettings, onOpenMemory = onOpenMemory)
     }
 }
 
@@ -518,7 +521,7 @@ private fun ChatInputBar(
 }
 
 @Composable
-private fun DougieBottomBar(onOpenSettings: () -> Unit) {
+private fun DougieBottomBar(onOpenSettings: () -> Unit, onOpenMemory: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -529,7 +532,7 @@ private fun DougieBottomBar(onOpenSettings: () -> Unit) {
     ) {
         BottomItem("对话", Icons.AutoMirrored.Filled.Chat, selected = true)
         BottomItem("任务", Icons.Filled.History, selected = false)
-        BottomItem("记忆", Icons.Filled.Storage, selected = false)
+        BottomItem("记忆", Icons.Filled.Storage, selected = false, onClick = onOpenMemory)
         BottomItem("设置", Icons.Filled.Settings, selected = false, onClick = onOpenSettings)
     }
 }

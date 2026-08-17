@@ -17,6 +17,13 @@ core/runtime/src/main/kotlin/com/dougie/core/runtime/
   TaskManager.kt
   EgressGateway.kt
   ToolCallSanitizer.kt
+core/memory/src/main/kotlin/com/dougie/core/memory/
+  MemoryStore.kt
+  MemoryGate.kt
+  InMemoryMemoryStore.kt
+data/memory/src/main/kotlin/com/dougie/data/memory/
+  RoomMemoryStore.kt
+data/preferences/src/main/kotlin/com/dougie/data/preferences/
 core/runtime/src/test/kotlin/com/dougie/core/runtime/
 core/tool/src/main/kotlin/com/dougie/core/tool/
   AgentTool.kt
@@ -39,9 +46,11 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `OpenAICompatibleProvider` SSE (OkHttp) | Tool execution, UI, policy bypass |
 | `:core:tool` | `AgentTool` + JVM tools (`FakeBatteryTool`, `SystemTimeTool`) | `BatteryManager` / other Android APIs |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `EgressGateway.stream`, `ToolCallSanitizer` | Compose, Android Context, HTTP |
+| `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool` | Loop state machine, LLM HTTP |
-| `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false | Loop / Chat UI |
-| `:app` | Wires OkHttp (`readTimeout` 60s, `callTimeout` 0), Gateway, `battery`+`time`, PreferenceStore, `Dispatchers.Default` | Business rules that belong in core |
+| `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
+| `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
+| `:app` | Wires OkHttp (`readTimeout` 60s, `callTimeout` 0), Gateway, `battery`+`time`, PreferenceStore, `RoomMemoryStore`, `Dispatchers.Default` | Business rules that belong in core |
 
 New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`.
 

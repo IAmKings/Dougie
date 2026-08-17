@@ -27,8 +27,11 @@ include(
     ":core:llm",
     ":core:tool",
     ":core:runtime",
+    ":core:memory",
     ":tool:system",
     ":data:preferences",
+    ":data:memory",
     ":feature:chat",
     ":feature:settings",
+    ":feature:memory",
 )

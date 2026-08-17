@@ -2,12 +2,14 @@ package com.dougie.app
 
 import android.app.Application
 import com.dougie.core.llm.OpenAICompatibleProvider
+import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
 import com.dougie.core.runtime.EgressGateway
 import com.dougie.core.runtime.LoopEngine
 import com.dougie.core.runtime.TaskManager
 import com.dougie.core.tool.SystemTimeTool
+import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
 import com.dougie.tool.system.DeviceBatteryTool
 import kotlinx.coroutines.Dispatchers
@@ -19,10 +21,13 @@ class DougieApplication : Application() {
         private set
     lateinit var preferenceStore: PreferenceStore
         private set
+    lateinit var memoryStore: MemoryStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
         preferenceStore = PreferenceStore(this)
+        memoryStore = RoomMemoryStore(this)
         val dispatcher = Dispatchers.Default
         val http = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -50,6 +55,8 @@ class DougieApplication : Application() {
                 ),
                 dispatcher = dispatcher,
                 gateway = gateway,
+                memoryStore = memoryStore,
+                memoryEnabled = { preferenceStore.settings.value.memoryEnabled },
             ),
             dispatcher = dispatcher,
         )

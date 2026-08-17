@@ -1,0 +1,7 @@
+{"file": "PRD.md", "reason": "§7 Memory, FTS5, Gate, user control"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Keep core JVM-pure; new :core:memory / :data:memory"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log memory contents"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "New feature:memory; bottom nav"}
+{"file": "design/其他功能/Semantic_Memory_-_Facts__History__70ff8c4bf76a4388a6a7a400e29e52e9.html", "reason": "Memory viewer visual"}
+{"file": "core/llm/src/main/kotlin/com/dougie/core/llm/OpenAICompatibleProvider.kt", "reason": "Inject retrieved facts into messages"}
+{"file": "core/runtime/src/main/kotlin/com/dougie/core/runtime/LoopEngine.kt", "reason": "Search before LLM, ingest after complete"}

@@ -6,6 +6,7 @@ data class ProviderSettings(
     val model: String = DEFAULT_MODEL,
     val apiKey: String = "",
     val egressConsentAt: Long? = null,
+    val memoryEnabled: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_BASE_URL = "https://api.openai.com/v1"

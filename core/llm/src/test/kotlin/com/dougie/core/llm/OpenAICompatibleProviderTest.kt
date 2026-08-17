@@ -5,6 +5,7 @@ import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
+import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import kotlinx.coroutines.flow.toList
@@ -87,6 +88,34 @@ class OpenAICompatibleProviderTest {
         assertEquals(listOf("你", "现在", "的手机电量是 80%。"), texts)
         assertEquals("你现在的手机电量是 80%。", texts.joinToString(""))
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun requestBodyIncludesKnownFactsFromRetrievedMemories() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val provider = testProvider()
+        provider.generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "t-mem",
+                    input = "我叫什么",
+                    retrievedMemories = listOf(
+                        MemoryEntry(
+                            id = "m1",
+                            content = "我叫小明，住在上海",
+                            source = "task-0",
+                            confidence = 0.8f,
+                            createdAt = 1L,
+                            updatedAt = 1L,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("Known facts"))
+        assertTrue(body.contains("我叫小明，住在上海"))
+        assertTrue(body.contains("我叫什么"))
     }
 
     @Test

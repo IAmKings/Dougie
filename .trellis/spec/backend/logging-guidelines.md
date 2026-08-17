@@ -9,7 +9,7 @@
 - Raw LLM HTTP request/response bodies and SSE `data:` payloads (Release and Debug)
 - Tool arguments that contain secrets
 
-`LoopEngine`, `EgressGateway`, and `OpenAICompatibleProvider` currently log nothing. When adding logs, use tool **name** + `taskId` + `loopCount` only.
+`LoopEngine`, `EgressGateway`, and `OpenAICompatibleProvider` currently log nothing. When adding logs, use tool **name** + `taskId` + `loopCount` only. Never log `MemoryEntry.content`, retrieved facts, or the assembled system prompt.
 
 `PreferenceStore` stores `api_key` in EncryptedSharedPreferences (`dougie_provider_secure`). Never write the key to Logcat, plaintext `SharedPreferences`, or Compose preview dumps.
 
