@@ -12,6 +12,7 @@ data class ChatUiState(
     val items: List<ChatItem> = emptyList(),
     val inputEnabled: Boolean = true,
     val isEmpty: Boolean = true,
+    val canRetry: Boolean = false,
 )
 
 sealed class ChatItem {
@@ -68,5 +69,10 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         }
     }
     val busy = status != TaskStatus.COMPLETED && status != TaskStatus.FAILED && status != TaskStatus.IDLE
-    return ChatUiState(items = items, inputEnabled = !busy, isEmpty = false)
+    return ChatUiState(
+        items = items,
+        inputEnabled = !busy,
+        isEmpty = false,
+        canRetry = status == TaskStatus.FAILED,
+    )
 }

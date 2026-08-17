@@ -20,6 +20,20 @@ class CalendarCreateToolTest {
         assertEquals(1, port.createCalls.size)
         assertEquals(context.idempotencyKey, port.createCalls.single().idempotencyKey)
     }
+
+    @Test
+    fun sharedStoreHitsAcrossNewToolInstances() = runTest {
+        val port = FakeCalendarPort()
+        val store = InMemoryIdempotencyStore()
+        val first = CalendarCreateTool(port, store)
+        val second = CalendarCreateTool(port, store)
+        val context = ToolContext(taskId = "task-1", toolCallId = "call-1")
+        val args = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}"""
+        val one = first.execute(args, context)
+        val two = second.execute(args, context)
+        assertEquals(one.json, two.json)
+        assertEquals(1, port.createCalls.size)
+    }
 }
 
 class ClipboardReadToolTest {

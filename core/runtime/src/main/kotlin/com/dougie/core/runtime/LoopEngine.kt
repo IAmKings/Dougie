@@ -35,6 +35,7 @@ class LoopEngine(
     private val memoryEnabled: () -> Boolean = { true },
     private val policyEngine: PolicyEngine = PolicyEngine(),
     private val confirmTimeoutMs: Long = 60_000L,
+    private val auditLog: AuditLog = NoOpAuditLog,
 ) {
     private val sanitizer = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
     private val memoryGate = memoryStore?.let { MemoryGate(it, memoryEnabled) }
@@ -179,6 +180,7 @@ class LoopEngine(
                     task = updateLastTrace(task, TaskStatus.FAILED) {
                         it.copy(status = ToolTraceStatus.FAILED)
                     }
+                    recordAudit(task.taskId, tool.name, "FAILED")
                     return@withContext fail(task, UserFacingErrors.TOOL_TIMEOUT, emit)
                 } catch (e: CancellationException) {
                     throw e
@@ -186,15 +188,18 @@ class LoopEngine(
                     task = updateLastTrace(task, TaskStatus.FAILED) {
                         it.copy(status = ToolTraceStatus.FAILED)
                     }
+                    recordAudit(task.taskId, tool.name, "FAILED")
                     return@withContext fail(task, e.userMessage, emit)
                 } catch (e: Exception) {
                     task = updateLastTrace(task, TaskStatus.FAILED) {
                         it.copy(status = ToolTraceStatus.FAILED)
                     }
+                    recordAudit(task.taskId, tool.name, "FAILED")
                     return@withContext fail(task, UserFacingErrors.TOOL_FAILED, emit)
                 }
 
                 if (result.isFatal) {
+                    recordAudit(task.taskId, tool.name, "FAILED")
                     task = updateLastTrace(task, TaskStatus.FAILED) {
                         it.copy(status = ToolTraceStatus.FAILED, resultJson = result.json)
                     }.copy(lastError = result.error ?: UserFacingErrors.TOOL_FAILED)
@@ -202,6 +207,7 @@ class LoopEngine(
                     return@withContext task
                 }
 
+                recordAudit(task.taskId, tool.name, "SUCCESS")
                 task = updateLastTrace(task, TaskStatus.TOOL_RESULT) {
                     it.copy(status = ToolTraceStatus.SUCCESS, resultJson = result.json)
                 }
@@ -296,6 +302,16 @@ class LoopEngine(
             trace[trace.lastIndex] = transform(trace.last())
         }
         return task.copy(status = status, toolTrace = trace)
+    }
+
+    private fun recordAudit(taskId: String, toolName: String, outcome: String) {
+        try {
+            auditLog.record(taskId, toolName, outcome)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Audit must never fail the loop.
+        }
     }
 
     private suspend fun stepDelay() {

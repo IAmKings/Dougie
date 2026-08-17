@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dougie.core.runtime.TaskManager
+import com.dougie.core.model.TaskStatus
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -19,6 +20,12 @@ class ChatViewModel(
 
     fun send(text: String) {
         taskManager.submit(text)
+    }
+
+    fun retry() {
+        val current = taskManager.task.value ?: return
+        if (current.status != TaskStatus.FAILED) return
+        taskManager.submit(current.input)
     }
 
     fun confirm() {

@@ -33,9 +33,8 @@
 | `08-17-phase-1b-streaming-tools` | §15 Phase 1b | Streaming + ≥2 Tool（电量+时间）+ ToolCallSanitizer（已归档） |
 | `08-17-phase-2-local-memory` | §15 Phase 2 | FTS5 关键词记忆 + Gate + Memory UI，能找回至少一个事实（已归档） |
 | `08-17-phase-3a-tools-policy` | §15 Phase 3 切片 | 日历查询/创建、剪贴板、Policy+确认卡、权限中心（已归档） |
-| `08-17-phase-3b-location-screen` | §15 Phase 3 余下 | Location + ScreenCapture/Match（不含 Accessibility 点击） |
-| （后续）Phase 3b 定位与屏幕感知 | §15 Phase 3 余下 | Location + ScreenCapture/Match |
-| （后续）Phase 4 Reliability | §15 Phase 4 | 杀进程幂等与任务恢复 |
+| `08-17-phase-3b-location-screen` | §15 Phase 3 余下 | Location + ScreenCapture/Match（不含 Accessibility 点击）（已归档） |
+| `08-17-phase-4-task-recovery` | §15 Phase 4 | 任务落盘恢复、创建型幂等持久化、History、有限重试 |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 

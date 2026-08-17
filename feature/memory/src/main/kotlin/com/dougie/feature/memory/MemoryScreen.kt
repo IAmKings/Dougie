@@ -52,6 +52,7 @@ fun MemoryRoute(
     viewModel: MemoryViewModel,
     onOpenChat: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     MemoryScreen(
@@ -62,6 +63,7 @@ fun MemoryRoute(
         onSaveEdit = viewModel::updateContent,
         onOpenChat = onOpenChat,
         onOpenSettings = onOpenSettings,
+        onOpenHistory = onOpenHistory,
     )
 }
 
@@ -74,6 +76,7 @@ fun MemoryScreen(
     onSaveEdit: (MemoryEntry, String) -> Unit,
     onOpenChat: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit = {},
 ) {
     var editing by remember { mutableStateOf<MemoryEntry?>(null) }
     var confirmClear by remember { mutableStateOf(false) }
@@ -157,7 +160,11 @@ fun MemoryScreen(
                 }
             }
         }
-        MemoryBottomBar(onOpenChat = onOpenChat, onOpenSettings = onOpenSettings)
+        MemoryBottomBar(
+            onOpenChat = onOpenChat,
+            onOpenSettings = onOpenSettings,
+            onOpenHistory = onOpenHistory,
+        )
     }
     val currentEdit = editing
     if (currentEdit != null) {
@@ -245,7 +252,11 @@ private fun MemoryCard(
 }
 
 @Composable
-private fun MemoryBottomBar(onOpenChat: () -> Unit, onOpenSettings: () -> Unit) {
+private fun MemoryBottomBar(
+    onOpenChat: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -255,7 +266,7 @@ private fun MemoryBottomBar(onOpenChat: () -> Unit, onOpenSettings: () -> Unit) 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BottomItem("对话", Icons.AutoMirrored.Filled.Chat, selected = false, onClick = onOpenChat)
-        BottomItem("任务", Icons.Filled.History, selected = false)
+        BottomItem("任务", Icons.Filled.History, selected = false, onClick = onOpenHistory)
         BottomItem("记忆", Icons.Filled.Storage, selected = true)
         BottomItem("设置", Icons.Filled.Settings, selected = false, onClick = onOpenSettings)
     }

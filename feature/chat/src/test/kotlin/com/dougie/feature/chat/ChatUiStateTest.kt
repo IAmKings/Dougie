@@ -58,6 +58,7 @@ class ChatUiStateTest {
         )
         assertTrue(state.inputEnabled)
         assertTrue((state.items.last() as ChatItem.AgentMessage).text.contains("63"))
+        assertEquals(false, state.canRetry)
     }
 
     @Test
@@ -71,6 +72,20 @@ class ChatUiStateTest {
         val message = state.items.last() as ChatItem.AgentMessage
         assertTrue(message.text.contains(UserFacingErrors.EGRESS_BLOCKED))
         assertTrue(state.inputEnabled)
+        assertTrue(state.canRetry)
+    }
+
+    @Test
+    fun interruptedFailedShowsRetry() {
+        val state = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.INTERRUPTED,
+        ).toChatUiState()
+        assertTrue(state.inputEnabled)
+        assertTrue(state.canRetry)
+        assertTrue((state.items.last() as ChatItem.AgentMessage).text.contains(UserFacingErrors.INTERRUPTED))
     }
 
     @Test

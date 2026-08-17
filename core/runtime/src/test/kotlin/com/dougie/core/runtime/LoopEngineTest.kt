@@ -688,6 +688,25 @@ class LoopEngineTest {
     }
 
     @Test
+    fun auditRecordsTaskIdToolNameAndOutcomeOnly() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val recorded = mutableListOf<Triple<String, String, String>>()
+        val engine = LoopEngine(
+            llm = FakeLlmProvider(),
+            tools = mapOf("battery" to FakeBatteryTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            auditLog = AuditLog { taskId, toolName, outcome ->
+                recorded += Triple(taskId, toolName, outcome)
+            },
+        )
+        val result = engine.run(AgentTask(taskId = "aud", input = "电量")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(3, recorded.size)
+        assertTrue(recorded.all { it.first == "aud" && it.second == "battery" && it.third == "SUCCESS" })
+    }
+
+    @Test
     fun memorySearchCancellationIsNotSwallowed() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val store = object : MemoryStore {

@@ -11,16 +11,19 @@ import com.dougie.core.model.ToolParamSpec
 import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
+import com.dougie.core.model.UserFacingErrors
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 
 class OpenAICompatibleProviderTest {
     private lateinit var server: MockWebServer
@@ -172,6 +175,58 @@ class OpenAICompatibleProviderTest {
         assertEquals("call_battery_1", tool.id)
         assertEquals("battery", tool.name)
         assertEquals("{}", tool.argsJson)
+    }
+
+    @Test
+    fun retriesNetworkFailureTwiceThenSucceeds() = runTest {
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val provider = testProvider()
+        val answer = provider.generate(LoopContext(AgentTask(taskId = "t1", input = "你好")))
+        assertTrue((answer as LlmResponse.FinalAnswer).text.contains("80"))
+        assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun stopsAfterThreeNetworkFailures() = runTest {
+        repeat(3) {
+            server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+        }
+        val provider = testProvider()
+        try {
+            provider.generate(LoopContext(AgentTask(taskId = "t1", input = "你好")))
+            throw AssertionError("expected network failure")
+        } catch (e: Exception) {
+            val network = e is IOException ||
+                (e is com.dougie.core.model.AgentException && e.userMessage == UserFacingErrors.NETWORK_FAILED)
+            assertTrue(network)
+        }
+        assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun doesNotRetryAfterFirstStreamEvent() = runTest {
+        val firstEvent =
+            """data: {"choices":[{"delta":{"content":"你好"}}]}""" + "\n\n"
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(firstEvent + " ".repeat(2048) + "data: {\"choices\":[{\"delta\":{\"content\":\"续\"}}]}\n\n")
+                .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY),
+        )
+        val provider = testProvider()
+        try {
+            provider.generate(LoopContext(AgentTask(taskId = "t1", input = "你好")))
+            throw AssertionError("expected stream failure after first event")
+        } catch (e: Exception) {
+            val failed = e is IOException ||
+                (e is com.dougie.core.model.AgentException &&
+                    (e.userMessage == UserFacingErrors.NETWORK_FAILED ||
+                        e.userMessage == UserFacingErrors.LLM_FAILED))
+            assertTrue(failed)
+        }
+        assertEquals(1, server.requestCount)
     }
 
     private fun testProvider(): OpenAICompatibleProvider {

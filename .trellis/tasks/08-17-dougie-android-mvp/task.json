@@ -24,7 +24,8 @@
     "08-17-phase-1b-streaming-tools",
     "08-17-phase-2-local-memory",
     "08-17-phase-3a-tools-policy",
-    "08-17-phase-3b-location-screen"
+    "08-17-phase-3b-location-screen",
+    "08-17-phase-4-task-recovery"
   ],
   "parent": null,
   "relatedFiles": [],

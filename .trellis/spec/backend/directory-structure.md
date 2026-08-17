@@ -15,6 +15,8 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
 core/runtime/src/main/kotlin/com/dougie/core/runtime/
   LoopEngine.kt
   TaskManager.kt
+  TaskStore.kt
+  AuditLog.kt
   EgressGateway.kt
   ToolCallSanitizer.kt
   PolicyEngine.kt
@@ -22,8 +24,13 @@ core/memory/src/main/kotlin/com/dougie/core/memory/
   MemoryStore.kt
   MemoryGate.kt
   InMemoryMemoryStore.kt
+core/tool/src/main/kotlin/com/dougie/core/tool/
+  IdempotencyStore.kt
+  CalendarCreateTool.kt
 data/memory/src/main/kotlin/com/dougie/data/memory/
   RoomMemoryStore.kt
+data/tasks/src/main/kotlin/com/dougie/data/tasks/
+  DougieTaskStores.kt
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
 core/runtime/src/test/kotlin/com/dougie/core/runtime/
 core/tool/src/main/kotlin/com/dougie/core/tool/
@@ -53,13 +60,15 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 |--------|------|----------------|
 | `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `UserFacingErrors` | I/O, Android, HTTP |
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `OpenAICompatibleProvider` SSE (OkHttp) | Tool execution, UI, policy bypass |
-| `:core:tool` | `AgentTool` + JVM tools (`FakeBatteryTool`, `SystemTimeTool`) | `BatteryManager` / other Android APIs |
-| `:core:runtime` | `LoopEngine`, `TaskManager`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
+| `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` | `BatteryManager` / other Android APIs |
+| `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort` | Loop state machine, LLM HTTP |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
-| `:app` | Wires OkHttp (`readTimeout` 60s, `callTimeout` 0), Gateway, tools (`battery`/`time`/calendar/clipboard), `PolicyEngine` grants, PreferenceStore, `RoomMemoryStore`, `Dispatchers.Default` | Business rules that belong in core |
+| `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
+| `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |
+| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, RoomMemoryStore, DougieTaskStores, recoverInterrupted, `Dispatchers.Default` | Business rules that belong in core |
 
 New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`.
 

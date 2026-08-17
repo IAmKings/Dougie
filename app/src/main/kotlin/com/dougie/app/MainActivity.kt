@@ -16,12 +16,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dougie.feature.chat.ChatRoute
 import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
+import com.dougie.feature.history.HistoryRoute
+import com.dougie.feature.history.HistoryViewModel
 import com.dougie.feature.memory.MemoryRoute
 import com.dougie.feature.memory.MemoryViewModel
 import com.dougie.feature.settings.SettingsRoute
 import com.dougie.feature.settings.SettingsViewModel
 
-private enum class AppRoute { Chat, Settings, Memory, Permissions }
+private enum class AppRoute { Chat, Settings, Memory, Permissions, History }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +48,7 @@ class MainActivity : ComponentActivity() {
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
+                            onOpenHistory = { route = AppRoute.History },
                         )
                     }
                     AppRoute.Settings -> {
@@ -64,6 +67,18 @@ class MainActivity : ComponentActivity() {
                         MemoryRoute(
                             viewModel = viewModel,
                             onOpenChat = { route = AppRoute.Chat },
+                            onOpenSettings = { route = AppRoute.Settings },
+                            onOpenHistory = { route = AppRoute.History },
+                        )
+                    }
+                    AppRoute.History -> {
+                        val viewModel: HistoryViewModel = viewModel(
+                            factory = HistoryViewModel.Factory(app.taskStores.taskStore),
+                        )
+                        HistoryRoute(
+                            viewModel = viewModel,
+                            onOpenChat = { route = AppRoute.Chat },
+                            onOpenMemory = { route = AppRoute.Memory },
                             onOpenSettings = { route = AppRoute.Settings },
                         )
                     }

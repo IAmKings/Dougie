@@ -18,11 +18,16 @@ class TaskManager(
     private val loopEngine: LoopEngine,
     private val dispatcher: CoroutineDispatcher,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher),
+    private val taskStore: TaskStore? = null,
 ) {
     private val _task = MutableStateFlow<AgentTask?>(null)
     val task: StateFlow<AgentTask?> = _task.asStateFlow()
 
     private var running: Job? = null
+
+    fun seed(task: AgentTask) {
+        _task.value = task
+    }
 
     fun submit(input: String) {
         val trimmed = input.trim()
@@ -39,9 +44,11 @@ class TaskManager(
         )
         _task.value = created
         running = scope.launch(dispatcher) {
+            persist(created)
             try {
                 loopEngine.run(created) { snapshot ->
                     _task.value = snapshot
+                    persist(snapshot)
                 }
             } catch (e: CancellationException) {
                 markCancelled()
@@ -62,13 +69,26 @@ class TaskManager(
         running?.cancel()
     }
 
-    private fun markCancelled() {
+    private suspend fun markCancelled() {
         val current = _task.value ?: return
         if (current.status == TaskStatus.COMPLETED || current.status == TaskStatus.FAILED) return
-        _task.value = current.copy(
+        val failed = current.copy(
             status = TaskStatus.FAILED,
             lastError = UserFacingErrors.CANCELLED,
             streamingText = null,
         )
+        _task.value = failed
+        persist(failed)
+    }
+
+    private suspend fun persist(task: AgentTask) {
+        val store = taskStore ?: return
+        try {
+            store.upsert(task)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Skip persist if encode/store throws; the loop still runs.
+        }
     }
 }

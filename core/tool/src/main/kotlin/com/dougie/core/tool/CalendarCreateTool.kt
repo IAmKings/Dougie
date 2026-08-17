@@ -13,10 +13,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.util.concurrent.ConcurrentHashMap
 
 class CalendarCreateTool(
     private val port: CalendarPort,
+    private val idempotencyStore: IdempotencyStore = InMemoryIdempotencyStore(),
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = ToolDescriptor(
@@ -30,18 +30,17 @@ class CalendarCreateTool(
         androidPermission = AndroidPermissions.WRITE_CALENDAR,
     )
 
-    private val idempotent = ConcurrentHashMap<String, String>()
-
     override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
         require(context.idempotencyKey == context.taskId + context.toolCallId)
-        idempotent[context.idempotencyKey]?.let { return ToolResult(json = it) }
+        idempotencyStore.get(context.idempotencyKey)?.let { return ToolResult(json = it) }
         val parsed = parseArgs(argumentsJson)
         val json = port.createEvent(
             title = parsed.title,
             startIso = parsed.startIso,
             idempotencyKey = context.idempotencyKey,
         )
-        val stored = idempotent.putIfAbsent(context.idempotencyKey, json) ?: json
+        idempotencyStore.put(context.idempotencyKey, json)
+        val stored = idempotencyStore.get(context.idempotencyKey) ?: json
         return ToolResult(json = stored)
     }
 

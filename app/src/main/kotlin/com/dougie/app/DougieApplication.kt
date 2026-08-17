@@ -13,6 +13,7 @@ import com.dougie.core.runtime.EgressGateway
 import com.dougie.core.runtime.LoopEngine
 import com.dougie.core.runtime.PolicyEngine
 import com.dougie.core.runtime.TaskManager
+import com.dougie.core.runtime.recoverInterrupted
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
@@ -24,12 +25,14 @@ import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
+import com.dougie.data.tasks.DougieTaskStores
 import com.dougie.tool.system.AndroidCalendarPort
 import com.dougie.tool.system.AndroidClipboardPort
 import com.dougie.tool.system.AndroidLocationPort
 import com.dougie.tool.system.AndroidScreenCapturePort
 import com.dougie.tool.system.DeviceBatteryTool
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -40,6 +43,8 @@ class DougieApplication : Application() {
         private set
     lateinit var memoryStore: MemoryStore
         private set
+    lateinit var taskStores: DougieTaskStores
+        private set
     lateinit var permissionUsage: PermissionUsageTracker
         private set
 
@@ -49,6 +54,7 @@ class DougieApplication : Application() {
         super.onCreate()
         preferenceStore = PreferenceStore(this)
         memoryStore = RoomMemoryStore(this)
+        taskStores = DougieTaskStores(this)
         permissionUsage = PermissionUsageTracker()
         ProcessLifecycleOwner.get().lifecycle.addObserver(foregroundTracker)
         val dispatcher = Dispatchers.Default
@@ -76,7 +82,7 @@ class DougieApplication : Application() {
             "battery" to DeviceBatteryTool(this),
             "time" to SystemTimeTool(),
             CalendarQueryTool.NAME to CalendarQueryTool(calendarPort),
-            CalendarCreateTool.NAME to CalendarCreateTool(calendarPort),
+            CalendarCreateTool.NAME to CalendarCreateTool(calendarPort, taskStores.idempotencyStore),
             ClipboardReadTool.NAME to ClipboardReadTool(clipboardPort),
             ClipboardWriteTool.NAME to ClipboardWriteTool(clipboardPort),
             LocationTool.NAME to LocationTool(locationPort),
@@ -111,9 +117,14 @@ class DougieApplication : Application() {
                     ContextCompat.checkSelfPermission(this, permission) ==
                         PackageManager.PERMISSION_GRANTED
                 },
+                auditLog = taskStores.auditLog,
             ),
             dispatcher = dispatcher,
+            taskStore = taskStores.taskStore,
         )
+        runBlocking {
+            recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
+        }
     }
 
     companion object {

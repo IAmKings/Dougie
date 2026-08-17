@@ -11,6 +11,7 @@ object UserFacingErrors {
     const val UNKNOWN_TOOL = "模型调用了未知工具，已拒绝执行。"
     const val INVALID_TOOL_ARGS = "工具参数无效，已拒绝执行。"
     const val CANCELLED = "任务已取消。"
+    const val INTERRUPTED = "任务已中断，请重新提交。"
     const val PERMISSION_DENIED = "未授权，已为你跳过该操作"
     const val CONFIRM_REJECTED = "该操作需你确认后才执行"
     const val CLIPBOARD_NOT_FOREGROUND = "应用不在前台，无法读取剪贴板。"

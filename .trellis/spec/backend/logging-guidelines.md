@@ -9,7 +9,7 @@
 - Raw LLM HTTP request/response bodies and SSE `data:` payloads (Release and Debug)
 - Tool arguments that contain secrets
 
-`LoopEngine`, `EgressGateway`, and `OpenAICompatibleProvider` currently log nothing. When adding logs, use tool **name** + `taskId` + `loopCount` only. Never log `MemoryEntry.content`, retrieved facts, the assembled system prompt, calendar event titles/bodies, or clipboard text.
+`LoopEngine`, `EgressGateway`, and `OpenAICompatibleProvider` currently log nothing. When adding logs, use tool **name** + `taskId` + `loopCount` only. `AuditLog` may persist `taskId`, `toolName`, and `outcome` (`SUCCESS`/`FAILED`) — never Prompt, API keys, calendar event titles/bodies, clipboard text, coordinates, or capture pixels. Never log `MemoryEntry.content`, retrieved facts, the assembled system prompt, or `snapshot_json`.
 
 `PreferenceStore` stores `api_key` in EncryptedSharedPreferences (`dougie_provider_secure`). Never write the key to Logcat, plaintext `SharedPreferences`, or Compose preview dumps.
 

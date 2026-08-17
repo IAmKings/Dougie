@@ -31,8 +31,10 @@ include(
     ":tool:system",
     ":data:preferences",
     ":data:memory",
+    ":data:tasks",
     ":feature:chat",
     ":feature:settings",
     ":feature:memory",
+    ":feature:history",
     ":feature:permissions",
 )

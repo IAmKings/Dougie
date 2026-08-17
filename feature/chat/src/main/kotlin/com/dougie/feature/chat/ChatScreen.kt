@@ -79,6 +79,7 @@ fun ChatRoute(
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
@@ -86,10 +87,12 @@ fun ChatRoute(
         onSend = viewModel::send,
         onConfirm = viewModel::confirm,
         onReject = viewModel::reject,
+        onRetry = viewModel::retry,
         allowCloud = allowCloud,
         onOpenSettings = onOpenSettings,
         onOpenMemory = onOpenMemory,
         onOpenPermissions = onOpenPermissions,
+        onOpenHistory = onOpenHistory,
     )
 }
 
@@ -99,10 +102,12 @@ fun ChatScreen(
     onSend: (String) -> Unit,
     onConfirm: () -> Unit = {},
     onReject: () -> Unit = {},
+    onRetry: () -> Unit = {},
     allowCloud: Boolean = false,
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -123,8 +128,10 @@ fun ChatScreen(
             } else {
                 ChatFeed(
                     items = uiState.items,
+                    canRetry = uiState.canRetry,
                     onConfirm = onConfirm,
                     onReject = onReject,
+                    onRetry = onRetry,
                 )
             }
         }
@@ -132,7 +139,11 @@ fun ChatScreen(
             enabled = uiState.inputEnabled,
             onSend = onSend,
         )
-        DougieBottomBar(onOpenSettings = onOpenSettings, onOpenMemory = onOpenMemory)
+        DougieBottomBar(
+            onOpenSettings = onOpenSettings,
+            onOpenMemory = onOpenMemory,
+            onOpenHistory = onOpenHistory,
+        )
     }
 }
 
@@ -274,8 +285,10 @@ private fun ExampleChip(text: String, onClick: (String) -> Unit) {
 @Composable
 private fun ChatFeed(
     items: List<ChatItem>,
+    canRetry: Boolean,
     onConfirm: () -> Unit,
     onReject: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     val listState = rememberLazyListState()
     val lastAgent = (items.lastOrNull() as? ChatItem.AgentMessage)?.text
@@ -307,7 +320,11 @@ private fun ChatFeed(
                 is ChatItem.Thinking -> ThinkingChip(item.loopNumber)
                 is ChatItem.ToolCard -> ToolCallCard(item)
                 is ChatItem.ConfirmCard -> ConfirmToolCard(item, onConfirm, onReject)
-                is ChatItem.AgentMessage -> AgentBubble(item.text)
+                is ChatItem.AgentMessage -> AgentBubble(
+                    text = item.text,
+                    showRetry = canRetry && item === items.lastOrNull(),
+                    onRetry = onRetry,
+                )
             }
         }
     }
@@ -331,19 +348,39 @@ private fun UserBubble(text: String) {
 }
 
 @Composable
-private fun AgentBubble(text: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-        Text(
-            text = text,
-            color = DougieColors.OnSurface,
-            fontSize = 16.sp,
-            modifier = Modifier
-                .widthIn(max = 320.dp)
-                .padding(start = 16.dp)
-                .clip(RoundedCornerShape(16.dp).copy(topStart = androidx.compose.foundation.shape.CornerSize(4.dp)))
-                .background(DougieColors.SurfaceContainer)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-        )
+private fun AgentBubble(
+    text: String,
+    showRetry: Boolean = false,
+    onRetry: () -> Unit = {},
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+            Text(
+                text = text,
+                color = DougieColors.OnSurface,
+                fontSize = 16.sp,
+                modifier = Modifier
+                    .widthIn(max = 320.dp)
+                    .padding(start = 16.dp)
+                    .clip(RoundedCornerShape(16.dp).copy(topStart = androidx.compose.foundation.shape.CornerSize(4.dp)))
+                    .background(DougieColors.SurfaceContainer)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        if (showRetry) {
+            Text(
+                text = "重试",
+                color = DougieColors.Primary,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, DougieColors.Outline, RoundedCornerShape(8.dp))
+                    .clickable(onClick = onRetry)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
     }
 }
 
@@ -643,7 +680,11 @@ private fun ChatInputBar(
 }
 
 @Composable
-private fun DougieBottomBar(onOpenSettings: () -> Unit, onOpenMemory: () -> Unit) {
+private fun DougieBottomBar(
+    onOpenSettings: () -> Unit,
+    onOpenMemory: () -> Unit,
+    onOpenHistory: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -653,7 +694,7 @@ private fun DougieBottomBar(onOpenSettings: () -> Unit, onOpenMemory: () -> Unit
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BottomItem("对话", Icons.AutoMirrored.Filled.Chat, selected = true)
-        BottomItem("任务", Icons.Filled.History, selected = false)
+        BottomItem("任务", Icons.Filled.History, selected = false, onClick = onOpenHistory)
         BottomItem("记忆", Icons.Filled.Storage, selected = false, onClick = onOpenMemory)
         BottomItem("设置", Icons.Filled.Settings, selected = false, onClick = onOpenSettings)
     }
