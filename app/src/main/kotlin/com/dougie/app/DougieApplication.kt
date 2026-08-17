@@ -25,6 +25,9 @@ import com.dougie.core.tool.LocationTool
 import com.dougie.core.tool.ScreenCaptureTool
 import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SpeechInputTool
+import com.dougie.core.tool.SpeechOutputTool
+import com.dougie.core.tool.PreferOfflineTtsPort
+import com.dougie.core.tool.UnwiredTtsEngine
 import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
@@ -35,6 +38,7 @@ import com.dougie.tool.system.AndroidClipboardPort
 import com.dougie.tool.system.AndroidLocationPort
 import com.dougie.tool.system.AndroidScreenCapturePort
 import com.dougie.tool.system.AndroidSpeechPort
+import com.dougie.tool.system.AndroidSystemTtsEngine
 import com.dougie.tool.system.DeviceBatteryTool
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -83,6 +87,10 @@ class DougieApplication : Application() {
             isForeground = { foregroundTracker.foreground },
             onUsed = { permissionUsage.mark(AndroidPermissions.RECORD_AUDIO) },
         )
+        val ttsPort = PreferOfflineTtsPort(
+            offline = UnwiredTtsEngine,
+            fallback = AndroidSystemTtsEngine(this),
+        )
         val screenStore = InMemoryScreenFrameStore()
         val screenPort = AndroidScreenCapturePort(
             context = this,
@@ -105,6 +113,7 @@ class DougieApplication : Application() {
             ScreenMatchTool.NAME to ScreenMatchTool(screenStore),
             AppIntentTool.NAME to AppIntentTool(appIntentPort, taskStores.idempotencyStore),
             SpeechInputTool.NAME to SpeechInputTool(speechPort),
+            SpeechOutputTool.NAME to SpeechOutputTool(ttsPort),
         )
         ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
         val provider = OpenAICompatibleProvider(

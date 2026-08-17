@@ -1,0 +1,67 @@
+package com.dougie.core.tool
+
+import com.dougie.core.model.AgentException
+import com.dougie.core.model.ToolContext
+import com.dougie.core.model.UserFacingErrors
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class SpeechOutputToolTest {
+    @Test
+    fun prefersOfflineWhenReady() = runTest {
+        val offline = FakeTtsEngine(ready = true)
+        val fallback = FakeTtsEngine(ready = true)
+        val tool = SpeechOutputTool(PreferOfflineTtsPort(offline, fallback))
+        val result = tool.execute("""{"text":"你好"}""", ToolContext("t", "c"))
+        assertTrue(result.json.contains("\"ok\":true"))
+        assertTrue(result.json.contains("\"backend\":\"offline\""))
+        assertEquals(listOf("你好"), offline.spoken)
+        assertTrue(fallback.spoken.isEmpty())
+        assertFalse(result.json.contains("pcm"))
+    }
+
+    @Test
+    fun usesSystemFallbackWhenOfflineUnready() = runTest {
+        val offline = FakeTtsEngine(ready = false)
+        val fallback = FakeTtsEngine(ready = true)
+        val tool = SpeechOutputTool(PreferOfflineTtsPort(offline, fallback))
+        val result = tool.execute("""{"text":"你好"}""", ToolContext("t", "c"))
+        assertTrue(result.json.contains("\"backend\":\"system\""))
+        assertTrue(offline.spoken.isEmpty())
+        assertEquals(listOf("你好"), fallback.spoken)
+    }
+
+    @Test
+    fun rejectsLongTextOnFallback() = runTest {
+        val offline = FakeTtsEngine(ready = false)
+        val fallback = FakeTtsEngine(ready = true)
+        val tool = SpeechOutputTool(PreferOfflineTtsPort(offline, fallback))
+        val longText = "啊".repeat(PreferOfflineTtsPort.MAX_SYSTEM_CHARS + 1)
+        val result = tool.execute("""{"text":"$longText"}""", ToolContext("t", "c"))
+        assertEquals(UserFacingErrors.TTS_TOO_LONG, result.error)
+        assertTrue(fallback.spoken.isEmpty())
+    }
+
+    @Test
+    fun rejectsNetworkVoice() = runTest {
+        val offline = FakeTtsEngine(ready = false)
+        val fallback = FakeTtsEngine(ready = true, outcome = TtsOutcome.NETWORK)
+        val tool = SpeechOutputTool(PreferOfflineTtsPort(offline, fallback))
+        val result = tool.execute("""{"text":"你好"}""", ToolContext("t", "c"))
+        assertEquals(UserFacingErrors.TTS_NETWORK, result.error)
+    }
+
+    @Test
+    fun emptyTextIsInvalid() {
+        val tool = SpeechOutputTool(PreferOfflineTtsPort(FakeTtsEngine(), FakeTtsEngine()))
+        try {
+            tool.validateArguments("""{"text":"  "}""")
+            throw AssertionError("expected AgentException")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, e.userMessage)
+        }
+    }
+}

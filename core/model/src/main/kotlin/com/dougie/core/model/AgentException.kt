@@ -27,6 +27,9 @@ object UserFacingErrors {
     const val SPEECH_MODEL_MISSING = "离线语音模型尚未就绪，无法识别。"
     const val SPEECH_ENGINE_NOT_READY = "离线语音引擎尚未接入，无法识别。"
     const val SPEECH_EMPTY = "没有听到有效语音，请靠近麦克风后重试。"
+    const val TTS_TOO_LONG = "离线语音未就绪，只能播报短提示。"
+    const val TTS_NETWORK = "系统语音需要联网，已拒绝播报。"
+    const val TTS_FAILED = "语音播报失败，请稍后重试。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

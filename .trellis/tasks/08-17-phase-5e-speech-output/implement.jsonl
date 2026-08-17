@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "§6.9 SpeechOutputTool, system TTS fallback only, no online engine"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "TTS user-facing errors"}
+{"file": "core/tool/src/main/kotlin/com/dougie/core/tool/SpeechOutputTool.kt", "reason": "New tool"}
+{"file": "app/src/main/kotlin/com/dougie/app/DougieApplication.kt", "reason": "Register speech_output"}

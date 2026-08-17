@@ -50,6 +50,8 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   SpeechInputTool.kt
   SpeechSession.kt
   SherpaSpeechEngine.kt
+  TtsPort.kt
+  SpeechOutputTool.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -58,6 +60,7 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   AndroidSpeechPort.kt
   AudioRecordSpeechRecorder.kt
   SherpaJni.kt
+  AndroidSystemTtsEngine.kt
 tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   DougieAccessibilityService.kt
   GesturePort.kt
@@ -80,7 +83,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` | `BatteryManager` / other Android APIs |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech ports, `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings | Loop state machine, LLM HTTP, cloud STT |
+| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech ports, `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine` | Loop state machine, LLM HTTP, cloud STT/TTS |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -131,6 +134,49 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: System `SpeechRecognizer` / online engines can egress audio. Checking in Paraformer int8 (~230MB) blows git and Play APK size.
 
 **Instead**: `SpeechInputTool` in `:core:tool` talks to `SpeechPort`. `SpeechSession` records only after gates pass, then `SherpaSpeechEngine.transcribe`. `AndroidSpeechPort` uses `filesDir/models/asr/{model.int8.onnx,tokens.txt}` and `SherpaJni.isAvailable()` (`System.loadLibrary("sherpa-onnx-jni")`). Do not class-load `OfflineRecognizer` until the library loads. Models and `jniLibs` stay out of git. Trimmed JNI bindings are Apache-2.0 from sherpa-onnx v1.13.4.
+
+## Don't: Online TTS or commit VITS ONNX
+
+**Problem**: System voices with `isNetworkConnectionRequired` egress text. Checking in VITS (~116MB) belongs in a later slice, not this contract.
+
+**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. Default offline is `UnwiredTtsEngine` until VITS is wired. Success JSON is `ok` + `backend` only.
+
+## Scenario: speech_output TTS contract
+
+### 1. Scope / Trigger
+Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort`; `:tool:system` `AndroidSystemTtsEngine`; app wires `UnwiredTtsEngine` as offline until VITS.
+
+### 2. Signatures
+- `TtsEngine.isReady(): Boolean` / `suspend fun speak(text: String): TtsOutcome`
+- `PreferOfflineTtsPort.speak(text): TtsSpeakResult` (`ok`, `backend` `offline`|`system`, optional `error`)
+- `SpeechOutputTool` name `speech_output`, `RiskLevel.L0`, required `text`
+
+### 3. Contracts
+- Offline ready → never call system TTS.
+- Offline unready → system TTS only if `text.length <= 80`.
+- `Voice.isNetworkConnectionRequired` → fail, no speak. Check **after** `setLanguage` (language switch can pick a network voice).
+- Target 30+: `:tool:system` merged manifest must `<queries>` `android.intent.action.TTS_SERVICE` so engines/voices are visible.
+- Success JSON `{"ok":true,"backend":"offline"|"system"}` — no PCM/bytes.
+- Do not commit VITS ONNX.
+
+### 4. Validation & Error Matrix
+- Empty/blank `text` → `INVALID_TOOL_ARGS`
+- Fallback length > 80 → `TTS_TOO_LONG`
+- Network voice → `TTS_NETWORK`
+- Engine fail → `TTS_FAILED`
+
+### 5. Good / Base / Bad
+- Good: offline ready, short text, `backend=offline`
+- Base: offline unready, short text, `backend=system`
+- Bad: 81-char fallback; network voice; empty text
+
+### 6. Tests Required
+- `SpeechOutputToolTest`: prefers offline; fallback; long fallback; network; empty text
+- `./gradlew :core:tool:test :app:checkChannelLeak`
+
+### 7. Wrong vs Correct
+- Wrong: `TextToSpeech` with a network voice, checking the voice only before `setLanguage`, or logging utterance text
+- Correct: reject `isNetworkConnectionRequired` on the voice actually used; AuditLog stores tool name/outcome only
 
 ## Scenario: LoopEngine status contract
 

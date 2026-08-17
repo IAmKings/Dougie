@@ -40,8 +40,9 @@
 | `08-17-phase-5a-tap-swipe` | §15 Phase 5 / §10.2 | 侧载真实 tap/swipe；Play 仍零 Accessibility（已归档） |
 | `08-17-phase-5b-speech-input` | §15 Phase 5 / §6.8 | `speech_input` 合同与权限门；不内置 230MB 模型（已归档） |
 | `08-17-phase-5c-speech-engine` | §15 Phase 5 / §6.8 | 前台 PCM 采集 + 可注入本地引擎缝；不入库 ONNX/JNI（已归档） |
-| `08-17-phase-5d-sherpa-jni` | §15 Phase 5 / §6.8 | sherpa-onnx JNI 可加载时本地 Paraformer 转写 |
-| （后续）Phase 5 余下 | §15 Phase 5 | TTS / 本地 LLM |
+| `08-17-phase-5d-sherpa-jni` | §15 Phase 5 / §6.8 | sherpa-onnx JNI 可加载时本地 Paraformer 转写（已归档） |
+| `08-17-phase-5e-speech-output` | §15 Phase 5 / §6.9 | `speech_output` 合同；系统短播报降级，禁联网合成 |
+| （后续）Phase 5 余下 | §15 Phase 5 | VITS 离线 TTS / 本地 LLM |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 
