@@ -82,4 +82,17 @@ class PolicyEngineTest {
         )
         assertTrue(decision is PolicyDecision.DeniedPermission)
     }
+
+    @Test
+    fun missingRecordAudioDeniesSpeechInput() {
+        val engine = PolicyEngine { false }
+        val decision = engine.decide(
+            ToolDescriptor(
+                name = "speech_input",
+                riskLevel = RiskLevel.L1,
+                androidPermission = AndroidPermissions.RECORD_AUDIO,
+            ),
+        )
+        assertTrue(decision is PolicyDecision.DeniedPermission)
+    }
 }

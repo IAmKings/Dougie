@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/08-17-phase-5b-speech-input/prd.md", "reason": "Acceptance"}
+{"file": "PRD.md", "reason": "Audio never leaves device"}
+{"file": "core/tool/src/test/kotlin/com/dougie/core/tool/SpeechInputToolTest.kt", "reason": "Zero listen on deny paths"}
+{"file": "app/build.gradle.kts", "reason": "Play leak still green"}

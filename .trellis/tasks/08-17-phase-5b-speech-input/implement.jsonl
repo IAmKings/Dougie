@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "§6.8 SpeechInputTool offline, no cloud STT"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Speech user-facing errors"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Never log audio PCM"}
+{"file": "core/tool/src/main/kotlin/com/dougie/core/tool/SpeechInputTool.kt", "reason": "New tool"}
+{"file": "app/src/main/kotlin/com/dougie/app/DougieApplication.kt", "reason": "Register speech_input"}

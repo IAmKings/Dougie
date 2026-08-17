@@ -23,6 +23,9 @@ object UserFacingErrors {
     const val TAP_SWIPE_CONSENT = "未完成侧载知情同意，无法执行屏幕操作"
     const val TAP_SWIPE_SERVICE = "未开启无障碍服务，无法执行屏幕操作"
     const val TAP_SWIPE_BLOCKED = "该应用不允许自动点击或滑动。"
+    const val SPEECH_NOT_FOREGROUND = "应用不在前台，无法使用语音输入。"
+    const val SPEECH_MODEL_MISSING = "离线语音模型尚未就绪，无法识别。"
+    const val SPEECH_ENGINE_NOT_READY = "离线语音引擎尚未接入，无法识别。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

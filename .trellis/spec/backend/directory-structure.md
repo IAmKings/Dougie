@@ -46,11 +46,14 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   AppIntentAllowlist.kt
   AppIntentPort.kt
   AppIntentTool.kt
+  SpeechPort.kt
+  SpeechInputTool.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
   AndroidClipboardPort.kt
   AndroidAppIntentPort.kt
+  AndroidSpeechPort.kt
 tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   DougieAccessibilityService.kt
   GesturePort.kt
@@ -73,7 +76,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` | `BatteryManager` / other Android APIs |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort`, `AndroidAppIntentPort` | Loop state machine, LLM HTTP |
+| `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort`, `AndroidAppIntentPort`, `AndroidSpeechPort` | Loop state machine, LLM HTTP, cloud STT |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -118,6 +121,12 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: `:core:tool` is on the Play classpath. A TapSwipe class there would ship in the Play APK even if unregistered.
 
 **Instead**: Keep `TapSwipeTool` and `AccessibilityService` in `:tool:accessibility`, wired only with `sideloadImplementation`. Play `ChannelTools` must not import those types. `PolicyEngine` treats `RiskLevel.L3` as always `NeedsConfirmation`. Sideload `TapSwipeTool` dispatches via `GesturePort` (`dispatchGesture`); refuse bank/payment/password-manager foreground packages in `HighRiskForeground` before any gesture.
+
+## Don't: Cloud STT or commit 230MB ASR models
+
+**Problem**: System `SpeechRecognizer` / online engines can egress audio. Checking in Paraformer int8 (~230MB) blows git and Play APK size.
+
+**Instead**: `SpeechInputTool` in `:core:tool` talks to `SpeechPort`. `AndroidSpeechPort` looks for `filesDir/models/asr/encoder.onnx` and keeps `isEngineReady() == false` until sherpa-onnx is wired. Never open the microphone on a deny path. Models stay out of git.
 
 ## Scenario: LoopEngine status contract
 

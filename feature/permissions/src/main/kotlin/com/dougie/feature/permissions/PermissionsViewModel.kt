@@ -90,6 +90,13 @@ class PermissionsViewModel(
                 riskLabel = "L1",
             ),
             item(
+                id = "microphone",
+                title = "麦克风",
+                subtitle = "仅在前台本地转写，音频不出设备、不入日志",
+                permission = AndroidPermissions.RECORD_AUDIO,
+                riskLabel = "L1",
+            ),
+            item(
                 id = "screen_capture",
                 title = "屏幕截取",
                 subtitle = "系统投屏授权后，截图只留在本机内存，不会发给模型",
