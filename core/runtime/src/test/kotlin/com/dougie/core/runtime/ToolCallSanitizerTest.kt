@@ -68,6 +68,27 @@ class ToolCallSanitizerTest {
     }
 
     @Test
+    fun missingRequiredFieldWithoutDefaultFails() {
+        val sanitizer = ToolCallSanitizer(
+            mapOf(
+                "calendar_create" to ToolDescriptor(
+                    name = "calendar_create",
+                    properties = mapOf(
+                        "title" to ToolParamSpec(ToolParamType.STRING),
+                        "startIso" to ToolParamSpec(ToolParamType.STRING),
+                    ),
+                ),
+            ),
+        )
+        try {
+            sanitizer.sanitize("calendar_create", """{"title":"开会"}""")
+            throw AssertionError("expected AgentException")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, e.userMessage)
+        }
+    }
+
+    @Test
     fun fillsDefaultWhenRequiredFieldMissing() {
         val sanitizer = ToolCallSanitizer(
             mapOf(

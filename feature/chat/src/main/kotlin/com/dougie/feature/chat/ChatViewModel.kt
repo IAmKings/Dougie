@@ -21,6 +21,14 @@ class ChatViewModel(
         taskManager.submit(text)
     }
 
+    fun confirm() {
+        taskManager.confirm()
+    }
+
+    fun reject() {
+        taskManager.reject()
+    }
+
     class Factory(
         private val taskManager: TaskManager,
     ) : ViewModelProvider.Factory {

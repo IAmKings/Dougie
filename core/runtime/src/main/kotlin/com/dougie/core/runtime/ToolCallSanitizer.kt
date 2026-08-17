@@ -30,7 +30,8 @@ class ToolCallSanitizer(
             for ((key, spec) in descriptor.properties) {
                 val raw = parsed[key]
                 if (raw == null || raw is JsonNull) {
-                    val fallback = spec.defaultJson ?: continue
+                    val fallback = spec.defaultJson
+                        ?: throw AgentException(UserFacingErrors.INVALID_TOOL_ARGS)
                     put(key, Json.parseToJsonElement(fallback))
                     continue
                 }

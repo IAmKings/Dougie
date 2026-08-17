@@ -60,13 +60,13 @@ class EgressGatewayTest {
         server.start()
         try {
             server.enqueue(MockResponse().setBody("""{"choices":[{"message":{"content":"no"}}]}"""))
-            val provider = OpenAICompatibleProvider(OkHttpClient()) {
+            val provider = OpenAICompatibleProvider(OkHttpClient(), config = {
                 CloudLlmConfig(
                     baseUrl = server.url("/v1/").toString(),
                     apiKey = "sk-present-but-blocked",
                     model = "gpt-4o-mini",
                 )
-            }
+            })
             val gateway = EgressGateway(
                 policy = { EgressPolicy(allowCloud = false) },
                 apiKey = { "sk-present-but-blocked" },
@@ -89,13 +89,13 @@ class EgressGatewayTest {
         server.start()
         try {
             server.enqueue(MockResponse().setBody("data: {\"choices\":[{\"delta\":{\"content\":\"no\"}}]}\n\ndata: [DONE]\n"))
-            val provider = OpenAICompatibleProvider(OkHttpClient()) {
+            val provider = OpenAICompatibleProvider(OkHttpClient(), config = {
                 CloudLlmConfig(
                     baseUrl = server.url("/v1/").toString(),
                     apiKey = "sk-present-but-blocked",
                     model = "gpt-4o-mini",
                 )
-            }
+            })
             val gateway = EgressGateway(
                 policy = { EgressPolicy(allowCloud = false) },
                 apiKey = { "sk-present-but-blocked" },

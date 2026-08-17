@@ -1,6 +1,7 @@
 package com.dougie.feature.chat
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 
@@ -17,6 +18,12 @@ sealed class ChatItem {
     data class UserMessage(val text: String) : ChatItem()
     data class Thinking(val loopNumber: Int) : ChatItem()
     data class ToolCard(val entry: ToolTraceEntry) : ChatItem()
+    data class ConfirmCard(
+        val toolName: String,
+        val argsJson: String,
+        val riskLevel: RiskLevel,
+        val toolCallId: String,
+    ) : ChatItem()
     data class AgentMessage(val text: String) : ChatItem()
 }
 
@@ -28,7 +35,19 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         add(ChatItem.UserMessage(input))
         toolTrace.forEachIndexed { index, entry ->
             add(ChatItem.Thinking(loopNumber = index + 1))
-            add(ChatItem.ToolCard(entry))
+            val awaitingThis = status == TaskStatus.AWAITING_CONFIRMATION && index == toolTrace.lastIndex
+            if (awaitingThis) {
+                add(
+                    ChatItem.ConfirmCard(
+                        toolName = entry.toolName,
+                        argsJson = entry.argsSummary,
+                        riskLevel = entry.riskLevel,
+                        toolCallId = entry.toolCallId,
+                    ),
+                )
+            } else {
+                add(ChatItem.ToolCard(entry))
+            }
         }
         val nextLoop = loopCount + 1
         val alreadyShowingNextThinking = toolTrace.size >= nextLoop

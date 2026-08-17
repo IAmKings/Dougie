@@ -16,13 +16,15 @@ val uiState: StateFlow<ChatUiState> = taskManager.task
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
 ```
 
-`ChatItem`: `UserMessage` | `Thinking(loopNumber)` | `ToolCard` | `AgentMessage`.
+`ChatItem`: `UserMessage` | `Thinking(loopNumber)` | `ToolCard` | `ConfirmCard` | `AgentMessage`.
 
-`inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE).
+`inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE), including `AWAITING_CONFIRMATION`.
+
+When `status == AWAITING_CONFIRMATION`, map the last `ToolTraceEntry` to `ConfirmCard(toolName, argsJson, riskLevel, toolCallId)` instead of a `ToolCard`. `ChatViewModel.confirm()` / `reject()` call `TaskManager` and must not store a second confirmation flag.
 
 If `streamingText` is not blank and status is not COMPLETED/FAILED, append `AgentMessage(streamingText)` even while `THINKING`. After complete, show `finalAnswer` only (`streamingText` is null).
 
-Tool cards: `battery` → 电池工具, `time` → 时间工具, else the raw `toolName`. Do not hardcode “电池” for every tool.
+Tool cards: `battery` → 电池工具, `time` → 时间工具, `calendar_query` / `calendar_create` / `clipboard_*` use Chinese labels, else the raw `toolName`. Do not hardcode “电池” for every tool.
 
 Egress / timeout / network / cancel failures are not a separate UI type: they are `AgentMessage` text from `lastError`.
 

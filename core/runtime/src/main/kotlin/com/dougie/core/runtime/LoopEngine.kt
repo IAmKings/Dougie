@@ -8,6 +8,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
+import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolContext
 import com.dougie.core.model.ToolTraceEntry
@@ -15,6 +16,7 @@ import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -31,9 +33,22 @@ class LoopEngine(
     private val toolTimeoutMs: Long = 15_000L,
     private val memoryStore: MemoryStore? = null,
     private val memoryEnabled: () -> Boolean = { true },
+    private val policyEngine: PolicyEngine = PolicyEngine(),
+    private val confirmTimeoutMs: Long = 60_000L,
 ) {
     private val sanitizer = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
     private val memoryGate = memoryStore?.let { MemoryGate(it, memoryEnabled) }
+
+    @Volatile
+    private var confirmGate: CompletableDeferred<Boolean>? = null
+
+    fun confirm() {
+        confirmGate?.complete(true)
+    }
+
+    fun reject() {
+        confirmGate?.complete(false)
+    }
 
     suspend fun run(initial: AgentTask, emit: suspend (AgentTask) -> Unit): AgentTask {
         return withContext(dispatcher) {
@@ -81,11 +96,13 @@ class LoopEngine(
                 }
 
                 val toolCallId = toolEvent.id.ifBlank { "call-${task.loopCount + 1}" }
+                val registered = tools[toolEvent.name]
                 val pending = ToolTraceEntry(
                     toolCallId = toolCallId,
                     toolName = toolEvent.name,
                     argsSummary = toolEvent.argsJson,
                     status = ToolTraceStatus.PENDING,
+                    riskLevel = registered?.descriptor?.riskLevel ?: RiskLevel.L0,
                 )
                 task = task.copy(
                     status = TaskStatus.TOOL_PENDING,
@@ -108,19 +125,48 @@ class LoopEngine(
                     it.copy(argsSummary = sanitizedArgs)
                 }
 
-                task = updateLastTrace(task, TaskStatus.TOOL_EXECUTING) {
-                    it.copy(status = ToolTraceStatus.EXECUTING)
-                }
-                emit(task)
-                stepDelay()
-
-                val tool = tools[toolEvent.name]
+                val tool = registered
                 if (tool == null) {
                     task = updateLastTrace(task, TaskStatus.FAILED) {
                         it.copy(status = ToolTraceStatus.FAILED)
                     }
                     return@withContext fail(task, UserFacingErrors.UNKNOWN_TOOL, emit)
                 }
+
+                when (policyEngine.decide(tool.descriptor)) {
+                    is PolicyDecision.DeniedPermission -> {
+                        task = updateLastTrace(task, TaskStatus.FAILED) {
+                            it.copy(status = ToolTraceStatus.FAILED)
+                        }
+                        return@withContext fail(task, UserFacingErrors.PERMISSION_DENIED, emit)
+                    }
+                    PolicyDecision.NeedsConfirmation -> {
+                        val gate = CompletableDeferred<Boolean>()
+                        confirmGate = gate
+                        task = updateLastTrace(task, TaskStatus.AWAITING_CONFIRMATION) { it }
+                        emit(task)
+                        val confirmed = try {
+                            withTimeout(confirmTimeoutMs) { gate.await() }
+                        } catch (e: TimeoutCancellationException) {
+                            false
+                        } finally {
+                            if (confirmGate === gate) confirmGate = null
+                        }
+                        if (!confirmed) {
+                            task = updateLastTrace(task, TaskStatus.FAILED) {
+                                it.copy(status = ToolTraceStatus.FAILED)
+                            }
+                            return@withContext fail(task, UserFacingErrors.CONFIRM_REJECTED, emit)
+                        }
+                    }
+                    PolicyDecision.Allow -> Unit
+                }
+
+                task = updateLastTrace(task, TaskStatus.TOOL_EXECUTING) {
+                    it.copy(status = ToolTraceStatus.EXECUTING)
+                }
+                emit(task)
+                stepDelay()
 
                 val result = try {
                     withTimeout(toolTimeoutMs) {

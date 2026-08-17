@@ -50,6 +50,14 @@ class TaskManager(
         }
     }
 
+    fun confirm() {
+        loopEngine.confirm()
+    }
+
+    fun reject() {
+        loopEngine.reject()
+    }
+
     fun cancel() {
         running?.cancel()
     }

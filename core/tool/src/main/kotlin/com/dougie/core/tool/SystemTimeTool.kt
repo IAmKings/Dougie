@@ -11,7 +11,10 @@ class SystemTimeTool(
     private val clock: Clock = Clock.systemDefaultZone(),
 ) : AgentTool {
     override val name: String = "time"
-    override val descriptor: ToolDescriptor = ToolDescriptor(name)
+    override val descriptor: ToolDescriptor = ToolDescriptor(
+        name = name,
+        description = "Read the current local date and time.",
+    )
 
     override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
         require(context.idempotencyKey == context.taskId + context.toolCallId) {

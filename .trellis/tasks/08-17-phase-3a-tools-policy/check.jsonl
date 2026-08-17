@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "L2 confirm, calendar cases, clipboard foreground"}
+{"file": ".trellis/tasks/08-17-phase-3a-tools-policy/prd.md", "reason": "Acceptance"}
+{"file": ".trellis/tasks/08-17-phase-3a-tools-policy/design.md", "reason": "PolicyEngine and confirm gate"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "feature must not call CalendarContract"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "ConfirmCard from task status"}

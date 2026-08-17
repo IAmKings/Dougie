@@ -15,7 +15,11 @@ import com.dougie.core.model.ToolContext
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.CalendarCreateTool
+import com.dougie.core.tool.ClipboardReadTool
 import com.dougie.core.tool.FakeBatteryTool
+import com.dougie.core.tool.FakeCalendarPort
+import com.dougie.core.tool.FakeClipboardPort
 import com.dougie.core.tool.SystemTimeTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -446,6 +450,155 @@ class LoopEngineTest {
         val result = engine.run(AgentTask(taskId = "ok", input = "我叫小明")) {}
         assertEquals(TaskStatus.COMPLETED, result.status)
         assertEquals("好的", result.finalAnswer)
+    }
+
+    @Test
+    fun l2ConfirmExecutesOnceAndRejectSkipsExecute() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeCalendarPort()
+        val create = CalendarCreateTool(port)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(
+                        id = "cal-1",
+                        name = CalendarCreateTool.NAME,
+                        argsJson = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""",
+                    )
+                } else {
+                    LlmResponse.FinalAnswer("已创建日程。")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(CalendarCreateTool.NAME to create),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val confirmed = engine.run(AgentTask(taskId = "c1", input = "约开会")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, confirmed.status)
+        assertEquals(1, port.createCalls.size)
+
+        val rejectedPort = FakeCalendarPort()
+        val rejectEngine = LoopEngine(
+            llm = provider,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(rejectedPort)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val rejected = rejectEngine.run(AgentTask(taskId = "c2", input = "约开会")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) rejectEngine.reject()
+        }
+        assertEquals(TaskStatus.FAILED, rejected.status)
+        assertEquals(UserFacingErrors.CONFIRM_REJECTED, rejected.lastError)
+        assertEquals(0, rejectedPort.createCalls.size)
+    }
+
+    @Test
+    fun invalidL2ArgsFailBeforeConfirmOrExecute() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeCalendarPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "cal-bad",
+                    name = CalendarCreateTool.NAME,
+                    argsJson = """{"title":"开会"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val statuses = mutableListOf<TaskStatus>()
+        val result = engine.run(AgentTask(taskId = "bad", input = "约开会")) { snapshot ->
+            statuses += snapshot.status
+        }
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, result.lastError)
+        assertEquals(0, port.createCalls.size)
+        assertEquals(false, statuses.contains(TaskStatus.AWAITING_CONFIRMATION))
+    }
+
+    @Test
+    fun missingPermissionDoesNotExecute() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeCalendarPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "cal-1",
+                    name = CalendarCreateTool.NAME,
+                    argsJson = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            policyEngine = PolicyEngine { false },
+        )
+        val result = engine.run(AgentTask(taskId = "deny", input = "约开会")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.PERMISSION_DENIED, result.lastError)
+        assertEquals(0, port.createCalls.size)
+    }
+
+    @Test
+    fun clipboardBackgroundDoesNotExecuteAsSuccess() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeClipboardPort(foreground = false, text = "secret")
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "clip-1",
+                    name = ClipboardReadTool.NAME,
+                    argsJson = "{}",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(ClipboardReadTool.NAME to ClipboardReadTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "bg", input = "剪贴板里有什么")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.CLIPBOARD_NOT_FOREGROUND, result.lastError)
+        assertEquals(ToolTraceStatus.FAILED, result.toolTrace.single().status)
+        assertEquals(false, result.toolTrace.single().resultJson.orEmpty().contains("secret"))
+    }
+
+    @Test
+    fun calendarCreateSameKeyInsertsOnceViaTool() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeCalendarPort()
+        val tool = CalendarCreateTool(port)
+        val ctx = ToolContext(taskId = "task-1", toolCallId = "call-1")
+        val args = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}"""
+        tool.execute(args, ctx)
+        tool.execute(args, ctx)
+        assertEquals(1, port.createCalls.size)
+        val engine = LoopEngine(
+            llm = FakeLlmProvider(),
+            tools = mapOf("battery" to FakeBatteryTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        assertEquals(TaskStatus.COMPLETED, engine.run(AgentTask(taskId = "keep-l0", input = "电量")) {}.status)
     }
 
     @Test

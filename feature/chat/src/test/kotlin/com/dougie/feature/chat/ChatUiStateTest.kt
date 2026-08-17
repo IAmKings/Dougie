@@ -93,10 +93,35 @@ class ChatUiStateTest {
         assertEquals("calendar", toolDisplayName("calendar"))
     }
 
+    @Test
+    fun awaitingConfirmationShowsConfirmCardAndDisablesInput() {
+        val state = AgentTask(
+            taskId = "t",
+            input = "帮我约明天下午开会",
+            status = TaskStatus.AWAITING_CONFIRMATION,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "cal-1",
+                    toolName = "calendar_create",
+                    argsSummary = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""",
+                    status = ToolTraceStatus.PENDING,
+                    riskLevel = com.dougie.core.model.RiskLevel.L2,
+                ),
+            ),
+        ).toChatUiState()
+        assertEquals(listOf("user", "thinking-1", "confirm-cal-1"), state.items.map { it.kind() })
+        val card = state.items.last() as ChatItem.ConfirmCard
+        assertEquals("calendar_create", card.toolName)
+        assertEquals("""{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""", card.argsJson)
+        assertEquals(com.dougie.core.model.RiskLevel.L2, card.riskLevel)
+        assertEquals(false, state.inputEnabled)
+    }
+
     private fun ChatItem.kind(): String = when (this) {
         is ChatItem.UserMessage -> "user"
         is ChatItem.Thinking -> "thinking-$loopNumber"
         is ChatItem.ToolCard -> "tool-${entry.toolCallId}"
+        is ChatItem.ConfirmCard -> "confirm-$toolCallId"
         is ChatItem.AgentMessage -> "agent"
     }
 }

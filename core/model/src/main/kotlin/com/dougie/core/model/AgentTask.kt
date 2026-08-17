@@ -18,10 +18,17 @@ enum class TaskStatus {
     PREPARING,
     THINKING,
     TOOL_PENDING,
+    AWAITING_CONFIRMATION,
     TOOL_EXECUTING,
     TOOL_RESULT,
     COMPLETED,
     FAILED,
+}
+
+enum class RiskLevel {
+    L0,
+    L1,
+    L2,
 }
 
 data class ToolTraceEntry(
@@ -30,6 +37,7 @@ data class ToolTraceEntry(
     val argsSummary: String,
     val resultJson: String? = null,
     val status: ToolTraceStatus = ToolTraceStatus.PENDING,
+    val riskLevel: RiskLevel = RiskLevel.L0,
 )
 
 enum class ToolTraceStatus {
@@ -59,8 +67,16 @@ sealed class LlmEvent {
 
 data class ToolDescriptor(
     val name: String,
+    val description: String = "",
     val properties: Map<String, ToolParamSpec> = emptyMap(),
+    val riskLevel: RiskLevel = RiskLevel.L0,
+    val androidPermission: String? = null,
 )
+
+object AndroidPermissions {
+    const val READ_CALENDAR = "android.permission.READ_CALENDAR"
+    const val WRITE_CALENDAR = "android.permission.WRITE_CALENDAR"
+}
 
 data class ToolParamSpec(
     val type: ToolParamType,

@@ -16,6 +16,7 @@ object DougieColors {
     val OnSurfaceVariant = Color(0xFF444651)
     val OutlineVariant = Color(0xFFC5C5D2)
     val Outline = Color(0xFF757682)
+    val Error = Color(0xFFBA1A1A)
     val StatusThinking = Color(0xFF566AB2)
     val StatusCompleted = Color(0xFF2E7D32)
     val StatusExecuting = Color(0xFFFFB300)

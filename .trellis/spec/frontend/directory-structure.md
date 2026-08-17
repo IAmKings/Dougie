@@ -23,25 +23,32 @@ feature/memory/src/main/kotlin/com/dougie/feature/memory/
   MemoryScreen.kt
   MemoryViewModel.kt
   DougieColors.kt
+feature/permissions/src/main/kotlin/com/dougie/feature/permissions/
+  PermissionsScreen.kt
+  PermissionsViewModel.kt
+  DougieColors.kt
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
+  AppForegroundTracker.kt
+  PermissionUsageTracker.kt
 ```
 
 ## Module Organization
 
 | Module | Owns |
 |--------|------|
-| `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping; navigate to settings |
+| `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping, Confirm Card; navigate to settings / memory / Permission Center |
 | `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore` |
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + `DeviceBatteryTool` + `RoomMemoryStore` on `Dispatchers.Default`; Chat↔Settings↔Memory routes |
+| `:feature:permissions` | Permission Center: calendar read/write status, request runtime grants, clipboard note |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` on `Dispatchers.Default`; Chat↔Settings↔Memory↔Permissions routes |
 
-`:feature:*` must not call `BatteryManager` or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
+`:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
 ## Naming Conventions
 
-- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`, `MemoryScreen` / `MemoryRoute`
+- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`, `MemoryScreen` / `MemoryRoute`, `PermissionsScreen` / `PermissionsRoute`
 - Mapping: `AgentTask?.toChatUiState()` in `ChatUiState.kt`
 - Product copy: **Dougie**, never Waku
 - Chat colors: Stitch tokens `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`DougieColors`)

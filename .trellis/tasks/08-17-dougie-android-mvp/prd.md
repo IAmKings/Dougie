@@ -31,9 +31,10 @@
 | `08-17-phase-0-skeleton-chat` | Phase 0 + Chat 主界面 | Fake LLM + Fake Tool 稳定跑通 3 次 Loop；Chat 展示完整状态链（实现已通过） |
 | `08-17-phase-1a-cloud-battery` | §15 Phase 1a | 真实 OpenAI-compatible 对话 + 真实电量 Tool + Egress 默认拦截（已归档） |
 | `08-17-phase-1b-streaming-tools` | §15 Phase 1b | Streaming + ≥2 Tool（电量+时间）+ ToolCallSanitizer（已归档） |
-| `08-17-phase-2-local-memory` | §15 Phase 2 | FTS5 关键词记忆 + Gate + Memory UI，能找回至少一个事实 |
-| （后续）Phase 2 Memory UI | §15 Phase 2 | 能从历史找回至少一个事实 |
-| （后续）其余 Phase | §15 Phase 3–4 | 按各自 PRD 拆分 |
+| `08-17-phase-2-local-memory` | §15 Phase 2 | FTS5 关键词记忆 + Gate + Memory UI，能找回至少一个事实（已归档） |
+| `08-17-phase-3a-tools-policy` | §15 Phase 3 切片 | 日历查询/创建、剪贴板、Policy+确认卡、权限中心 |
+| （后续）Phase 3b 定位与屏幕感知 | §15 Phase 3 余下 | Location + ScreenCapture/Match |
+| （后续）Phase 4 Reliability | §15 Phase 4 | 杀进程幂等与任务恢复 |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 

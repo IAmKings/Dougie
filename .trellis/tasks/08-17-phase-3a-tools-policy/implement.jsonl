@@ -1,0 +1,8 @@
+{"file": "PRD.md", "reason": "Risk levels, Confirm Card, Permission Center, calendar, clipboard foreground"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine/Policy must stay JVM-pure"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Permission skip and confirm reject copy"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No calendar/clipboard dumps"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Map AWAITING_CONFIRMATION from AgentTask only"}
+{"file": "core/runtime/src/main/kotlin/com/dougie/core/runtime/LoopEngine.kt", "reason": "Insert policy+confirm before execute"}
+{"file": "design/权限与系统/高风险操作确认_-_权限授予_中文版__c269844e4b04460d86dc11292144f9b6.html", "reason": "Confirm Card visual"}
+{"file": "design/权限与系统/权限中心_-_隐私管控_中文版__76580b56748945a1a0570859eea536a0.html", "reason": "Permission Center visual"}

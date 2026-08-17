@@ -6,6 +6,8 @@ import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
+import com.dougie.core.model.ToolDescriptor
+import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.UserFacingErrors
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
@@ -39,6 +41,7 @@ import java.io.IOException
 
 class OpenAICompatibleProvider(
     private val client: OkHttpClient,
+    private val toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
     private val config: () -> CloudLlmConfig,
 ) : LlmProvider {
     override val isLocal: Boolean = false
@@ -165,7 +168,7 @@ class OpenAICompatibleProvider(
             put("model", model)
             put("stream", stream)
             put("messages", messages)
-            put("tools", L0_TOOLS)
+            put("tools", buildToolsArray(toolDescriptors()))
         }.toString()
     }
 
@@ -261,33 +264,65 @@ class OpenAICompatibleProvider(
     companion object {
         private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
         const val SYSTEM_PROMPT =
-            "You are Dougie, a local-first mobile agent. Use the battery tool when the user asks about battery level. Use the time tool when the user asks for the current time. Reply in Chinese."
+            "You are Dougie, a local-first mobile agent. Use battery, time, calendar_query, calendar_create, clipboard_read, and clipboard_write when they match the user request. Reply in Chinese."
 
         internal fun chatCompletionsUrl(baseUrl: String): String {
             return baseUrl.trimEnd('/') + "/chat/completions"
         }
 
-        private val L0_TOOLS = buildJsonArray {
-            add(functionTool("battery", "Read the device battery percent and charging state."))
-            add(functionTool("time", "Read the current local date and time."))
+        internal fun buildToolsArray(descriptors: List<ToolDescriptor>): JsonArray = buildJsonArray {
+            for (descriptor in descriptors) {
+                add(functionTool(descriptor))
+            }
         }
 
-        private fun functionTool(name: String, description: String) = buildJsonObject {
+        private fun functionTool(descriptor: ToolDescriptor) = buildJsonObject {
             put("type", "function")
             put(
                 "function",
                 buildJsonObject {
-                    put("name", name)
-                    put("description", description)
+                    put("name", descriptor.name)
+                    put("description", descriptor.description)
                     put(
                         "parameters",
                         buildJsonObject {
                             put("type", "object")
-                            put("properties", buildJsonObject { })
+                            put(
+                                "properties",
+                                buildJsonObject {
+                                    for ((key, spec) in descriptor.properties) {
+                                        put(
+                                            key,
+                                            buildJsonObject {
+                                                put("type", spec.type.toJsonName())
+                                            },
+                                        )
+                                    }
+                                },
+                            )
+                            val required = descriptor.properties
+                                .filter { it.value.defaultJson == null }
+                                .keys
+                            if (required.isNotEmpty()) {
+                                put(
+                                    "required",
+                                    buildJsonArray {
+                                        required.forEach { add(JsonPrimitive(it)) }
+                                    },
+                                )
+                            }
                         },
                     )
                 },
             )
+        }
+
+        private fun ToolParamType.toJsonName(): String = when (this) {
+            ToolParamType.STRING -> "string"
+            ToolParamType.NUMBER -> "number"
+            ToolParamType.INTEGER -> "integer"
+            ToolParamType.BOOLEAN -> "boolean"
+            ToolParamType.OBJECT -> "object"
         }
     }
 }

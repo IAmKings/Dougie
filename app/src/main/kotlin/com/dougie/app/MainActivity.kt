@@ -21,7 +21,7 @@ import com.dougie.feature.memory.MemoryViewModel
 import com.dougie.feature.settings.SettingsRoute
 import com.dougie.feature.settings.SettingsViewModel
 
-private enum class AppRoute { Chat, Settings, Memory }
+private enum class AppRoute { Chat, Settings, Memory, Permissions }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
                             allowCloud = prefs.allowCloud,
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
+                            onOpenPermissions = { route = AppRoute.Permissions },
                         )
                     }
                     AppRoute.Settings -> {
@@ -64,6 +65,18 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onOpenChat = { route = AppRoute.Chat },
                             onOpenSettings = { route = AppRoute.Settings },
+                        )
+                    }
+                    AppRoute.Permissions -> {
+                        val viewModel: com.dougie.feature.permissions.PermissionsViewModel = viewModel(
+                            factory = com.dougie.feature.permissions.PermissionsViewModel.Factory(
+                                app,
+                                app.permissionUsage::lastUsedMs,
+                            ),
+                        )
+                        com.dougie.feature.permissions.PermissionsRoute(
+                            viewModel = viewModel,
+                            onBack = { route = AppRoute.Chat },
                         )
                     }
                 }

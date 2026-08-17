@@ -6,6 +6,9 @@ import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
+import com.dougie.core.model.ToolDescriptor
+import com.dougie.core.model.ToolParamSpec
+import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import kotlinx.coroutines.flow.toList
@@ -73,6 +76,10 @@ class OpenAICompatibleProviderTest {
         assertTrue(body.contains("\"stream\":true"))
         assertTrue(body.contains("\"name\":\"time\""))
         assertTrue(body.contains("\"name\":\"battery\""))
+        assertTrue(body.contains("\"name\":\"calendar_query\""))
+        assertTrue(body.contains("\"name\":\"calendar_create\""))
+        assertTrue(body.contains("\"name\":\"clipboard_read\""))
+        assertTrue(body.contains("\"name\":\"clipboard_write\""))
     }
 
     @Test
@@ -134,16 +141,45 @@ class OpenAICompatibleProviderTest {
     }
 
     private fun testProvider(): OpenAICompatibleProvider {
-        return OpenAICompatibleProvider(OkHttpClient()) {
-            CloudLlmConfig(
-                baseUrl = server.url("/v1/").toString(),
-                apiKey = "sk-test",
-                model = "gpt-4o-mini",
-            )
-        }
+        return OpenAICompatibleProvider(
+            client = OkHttpClient(),
+            config = {
+                CloudLlmConfig(
+                    baseUrl = server.url("/v1/").toString(),
+                    apiKey = "sk-test",
+                    model = "gpt-4o-mini",
+                )
+            },
+            toolDescriptors = { PHASE_3A_TOOLS },
+        )
     }
 
     companion object {
+        private val PHASE_3A_TOOLS = listOf(
+            ToolDescriptor("battery", description = "Read the device battery percent and charging state."),
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor(
+                name = "calendar_query",
+                description = "Query upcoming calendar events as a short JSON summary.",
+            ),
+            ToolDescriptor(
+                name = "calendar_create",
+                description = "Create a calendar event. Requires title and startIso.",
+                properties = mapOf(
+                    "title" to ToolParamSpec(ToolParamType.STRING),
+                    "startIso" to ToolParamSpec(ToolParamType.STRING),
+                ),
+            ),
+            ToolDescriptor(
+                name = "clipboard_read",
+                description = "Read clipboard text. Only works while the app is in the foreground.",
+            ),
+            ToolDescriptor(
+                name = "clipboard_write",
+                description = "Write text to the clipboard. Requires user confirmation.",
+                properties = mapOf("text" to ToolParamSpec(ToolParamType.STRING)),
+            ),
+        )
         private const val TOOL_CALL_BODY = """
         {
           "choices": [

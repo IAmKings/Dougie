@@ -78,14 +78,18 @@ fun ChatRoute(
     allowCloud: Boolean = false,
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
+    onOpenPermissions: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
         uiState = uiState,
         onSend = viewModel::send,
+        onConfirm = viewModel::confirm,
+        onReject = viewModel::reject,
         allowCloud = allowCloud,
         onOpenSettings = onOpenSettings,
         onOpenMemory = onOpenMemory,
+        onOpenPermissions = onOpenPermissions,
     )
 }
 
@@ -93,9 +97,12 @@ fun ChatRoute(
 fun ChatScreen(
     uiState: ChatUiState,
     onSend: (String) -> Unit,
+    onConfirm: () -> Unit = {},
+    onReject: () -> Unit = {},
     allowCloud: Boolean = false,
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
+    onOpenPermissions: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -105,12 +112,20 @@ fun ChatScreen(
             .navigationBarsPadding()
             .imePadding(),
     ) {
-        DougieTopBar(allowCloud = allowCloud, onOpenSettings = onOpenSettings)
+        DougieTopBar(
+            allowCloud = allowCloud,
+            onOpenSettings = onOpenSettings,
+            onOpenPermissions = onOpenPermissions,
+        )
         Box(modifier = Modifier.weight(1f)) {
             if (uiState.isEmpty) {
                 EmptyState(onExampleClick = onSend)
             } else {
-                ChatFeed(items = uiState.items)
+                ChatFeed(
+                    items = uiState.items,
+                    onConfirm = onConfirm,
+                    onReject = onReject,
+                )
             }
         }
         ChatInputBar(
@@ -125,6 +140,7 @@ fun ChatScreen(
 private fun DougieTopBar(
     allowCloud: Boolean,
     onOpenSettings: () -> Unit,
+    onOpenPermissions: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -181,12 +197,20 @@ private fun DougieTopBar(
             }
         }
         Icon(
+            imageVector = Icons.Filled.Lock,
+            contentDescription = "权限中心",
+            tint = DougieColors.Primary,
+            modifier = Modifier
+                .size(24.dp)
+                .clickable(onClick = onOpenPermissions),
+        )
+        Icon(
             imageVector = Icons.Outlined.FavoriteBorder,
             contentDescription = "隐私",
             tint = DougieColors.Primary,
             modifier = Modifier
                 .size(24.dp)
-                .clickable(onClick = onOpenSettings),
+                .clickable(onClick = onOpenPermissions),
         )
     }
 }
@@ -248,7 +272,11 @@ private fun ExampleChip(text: String, onClick: (String) -> Unit) {
 }
 
 @Composable
-private fun ChatFeed(items: List<ChatItem>) {
+private fun ChatFeed(
+    items: List<ChatItem>,
+    onConfirm: () -> Unit,
+    onReject: () -> Unit,
+) {
     val listState = rememberLazyListState()
     val lastAgent = (items.lastOrNull() as? ChatItem.AgentMessage)?.text
     LaunchedEffect(items.size, lastAgent) {
@@ -269,6 +297,7 @@ private fun ChatFeed(items: List<ChatItem>) {
                     is ChatItem.UserMessage -> "user"
                     is ChatItem.Thinking -> "thinking-${item.loopNumber}"
                     is ChatItem.ToolCard -> "tool-${item.entry.toolCallId}"
+                    is ChatItem.ConfirmCard -> "confirm-${item.toolCallId}"
                     is ChatItem.AgentMessage -> "agent"
                 }
             },
@@ -277,6 +306,7 @@ private fun ChatFeed(items: List<ChatItem>) {
                 is ChatItem.UserMessage -> UserBubble(item.text)
                 is ChatItem.Thinking -> ThinkingChip(item.loopNumber)
                 is ChatItem.ToolCard -> ToolCallCard(item)
+                is ChatItem.ConfirmCard -> ConfirmToolCard(item, onConfirm, onReject)
                 is ChatItem.AgentMessage -> AgentBubble(item.text)
             }
         }
@@ -364,11 +394,12 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
         ToolTraceStatus.FAILED -> Color(0xFFD32F2F)
     }
     val toolLabel = toolDisplayName(entry.toolName)
+    val risk = entry.riskLevel.name
     val label = when (entry.status) {
-        ToolTraceStatus.SUCCESS -> "已调用 $toolLabel (L0)"
-        ToolTraceStatus.EXECUTING -> "正在调用 $toolLabel (L0)"
-        ToolTraceStatus.PENDING -> "准备调用 $toolLabel (L0)"
-        ToolTraceStatus.FAILED -> "$toolLabel 失败 (L0)"
+        ToolTraceStatus.SUCCESS -> "已调用 $toolLabel ($risk)"
+        ToolTraceStatus.EXECUTING -> "正在调用 $toolLabel ($risk)"
+        ToolTraceStatus.PENDING -> "准备调用 $toolLabel ($risk)"
+        ToolTraceStatus.FAILED -> "$toolLabel 失败 ($risk)"
     }
     Row(
         modifier = Modifier
@@ -429,6 +460,97 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
             }
         }
     }
+}
+
+@Composable
+private fun ConfirmToolCard(
+    item: ChatItem.ConfirmCard,
+    onConfirm: () -> Unit,
+    onReject: () -> Unit,
+) {
+    val toolLabel = toolDisplayName(item.toolName)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(0.92f)
+            .padding(start = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, DougieColors.Error, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLowest)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(Icons.Filled.Build, contentDescription = null, tint = DougieColors.Error)
+            Text(
+                text = "确认 $toolLabel",
+                fontWeight = FontWeight.Bold,
+                color = DougieColors.OnSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = item.riskLevel.name,
+                color = DougieColors.Error,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Text(
+            text = "该操作会写入设备数据。确认后才会执行；拒绝则跳过。",
+            color = DougieColors.OnSurfaceVariant,
+            fontSize = 13.sp,
+        )
+        Text(
+            text = item.argsJson.ifBlank { "{}" },
+            fontFamily = FontFamily.Monospace,
+            fontSize = 12.sp,
+            color = DougieColors.SecondaryFixed,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(DougieColors.TerminalBg)
+                .padding(8.dp),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ConfirmActionButton(
+                label = "拒绝",
+                modifier = Modifier.weight(1f),
+                onClick = onReject,
+            )
+            ConfirmActionButton(
+                label = "确认",
+                modifier = Modifier.weight(1f),
+                onClick = onConfirm,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConfirmActionButton(
+    label: String,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(8.dp)
+    Text(
+        text = label,
+        color = DougieColors.OnSurface,
+        fontWeight = FontWeight.Medium,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = modifier
+            .clip(shape)
+            .border(1.dp, DougieColors.Outline, shape)
+            .background(DougieColors.SurfaceContainerLowest)
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+    )
 }
 
 @Composable
@@ -562,6 +684,10 @@ private fun BottomItem(
 internal fun toolDisplayName(toolName: String): String = when (toolName) {
     "battery" -> "电池工具"
     "time" -> "时间工具"
+    "calendar_query" -> "日历查询"
+    "calendar_create" -> "创建日程"
+    "clipboard_read" -> "读取剪贴板"
+    "clipboard_write" -> "写入剪贴板"
     else -> toolName
 }
 

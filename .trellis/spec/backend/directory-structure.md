@@ -17,6 +17,7 @@ core/runtime/src/main/kotlin/com/dougie/core/runtime/
   TaskManager.kt
   EgressGateway.kt
   ToolCallSanitizer.kt
+  PolicyEngine.kt
 core/memory/src/main/kotlin/com/dougie/core/memory/
   MemoryStore.kt
   MemoryGate.kt
@@ -29,8 +30,16 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   AgentTool.kt
   FakeBatteryTool.kt
   SystemTimeTool.kt
+  CalendarPort.kt
+  CalendarQueryTool.kt
+  CalendarCreateTool.kt
+  ClipboardPort.kt
+  ClipboardReadTool.kt
+  ClipboardWriteTool.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
+  AndroidCalendarPort.kt
+  AndroidClipboardPort.kt
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
   PreferenceStore.kt
   ProviderSettings.kt
@@ -45,18 +54,18 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `UserFacingErrors` | I/O, Android, HTTP |
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `OpenAICompatibleProvider` SSE (OkHttp) | Tool execution, UI, policy bypass |
 | `:core:tool` | `AgentTool` + JVM tools (`FakeBatteryTool`, `SystemTimeTool`) | `BatteryManager` / other Android APIs |
-| `:core:runtime` | `LoopEngine`, `TaskManager`, `EgressGateway.stream`, `ToolCallSanitizer` | Compose, Android Context, HTTP |
+| `:core:runtime` | `LoopEngine`, `TaskManager`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool` | Loop state machine, LLM HTTP |
+| `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort` | Loop state machine, LLM HTTP |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
-| `:app` | Wires OkHttp (`readTimeout` 60s, `callTimeout` 0), Gateway, `battery`+`time`, PreferenceStore, `RoomMemoryStore`, `Dispatchers.Default` | Business rules that belong in core |
+| `:app` | Wires OkHttp (`readTimeout` 60s, `callTimeout` 0), Gateway, tools (`battery`/`time`/calendar/clipboard), `PolicyEngine` grants, PreferenceStore, `RoomMemoryStore`, `Dispatchers.Default` | Business rules that belong in core |
 
 New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`.
 
 ## Naming Conventions
 
-- Types: `AgentTask`, `TaskStatus`, `LoopEngine`, `FakeLlmProvider`, `FakeBatteryTool`, `SystemTimeTool`, `DeviceBatteryTool`, `EgressGateway`, `ToolCallSanitizer`
+- Types: `AgentTask`, `TaskStatus`, `LoopEngine`, `PolicyEngine`, `FakeLlmProvider`, `FakeBatteryTool`, `SystemTimeTool`, `DeviceBatteryTool`, `EgressGateway`, `ToolCallSanitizer`
 - Tool names in traces are lowercase ids (`battery`, `time`), not class names
 - Idempotency key is always `taskId + toolCallId` (`ToolContext.idempotencyKey`)
 
@@ -110,7 +119,9 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `result.isFatal` → `FAILED`
 - `loopCount >= maxLoops` without FinalAnswer → `FAILED` / `MaxLoopExceeded`
 - Empty trimmed input → `TaskManager` no-op
-- New submit while status is not COMPLETED/FAILED → ignored (no overlapping loops)
+- New submit while status is not COMPLETED/FAILED → ignored (no overlapping loops), including `AWAITING_CONFIRMATION`
+- Missing Android permission → `FAILED` / `PERMISSION_DENIED`, no `AgentTool.execute`
+- L2 tool → `AWAITING_CONFIRMATION` then `TaskManager.confirm()` executes once; `reject()` or 60s timeout → `FAILED` / `CONFIRM_REJECTED`, no execute
 - `allowCloud=false` and `isLocal=false` → `EgressBlockedException` (even if API key is set)
 - `allowCloud=true` and blank API key → `MissingApiKeyException` (no HTTP)
 - Unknown / unregistered tool → sanitizer throws `UNKNOWN_TOOL` (no execute)

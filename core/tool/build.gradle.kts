@@ -16,6 +16,7 @@ kotlin {
 dependencies {
     api(project(":core:model"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

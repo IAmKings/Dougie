@@ -34,4 +34,5 @@ include(
     ":feature:chat",
     ":feature:settings",
     ":feature:memory",
+    ":feature:permissions",
 )
