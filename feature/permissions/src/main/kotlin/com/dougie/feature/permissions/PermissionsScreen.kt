@@ -1,6 +1,7 @@
 package com.dougie.feature.permissions
 
 import android.content.Intent
+import android.media.projection.MediaProjectionManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -47,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun PermissionsRoute(
     viewModel: PermissionsViewModel,
     onBack: () -> Unit,
+    onProjectionConsent: (resultCode: Int, data: Intent?) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -61,6 +63,10 @@ fun PermissionsRoute(
         uiState = uiState,
         onBack = onBack,
         onGranted = { viewModel.refresh() },
+        onProjectionConsent = { resultCode, data ->
+            onProjectionConsent(resultCode, data)
+            viewModel.refresh()
+        },
     )
 }
 
@@ -69,13 +75,19 @@ fun PermissionsScreen(
     uiState: PermissionUiState,
     onBack: () -> Unit,
     onGranted: () -> Unit,
+    onProjectionConsent: (resultCode: Int, data: Intent?) -> Unit,
 ) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { onGranted() }
+    val projectionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        onProjectionConsent(result.resultCode, result.data)
+    }
     val calendarDenied = uiState.items
-        .filter { it.runtimePermission != null }
+        .filter { it.id.startsWith("calendar") }
         .none { it.granted }
     Column(
         modifier = Modifier
@@ -153,9 +165,18 @@ fun PermissionsScreen(
                 PermissionRow(
                     item = item,
                     onGrant = {
-                        val permission = item.runtimePermission
-                        if (permission != null) {
-                            launcher.launch(arrayOf(permission))
+                        when (item.kind) {
+                            PermissionKind.SCREEN_CAPTURE -> {
+                                val manager = context.getSystemService(MediaProjectionManager::class.java)
+                                projectionLauncher.launch(manager.createScreenCaptureIntent())
+                            }
+                            PermissionKind.RUNTIME -> {
+                                val permission = item.runtimePermission
+                                if (permission != null) {
+                                    launcher.launch(arrayOf(permission))
+                                }
+                            }
+                            PermissionKind.CLIPBOARD -> Unit
                         }
                     },
                     onOpenSettings = {
@@ -216,12 +237,18 @@ private fun PermissionRow(
             fontSize = 12.sp,
         )
         Spacer(Modifier.height(12.dp))
-        if (item.runtimePermission != null) {
-            if (!item.granted) {
-                GrantButton("去授权", onGrant)
-            } else {
-                GrantButton("在系统设置中撤销", onOpenSettings)
+        when (item.kind) {
+            PermissionKind.RUNTIME -> {
+                if (!item.granted) {
+                    GrantButton("去授权", onGrant)
+                } else {
+                    GrantButton("在系统设置中撤销", onOpenSettings)
+                }
             }
+            PermissionKind.SCREEN_CAPTURE -> {
+                GrantButton(if (item.granted) "重新授权屏幕截取" else "去授权屏幕截取", onGrant)
+            }
+            PermissionKind.CLIPBOARD -> Unit
         }
     }
 }

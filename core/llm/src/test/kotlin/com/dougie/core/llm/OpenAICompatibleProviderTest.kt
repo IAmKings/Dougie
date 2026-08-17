@@ -80,6 +80,9 @@ class OpenAICompatibleProviderTest {
         assertTrue(body.contains("\"name\":\"calendar_create\""))
         assertTrue(body.contains("\"name\":\"clipboard_read\""))
         assertTrue(body.contains("\"name\":\"clipboard_write\""))
+        assertTrue(body.contains("\"name\":\"location\""))
+        assertTrue(body.contains("\"name\":\"screen_capture\""))
+        assertTrue(body.contains("\"name\":\"screen_match\""))
     }
 
     @Test
@@ -95,6 +98,37 @@ class OpenAICompatibleProviderTest {
         assertEquals(listOf("你", "现在", "的手机电量是 80%。"), texts)
         assertEquals("你现在的手机电量是 80%。", texts.joinToString(""))
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun screenCaptureToolResultInMessagesIsMetadataOnly() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val provider = testProvider()
+        provider.generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "cap",
+                    input = "截一下屏",
+                    toolTrace = listOf(
+                        ToolTraceEntry(
+                            toolCallId = "call_cap_1",
+                            toolName = "screen_capture",
+                            argsSummary = "{}",
+                            resultJson = """{"capture_id":"synthetic","width":32,"height":32}""",
+                            status = ToolTraceStatus.SUCCESS,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("capture_id"))
+        assertTrue(body.contains("synthetic"))
+        assertTrue(body.contains("width"))
+        assertTrue(body.contains("height"))
+        assertTrue(!body.contains("data:image"))
+        assertTrue(!body.contains("base64,"))
+        assertTrue(!body.contains("\"gray\":"))
     }
 
     @Test
@@ -150,12 +184,12 @@ class OpenAICompatibleProviderTest {
                     model = "gpt-4o-mini",
                 )
             },
-            toolDescriptors = { PHASE_3A_TOOLS },
+            toolDescriptors = { PHASE_3B_TOOLS },
         )
     }
 
     companion object {
-        private val PHASE_3A_TOOLS = listOf(
+        private val PHASE_3B_TOOLS = listOf(
             ToolDescriptor("battery", description = "Read the device battery percent and charging state."),
             ToolDescriptor("time", description = "Read the current local date and time."),
             ToolDescriptor(
@@ -178,6 +212,19 @@ class OpenAICompatibleProviderTest {
                 name = "clipboard_write",
                 description = "Write text to the clipboard. Requires user confirmation.",
                 properties = mapOf("text" to ToolParamSpec(ToolParamType.STRING)),
+            ),
+            ToolDescriptor(
+                name = "location",
+                description = "Read a coarse device location as JSON (latitude, longitude, accuracy, provider).",
+            ),
+            ToolDescriptor(
+                name = "screen_capture",
+                description = "Capture the current screen. Returns capture_id, width, and height only.",
+            ),
+            ToolDescriptor(
+                name = "screen_match",
+                description = "Match a bundled grayscale template against the last screen capture.",
+                properties = mapOf("template_id" to ToolParamSpec(ToolParamType.STRING)),
             ),
         )
         private const val TOOL_CALL_BODY = """

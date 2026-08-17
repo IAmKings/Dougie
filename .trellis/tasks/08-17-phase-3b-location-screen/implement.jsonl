@@ -1,0 +1,7 @@
+{"file": "PRD.md", "reason": "§6.7 screen sense, location, no screenshot in prompt"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Android APIs stay in tool:system"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No coords or screenshot bytes in logs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Permission skip and match failure"}
+{"file": "core/runtime/src/main/kotlin/com/dougie/core/runtime/PolicyEngine.kt", "reason": "Reuse L1 permission deny"}
+{"file": "feature/permissions/src/main/kotlin/com/dougie/feature/permissions/PermissionsScreen.kt", "reason": "Add location and projection rows"}
+{"file": "design/权限与系统/地理位置访问_-_隐私围栏引导_中文版__798b76d4440d457b8ea3944b8177abae.html", "reason": "Location privacy copy"}

@@ -55,4 +55,17 @@ class PolicyEngineTest {
             ),
         )
     }
+
+    @Test
+    fun missingLocationPermissionDeniesL1() {
+        val engine = PolicyEngine { false }
+        val decision = engine.decide(
+            ToolDescriptor(
+                name = "location",
+                riskLevel = RiskLevel.L1,
+                androidPermission = AndroidPermissions.ACCESS_COARSE_LOCATION,
+            ),
+        )
+        assertTrue(decision is PolicyDecision.DeniedPermission)
+    }
 }

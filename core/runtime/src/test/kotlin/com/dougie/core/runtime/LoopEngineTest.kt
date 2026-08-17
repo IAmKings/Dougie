@@ -20,6 +20,12 @@ import com.dougie.core.tool.ClipboardReadTool
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.FakeCalendarPort
 import com.dougie.core.tool.FakeClipboardPort
+import com.dougie.core.tool.FakeLocationPort
+import com.dougie.core.tool.FakeScreenCapturePort
+import com.dougie.core.tool.InMemoryScreenFrameStore
+import com.dougie.core.tool.LocationTool
+import com.dougie.core.tool.ScreenCaptureTool
+import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SystemTimeTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -553,6 +559,86 @@ class LoopEngineTest {
         assertEquals(TaskStatus.FAILED, result.status)
         assertEquals(UserFacingErrors.PERMISSION_DENIED, result.lastError)
         assertEquals(0, port.createCalls.size)
+    }
+
+    @Test
+    fun locationMissingPermissionDoesNotExecute() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeLocationPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(id = "loc-1", name = LocationTool.NAME, argsJson = "{}")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(LocationTool.NAME to LocationTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            policyEngine = PolicyEngine { false },
+        )
+        val result = engine.run(AgentTask(taskId = "loc-deny", input = "我在哪")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.PERMISSION_DENIED, result.lastError)
+        assertEquals(0, port.queryCount)
+    }
+
+    @Test
+    fun screenCaptureResultIsMetadataOnly() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeScreenCapturePort()
+        val store = InMemoryScreenFrameStore()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "cap-1", name = ScreenCaptureTool.NAME, argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer("已截取")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(ScreenCaptureTool.NAME to ScreenCaptureTool(port, store)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "cap", input = "截屏")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        val json = result.toolTrace.single().resultJson.orEmpty()
+        assertTrue(json.contains("\"capture_id\""))
+        assertTrue(json.contains("\"width\""))
+        assertTrue(json.contains("\"height\""))
+        assertTrue(!json.contains("data:image"))
+        assertTrue(!json.contains("base64"))
+        assertEquals("synthetic", store.last()?.id)
+    }
+
+    @Test
+    fun screenMatchWithoutFrameFailsWithoutGuessing() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "match-1",
+                    name = ScreenMatchTool.NAME,
+                    argsJson = """{"template_id":"solid"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(ScreenMatchTool.NAME to ScreenMatchTool(InMemoryScreenFrameStore())),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "match", input = "屏幕上有标志吗")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.SCREEN_MATCH_FAILED, result.lastError)
+        assertTrue(result.toolTrace.single().resultJson.orEmpty().contains("\"found\":false"))
     }
 
     @Test

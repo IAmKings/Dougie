@@ -45,7 +45,7 @@ class MemoryGate(
             if (lower.contains("sk-")) return true
             if (text.contains("密码是")) return true
             if (lower.contains("password") && (lower.contains("是") || lower.contains("is"))) return true
-            if (lower.contains("api key") || lower.contains("api_key") || lower.contains("apikey")) return true
+            if (lower.contains("data:image") || lower.contains("base64,")) return true
             if (Regex("""\b(?:\d[ -]?){13,19}\b""").containsMatchIn(text)) return true
             return false
         }

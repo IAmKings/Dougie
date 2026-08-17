@@ -8,6 +8,7 @@ import com.dougie.core.llm.OpenAICompatibleProvider
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
+import com.dougie.core.model.AndroidPermissions
 import com.dougie.core.runtime.EgressGateway
 import com.dougie.core.runtime.LoopEngine
 import com.dougie.core.runtime.PolicyEngine
@@ -16,11 +17,17 @@ import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
 import com.dougie.core.tool.ClipboardWriteTool
+import com.dougie.core.tool.InMemoryScreenFrameStore
+import com.dougie.core.tool.LocationTool
+import com.dougie.core.tool.ScreenCaptureTool
+import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
 import com.dougie.tool.system.AndroidCalendarPort
 import com.dougie.tool.system.AndroidClipboardPort
+import com.dougie.tool.system.AndroidLocationPort
+import com.dougie.tool.system.AndroidScreenCapturePort
 import com.dougie.tool.system.DeviceBatteryTool
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -56,6 +63,15 @@ class DougieApplication : Application() {
             isForeground = { foregroundTracker.foreground },
             onUsed = { permissionUsage.mark(CLIPBOARD_USAGE_KEY) },
         )
+        val locationPort = AndroidLocationPort(this) {
+            permissionUsage.mark(AndroidPermissions.ACCESS_COARSE_LOCATION)
+        }
+        val screenStore = InMemoryScreenFrameStore()
+        val screenPort = AndroidScreenCapturePort(
+            context = this,
+            isForeground = { foregroundTracker.foreground },
+            onUsed = { permissionUsage.mark(SCREEN_CAPTURE_USAGE_KEY) },
+        )
         val tools = mapOf(
             "battery" to DeviceBatteryTool(this),
             "time" to SystemTimeTool(),
@@ -63,6 +79,9 @@ class DougieApplication : Application() {
             CalendarCreateTool.NAME to CalendarCreateTool(calendarPort),
             ClipboardReadTool.NAME to ClipboardReadTool(clipboardPort),
             ClipboardWriteTool.NAME to ClipboardWriteTool(clipboardPort),
+            LocationTool.NAME to LocationTool(locationPort),
+            ScreenCaptureTool.NAME to ScreenCaptureTool(screenPort, screenStore),
+            ScreenMatchTool.NAME to ScreenMatchTool(screenStore),
         )
         val provider = OpenAICompatibleProvider(
             client = http,
@@ -99,5 +118,6 @@ class DougieApplication : Application() {
 
     companion object {
         const val CLIPBOARD_USAGE_KEY = "clipboard"
+        const val SCREEN_CAPTURE_USAGE_KEY = "screen_capture"
     }
 }

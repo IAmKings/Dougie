@@ -72,11 +72,17 @@ class MainActivity : ComponentActivity() {
                             factory = com.dougie.feature.permissions.PermissionsViewModel.Factory(
                                 app,
                                 app.permissionUsage::lastUsedMs,
+                                projectionGranted = {
+                                    com.dougie.tool.system.ScreenCaptureConsentStore.hasToken()
+                                },
                             ),
                         )
                         com.dougie.feature.permissions.PermissionsRoute(
                             viewModel = viewModel,
                             onBack = { route = AppRoute.Chat },
+                            onProjectionConsent = { resultCode, data ->
+                                com.dougie.tool.system.ScreenCaptureConsentStore.save(resultCode, data)
+                            },
                         )
                     }
                 }

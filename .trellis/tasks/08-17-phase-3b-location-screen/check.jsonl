@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "Screen not in prompt; location permission"}
+{"file": ".trellis/tasks/08-17-phase-3b-location-screen/prd.md", "reason": "Acceptance"}
+{"file": ".trellis/tasks/08-17-phase-3b-location-screen/design.md", "reason": "NCC not OpenCV"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No screenshot/coord logs"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "core JVM-pure"}

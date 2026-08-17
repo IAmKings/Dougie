@@ -18,6 +18,12 @@ data class PermissionUiState(
     val items: List<PermissionItem> = emptyList(),
 )
 
+enum class PermissionKind {
+    RUNTIME,
+    CLIPBOARD,
+    SCREEN_CAPTURE,
+}
+
 data class PermissionItem(
     val id: String,
     val title: String,
@@ -27,11 +33,13 @@ data class PermissionItem(
     val riskLabel: String,
     val lastUsedLabel: String,
     val highRisk: Boolean = false,
+    val kind: PermissionKind = PermissionKind.RUNTIME,
 )
 
 class PermissionsViewModel(
     application: Application,
     private val lastUsedMs: (String) -> Long?,
+    private val projectionGranted: () -> Boolean = { false },
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(PermissionUiState())
@@ -72,6 +80,24 @@ class PermissionsViewModel(
                 usageKey = CLIPBOARD_USAGE_KEY,
                 riskLabel = "L1 / L2",
                 granted = true,
+                kind = PermissionKind.CLIPBOARD,
+            ),
+            item(
+                id = "location",
+                title = "粗略位置",
+                subtitle = "仅申请粗略定位，用于回答「我在哪」一类问题",
+                permission = AndroidPermissions.ACCESS_COARSE_LOCATION,
+                riskLabel = "L1",
+            ),
+            item(
+                id = "screen_capture",
+                title = "屏幕截取",
+                subtitle = "系统投屏授权后，截图只留在本机内存，不会发给模型",
+                permission = null,
+                usageKey = SCREEN_CAPTURE_USAGE_KEY,
+                riskLabel = "L1",
+                granted = projectionGranted(),
+                kind = PermissionKind.SCREEN_CAPTURE,
             ),
         )
     }
@@ -85,6 +111,7 @@ class PermissionsViewModel(
         highRisk: Boolean = false,
         usageKey: String? = permission,
         granted: Boolean? = null,
+        kind: PermissionKind = if (permission != null) PermissionKind.RUNTIME else PermissionKind.CLIPBOARD,
     ): PermissionItem {
         val isGranted = granted ?: permission?.let { checkGranted(it) } ?: false
         return PermissionItem(
@@ -96,6 +123,7 @@ class PermissionsViewModel(
             riskLabel = riskLabel,
             lastUsedLabel = formatLastUsed(usageKey?.let(lastUsedMs)),
             highRisk = highRisk,
+            kind = kind,
         )
     }
 
@@ -117,14 +145,16 @@ class PermissionsViewModel(
     class Factory(
         private val application: Application,
         private val lastUsedMs: (String) -> Long?,
+        private val projectionGranted: () -> Boolean = { false },
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return PermissionsViewModel(application, lastUsedMs) as T
+            return PermissionsViewModel(application, lastUsedMs, projectionGranted) as T
         }
     }
 
     companion object {
         const val CLIPBOARD_USAGE_KEY = "clipboard"
+        const val SCREEN_CAPTURE_USAGE_KEY = "screen_capture"
     }
 }

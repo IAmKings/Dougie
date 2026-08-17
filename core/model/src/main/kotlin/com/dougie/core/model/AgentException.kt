@@ -14,6 +14,8 @@ object UserFacingErrors {
     const val PERMISSION_DENIED = "未授权，已为你跳过该操作"
     const val CONFIRM_REJECTED = "该操作需你确认后才执行"
     const val CLIPBOARD_NOT_FOREGROUND = "应用不在前台，无法读取剪贴板。"
+    const val SCREEN_NOT_FOREGROUND = "应用不在前台，无法截取屏幕。"
+    const val SCREEN_MATCH_FAILED = "未能匹配屏幕内容，已停止以免误操作。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

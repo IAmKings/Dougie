@@ -76,6 +76,7 @@ data class ToolDescriptor(
 object AndroidPermissions {
     const val READ_CALENDAR = "android.permission.READ_CALENDAR"
     const val WRITE_CALENDAR = "android.permission.WRITE_CALENDAR"
+    const val ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION"
 }
 
 data class ToolParamSpec(

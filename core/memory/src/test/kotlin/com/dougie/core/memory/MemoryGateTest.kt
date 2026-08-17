@@ -46,6 +46,19 @@ class MemoryGateTest {
     }
 
     @Test
+    fun rejectsScreenshotPayload() = runTest {
+        val store = InMemoryMemoryStore()
+        val gate = MemoryGate(store, enabled = { true })
+        val result = gate.ingest(
+            "我叫小明，住在上海",
+            assistantText = "data:image/png;base64,AAAA",
+            sourceTaskId = "t",
+        )
+        assertEquals(GateResult.SkippedSensitive, result)
+        assertTrue(store.list().isEmpty())
+    }
+
+    @Test
     fun disabledIngestIsNoOp() = runTest {
         val store = InMemoryMemoryStore()
         val gate = MemoryGate(store, enabled = { false })
