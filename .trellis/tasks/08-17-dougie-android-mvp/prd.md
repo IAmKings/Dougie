@@ -36,8 +36,9 @@
 | `08-17-phase-3b-location-screen` | §15 Phase 3 余下 | Location + ScreenCapture/Match（不含 Accessibility 点击）（已归档） |
 | `08-17-phase-4-task-recovery` | §15 Phase 4 | 任务落盘恢复、创建型幂等持久化、History、有限重试（已归档） |
 | `08-17-mvp-app-intent` | §3.1 Tools #6 | 安全打开 URI/应用的 App Intent（L2 确认）（已归档） |
-| `08-17-play-sideload-flavors` | §17.4 | Play / Sideload 构建期双渠道，play 不含 Accessibility |
-| （后续）Phase 5 Beta | §15 Phase 5 | 离线语音 / 真实点击自动化 / 本地 LLM |
+| `08-17-play-sideload-flavors` | §17.4 | Play / Sideload 构建期双渠道，play 不含 Accessibility（已归档） |
+| `08-17-phase-5a-tap-swipe` | §15 Phase 5 / §10.2 | 侧载真实 tap/swipe；Play 仍零 Accessibility |
+| （后续）Phase 5 余下 | §15 Phase 5 | 离线语音 / 本地 LLM |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 
@@ -45,7 +46,7 @@
 
 - [ ] Phase 0 生死线通过后才允许启动 Phase 1 子任务。
 - [ ] `:core:*` 保持 JVM 纯净（零 `android.*`），`:feature:*` 不直连系统 API。
-- [ ] Play / Sideload 双渠道差异不在 Phase 0 实现；构建 flavors 归后续子任务。
+- [x] Play / Sideload 双渠道差异不在 Phase 0 实现；构建 flavors 归后续子任务。
 - [ ] 父任务本身不合并代码；最终集成审查在全部阻塞子任务归档后进行。
 
 ## Out of scope（父级，全 MVP 非目标）

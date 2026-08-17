@@ -98,7 +98,7 @@ class DougieApplication : Application() {
             ScreenMatchTool.NAME to ScreenMatchTool(screenStore),
             AppIntentTool.NAME to AppIntentTool(appIntentPort, taskStores.idempotencyStore),
         )
-        ChannelTools.register(tools) { ChannelHooks.hasChannelConsent(this) }
+        ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
         val provider = OpenAICompatibleProvider(
             client = http,
             config = {
@@ -138,7 +138,7 @@ class DougieApplication : Application() {
     }
 
     fun refreshChannelTools() {
-        ChannelTools.register(tools) { ChannelHooks.hasChannelConsent(this) }
+        ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
     }
 
     companion object {

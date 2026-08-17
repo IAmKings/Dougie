@@ -20,6 +20,9 @@ object UserFacingErrors {
     const val APP_INTENT_DENIED = "该链接不被允许打开。"
     const val APP_INTENT_NOT_FOREGROUND = "应用不在前台，无法打开应用或链接。"
     const val APP_INTENT_LAUNCH_FAILED = "无法打开该应用或链接。"
+    const val TAP_SWIPE_CONSENT = "未完成侧载知情同意，无法执行屏幕操作"
+    const val TAP_SWIPE_SERVICE = "未开启无障碍服务，无法执行屏幕操作"
+    const val TAP_SWIPE_BLOCKED = "该应用不允许自动点击或滑动。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

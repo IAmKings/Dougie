@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/08-17-phase-5a-tap-swipe/prd.md", "reason": "Acceptance"}
+{"file": "PRD.md", "reason": "Play leak + sideload L3 + denylist"}
+{"file": "tool/accessibility/src/test/kotlin/com/dougie/tool/accessibility/TapSwipeToolTest.kt", "reason": "Zero dispatch on deny paths"}
+{"file": "app/src/play/kotlin/com/dougie/app/ChannelTools.kt", "reason": "No accessibility imports"}
+{"file": "app/build.gradle.kts", "reason": "checkChannelLeak"}

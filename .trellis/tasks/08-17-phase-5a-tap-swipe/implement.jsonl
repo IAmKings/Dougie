@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "§6.7 TapSwipe idempotency, §10.2 bank/pay/password ban"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "TapSwipe stays in :tool:accessibility"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "User-facing tap/swipe errors"}
+{"file": "tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/TapSwipeTool.kt", "reason": "Replace stub with GesturePort"}
+{"file": "app/src/sideload/kotlin/com/dougie/app/ChannelTools.kt", "reason": "Wire idempotency store"}
