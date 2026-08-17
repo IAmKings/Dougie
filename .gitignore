@@ -13,6 +13,7 @@ __pycache__/
 # ── Android / Gradle 构建产物（未来工程） ─────────────
 build/
 .gradle/
+.kotlin/
 local.properties
 *.apk
 *.aab

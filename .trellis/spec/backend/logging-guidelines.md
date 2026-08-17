@@ -1,51 +1,16 @@
 # Logging Guidelines
 
-> How logging is done in this project.
+> What must never appear in logs.
 
----
+## Forbidden
 
-## Overview
+- Full LLM prompts or completions (`PRD.md` §9.3)
+- API keys, Keystore material, `Authorization` header values
+- Raw LLM HTTP request/response bodies (Release and Debug)
+- Tool arguments that contain secrets
 
-<!--
-Document your project's logging conventions here.
+`LoopEngine`, `EgressGateway`, and `OpenAICompatibleProvider` currently log nothing. When adding logs, use tool **name** + `taskId` + `loopCount` only.
 
-Questions to answer:
-- What logging library do you use?
-- What are the log levels and when to use each?
-- What should be logged?
-- What should NOT be logged (PII, secrets)?
--->
+`PreferenceStore` stores `api_key` in EncryptedSharedPreferences (`dougie_provider_secure`). Never write the key to Logcat, plaintext `SharedPreferences`, or Compose preview dumps.
 
-(To be filled by the team)
-
----
-
-## Log Levels
-
-<!-- When to use each level: debug, info, warn, error -->
-
-(To be filled by the team)
-
----
-
-## Structured Logging
-
-<!-- Log format, required fields -->
-
-(To be filled by the team)
-
----
-
-## What to Log
-
-<!-- Important events to log -->
-
-(To be filled by the team)
-
----
-
-## What NOT to Log
-
-<!-- Sensitive data, PII, secrets -->
-
-(To be filled by the team)
+Release builds must not log raw LLM HTTP bodies (`PRD.md` §9.3 / review #10).

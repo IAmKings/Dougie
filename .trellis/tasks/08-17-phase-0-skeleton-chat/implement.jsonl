@@ -1,0 +1,6 @@
+{"file": "PRD.md", "reason": "Phase 0 完成标准、状态机、Loop 规则、Chat UI 必须展示的状态链、模块红线"}
+{"file": "DESIGN.md", "reason": "design/ 资源布局与复用原则"}
+{"file": "design/语音与对话/Waku_对话_-_AI_交互_中文版__040b9b0466794abd8dc1d514b1733729.html", "reason": "Chat 主界面视觉与配色令牌"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "UI StateFlow 与 JVM Loop 跨层数据流"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端 guideline 索引（当前多为待填，实现时勿发明冲突约定）"}
+{"file": ".trellis/spec/backend/index.md", "reason": "后端 guideline 索引（当前多为待填）"}

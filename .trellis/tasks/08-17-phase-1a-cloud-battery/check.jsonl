@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "Egress default false, Keystore, one real Tool"}
+{"file": ".trellis/tasks/08-17-phase-1a-cloud-battery/prd.md", "reason": "Acceptance checklist"}
+{"file": ".trellis/tasks/08-17-phase-1a-cloud-battery/design.md", "reason": "Module boundaries and HTTP/tool contracts"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "core must stay JVM-pure; battery not in feature"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Key and prompt leakage"}

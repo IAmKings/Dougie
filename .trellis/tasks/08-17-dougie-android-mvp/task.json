@@ -1,0 +1,29 @@
+{
+  "id": "dougie-android-mvp",
+  "name": "dougie-android-mvp",
+  "title": "Dougie Android MVP",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P0",
+  "creator": "kuluoluo",
+  "assignee": "kuluoluo",
+  "createdAt": "2026-08-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "08-17-phase-0-skeleton-chat",
+    "08-17-phase-1a-cloud-battery"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

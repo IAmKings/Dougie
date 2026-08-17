@@ -1,0 +1,7 @@
+{"file": "PRD.md", "reason": "Phase 1a, EgressPolicy, LlmProvider Flow, API Keystore, Battery tool"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "JVM-pure core and LoopEngine contracts from Phase 0"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompts or API keys in logs"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Chat module boundaries and Dougie branding"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "StateFlow mapping must survive Gateway errors"}
+{"file": "design/权限与系统/Provider_设置_-_模型与密钥_中文版__d4efd330e6df4ddb9e8280095d6b5e10.html", "reason": "Provider settings visual reference"}
+{"file": ".trellis/tasks/08-17-phase-0-skeleton-chat/design.md", "reason": "Existing Fake loop and Chat mapping to extend, not rewrite"}

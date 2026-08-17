@@ -1,54 +1,53 @@
 # Directory Structure
 
-> How frontend code is organized in this project.
-
----
+> How Android UI modules are organized in Dougie.
 
 ## Overview
 
-<!--
-Document your project's frontend directory structure here.
-
-Questions to answer:
-- Where do components live?
-- How are features/modules organized?
-- Where are shared utilities?
-- How are assets organized?
--->
-
-(To be filled by the team)
-
----
+User-facing screens live in `:feature:*` Android libraries. `:app` only hosts `MainActivity`, `Application`, and dependency injection. Features collect `StateFlow` from `:core:runtime`; they do not run the Agent loop on Main.
 
 ## Directory Layout
 
 ```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
+feature/chat/src/main/kotlin/com/dougie/feature/chat/
+  ChatScreen.kt
+  ChatViewModel.kt
+  ChatUiState.kt
+  DougieColors.kt
+feature/chat/src/main/res/drawable/dougie_logo.xml
+feature/settings/src/main/kotlin/com/dougie/feature/settings/
+  SettingsScreen.kt
+  SettingsViewModel.kt
+  DougieColors.kt
+app/src/main/kotlin/com/dougie/app/
+  DougieApplication.kt
+  MainActivity.kt
 ```
-
----
 
 ## Module Organization
 
-<!-- How should new features be organized? -->
+| Module | Owns |
+|--------|------|
+| `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping; navigate to settings |
+| `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore` |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + `DeviceBatteryTool` on `Dispatchers.Default`; Chat↔Settings route |
 
-(To be filled by the team)
-
----
+`:feature:*` must not call `BatteryManager` or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
 ## Naming Conventions
 
-<!-- File and folder naming rules -->
+- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`
+- Mapping: `AgentTask?.toChatUiState()` in `ChatUiState.kt`
+- Product copy: **Dougie**, never Waku
+- Chat colors: Stitch tokens `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`DougieColors`)
+- Egress consent (fixed): `本次请求可能将输入、必要上下文和 Tool Result 发送至第三方 LLM 服务。`
 
-(To be filled by the team)
+## Design Decision: Chat status chain
 
----
+**Context**: PRD §11.1 forbids a lone “正在思考”.
 
-## Examples
+**Decision**: `toChatUiState` inserts `Thinking(loopNumber)` before each tool card, plus a live Thinking chip while `PREPARING`/`THINKING`. Tool cards show `resultJson` when present. `FAILED` + `lastError` becomes `AgentMessage("任务失败：$lastError")`.
 
-<!-- Link to well-organized modules as examples -->
+## Don't: Run LoopEngine on Main
 
-(To be filled by the team)
+`DougieApplication` must pass `Dispatchers.Default` (or a test dispatcher). UI only `collect`s `taskManager.task`.

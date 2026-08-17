@@ -1,51 +1,27 @@
 # State Management
 
-> How state is managed in this project.
-
----
+> Chat and task UI state in Dougie.
 
 ## Overview
 
-<!--
-Document your project's state management conventions here.
+Single source of truth is `TaskManager.task: StateFlow<AgentTask?>`. Compose collects it via `ChatViewModel.uiState`.
 
-Questions to answer:
-- What state management solution do you use?
-- How is local vs global state decided?
-- How do you handle server state?
-- What are the patterns for derived state?
--->
+Provider settings are a separate store: `PreferenceStore.settings: StateFlow<ProviderSettings>`. Settings form is local until **保存配置**; the next `submit` reads current `allowCloud` / key via lambdas on `EgressGateway` and `OpenAICompatibleProvider`.
 
-(To be filled by the team)
+## Pattern
 
----
+```kotlin
+val uiState: StateFlow<ChatUiState> = taskManager.task
+    .map { it.toChatUiState() }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
+```
 
-## State Categories
+`ChatItem`: `UserMessage` | `Thinking(loopNumber)` | `ToolCard` | `AgentMessage`.
 
-<!-- Local state, global state, server state, URL state -->
+`inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE).
 
-(To be filled by the team)
+Egress / timeout / network failures are not a separate UI type: they are `AgentMessage` text from `lastError`.
 
----
+## Don't: Duplicate loop status in ViewModel
 
-## When to Use Global State
-
-<!-- Criteria for promoting state to global -->
-
-(To be filled by the team)
-
----
-
-## Server State
-
-<!-- How server data is cached and synchronized -->
-
-(To be filled by the team)
-
----
-
-## Common Mistakes
-
-<!-- State management mistakes your team has made -->
-
-(To be filled by the team)
+Do not keep a second `mutableStateOf` copy of `TaskStatus`. Map from `AgentTask` only so Fake tests and the real provider stay consistent.
