@@ -131,3 +131,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 7: MVP App Intent
+
+**Date**: 2026-08-17
+**Task**: MVP App Intent
+**Branch**: `main`
+
+### Summary
+
+提交可确认的 App Intent；下一步 Play/Sideload 双渠道 flavors。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ad681bf` | (see git log) |
+
+### Status
+
+[OK] **Completed**
