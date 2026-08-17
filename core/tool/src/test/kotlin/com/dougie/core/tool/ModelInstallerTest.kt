@@ -2,6 +2,9 @@ package com.dougie.core.tool
 
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -9,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 import java.nio.file.Files
+import kotlin.coroutines.cancellation.CancellationException
 
 class ModelInstallerTest {
     private val hello = "hello".toByteArray()
@@ -123,6 +127,53 @@ class ModelInstallerTest {
                 userConfirmed = true,
             )
             assertTrue(AsrModelLayout.isPresent(File(dir, AsrModelLayout.DIR)))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun cancelDuringGetDeletesPartAndRethrows() = runTest {
+        val started = CompletableDeferred<Unit>()
+        val installer = ModelInstaller { _, dest, _ ->
+            dest.writeBytes(hello)
+            started.complete(Unit)
+            awaitCancellation()
+        }
+        val dir = Files.createTempDirectory("model-root").toFile()
+        try {
+            val job = launch {
+                installer.install(pack(), dir, userConfirmed = true)
+            }
+            started.await()
+            job.cancel()
+            job.join()
+            assertTrue(job.isCancelled)
+            val packDir = File(dir, AsrModelLayout.DIR)
+            assertFalse(File(packDir, AsrModelLayout.MODEL_FILE).exists())
+            assertFalse(File(packDir, AsrModelLayout.MODEL_FILE + ".part").exists())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun cancellationIsNotMappedToDownloadFailed() = runTest {
+        val installer = ModelInstaller { _, dest, _ ->
+            dest.writeBytes(hello)
+            throw CancellationException("stop")
+        }
+        val dir = Files.createTempDirectory("model-root").toFile()
+        try {
+            try {
+                installer.install(pack(), dir, userConfirmed = true)
+                throw AssertionError("expected CancellationException")
+            } catch (e: AgentException) {
+                throw AssertionError("cancel must not become download failed", e)
+            } catch (_: CancellationException) {
+            }
+            val packDir = File(dir, AsrModelLayout.DIR)
+            assertFalse(File(packDir, AsrModelLayout.MODEL_FILE + ".part").exists())
         } finally {
             dir.deleteRecursively()
         }

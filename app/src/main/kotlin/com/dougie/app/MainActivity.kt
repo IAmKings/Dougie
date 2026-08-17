@@ -54,7 +54,12 @@ class MainActivity : ComponentActivity() {
                     }
                     AppRoute.Settings -> {
                         val viewModel: SettingsViewModel = viewModel(
-                            factory = SettingsViewModel.Factory(app.preferenceStore),
+                            factory = SettingsViewModel.Factory(
+                                app.preferenceStore,
+                                app.modelInstaller,
+                                app.filesDir,
+                                AppOfflineModels.offers,
+                            ),
                         )
                         SettingsRoute(
                             viewModel = viewModel,

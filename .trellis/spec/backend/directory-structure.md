@@ -58,6 +58,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   IntentJsonParser.kt
   LlamaIntentEngine.kt
   ModelInstaller.kt
+  OfficialModelCatalog.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -164,7 +165,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
 
-**Instead**: `ModelInstaller` is app-owned. Require `userConfirmed`, `https://` only, SHA-256 match, write `.part` then rename. `OkHttpModelGet` rejects non-https redirects. Not registered on `LoopEngine`.
+**Instead**: `ModelInstaller` is app-owned. Require `userConfirmed`, `https://` only, SHA-256 match, write `.part` then rename. Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); delete `.part` on cancel. `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. Not registered on `LoopEngine`. HTTPS/SHA-256 come from gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` → `AppOfflineModels` / `OfficialModelCatalog`. Blank URL or SHA → offer not configured; UI must not fetch.
 
 ## Scenario: speech_output TTS contract
 

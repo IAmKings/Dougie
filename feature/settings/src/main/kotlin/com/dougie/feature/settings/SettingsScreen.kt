@@ -21,15 +21,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,26 +57,37 @@ fun SettingsRoute(
     onBack: () -> Unit,
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
+    val models by viewModel.models.collectAsStateWithLifecycle()
     SettingsScreen(
         form = form,
+        models = models,
         onBack = onBack,
         onAllowCloudChange = viewModel::setAllowCloud,
         onBaseUrlChange = viewModel::setBaseUrl,
         onApiKeyChange = viewModel::setApiKey,
         onModelChange = viewModel::setModel,
         onSave = viewModel::save,
+        onRequestModel = viewModel::requestModel,
+        onConfirmModel = viewModel::confirmModel,
+        onDismissModelConfirm = viewModel::dismissModelConfirm,
+        onCancelModel = viewModel::cancelModel,
     )
 }
 
 @Composable
 fun SettingsScreen(
     form: SettingsFormState,
+    models: OfflineModelsUi,
     onBack: () -> Unit,
     onAllowCloudChange: (Boolean) -> Unit,
     onBaseUrlChange: (String) -> Unit,
     onApiKeyChange: (String) -> Unit,
     onModelChange: (String) -> Unit,
     onSave: () -> Unit,
+    onRequestModel: (String) -> Unit,
+    onConfirmModel: () -> Unit,
+    onDismissModelConfirm: () -> Unit,
+    onCancelModel: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -208,6 +222,11 @@ fun SettingsScreen(
                 FieldLabel("模型")
                 SettingsField(value = form.model, onValueChange = onModelChange)
             }
+            OfflineModelsSection(
+                models = models,
+                onRequestModel = onRequestModel,
+                onCancelModel = onCancelModel,
+            )
             if (form.saved) {
                 Text(
                     text = "已保存。下次对话将使用当前策略。",
@@ -225,6 +244,119 @@ fun SettingsScreen(
             ) {
                 Text("保存配置")
             }
+        }
+    }
+    val pending = models.pending
+    if (pending != null) {
+        AlertDialog(
+            onDismissRequest = onDismissModelConfirm,
+            title = { Text("下载 ${pending.title}？") },
+            text = {
+                Text(
+                    "将下载 ${pending.sizeLabel} 到 Dougie 应用私有目录，会占用存储并消耗流量。确认后才开始下载。",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirmModel) { Text("确认下载") }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissModelConfirm) { Text("取消") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun OfflineModelsSection(
+    models: OfflineModelsUi,
+    onRequestModel: (String) -> Unit,
+    onCancelModel: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "离线模型",
+            color = DougieColors.OnSurface,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        Text(
+            text = "语音识别、语音合成与意图理解按需下载到本机。Dougie 不会把模型当作 Agent 工具由云端触发。",
+            color = DougieColors.OnSurfaceVariant,
+            fontSize = 14.sp,
+        )
+        models.rows.forEach { row ->
+            OfflineModelRow(
+                row = row,
+                onRequest = { onRequestModel(row.id) },
+                onCancel = { onCancelModel(row.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun OfflineModelRow(
+    row: OfflineModelRowUi,
+    onRequest: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = row.title,
+                    color = DougieColors.OnSurface,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    text = row.sizeLabel,
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 14.sp,
+                )
+            }
+            when {
+                row.installed -> Text("已安装", color = DougieColors.TertiaryContainer, fontSize = 14.sp)
+                row.downloading -> TextButton(onClick = onCancel) { Text("取消") }
+                else -> TextButton(onClick = onRequest, enabled = row.configured) { Text("下载") }
+            }
+        }
+        if (!row.configured && !row.installed) {
+            Text(
+                text = OfflineModelDownloads.UNCONFIGURED,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+            )
+        }
+        if (row.downloading) {
+            val progress = if (row.total > 0L) {
+                (row.downloaded.toFloat() / row.total.toFloat()).coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = if (row.total > 0L) "下载中 ${row.downloaded} / ${row.total}" else "下载中…",
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+            )
+        }
+        if (row.error != null && row.configured) {
+            Text(text = row.error, color = DougieColors.Error, fontSize = 12.sp)
         }
     }
 }

@@ -1,7 +1,24 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+}
+
+fun localProp(key: String): String {
+    val file = rootProject.file("local.properties")
+    if (!file.exists()) return ""
+    val props = Properties()
+    file.inputStream().use { props.load(it) }
+    return props.getProperty(key).orEmpty().trim()
+}
+
+fun quotedBuildConfig(key: String): String {
+    val escaped = localProp(key)
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+    return "\"$escaped\""
 }
 
 android {
@@ -14,6 +31,23 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        // Optional HTTPS + SHA-256 in local.properties (gitignored). Blank → row disabled.
+        listOf(
+            "ASR_MODEL_URL" to "dougie.model.asr.url",
+            "ASR_MODEL_SHA256" to "dougie.model.asr.sha256",
+            "ASR_TOKENS_URL" to "dougie.model.asr.tokens.url",
+            "ASR_TOKENS_SHA256" to "dougie.model.asr.tokens.sha256",
+            "TTS_MODEL_URL" to "dougie.model.tts.url",
+            "TTS_MODEL_SHA256" to "dougie.model.tts.sha256",
+            "TTS_TOKENS_URL" to "dougie.model.tts.tokens.url",
+            "TTS_TOKENS_SHA256" to "dougie.model.tts.tokens.sha256",
+            "TTS_LEXICON_URL" to "dougie.model.tts.lexicon.url",
+            "TTS_LEXICON_SHA256" to "dougie.model.tts.lexicon.sha256",
+            "INTENT_MODEL_URL" to "dougie.model.intent.url",
+            "INTENT_MODEL_SHA256" to "dougie.model.intent.sha256",
+        ).forEach { (field, prop) ->
+            buildConfigField("String", field, quotedBuildConfig(prop))
+        }
     }
 
     flavorDimensions += "channel"

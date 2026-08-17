@@ -37,7 +37,8 @@
     "08-17-phase-5g-intent-classifier",
     "08-17-phase-5h-llama-engine",
     "08-17-phase-5i-llama-ndk",
-    "08-17-phase-5j-model-download"
+    "08-17-phase-5j-model-download",
+    "08-17-phase-5k-download-ui"
   ],
   "parent": null,
   "relatedFiles": [],

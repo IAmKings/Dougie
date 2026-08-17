@@ -18,6 +18,7 @@ feature/chat/src/main/res/drawable/dougie_logo.xml
 feature/settings/src/main/kotlin/com/dougie/feature/settings/
   SettingsScreen.kt
   SettingsViewModel.kt
+  OfflineModelDownloads.kt
   DougieColors.kt
 feature/memory/src/main/kotlin/com/dougie/feature/memory/
   MemoryScreen.kt
@@ -35,6 +36,7 @@ feature/history/src/main/kotlin/com/dougie/feature/history/
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
+  AppOfflineModels.kt
   AppForegroundTracker.kt
   PermissionUsageTracker.kt
 ```
@@ -44,7 +46,7 @@ app/src/main/kotlin/com/dougie/app/
 | Module | Owns |
 |--------|------|
 | `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping, Confirm Card; navigate to settings / memory / Permission Center |
-| `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore` |
+| `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore`; 离线模型三行确认下载（`ModelInstaller`，非 AgentTool） |
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
 | `:feature:permissions` | Permission Center: calendar read/write status, request runtime grants, clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
@@ -69,3 +71,9 @@ app/src/main/kotlin/com/dougie/app/
 ## Don't: Run LoopEngine on Main
 
 `DougieApplication` must pass `Dispatchers.Default` (or a test dispatcher). UI only `collect`s `taskManager.task`.
+
+## Don't: Let settings download without size confirm
+
+**Problem**: Play on-demand models are hundreds of MB. A one-tap download skips traffic/storage consent; putting URLs on the LLM would fetch arbitrary files.
+
+**Instead**: `OfflineModelDownloads` in `:feature:settings` owns three rows (ASR ~230MB, TTS ~116MB, intent ~470MB). `request` only opens confirm; `confirm` calls `ModelInstaller` with `userConfirmed=true`. Unconfigured (`尚未配置下载地址`) and already-installed rows do not fetch. Cancel the job; layout `isPresent` stays false. `:feature:settings` depends on `:core:tool` only — OkHttp stays in `:app` / `:tool:system`.

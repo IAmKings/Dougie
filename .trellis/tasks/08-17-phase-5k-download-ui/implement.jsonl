@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "§6.8–6.10 play on-demand download, size/traffic confirm, progress+cancel"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": ":feature:settings owns UI; :app wires installer; no OkHttp in feature"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": ModelInstaller is not an AgentTool"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": filesDir layout vs settings state vs OkHttp"}

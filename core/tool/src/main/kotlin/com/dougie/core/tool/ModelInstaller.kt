@@ -5,6 +5,7 @@ import com.dougie.core.model.UserFacingErrors
 import java.io.File
 import java.net.URI
 import java.security.MessageDigest
+import kotlin.coroutines.cancellation.CancellationException
 
 data class ModelFileSpec(
     val name: String,
@@ -74,6 +75,9 @@ class ModelInstaller(
                     part.copyTo(target, overwrite = true)
                     part.delete()
                 }
+            } catch (e: CancellationException) {
+                part.delete()
+                throw e
             } catch (e: AgentException) {
                 part.delete()
                 throw e
