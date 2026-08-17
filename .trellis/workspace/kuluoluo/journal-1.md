@@ -383,3 +383,24 @@ HTTPS+SHA-256 ModelInstaller：须用户确认、非 Agent Tool；哈希失败�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 19: Phase 5k 设置页模型下载 UI
+
+**Date**: 2026-08-17
+**Task**: Phase 5k 设置页模型下载 UI
+**Branch**: `main`
+
+### Summary
+
+设置页 ASR/TTS/意图三行确认体积后下载；可取消；URL 由 local.properties 注入。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b538ed4` | (see git log) |
+
+### Status
+
+[OK] **Completed**
