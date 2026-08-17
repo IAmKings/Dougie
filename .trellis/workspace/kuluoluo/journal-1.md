@@ -26,3 +26,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: Phase 1b 流式双 Tool
+
+**Date**: 2026-08-17
+**Task**: Phase 1b 流式双 Tool
+**Branch**: `main`
+
+### Summary
+
+提交 SSE 流式、时间 Tool、Sanitizer 与 Chat streamingText；归档 1b 后进入 Phase 2 Memory。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f21cddf` | (see git log) |
+
+### Status
+
+[OK] **Completed**
