@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "§6.8 sherpa-onnx Paraformer local only"}
+{"file": "core/tool/src/main/kotlin/com/dougie/core/tool/SherpaSpeechEngine.kt", "reason": "Engine gate"}
+{"file": "tool/system/src/main/kotlin/com/dougie/tool/system/SherpaJni.kt", "reason": "loadLibrary + decode"}
+{"file": "tool/system/src/main/kotlin/com/dougie/tool/system/AndroidSpeechPort.kt", "reason": "Default engine"}

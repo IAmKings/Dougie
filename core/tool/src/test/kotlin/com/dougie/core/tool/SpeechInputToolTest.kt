@@ -123,4 +123,52 @@ class SpeechInputToolTest {
             dir.deleteRecursively()
         }
     }
+
+    @Test
+    fun sherpaEngineNeedsModelAndNative() = runTest {
+        val dir = Files.createTempDirectory("sherpa-engine").toFile()
+        try {
+            assertFalse(
+                SherpaSpeechEngine(
+                    modelDir = dir,
+                    nativeAvailable = { true },
+                    decode = { _, _ -> "hi" },
+                ).isReady(),
+            )
+            File(dir, AsrModelLayout.MODEL_FILE).writeText("x")
+            File(dir, AsrModelLayout.TOKENS_FILE).writeText("a")
+            var decoded = 0
+            val blocked = SherpaSpeechEngine(
+                modelDir = dir,
+                nativeAvailable = { false },
+                decode = { _, _ -> error("decode") },
+            )
+            assertFalse(blocked.isReady())
+            val ready = SherpaSpeechEngine(
+                modelDir = dir,
+                nativeAvailable = { true },
+                decode = { _, utterance ->
+                    decoded += 1
+                    assertEquals(2, utterance.samples.size)
+                    "现在几点"
+                },
+            )
+            assertTrue(ready.isReady())
+            val recorder = FakeSpeechRecorder()
+            val result = SpeechInputTool(
+                SpeechSession(
+                    foregroundCheck = { true },
+                    modelCheck = { true },
+                    engine = ready,
+                    recorder = recorder,
+                ),
+            ).execute("{}", ToolContext("t", "c"))
+            assertTrue(result.json.contains("现在几点"))
+            assertFalse(result.json.contains("pcm"))
+            assertEquals(1, decoded)
+            assertEquals(1, recorder.captureCount)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
 }
