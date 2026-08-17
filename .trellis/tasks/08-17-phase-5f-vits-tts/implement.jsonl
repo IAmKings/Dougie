@@ -1,0 +1,3 @@
+{"file": "PRD.md", "reason": "§6.9 VITS offline TTS, no Kokoro this slice"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "TTS engine vs Android AudioTrack boundary"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Never log utterance text"}

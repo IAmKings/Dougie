@@ -8,6 +8,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import java.nio.file.Files
 
 class SpeechOutputToolTest {
     @Test
@@ -62,6 +64,56 @@ class SpeechOutputToolTest {
             throw AssertionError("expected AgentException")
         } catch (e: AgentException) {
             assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, e.userMessage)
+        }
+    }
+
+    @Test
+    fun ttsLayoutRequiresThreeFiles() {
+        val dir = Files.createTempDirectory("tts-layout").toFile()
+        try {
+            assertFalse(TtsModelLayout.isPresent(dir))
+            File(dir, TtsModelLayout.MODEL_FILE).writeText("x")
+            File(dir, TtsModelLayout.TOKENS_FILE).writeText("a")
+            assertFalse(TtsModelLayout.isPresent(dir))
+            File(dir, TtsModelLayout.LEXICON_FILE).writeText("b")
+            assertTrue(TtsModelLayout.isPresent(dir))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun sherpaTtsNeedsModelAndNative() = runTest {
+        val dir = Files.createTempDirectory("sherpa-tts").toFile()
+        try {
+            assertFalse(
+                SherpaTtsEngine(dir, nativeAvailable = { true }, speakNative = { _, _ -> TtsOutcome.SPOKEN }).isReady(),
+            )
+            File(dir, TtsModelLayout.MODEL_FILE).writeText("x")
+            File(dir, TtsModelLayout.TOKENS_FILE).writeText("a")
+            File(dir, TtsModelLayout.LEXICON_FILE).writeText("b")
+            assertFalse(
+                SherpaTtsEngine(dir, nativeAvailable = { false }, speakNative = { _, _ -> error("speak") }).isReady(),
+            )
+            var spoken = 0
+            val offline = SherpaTtsEngine(
+                modelDir = dir,
+                nativeAvailable = { true },
+                speakNative = { _, text ->
+                    spoken += 1
+                    assertEquals("你好", text)
+                    TtsOutcome.SPOKEN
+                },
+            )
+            val fallback = FakeTtsEngine(ready = true)
+            val result = SpeechOutputTool(PreferOfflineTtsPort(offline, fallback))
+                .execute("""{"text":"你好"}""", ToolContext("t", "c"))
+            assertTrue(result.json.contains("\"backend\":\"offline\""))
+            assertEquals(1, spoken)
+            assertTrue(fallback.spoken.isEmpty())
+            assertFalse(result.json.contains("pcm"))
+        } finally {
+            dir.deleteRecursively()
         }
     }
 }

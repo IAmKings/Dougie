@@ -27,7 +27,8 @@ import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SpeechInputTool
 import com.dougie.core.tool.SpeechOutputTool
 import com.dougie.core.tool.PreferOfflineTtsPort
-import com.dougie.core.tool.UnwiredTtsEngine
+import com.dougie.core.tool.SherpaTtsEngine
+import com.dougie.core.tool.TtsModelLayout
 import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
@@ -40,9 +41,11 @@ import com.dougie.tool.system.AndroidScreenCapturePort
 import com.dougie.tool.system.AndroidSpeechPort
 import com.dougie.tool.system.AndroidSystemTtsEngine
 import com.dougie.tool.system.DeviceBatteryTool
+import com.dougie.tool.system.SherpaJni
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 class DougieApplication : Application() {
@@ -87,8 +90,13 @@ class DougieApplication : Application() {
             isForeground = { foregroundTracker.foreground },
             onUsed = { permissionUsage.mark(AndroidPermissions.RECORD_AUDIO) },
         )
+        val ttsDir = File(filesDir, TtsModelLayout.DIR)
         val ttsPort = PreferOfflineTtsPort(
-            offline = UnwiredTtsEngine,
+            offline = SherpaTtsEngine(
+                modelDir = ttsDir,
+                nativeAvailable = SherpaJni::isAvailable,
+                speakNative = SherpaJni::speak,
+            ),
             fallback = AndroidSystemTtsEngine(this),
         )
         val screenStore = InMemoryScreenFrameStore()

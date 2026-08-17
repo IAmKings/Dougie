@@ -52,6 +52,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   SherpaSpeechEngine.kt
   TtsPort.kt
   SpeechOutputTool.kt
+  SherpaTtsEngine.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -61,6 +62,7 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   AudioRecordSpeechRecorder.kt
   SherpaJni.kt
   AndroidSystemTtsEngine.kt
+  (trimmed) com/k2fsa/sherpa/onnx/Tts.kt
 tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   DougieAccessibilityService.kt
   GesturePort.kt
@@ -139,15 +141,17 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: System voices with `isNetworkConnectionRequired` egress text. Checking in VITS (~116MB) belongs in a later slice, not this contract.
 
-**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. Default offline is `UnwiredTtsEngine` until VITS is wired. Success JSON is `ok` + `backend` only.
+**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. App default offline is `SherpaTtsEngine` on `filesDir/models/tts/{model.onnx,tokens.txt,lexicon.txt}` plus `SherpaJni.isAvailable()`. Do not class-load `OfflineTts` until the library loads (no companion `loadLibrary`). Trimmed `Tts.kt` is Apache-2.0 from sherpa-onnx v1.13.4. VITS ONNX stays out of git. Success JSON is `ok` + `backend` only.
 
 ## Scenario: speech_output TTS contract
 
 ### 1. Scope / Trigger
-Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort`; `:tool:system` `AndroidSystemTtsEngine`; app wires `UnwiredTtsEngine` as offline until VITS.
+Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort` + `SherpaTtsEngine`; `:tool:system` `AndroidSystemTtsEngine` + `SherpaJni.speak` + `AudioTrack`.
 
 ### 2. Signatures
 - `TtsEngine.isReady(): Boolean` / `suspend fun speak(text: String): TtsOutcome`
+- `SherpaTtsEngine(modelDir, nativeAvailable, speakNative)`
+- `TtsModelLayout.isPresent`: `model.onnx` + `tokens.txt` + `lexicon.txt` non-empty
 - `PreferOfflineTtsPort.speak(text): TtsSpeakResult` (`ok`, `backend` `offline`|`system`, optional `error`)
 - `SpeechOutputTool` name `speech_output`, `RiskLevel.L0`, required `text`
 
@@ -157,7 +161,7 @@ Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort`; `:tool:sy
 - `Voice.isNetworkConnectionRequired` → fail, no speak. Check **after** `setLanguage` (language switch can pick a network voice).
 - Target 30+: `:tool:system` merged manifest must `<queries>` `android.intent.action.TTS_SERVICE` so engines/voices are visible.
 - Success JSON `{"ok":true,"backend":"offline"|"system"}` — no PCM/bytes.
-- Do not commit VITS ONNX.
+- Do not commit VITS ONNX. Layout is `filesDir/models/tts/`. Optional `dict/` passed as `dictDir`.
 
 ### 4. Validation & Error Matrix
 - Empty/blank `text` → `INVALID_TOOL_ARGS`
@@ -171,7 +175,7 @@ Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort`; `:tool:sy
 - Bad: 81-char fallback; network voice; empty text
 
 ### 6. Tests Required
-- `SpeechOutputToolTest`: prefers offline; fallback; long fallback; network; empty text
+- `SpeechOutputToolTest`: prefers offline; fallback; long fallback; network; empty text; VITS layout + native gate
 - `./gradlew :core:tool:test :app:checkChannelLeak`
 
 ### 7. Wrong vs Correct

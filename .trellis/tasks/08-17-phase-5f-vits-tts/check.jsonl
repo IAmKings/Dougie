@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "core JVM vs tool:system AudioTrack"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "TTS_FAILED when synthesize/play fails"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No TTS text in logs"}

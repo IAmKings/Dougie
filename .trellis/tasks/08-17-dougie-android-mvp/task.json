@@ -32,7 +32,8 @@
     "08-17-phase-5b-speech-input",
     "08-17-phase-5c-speech-engine",
     "08-17-phase-5d-sherpa-jni",
-    "08-17-phase-5e-speech-output"
+    "08-17-phase-5e-speech-output",
+    "08-17-phase-5f-vits-tts"
   ],
   "parent": null,
   "relatedFiles": [],
