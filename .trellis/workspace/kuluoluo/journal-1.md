@@ -68,3 +68,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 4: Phase 3a 日历与确认卡
+
+**Date**: 2026-08-17
+**Task**: Phase 3a 日历与确认卡
+**Branch**: `main`
+
+### Summary
+
+提交 Policy、L2 确认卡、日历与前台剪贴板、权限中心；进入 Phase 3b 定位与屏幕感知。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eb0d72c` | (see git log) |
+
+### Status
+
+[OK] **Completed**
