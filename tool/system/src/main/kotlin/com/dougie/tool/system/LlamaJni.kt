@@ -28,6 +28,7 @@ object LlamaJni {
         }
     }
 
+    /** Implemented in `llama_jni.cpp` when `third_party/llama.cpp` is present at build time. */
     @JvmStatic
     external fun nativeComplete(modelPath: String, prompt: String): String
 }

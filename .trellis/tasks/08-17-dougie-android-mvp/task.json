@@ -35,7 +35,8 @@
     "08-17-phase-5e-speech-output",
     "08-17-phase-5f-vits-tts",
     "08-17-phase-5g-intent-classifier",
-    "08-17-phase-5h-llama-engine"
+    "08-17-phase-5h-llama-engine",
+    "08-17-phase-5i-llama-ndk"
   ],
   "parent": null,
   "relatedFiles": [],

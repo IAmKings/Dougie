@@ -69,6 +69,9 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   AndroidIntentPort.kt
   LlamaJni.kt
   (trimmed) com/k2fsa/sherpa/onnx/Tts.kt
+tool/system/src/main/cpp/
+  llama_jni.cpp
+  CMakeLists.txt
 tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   DougieAccessibilityService.kt
   GesturePort.kt
@@ -153,7 +156,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: Qwen3-0.6B GGUF is 420–639MB. Falling back to the cloud LLM hides that the local classifier is missing.
 
-**Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or engine not ready → fail with Chinese errors. `LlamaIntentEngine.isReady` needs GGUF + `LlamaJni.isAvailable()` (`System.loadLibrary("llama")`). Parse the first JSON object from complete text. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf` and llama.cpp / `jniLibs` stay out of git. NDK bindings are a later slice; missing `nativeComplete` maps to `INTENT_FAILED`.
+**Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or engine not ready → fail with Chinese errors. `LlamaIntentEngine.isReady` needs GGUF + `LlamaJni.isAvailable()` (`System.loadLibrary("llama")`). Parse the first JSON object from complete text. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf`, `third_party/llama.cpp/`, and `jniLibs` stay out of git. `:tool:system` CMake runs only if `third_party/llama.cpp/CMakeLists.txt` exists; JNI is `nativeComplete` (CPU, temp 0.7 / top-p 0.8 / presence 1.5). Native code must not log the prompt.
 
 ## Scenario: speech_output TTS contract
 

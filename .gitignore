@@ -20,6 +20,7 @@ local.properties
 *.onnx
 *.gguf
 **/jniLibs/
+third_party/llama.cpp/
 
 # ── 环境变量与密钥（绝不入库） ────────────────────────
 .env

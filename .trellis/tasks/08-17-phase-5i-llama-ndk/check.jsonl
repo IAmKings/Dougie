@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "CMake optional, OUTPUT_NAME llama"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt in native logs"}
+{"file": "tool/system/src/main/cpp/llama_jni.cpp", "reason": "JNI nativeComplete, silent llama_log_set"}
+{"file": "tool/system/src/main/cpp/CMakeLists.txt", "reason": "OUTPUT_NAME llama"}
+{"file": "tool/system/build.gradle.kts", "reason": "CMake only if llama.cpp exists"}

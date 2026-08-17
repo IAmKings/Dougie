@@ -21,6 +21,28 @@ android {
     }
 }
 
+val llamaCpp = rootProject.layout.projectDirectory.dir("third_party/llama.cpp").asFile
+val hasLlamaCpp = llamaCpp.resolve("CMakeLists.txt").exists()
+if (hasLlamaCpp) {
+    android {
+        defaultConfig {
+            ndk {
+                abiFilters += "arm64-v8a"
+            }
+            externalNativeBuild {
+                cmake {
+                    arguments += "-DLLAMA_CPP_DIR=${llamaCpp.absolutePath}"
+                }
+            }
+        }
+        externalNativeBuild {
+            cmake {
+                path = file("src/main/cpp/CMakeLists.txt")
+            }
+        }
+    }
+}
+
 dependencies {
     api(project(":core:tool"))
     implementation(libs.androidx.core.ktx)

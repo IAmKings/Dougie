@@ -44,8 +44,9 @@
 | `08-17-phase-5e-speech-output` | §15 Phase 5 / §6.9 | `speech_output` 合同；系统短播报降级，禁联网合成（已归档） |
 | `08-17-phase-5f-vits-tts` | §15 Phase 5 / §6.9 | sherpa VITS 离线合成；不入库 116MB 模型（已归档） |
 | `08-17-phase-5g-intent-classifier` | §15 Phase 5 / §6.10 | `intent_classifier` 合同与模型门；不入库 GGUF（已归档） |
-| `08-17-phase-5h-llama-engine` | §15 Phase 5 / §6.10 | llama 完成缝 + JSON 解析；不入库 GGUF/NDK |
-| （后续）Phase 5 余下 | §15 Phase 5 | llama.cpp NDK 真实推理 |
+| `08-17-phase-5h-llama-engine` | §15 Phase 5 / §6.10 | llama 完成缝 + JSON 解析；不入库 GGUF/NDK（已归档） |
+| `08-17-phase-5i-llama-ndk` | §15 Phase 5 / §6.10 | 可选 CMake 编译 `nativeComplete`；不入库 llama.cpp |
+| （后续）Phase 5 余下 | §15 Phase 5 | Play 按需下载 / 评测集 |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 
