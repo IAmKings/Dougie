@@ -173,3 +173,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 9: 侧载真实点击滑动
+
+**Date**: 2026-08-17
+**Task**: 侧载真实点击滑动
+**Branch**: `main`
+
+### Summary
+
+提交 TapSwipe dispatchGesture；下一步离线 ASR 合同与权限门，不内置 230MB 模型。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `331595c` | (see git log) |
+
+### Status
+
+[OK] **Completed**
