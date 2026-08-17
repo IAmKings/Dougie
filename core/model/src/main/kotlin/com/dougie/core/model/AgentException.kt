@@ -34,6 +34,9 @@ object UserFacingErrors {
     const val INTENT_ENGINE_NOT_READY = "离线意图引擎尚未接入，无法分类。"
     const val INTENT_LOW_CONFIDENCE = "意图不够明确，请补充说明或改用云端模型。"
     const val INTENT_FAILED = "离线意图推理失败，请稍后重试。"
+    const val MODEL_DOWNLOAD_DENIED = "未确认下载，已跳过获取离线模型。"
+    const val MODEL_HASH_MISMATCH = "离线模型校验失败，已删除不完整文件。"
+    const val MODEL_DOWNLOAD_FAILED = "离线模型下载失败，请检查网络后重试。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

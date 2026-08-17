@@ -29,6 +29,7 @@ import com.dougie.core.tool.SpeechOutputTool
 import com.dougie.core.tool.IntentClassifierTool
 import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SherpaTtsEngine
+import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.TtsModelLayout
 import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
@@ -43,6 +44,7 @@ import com.dougie.tool.system.AndroidScreenCapturePort
 import com.dougie.tool.system.AndroidSpeechPort
 import com.dougie.tool.system.AndroidSystemTtsEngine
 import com.dougie.tool.system.DeviceBatteryTool
+import com.dougie.tool.system.OkHttpModelGet
 import com.dougie.tool.system.SherpaJni
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -61,6 +63,8 @@ class DougieApplication : Application() {
         private set
     lateinit var permissionUsage: PermissionUsageTracker
         private set
+    lateinit var modelInstaller: ModelInstaller
+        private set
 
     private val foregroundTracker = AppForegroundTracker()
     private lateinit var tools: LinkedHashMap<String, AgentTool>
@@ -78,6 +82,7 @@ class DougieApplication : Application() {
             .readTimeout(60, TimeUnit.SECONDS)
             .callTimeout(0, TimeUnit.SECONDS)
             .build()
+        modelInstaller = ModelInstaller(OkHttpModelGet(OkHttpModelGet.client(http)))
         val calendarPort = AndroidCalendarPort(this) { permissionUsage.mark(it) }
         val clipboardPort = AndroidClipboardPort(
             context = this,

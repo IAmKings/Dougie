@@ -38,6 +38,9 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false` | `离线意图引擎尚未接入，无法分类。` |
 | Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |
 | Intent infer failed | Model text is not JSON / native complete failed | `离线意图推理失败，请稍后重试。` |
+| Model download not confirmed / not https | `userConfirmed=false` or non-https URL | `未确认下载，已跳过获取离线模型。` |
+| Model hash mismatch | SHA-256 of payload ≠ spec | `离线模型校验失败，已删除不完整文件。` |
+| Model download failed | HTTP/IO error | `离线模型下载失败，请检查网络后重试。` |
 
 `AgentException.userMessage` is what LoopEngine copies into `lastError`. Gateway throws before `LlmProvider.stream` is collected, so blocked egress never becomes a network error. Do not map OkHttp `call.cancel()` to `LLM_FAILED`.
 

@@ -57,6 +57,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   IntentClassifierTool.kt
   IntentJsonParser.kt
   LlamaIntentEngine.kt
+  ModelInstaller.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -68,6 +69,7 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   AndroidSystemTtsEngine.kt
   AndroidIntentPort.kt
   LlamaJni.kt
+  OkHttpModelGet.kt
   (trimmed) com/k2fsa/sherpa/onnx/Tts.kt
 tool/system/src/main/cpp/
   llama_jni.cpp
@@ -94,7 +96,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` | `BatteryManager` / other Android APIs |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech ports, `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort` | Loop state machine, LLM HTTP, cloud STT/TTS |
+| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech ports, `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -157,6 +159,12 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: Qwen3-0.6B GGUF is 420–639MB. Falling back to the cloud LLM hides that the local classifier is missing.
 
 **Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or engine not ready → fail with Chinese errors. `LlamaIntentEngine.isReady` needs GGUF + `LlamaJni.isAvailable()` (`System.loadLibrary("llama")`). Parse the first JSON object from complete text. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf`, `third_party/llama.cpp/`, and `jniLibs` stay out of git. `:tool:system` CMake runs only if `third_party/llama.cpp/CMakeLists.txt` exists; JNI is `nativeComplete` (CPU, temp 0.7 / top-p 0.8 / presence 1.5). Native code must not log the prompt.
+
+## Don't: AgentTool with attacker-controlled download URL
+
+**Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
+
+**Instead**: `ModelInstaller` is app-owned. Require `userConfirmed`, `https://` only, SHA-256 match, write `.part` then rename. `OkHttpModelGet` rejects non-https redirects. Not registered on `LoopEngine`.
 
 ## Scenario: speech_output TTS contract
 
