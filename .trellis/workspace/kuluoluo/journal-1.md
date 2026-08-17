@@ -152,3 +152,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 8: Play Sideload 双渠道
+
+**Date**: 2026-08-17
+**Task**: Play Sideload 双渠道
+**Branch**: `main`
+
+### Summary
+
+提交 Play/Sideload flavors 与泄漏检查；下一步侧载真实 TapSwipe。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2a54715` | (see git log) |
+
+### Status
+
+[OK] **Completed**
