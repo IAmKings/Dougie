@@ -362,3 +362,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 18: Phase 5j 模型按需安装器
+
+**Date**: 2026-08-17
+**Task**: Phase 5j 模型按需安装器
+**Branch**: `main`
+
+### Summary
+
+HTTPS+SHA-256 ModelInstaller：须用户确认、非 Agent Tool；哈希失败删 .part。未做下载 UI。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a4ddb9e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
