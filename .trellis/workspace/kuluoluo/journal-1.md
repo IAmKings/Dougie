@@ -278,3 +278,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 14: sherpa VITS 离线合成
+
+**Date**: 2026-08-17
+**Task**: sherpa VITS 离线合成
+**Branch**: `main`
+
+### Summary
+
+提交 VITS 离线合成与 AudioTrack 播放；缺模型时仍降级系统短播报。下一步接入 IntentClassifier 合同，不入库 GGUF。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e0f59b0` | (see git log) |
+
+### Status
+
+[OK] **Completed**

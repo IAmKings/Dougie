@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
+- **Total Sessions**: 14
 - **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~280 | Active |
+| `journal-1.md` | ~301 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-08-17 | sherpa VITS 离线合成 | `e0f59b0` | `main` |
 | 13 | 2026-08-17 | speech_output 系统 TTS 降级 | `28f7f23` | `main` |
 | 12 | 2026-08-17 | sherpa 本地转写 | `f242924` | `main` |
 | 11 | 2026-08-17 | 前台录音与引擎缝 | `bc4ba17` | `main` |
