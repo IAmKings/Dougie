@@ -47,3 +47,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: Phase 2 本地记忆
+
+**Date**: 2026-08-17
+**Task**: Phase 2 本地记忆
+**Branch**: `main`
+
+### Summary
+
+提交 FTS 记忆、Gate 与 Memory UI；归档后进入 Phase 3a 日历/剪贴板/权限确认。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `00585d9` | (see git log) |
+
+### Status
+
+[OK] **Completed**

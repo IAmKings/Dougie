@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 2
+- **Total Sessions**: 3
 - **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~49 | Active |
+| `journal-1.md` | ~70 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 3 | 2026-08-17 | Phase 2 本地记忆 | `00585d9` | `main` |
 | 2 | 2026-08-17 | Phase 1b 流式双 Tool | `f21cddf` | `main` |
 | 1 | 2026-08-17 | Phase 0–1a 落地 | `1aebe5d` | `main` |
 <!-- @@@/auto:session-history -->
