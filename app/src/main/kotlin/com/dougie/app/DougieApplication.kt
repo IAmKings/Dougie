@@ -15,6 +15,7 @@ import com.dougie.core.runtime.PolicyEngine
 import com.dougie.core.runtime.TaskManager
 import com.dougie.core.runtime.recoverInterrupted
 import com.dougie.core.tool.AppIntentTool
+import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
@@ -51,6 +52,7 @@ class DougieApplication : Application() {
         private set
 
     private val foregroundTracker = AppForegroundTracker()
+    private lateinit var tools: LinkedHashMap<String, AgentTool>
 
     override fun onCreate() {
         super.onCreate()
@@ -84,7 +86,7 @@ class DougieApplication : Application() {
             context = this,
             isForeground = { foregroundTracker.foreground },
         )
-        val tools = mapOf(
+        tools = linkedMapOf(
             "battery" to DeviceBatteryTool(this),
             "time" to SystemTimeTool(),
             CalendarQueryTool.NAME to CalendarQueryTool(calendarPort),
@@ -96,6 +98,7 @@ class DougieApplication : Application() {
             ScreenMatchTool.NAME to ScreenMatchTool(screenStore),
             AppIntentTool.NAME to AppIntentTool(appIntentPort, taskStores.idempotencyStore),
         )
+        ChannelTools.register(tools) { ChannelHooks.hasChannelConsent(this) }
         val provider = OpenAICompatibleProvider(
             client = http,
             config = {
@@ -132,6 +135,10 @@ class DougieApplication : Application() {
         runBlocking {
             recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
         }
+    }
+
+    fun refreshChannelTools() {
+        ChannelTools.register(tools) { ChannelHooks.hasChannelConsent(this) }
     }
 
     companion object {

@@ -1,0 +1,9 @@
+<resources>
+    <string name="sideload_consent_title">侧载渠道知情同意</string>
+    <string name="sideload_consent_body">本包含屏幕辅助能力。请逐项确认后继续；默认不勾选。</string>
+    <string name="sideload_consent_item_a11y">无障碍服务用于经我确认的屏幕点击/滑动，不会在未确认时操作。</string>
+    <string name="sideload_consent_item_boundary">不得用于银行、支付或密码管理器。</string>
+    <string name="sideload_consent_item_revoke">我可随时在系统设置中关闭无障碍服务以撤销该能力。</string>
+    <string name="sideload_consent_agree">同意并继续</string>
+    <string name="sideload_consent_exit">退出</string>
+</resources>

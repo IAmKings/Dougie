@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "§17.4 flavors, play leak red lines, §10.2 sideload consent"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Do not put TapSwipe in core:tool"}
+{"file": "app/build.gradle.kts", "reason": "Add product flavors"}
+{"file": "app/src/main/kotlin/com/dougie/app/DougieApplication.kt", "reason": "Flavor-gated tool registration"}
+{"file": "settings.gradle.kts", "reason": "Optional :tool:accessibility include"}

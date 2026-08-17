@@ -29,6 +29,7 @@ include(
     ":core:runtime",
     ":core:memory",
     ":tool:system",
+    ":tool:accessibility",
     ":data:preferences",
     ":data:memory",
     ":data:tasks",

@@ -37,7 +37,8 @@ class LoopEngine(
     private val confirmTimeoutMs: Long = 60_000L,
     private val auditLog: AuditLog = NoOpAuditLog,
 ) {
-    private val sanitizer = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
+    private val sanitizer: ToolCallSanitizer
+        get() = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
     private val memoryGate = memoryStore?.let { MemoryGate(it, memoryEnabled) }
 
     @Volatile

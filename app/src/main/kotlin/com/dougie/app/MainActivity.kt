@@ -31,10 +31,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val app = application as DougieApplication
         setContent {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = DougieColors.Surface,
-            ) {
+            ChannelHooks.Root {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = DougieColors.Surface,
+                ) {
                 var route by remember { mutableStateOf(AppRoute.Chat) }
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 when (route) {
@@ -100,6 +101,7 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+                }
                 }
             }
         }

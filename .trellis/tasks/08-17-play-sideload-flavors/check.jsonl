@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "play APK must not contain Accessibility or TapSwipe"}
+{"file": ".trellis/tasks/08-17-play-sideload-flavors/prd.md", "reason": "Acceptance"}
+{"file": ".trellis/tasks/08-17-play-sideload-flavors/design.md", "reason": "Module isolation"}
+{"file": "app/build.gradle.kts", "reason": "play default, sideload suffix"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "TapSwipe not in core"}

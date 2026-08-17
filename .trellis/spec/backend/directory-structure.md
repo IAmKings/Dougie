@@ -51,6 +51,9 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   AndroidCalendarPort.kt
   AndroidClipboardPort.kt
   AndroidAppIntentPort.kt
+tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
+  DougieAccessibilityService.kt
+  TapSwipeTool.kt
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
   PreferenceStore.kt
   ProviderSettings.kt
@@ -68,6 +71,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort`, `AndroidAppIntentPort` | Loop state machine, LLM HTTP |
+| `:tool:accessibility` (Android, **sideload flavor only**) | No-op `DougieAccessibilityService`, stub `TapSwipeTool` (L3) | Play APK, `:core:tool`, real click dispatch |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
@@ -105,6 +109,12 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: Adding `com.android.library` to runtime/llm/tool/model breaks the JVM-pure red line and `:cli` reuse.
 
 **Instead**: Put `BatteryManager` in `:tool:system` and inject `AgentTool` into `LoopEngine`. Store API keys in `:data:preferences` via EncryptedSharedPreferences (MasterKey), not plaintext XML prefs.
+
+## Don't: Put `TapSwipeTool` in `:core:tool`
+
+**Problem**: `:core:tool` is on the Play classpath. A TapSwipe class there would ship in the Play APK even if unregistered.
+
+**Instead**: Keep `TapSwipeTool` and `AccessibilityService` in `:tool:accessibility`, wired only with `sideloadImplementation`. Play `ChannelTools` must not import those types. `PolicyEngine` treats `RiskLevel.L3` as always `NeedsConfirmation`.
 
 ## Scenario: LoopEngine status contract
 

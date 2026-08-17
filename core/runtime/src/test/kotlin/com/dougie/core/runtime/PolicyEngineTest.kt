@@ -57,6 +57,20 @@ class PolicyEngineTest {
     }
 
     @Test
+    fun l3AlwaysNeedsConfirmation() {
+        val engine = PolicyEngine { true }
+        assertEquals(
+            PolicyDecision.NeedsConfirmation,
+            engine.decide(
+                ToolDescriptor(
+                    name = "tap_swipe",
+                    riskLevel = RiskLevel.L3,
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun missingLocationPermissionDeniesL1() {
         val engine = PolicyEngine { false }
         val decision = engine.decide(

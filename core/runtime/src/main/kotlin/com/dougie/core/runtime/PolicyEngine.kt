@@ -17,7 +17,7 @@ class PolicyEngine(
         if (permission != null && !isGranted(permission)) {
             return PolicyDecision.DeniedPermission(permission)
         }
-        if (descriptor.riskLevel == RiskLevel.L2) {
+        if (descriptor.riskLevel == RiskLevel.L2 || descriptor.riskLevel == RiskLevel.L3) {
             return PolicyDecision.NeedsConfirmation
         }
         return PolicyDecision.Allow
