@@ -217,6 +217,8 @@ private fun EmptyState(onExampleClick: (String) -> Unit) {
         )
         Spacer(Modifier.height(24.dp))
         ExampleChip(BATTERY_EXAMPLE, onExampleClick)
+        Spacer(Modifier.height(12.dp))
+        ExampleChip(TIME_EXAMPLE, onExampleClick)
     }
 }
 
@@ -245,7 +247,8 @@ private fun ExampleChip(text: String, onClick: (String) -> Unit) {
 @Composable
 private fun ChatFeed(items: List<ChatItem>) {
     val listState = rememberLazyListState()
-    LaunchedEffect(items.size) {
+    val lastAgent = (items.lastOrNull() as? ChatItem.AgentMessage)?.text
+    LaunchedEffect(items.size, lastAgent) {
         if (items.isNotEmpty()) {
             listState.animateScrollToItem(items.lastIndex)
         }
@@ -357,11 +360,12 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
         ToolTraceStatus.EXECUTING, ToolTraceStatus.PENDING -> DougieColors.StatusExecuting
         ToolTraceStatus.FAILED -> Color(0xFFD32F2F)
     }
+    val toolLabel = toolDisplayName(entry.toolName)
     val label = when (entry.status) {
-        ToolTraceStatus.SUCCESS -> "已调用 电池工具 (L0)"
-        ToolTraceStatus.EXECUTING -> "正在调用 电池工具 (L0)"
-        ToolTraceStatus.PENDING -> "准备调用 电池工具 (L0)"
-        ToolTraceStatus.FAILED -> "电池工具失败 (L0)"
+        ToolTraceStatus.SUCCESS -> "已调用 $toolLabel (L0)"
+        ToolTraceStatus.EXECUTING -> "正在调用 $toolLabel (L0)"
+        ToolTraceStatus.PENDING -> "准备调用 $toolLabel (L0)"
+        ToolTraceStatus.FAILED -> "$toolLabel 失败 (L0)"
     }
     Row(
         modifier = Modifier
@@ -390,7 +394,7 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
             }
             val resultJson = entry.resultJson
             Text(
-                text = "> 正在执行 DeviceBatteryTool...\nresult: ${resultJson ?: "..."}",
+                text = "> 正在执行 ${entry.toolName}...\nresult: ${resultJson ?: "..."}",
                 fontFamily = FontFamily.Monospace,
                 fontSize = 13.sp,
                 color = DougieColors.SecondaryFixed,
@@ -413,7 +417,7 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
                         modifier = Modifier.size(14.dp),
                     )
                     Text(
-                        text = batterySummary(resultJson),
+                        text = toolResultSummary(entry.toolName, resultJson),
                         color = DougieColors.StatusCompleted,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
@@ -552,7 +556,14 @@ private fun BottomItem(
     }
 }
 
-internal fun batterySummary(resultJson: String): String {
+internal fun toolDisplayName(toolName: String): String = when (toolName) {
+    "battery" -> "电池工具"
+    "time" -> "时间工具"
+    else -> toolName
+}
+
+internal fun toolResultSummary(toolName: String, resultJson: String): String {
+    if (toolName != "battery") return resultJson
     val percent = Regex(""""battery_percent"\s*:\s*(\d+)""").find(resultJson)?.groupValues?.get(1)
     val charging = Regex(""""charging"\s*:\s*(true|false)""").find(resultJson)?.groupValues?.get(1)
     return if (percent != null && charging != null) {
@@ -561,3 +572,5 @@ internal fun batterySummary(resultJson: String): String {
         resultJson
     }
 }
+
+internal fun batterySummary(resultJson: String): String = toolResultSummary("battery", resultJson)

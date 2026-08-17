@@ -10,6 +10,7 @@ import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MissingApiKeyException
 import com.dougie.core.model.UserFacingErrors
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -72,6 +73,35 @@ class EgressGatewayTest {
             )
             try {
                 gateway.complete(provider, LoopContext(AgentTask("t", "电量?")))
+                throw AssertionError("expected EgressBlockedException")
+            } catch (e: EgressBlockedException) {
+                assertEquals(UserFacingErrors.EGRESS_BLOCKED, e.userMessage)
+            }
+            assertEquals(0, server.requestCount)
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun streamDenyNeverSendsHttpEvenWhenApiKeyIsConfigured() = runTest {
+        val server = MockWebServer()
+        server.start()
+        try {
+            server.enqueue(MockResponse().setBody("data: {\"choices\":[{\"delta\":{\"content\":\"no\"}}]}\n\ndata: [DONE]\n"))
+            val provider = OpenAICompatibleProvider(OkHttpClient()) {
+                CloudLlmConfig(
+                    baseUrl = server.url("/v1/").toString(),
+                    apiKey = "sk-present-but-blocked",
+                    model = "gpt-4o-mini",
+                )
+            }
+            val gateway = EgressGateway(
+                policy = { EgressPolicy(allowCloud = false) },
+                apiKey = { "sk-present-but-blocked" },
+            )
+            try {
+                gateway.stream(provider, LoopContext(AgentTask("t", "电量?"))).collect { }
                 throw AssertionError("expected EgressBlockedException")
             } catch (e: EgressBlockedException) {
                 assertEquals(UserFacingErrors.EGRESS_BLOCKED, e.userMessage)

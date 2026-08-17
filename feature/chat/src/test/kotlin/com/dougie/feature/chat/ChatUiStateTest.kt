@@ -73,6 +73,26 @@ class ChatUiStateTest {
         assertTrue(state.inputEnabled)
     }
 
+    @Test
+    fun thinkingShowsStreamingTextBeforeCompletion() {
+        val state = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.THINKING,
+            streamingText = "你现在的手机",
+        ).toChatUiState()
+        assertEquals(listOf("user", "thinking-1", "agent"), state.items.map { it.kind() })
+        assertEquals("你现在的手机", (state.items.last() as ChatItem.AgentMessage).text)
+        assertEquals(false, state.inputEnabled)
+    }
+
+    @Test
+    fun toolCardsUseGenericNamesInsteadOfHardcodedBattery() {
+        assertEquals("电池工具", toolDisplayName("battery"))
+        assertEquals("时间工具", toolDisplayName("time"))
+        assertEquals("calendar", toolDisplayName("calendar"))
+    }
+
     private fun ChatItem.kind(): String = when (this) {
         is ChatItem.UserMessage -> "user"
         is ChatItem.Thinking -> "thinking-$loopNumber"

@@ -1,0 +1,8 @@
+{"file": "PRD.md", "reason": "Phase 1b streaming, ToolCallSanitizer, L0 time+battery"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine and Gateway contracts to extend"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "User-facing failures must stay"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No SSE/prompt/key logs"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Chat must map streamingText from AgentTask"}
+{"file": "core/llm/src/main/kotlin/com/dougie/core/llm/OpenAICompatibleProvider.kt", "reason": "Extend existing non-stream client"}
+{"file": "core/runtime/src/main/kotlin/com/dougie/core/runtime/LoopEngine.kt", "reason": "Collect Flow and sanitize tools"}
+{"file": ".trellis/tasks/archive/2026-08/08-17-phase-1a-cloud-battery/design.md", "reason": "Do not regress egress or battery wiring"}

@@ -29,8 +29,8 @@
 | 子任务 | 对应 PRD | 独立验收 |
 |---|---|---|
 | `08-17-phase-0-skeleton-chat` | Phase 0 + Chat 主界面 | Fake LLM + Fake Tool 稳定跑通 3 次 Loop；Chat 展示完整状态链（实现已通过） |
-| `08-17-phase-1a-cloud-battery` | §15 Phase 1a | 真实 OpenAI-compatible 对话 + 真实电量 Tool + Egress 默认拦截 |
-| （后续）Phase 1b Streaming + 多 Tool | §15 Phase 1b | ≥2 Tool + 幂等键 |
+| `08-17-phase-1a-cloud-battery` | §15 Phase 1a | 真实 OpenAI-compatible 对话 + 真实电量 Tool + Egress 默认拦截（已归档） |
+| `08-17-phase-1b-streaming-tools` | §15 Phase 1b | Streaming + ≥2 Tool（电量+时间）+ ToolCallSanitizer |
 | （后续）Phase 2 Memory UI | §15 Phase 2 | 能从历史找回至少一个事实 |
 | （后续）其余 Phase | §15 Phase 3–4 | 按各自 PRD 拆分 |
 

@@ -3,6 +3,7 @@ package com.dougie.core.runtime
 import com.dougie.core.llm.FakeLlmProvider
 import com.dougie.core.llm.LlmProvider
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.TaskStatus
@@ -12,8 +13,11 @@ import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.FakeBatteryTool
+import com.dougie.core.tool.SystemTimeTool
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -175,5 +179,162 @@ class LoopEngineTest {
         val result = engine.run(AgentTask(taskId = "tool-timeout", input = "电量?")) {}
         assertEquals(TaskStatus.FAILED, result.status)
         assertEquals(UserFacingErrors.TOOL_TIMEOUT, result.lastError)
+    }
+
+    @Test
+    fun unknownToolFailsWithoutExecuting() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        var executed = false
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(id = "call-1", name = "calendar", argsJson = "{}")
+            }
+        }
+        val battery = object : AgentTool {
+            override val name: String = "battery"
+            override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
+                executed = true
+                return ToolResult(json = "{}")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("battery" to battery),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "unknown", input = "日程?")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.UNKNOWN_TOOL, result.lastError)
+        assertEquals(false, executed)
+    }
+
+    @Test
+    fun extraToolArgsAreStrippedAndDoNotFailTask() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(
+                        id = "time-1",
+                        name = "time",
+                        argsJson = """{"hallucinated":true}""",
+                    )
+                } else {
+                    LlmResponse.FinalAnswer("现在是上午。")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "time-task", input = "现在几点了？")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(1, result.toolTrace.size)
+        assertEquals("{}", result.toolTrace.single().argsSummary)
+        assertEquals(ToolTraceStatus.SUCCESS, result.toolTrace.single().status)
+        assertTrue(result.finalAnswer!!.contains("现在"))
+    }
+
+    @Test
+    fun canCallTimeThenBatteryInOneTask() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return when (context.task.toolTrace.size) {
+                    0 -> LlmResponse.ToolCall(id = "time-1", name = "time", argsJson = "{}")
+                    1 -> LlmResponse.ToolCall(id = "battery-1", name = "battery", argsJson = "{}")
+                    else -> LlmResponse.FinalAnswer("现在有电。")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(
+                "time" to SystemTimeTool(),
+                "battery" to FakeBatteryTool(),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "multi", input = "时间和电量")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(listOf("time", "battery"), result.toolTrace.map { it.toolName })
+        assertTrue(result.toolTrace.all { it.status == ToolTraceStatus.SUCCESS })
+        assertTrue(result.toolTrace[0].resultJson!!.contains("iso_local"))
+        assertEquals(FakeBatteryTool.STABLE_RESULT, result.toolTrace[1].resultJson)
+        assertEquals(2, result.loopCount)
+    }
+
+    @Test
+    fun emitsStreamingTextWhileThinkingThenClearsOnComplete() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override fun stream(context: LoopContext): Flow<LlmEvent> = flow {
+                emit(LlmEvent.TextDelta("你"))
+                emit(LlmEvent.TextDelta("好"))
+            }
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                error("stream should be used")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val snapshots = mutableListOf<AgentTask>()
+        val result = engine.run(AgentTask(taskId = "stream", input = "你好")) { snapshots += it }
+        assertTrue(snapshots.any { it.status == TaskStatus.THINKING && it.streamingText == "你" })
+        assertTrue(snapshots.any { it.status == TaskStatus.THINKING && it.streamingText == "你好" })
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("你好", result.finalAnswer)
+        assertEquals(null, result.streamingText)
+    }
+
+    @Test
+    fun cancelStopsInFlightStreamAndFailsTask() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override fun stream(context: LoopContext): Flow<LlmEvent> = flow {
+                emit(LlmEvent.TextDelta("部分"))
+                delay(10_000)
+                emit(LlmEvent.TextDelta("完成"))
+            }
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                error("stream should be used")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val manager = TaskManager(
+            loopEngine = engine,
+            dispatcher = dispatcher,
+            scope = this,
+        )
+        manager.submit("你好")
+        testScheduler.runCurrent()
+        assertEquals("部分", manager.task.value?.streamingText)
+        manager.cancel()
+        advanceUntilIdle()
+        val task = manager.task.value
+        assertNotNull(task)
+        assertEquals(TaskStatus.FAILED, task!!.status)
+        assertEquals(UserFacingErrors.CANCELLED, task.lastError)
+        assertEquals(null, task.streamingText)
+        assertEquals(null, task.finalAnswer)
     }
 }

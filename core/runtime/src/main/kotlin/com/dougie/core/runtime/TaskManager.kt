@@ -1,6 +1,9 @@
 package com.dougie.core.runtime
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.TaskStatus
+import com.dougie.core.model.UserFacingErrors
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -25,21 +28,39 @@ class TaskManager(
         val trimmed = input.trim()
         if (trimmed.isEmpty()) return
         val current = _task.value
-        if (current != null && current.status != com.dougie.core.model.TaskStatus.COMPLETED &&
-            current.status != com.dougie.core.model.TaskStatus.FAILED
+        if (current != null && current.status != TaskStatus.COMPLETED &&
+            current.status != TaskStatus.FAILED
         ) {
             return
         }
-        running?.cancel()
         val created = AgentTask(
             taskId = UUID.randomUUID().toString(),
             input = trimmed,
         )
         _task.value = created
         running = scope.launch(dispatcher) {
-            loopEngine.run(created) { snapshot ->
-                _task.value = snapshot
+            try {
+                loopEngine.run(created) { snapshot ->
+                    _task.value = snapshot
+                }
+            } catch (e: CancellationException) {
+                markCancelled()
+                throw e
             }
         }
+    }
+
+    fun cancel() {
+        running?.cancel()
+    }
+
+    private fun markCancelled() {
+        val current = _task.value ?: return
+        if (current.status == TaskStatus.COMPLETED || current.status == TaskStatus.FAILED) return
+        _task.value = current.copy(
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.CANCELLED,
+            streamingText = null,
+        )
     }
 }

@@ -1,9 +1,9 @@
 {
-  "id": "dougie-android-mvp",
-  "name": "dougie-android-mvp",
-  "title": "Dougie Android MVP",
+  "id": "phase-1b-streaming-tools",
+  "name": "phase-1b-streaming-tools",
+  "title": "Phase 1b Streaming Multi Tool",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -18,12 +18,8 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "08-17-phase-0-skeleton-chat",
-    "08-17-phase-1a-cloud-battery",
-    "08-17-phase-1b-streaming-tools"
-  ],
-  "parent": null,
+  "children": [],
+  "parent": "08-17-dougie-android-mvp",
   "relatedFiles": [],
   "notes": "",
   "meta": {}

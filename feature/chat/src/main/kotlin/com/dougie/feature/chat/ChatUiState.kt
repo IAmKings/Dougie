@@ -5,6 +5,7 @@ import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 
 const val BATTERY_EXAMPLE = "我现在手机还有多少电？"
+const val TIME_EXAMPLE = "现在几点了？"
 
 data class ChatUiState(
     val items: List<ChatItem> = emptyList(),
@@ -33,6 +34,10 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         val alreadyShowingNextThinking = toolTrace.size >= nextLoop
         if ((status == TaskStatus.PREPARING || status == TaskStatus.THINKING) && !alreadyShowingNextThinking) {
             add(ChatItem.Thinking(loopNumber = nextLoop))
+        }
+        val streaming = streamingText
+        if (!streaming.isNullOrBlank() && status != TaskStatus.COMPLETED && status != TaskStatus.FAILED) {
+            add(ChatItem.AgentMessage(streaming))
         }
         val answer = finalAnswer
         if (status == TaskStatus.COMPLETED && !answer.isNullOrBlank()) {

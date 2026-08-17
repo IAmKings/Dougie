@@ -9,6 +9,7 @@ data class AgentTask(
     val toolTrace: List<ToolTraceEntry> = emptyList(),
     val finalAnswer: String? = null,
     val lastError: String? = null,
+    val streamingText: String? = null,
 )
 
 enum class TaskStatus {
@@ -48,6 +49,29 @@ sealed class LlmResponse {
         val name: String,
         val argsJson: String,
     ) : LlmResponse()
+}
+
+sealed class LlmEvent {
+    data class TextDelta(val text: String) : LlmEvent()
+    data class ToolCall(val id: String, val name: String, val argsJson: String) : LlmEvent()
+}
+
+data class ToolDescriptor(
+    val name: String,
+    val properties: Map<String, ToolParamSpec> = emptyMap(),
+)
+
+data class ToolParamSpec(
+    val type: ToolParamType,
+    val defaultJson: String? = null,
+)
+
+enum class ToolParamType {
+    STRING,
+    NUMBER,
+    INTEGER,
+    BOOLEAN,
+    OBJECT,
 }
 
 data class ToolContext(

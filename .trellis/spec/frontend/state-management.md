@@ -20,7 +20,11 @@ val uiState: StateFlow<ChatUiState> = taskManager.task
 
 `inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE).
 
-Egress / timeout / network failures are not a separate UI type: they are `AgentMessage` text from `lastError`.
+If `streamingText` is not blank and status is not COMPLETED/FAILED, append `AgentMessage(streamingText)` even while `THINKING`. After complete, show `finalAnswer` only (`streamingText` is null).
+
+Tool cards: `battery` → 电池工具, `time` → 时间工具, else the raw `toolName`. Do not hardcode “电池” for every tool.
+
+Egress / timeout / network / cancel failures are not a separate UI type: they are `AgentMessage` text from `lastError`.
 
 ## Don't: Duplicate loop status in ViewModel
 

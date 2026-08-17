@@ -2,10 +2,12 @@ package com.dougie.core.llm
 
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.CloudLlmConfig
+import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -34,13 +36,7 @@ class OpenAICompatibleProviderTest {
     fun parsesToolCallThenFinalContentAcrossTwoGenerateCalls() = runTest {
         server.enqueue(MockResponse().setBody(TOOL_CALL_BODY))
         server.enqueue(MockResponse().setBody(FINAL_BODY))
-        val provider = OpenAICompatibleProvider(OkHttpClient()) {
-            CloudLlmConfig(
-                baseUrl = server.url("/v1/").toString(),
-                apiKey = "sk-test",
-                model = "gpt-4o-mini",
-            )
-        }
+        val provider = testProvider()
 
         val first = provider.generate(LoopContext(AgentTask(taskId = "t1", input = "电量?")))
         val toolCall = first as LlmResponse.ToolCall
@@ -72,7 +68,50 @@ class OpenAICompatibleProviderTest {
         val recorded = server.takeRequest()
         assertTrue(recorded.path!!.endsWith("/chat/completions"))
         assertEquals("Bearer sk-test", recorded.getHeader("Authorization"))
-        assertTrue(recorded.body.readUtf8().contains("\"stream\":false"))
+        val body = recorded.body.readUtf8()
+        assertTrue(body.contains("\"stream\":true"))
+        assertTrue(body.contains("\"name\":\"time\""))
+        assertTrue(body.contains("\"name\":\"battery\""))
+    }
+
+    @Test
+    fun streamsTextDeltasIntoFinalAnswer() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(TEXT_SSE),
+        )
+        val provider = testProvider()
+        val events = provider.stream(LoopContext(AgentTask(taskId = "t1", input = "你好"))).toList()
+        val texts = events.map { (it as LlmEvent.TextDelta).text }
+        assertEquals(listOf("你", "现在", "的手机电量是 80%。"), texts)
+        assertEquals("你现在的手机电量是 80%。", texts.joinToString(""))
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun assemblesStreamedToolCallArguments() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(TOOL_CALL_SSE),
+        )
+        val provider = testProvider()
+        val events = provider.stream(LoopContext(AgentTask(taskId = "t1", input = "电量?"))).toList()
+        val tool = events.single() as LlmEvent.ToolCall
+        assertEquals("call_battery_1", tool.id)
+        assertEquals("battery", tool.name)
+        assertEquals("{}", tool.argsJson)
+    }
+
+    private fun testProvider(): OpenAICompatibleProvider {
+        return OpenAICompatibleProvider(OkHttpClient()) {
+            CloudLlmConfig(
+                baseUrl = server.url("/v1/").toString(),
+                apiKey = "sk-test",
+                model = "gpt-4o-mini",
+            )
+        }
     }
 
     companion object {
@@ -108,5 +147,29 @@ class OpenAICompatibleProviderTest {
           ]
         }
         """
+
+        private val TEXT_SSE = """
+            data: {"choices":[{"delta":{"content":"你"}}]}
+
+            data: {"choices":[{"delta":{"content":"现在"}}]}
+
+            data: {"choices":[{"delta":{"content":"的手机电量是 80%。"}}]}
+
+            data: {"choices":[{"delta":{},"finish_reason":"stop"}]}
+
+            data: [DONE]
+
+        """.trimIndent() + "\n"
+
+        private val TOOL_CALL_SSE = """
+            data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_battery_1","type":"function","function":{"name":"battery","arguments":""}}]}}]}
+
+            data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{}"}}]}}]}
+
+            data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}
+
+            data: [DONE]
+
+        """.trimIndent() + "\n"
     }
 }

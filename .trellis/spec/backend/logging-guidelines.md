@@ -6,7 +6,7 @@
 
 - Full LLM prompts or completions (`PRD.md` §9.3)
 - API keys, Keystore material, `Authorization` header values
-- Raw LLM HTTP request/response bodies (Release and Debug)
+- Raw LLM HTTP request/response bodies and SSE `data:` payloads (Release and Debug)
 - Tool arguments that contain secrets
 
 `LoopEngine`, `EgressGateway`, and `OpenAICompatibleProvider` currently log nothing. When adding logs, use tool **name** + `taskId` + `loopCount` only.

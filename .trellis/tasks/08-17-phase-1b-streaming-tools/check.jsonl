@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "≥2 tools, streaming, sanitizer"}
+{"file": ".trellis/tasks/08-17-phase-1b-streaming-tools/prd.md", "reason": "Acceptance checklist"}
+{"file": ".trellis/tasks/08-17-phase-1b-streaming-tools/design.md", "reason": "LlmEvent and Gateway.stream"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "core JVM-pure"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "No duplicate ViewModel stream buffer"}

@@ -8,6 +8,9 @@ object UserFacingErrors {
     const val LLM_FAILED = "模型调用失败，请稍后重试。"
     const val NETWORK_FAILED = "网络请求失败，请检查连接后重试。"
     const val TOOL_FAILED = "工具执行失败，请稍后重试。"
+    const val UNKNOWN_TOOL = "模型调用了未知工具，已拒绝执行。"
+    const val INVALID_TOOL_ARGS = "工具参数无效，已拒绝执行。"
+    const val CANCELLED = "任务已取消。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)
