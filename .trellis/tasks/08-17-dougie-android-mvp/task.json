@@ -39,7 +39,8 @@
     "08-17-phase-5i-llama-ndk",
     "08-17-phase-5j-model-download",
     "08-17-phase-5k-download-ui",
-    "08-17-phase-5l-sideload-models"
+    "08-17-phase-5l-sideload-models",
+    "08-17-phase-5m-eval-harness"
   ],
   "parent": null,
   "relatedFiles": [],

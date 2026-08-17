@@ -1,0 +1,28 @@
+{
+  "schema": [
+    "query_time",
+    "query_battery",
+    "query_calendar",
+    "create_calendar",
+    "query_location",
+    "clipboard_read",
+    "clipboard_write",
+    "open_app",
+    "screen_capture",
+    "speech_input",
+    "unknown"
+  ],
+  "items": [
+    { "id": "i1", "goldIntent": "query_time", "modelJson": "{\"intent\":\"query_time\",\"slots\":{},\"route\":\"time\",\"confidence\":0.91}" },
+    { "id": "i2", "goldIntent": "query_battery", "modelJson": "{\"intent\":\"query_battery\",\"slots\":{},\"route\":\"battery\",\"confidence\":0.93}" },
+    { "id": "i3", "goldIntent": "query_calendar", "modelJson": "{\"intent\":\"query_calendar\",\"slots\":{},\"route\":\"calendar\",\"confidence\":0.88}" },
+    { "id": "i4", "goldIntent": "create_calendar", "modelJson": "{\"intent\":\"create_calendar\",\"slots\":{},\"route\":\"calendar\",\"confidence\":0.90}" },
+    { "id": "i5", "goldIntent": "query_location", "modelJson": "{\"intent\":\"query_location\",\"slots\":{},\"route\":\"location\",\"confidence\":0.87}" },
+    { "id": "i6", "goldIntent": "clipboard_read", "modelJson": "{\"intent\":\"clipboard_read\",\"slots\":{},\"route\":\"clipboard\",\"confidence\":0.86}" },
+    { "id": "i7", "goldIntent": "clipboard_write", "modelJson": "{\"intent\":\"clipboard_write\",\"slots\":{},\"route\":\"clipboard\",\"confidence\":0.85}" },
+    { "id": "i8", "goldIntent": "open_app", "modelJson": "{\"intent\":\"open_app\",\"slots\":{},\"route\":\"app\",\"confidence\":0.92}" },
+    { "id": "i9", "goldIntent": "screen_capture", "modelJson": "{\"intent\":\"screen_capture\",\"slots\":{},\"route\":\"screen\",\"confidence\":0.84}" },
+    { "id": "i10", "goldIntent": "speech_input", "modelJson": "{\"intent\":\"speech_input\",\"slots\":{},\"route\":\"speech\",\"confidence\":0.89}" },
+    { "id": "i11", "goldIntent": "unknown", "modelJson": "{\"intent\":\"query_time\",\"slots\":{},\"route\":\"time\",\"confidence\":0.80}" }
+  ]
+}

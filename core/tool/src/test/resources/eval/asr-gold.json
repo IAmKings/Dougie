@@ -1,0 +1,9 @@
+{
+  "pairs": [
+    { "id": "a1", "reference": "今天天气很好", "hypothesis": "今天天气很好" },
+    { "id": "a2", "reference": "现在几点了", "hypothesis": "现在几点了" },
+    { "id": "a3", "reference": "帮我查一下电量", "hypothesis": "帮我查一下电量" },
+    { "id": "a4", "reference": "明天下午三点开会", "hypothesis": "明天下午三点开会" },
+    { "id": "a5", "reference": "打开日历", "hypothesis": "打开日历" }
+  ]
+}

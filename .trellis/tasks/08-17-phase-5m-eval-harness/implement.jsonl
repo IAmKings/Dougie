@@ -1,0 +1,2 @@
+{"file": "PRD.md", "reason": "Rule D CER<=5% and 500-clip set; rule E intent >=90%"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Keep eval JVM-only in :core:tool tests"}

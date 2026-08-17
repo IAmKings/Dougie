@@ -60,6 +60,12 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   ModelInstaller.kt
   OfficialModelCatalog.kt
   BundledModelSeed.kt
+  CharacterErrorRate.kt
+  IntentEval.kt
+  FullEvalSet.kt
+core/tool/src/test/resources/eval/
+  asr-gold.json
+  intent-gold.json
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -161,6 +167,13 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: Qwen3-0.6B GGUF is 420–639MB. Falling back to the cloud LLM hides that the local classifier is missing.
 
 **Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or engine not ready → fail with Chinese errors. `LlamaIntentEngine.isReady` needs GGUF + `LlamaJni.isAvailable()` (`System.loadLibrary("llama")`). Parse the first JSON object from complete text. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf`, `third_party/llama.cpp/`, and `jniLibs` stay out of git. `:tool:system` CMake runs only if `third_party/llama.cpp/CMakeLists.txt` exists; JNI is `nativeComplete` (CPU, temp 0.7 / top-p 0.8 / presence 1.5). Native code must not log the prompt.
+
+
+## Don't: Commit full ASR eval dumps
+
+**Problem**: Rule D wants ≥500 wav clips and CER ≤ 5%. Checking in audio, ONNX, or GGUF blows git and CI.
+
+**Instead**: JVM `CharacterErrorRate` + `IntentEval` run on tiny text gold under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`) is gitignored; `FullEvalSet.isPresent()` skips when missing. Do not call sherpa/llama from this path. Fixture `passed` is not a claim that the 500-clip set is done.
 
 ## Don't: AgentTool with attacker-controlled download URL
 
