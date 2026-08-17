@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~112 | Active |
+| `journal-1.md` | ~133 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-08-17 | Phase 4 任务恢复 | `88965cf` | `main` |
 | 5 | 2026-08-17 | Phase 3b 定位与屏幕感知 | `55b75d5` | `main` |
 | 4 | 2026-08-17 | Phase 3a 日历与确认卡 | `eb0d72c` | `main` |
 | 3 | 2026-08-17 | Phase 2 本地记忆 | `00585d9` | `main` |

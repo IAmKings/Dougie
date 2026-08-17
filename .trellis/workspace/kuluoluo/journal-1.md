@@ -110,3 +110,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: Phase 4 任务恢复
+
+**Date**: 2026-08-17
+**Task**: Phase 4 任务恢复
+**Branch**: `main`
+
+### Summary
+
+提交任务落盘、中断恢复、日历幂等、History 与重试；下一步补 MVP App Intent。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `88965cf` | (see git log) |
+
+### Status
+
+[OK] **Completed**
