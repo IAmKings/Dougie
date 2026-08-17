@@ -257,3 +257,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 13: speech_output 系统 TTS 降级
+
+**Date**: 2026-08-17
+**Task**: speech_output 系统 TTS 降级
+**Branch**: `main`
+
+### Summary
+
+提交 speech_output：离线未就绪时系统短播报，拒绝联网音色。下一步接入 sherpa VITS 离线合成，仍不入库 116MB 模型。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `28f7f23` | (see git log) |
+
+### Status
+
+[OK] **Completed**
