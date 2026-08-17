@@ -236,3 +236,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 12: sherpa 本地转写
+
+**Date**: 2026-08-17
+**Task**: sherpa 本地转写
+**Branch**: `main`
+
+### Summary
+
+提交 Paraformer JNI 转写门；下一步 speech_output TTS 合同与系统短播报降级。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f242924` | (see git log) |
+
+### Status
+
+[OK] **Completed**
