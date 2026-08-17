@@ -194,3 +194,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 10: 语音输入合同
+
+**Date**: 2026-08-17
+**Task**: 语音输入合同
+**Branch**: `main`
+
+### Summary
+
+提交 speech_input 权限与模型门；下一步接入 sherpa 离线引擎，仍不提交 230MB 模型。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fd128b0` | (see git log) |
+
+### Status
+
+[OK] **Completed**
