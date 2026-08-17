@@ -215,3 +215,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 11: 前台录音与引擎缝
+
+**Date**: 2026-08-17
+**Task**: 前台录音与引擎缝
+**Branch**: `main`
+
+### Summary
+
+提交 SpeechSession/AudioRecord；下一步接入 sherpa-onnx JNI 转写，仍不入库模型。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bc4ba17` | (see git log) |
+
+### Status
+
+[OK] **Completed**
