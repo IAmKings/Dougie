@@ -404,3 +404,24 @@ HTTPS+SHA-256 ModelInstaller：须用户确认、非 Agent Tool；哈希失败�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 20: Phase 5l sideload 内置语音模型
+
+**Date**: 2026-08-17
+**Task**: Phase 5l sideload 内置语音模型
+**Branch**: `main`
+
+### Summary
+
+sideload 从 assets 植入 ASR/TTS；play APK 不得含 onnx/意图 GGUF。权重不入库。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b3b9d83` | (see git log) |
+
+### Status
+
+[OK] **Completed**
