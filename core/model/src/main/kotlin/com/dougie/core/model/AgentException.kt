@@ -33,6 +33,7 @@ object UserFacingErrors {
     const val INTENT_MODEL_MISSING = "离线意图模型尚未就绪，无法分类。"
     const val INTENT_ENGINE_NOT_READY = "离线意图引擎尚未接入，无法分类。"
     const val INTENT_LOW_CONFIDENCE = "意图不够明确，请补充说明或改用云端模型。"
+    const val INTENT_FAILED = "离线意图推理失败，请稍后重试。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

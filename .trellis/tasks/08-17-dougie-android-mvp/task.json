@@ -34,7 +34,8 @@
     "08-17-phase-5d-sherpa-jni",
     "08-17-phase-5e-speech-output",
     "08-17-phase-5f-vits-tts",
-    "08-17-phase-5g-intent-classifier"
+    "08-17-phase-5g-intent-classifier",
+    "08-17-phase-5h-llama-engine"
   ],
   "parent": null,
   "relatedFiles": [],

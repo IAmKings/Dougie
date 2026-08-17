@@ -37,6 +37,7 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Intent model missing | `filesDir/models/intent/model.gguf` absent | `离线意图模型尚未就绪，无法分类。` |
 | Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false` | `离线意图引擎尚未接入，无法分类。` |
 | Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |
+| Intent infer failed | Model text is not JSON / native complete failed | `离线意图推理失败，请稍后重试。` |
 
 `AgentException.userMessage` is what LoopEngine copies into `lastError`. Gateway throws before `LlmProvider.stream` is collected, so blocked egress never becomes a network error. Do not map OkHttp `call.cancel()` to `LLM_FAILED`.
 

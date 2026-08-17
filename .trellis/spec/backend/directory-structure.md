@@ -55,6 +55,8 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   SherpaTtsEngine.kt
   IntentPort.kt
   IntentClassifierTool.kt
+  IntentJsonParser.kt
+  LlamaIntentEngine.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -65,6 +67,7 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   SherpaJni.kt
   AndroidSystemTtsEngine.kt
   AndroidIntentPort.kt
+  LlamaJni.kt
   (trimmed) com/k2fsa/sherpa/onnx/Tts.kt
 tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   DougieAccessibilityService.kt
@@ -150,7 +153,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: Qwen3-0.6B GGUF is 420–639MB. Falling back to the cloud LLM hides that the local classifier is missing.
 
-**Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or `UnwiredIntentEngine` → fail with Chinese errors. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf` is gitignored.
+**Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or engine not ready → fail with Chinese errors. `LlamaIntentEngine.isReady` needs GGUF + `LlamaJni.isAvailable()` (`System.loadLibrary("llama")`). Parse the first JSON object from complete text. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf` and llama.cpp / `jniLibs` stay out of git. NDK bindings are a later slice; missing `nativeComplete` maps to `INTENT_FAILED`.
 
 ## Scenario: speech_output TTS contract
 
