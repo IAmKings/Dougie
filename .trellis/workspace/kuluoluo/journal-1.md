@@ -446,3 +446,24 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 22: Debug 开发者页面
+
+**Date**: 2026-08-17
+**Task**: Debug 开发者页面
+**Branch**: `main`
+
+### Summary
+
+设置页开发者入口：当前任务字段 + 审计行，无敏感内容。父任务 UI 清单 Debug 已交付。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5e012b1` | (see git log) |
+
+### Status
+
+[OK] **Completed**

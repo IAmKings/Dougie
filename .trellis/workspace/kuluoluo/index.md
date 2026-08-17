@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 21
+- **Total Sessions**: 22
 - **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~448 | Active |
+| `journal-1.md` | ~469 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 22 | 2026-08-17 | Debug 开发者页面 | `5e012b1` | `main` |
 | 21 | 2026-08-17 | Phase 5m 评测夹具 | `4df8dde` | `main` |
 | 20 | 2026-08-17 | Phase 5l sideload 内置语音模型 | `b3b9d83` | `main` |
 | 19 | 2026-08-17 | Phase 5k 设置页模型下载 UI | `b538ed4` | `main` |
