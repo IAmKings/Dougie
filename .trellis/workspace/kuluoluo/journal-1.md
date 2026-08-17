@@ -89,3 +89,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: Phase 3b 定位与屏幕感知
+
+**Date**: 2026-08-17
+**Task**: Phase 3b 定位与屏幕感知
+**Branch**: `main`
+
+### Summary
+
+提交粗定位、截屏元数据与本地模板匹配；进入 Phase 4 任务恢复与幂等落盘。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `55b75d5` | (see git log) |
+
+### Status
+
+[OK] **Completed**
