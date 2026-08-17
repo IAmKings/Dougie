@@ -42,8 +42,9 @@
 | `08-17-phase-5c-speech-engine` | §15 Phase 5 / §6.8 | 前台 PCM 采集 + 可注入本地引擎缝；不入库 ONNX/JNI（已归档） |
 | `08-17-phase-5d-sherpa-jni` | §15 Phase 5 / §6.8 | sherpa-onnx JNI 可加载时本地 Paraformer 转写（已归档） |
 | `08-17-phase-5e-speech-output` | §15 Phase 5 / §6.9 | `speech_output` 合同；系统短播报降级，禁联网合成（已归档） |
-| `08-17-phase-5f-vits-tts` | §15 Phase 5 / §6.9 | sherpa VITS 离线合成；不入库 116MB 模型 |
-| （后续）Phase 5 余下 | §15 Phase 5 | 本地 LLM（IntentClassifier） |
+| `08-17-phase-5f-vits-tts` | §15 Phase 5 / §6.9 | sherpa VITS 离线合成；不入库 116MB 模型（已归档） |
+| `08-17-phase-5g-intent-classifier` | §15 Phase 5 / §6.10 | `intent_classifier` 合同与模型门；不入库 GGUF |
+| （后续）Phase 5 余下 | §15 Phase 5 | llama.cpp 本地 Qwen3 推理 |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 

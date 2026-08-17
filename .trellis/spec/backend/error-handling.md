@@ -34,6 +34,9 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | TTS fallback too long | Offline TTS unready and `text` longer than 80 chars | `离线语音未就绪，只能播报短提示。` |
 | TTS network voice | System voice `isNetworkConnectionRequired` | `系统语音需要联网，已拒绝播报。` |
 | TTS speak failed | Engine init/speak failed | `语音播报失败，请稍后重试。` |
+| Intent model missing | `filesDir/models/intent/model.gguf` absent | `离线意图模型尚未就绪，无法分类。` |
+| Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false` | `离线意图引擎尚未接入，无法分类。` |
+| Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |
 
 `AgentException.userMessage` is what LoopEngine copies into `lastError`. Gateway throws before `LlmProvider.stream` is collected, so blocked egress never becomes a network error. Do not map OkHttp `call.cancel()` to `LLM_FAILED`.
 

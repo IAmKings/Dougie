@@ -1,0 +1,3 @@
+{"file": "PRD.md", "reason": "§6.10 IntentClassifierTool, no cloud fallback"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Intent user-facing errors"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Never log user text or intent JSON"}

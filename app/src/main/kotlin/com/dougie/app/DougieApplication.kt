@@ -26,6 +26,7 @@ import com.dougie.core.tool.ScreenCaptureTool
 import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SpeechInputTool
 import com.dougie.core.tool.SpeechOutputTool
+import com.dougie.core.tool.IntentClassifierTool
 import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SherpaTtsEngine
 import com.dougie.core.tool.TtsModelLayout
@@ -36,6 +37,7 @@ import com.dougie.data.tasks.DougieTaskStores
 import com.dougie.tool.system.AndroidAppIntentPort
 import com.dougie.tool.system.AndroidCalendarPort
 import com.dougie.tool.system.AndroidClipboardPort
+import com.dougie.tool.system.AndroidIntentPort
 import com.dougie.tool.system.AndroidLocationPort
 import com.dougie.tool.system.AndroidScreenCapturePort
 import com.dougie.tool.system.AndroidSpeechPort
@@ -99,6 +101,7 @@ class DougieApplication : Application() {
             ),
             fallback = AndroidSystemTtsEngine(this),
         )
+        val intentPort = AndroidIntentPort(this)
         val screenStore = InMemoryScreenFrameStore()
         val screenPort = AndroidScreenCapturePort(
             context = this,
@@ -122,6 +125,7 @@ class DougieApplication : Application() {
             AppIntentTool.NAME to AppIntentTool(appIntentPort, taskStores.idempotencyStore),
             SpeechInputTool.NAME to SpeechInputTool(speechPort),
             SpeechOutputTool.NAME to SpeechOutputTool(ttsPort),
+            IntentClassifierTool.NAME to IntentClassifierTool(intentPort),
         )
         ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
         val provider = OpenAICompatibleProvider(

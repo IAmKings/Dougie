@@ -30,6 +30,9 @@ object UserFacingErrors {
     const val TTS_TOO_LONG = "离线语音未就绪，只能播报短提示。"
     const val TTS_NETWORK = "系统语音需要联网，已拒绝播报。"
     const val TTS_FAILED = "语音播报失败，请稍后重试。"
+    const val INTENT_MODEL_MISSING = "离线意图模型尚未就绪，无法分类。"
+    const val INTENT_ENGINE_NOT_READY = "离线意图引擎尚未接入，无法分类。"
+    const val INTENT_LOW_CONFIDENCE = "意图不够明确，请补充说明或改用云端模型。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

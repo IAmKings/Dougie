@@ -18,6 +18,7 @@ local.properties
 *.apk
 *.aab
 *.onnx
+*.gguf
 **/jniLibs/
 
 # ── 环境变量与密钥（绝不入库） ────────────────────────
