@@ -341,3 +341,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 17: llama NDK 可选编译
+
+**Date**: 2026-08-17
+**Task**: llama NDK 可选编译
+**Branch**: `main`
+
+### Summary
+
+提交可选 llama.cpp JNI。下一步 Play 按需下载 HTTPS+哈希，不入库模型、不做评测集。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ae59936` | (see git log) |
+
+### Status
+
+[OK] **Completed**
