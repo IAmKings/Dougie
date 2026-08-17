@@ -299,3 +299,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 15: intent_classifier 合同
+
+**Date**: 2026-08-17
+**Task**: intent_classifier 合同
+**Branch**: `main`
+
+### Summary
+
+提交 intent_classifier 模型/引擎/低置信度门。下一步接入可注入的 llama 完成缝，仍不入库 GGUF 与 NDK 源码。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `380953a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
