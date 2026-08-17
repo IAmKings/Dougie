@@ -33,6 +33,9 @@ class SpeechInputTool(
             return fail(UserFacingErrors.SPEECH_ENGINE_NOT_READY)
         }
         val text = port.listen()
+        if (text.isBlank()) {
+            return fail(UserFacingErrors.SPEECH_EMPTY)
+        }
         return ToolResult(
             json = buildJsonObject {
                 put("ok", true)

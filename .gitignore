@@ -17,6 +17,8 @@ build/
 local.properties
 *.apk
 *.aab
+*.onnx
+**/jniLibs/
 
 # ── 环境变量与密钥（绝不入库） ────────────────────────
 .env

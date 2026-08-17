@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "§6.8 paraformer files, local ASR only"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "SpeechSession vs Android recorder"}
+{"file": "core/tool/src/main/kotlin/com/dougie/core/tool/SpeechPort.kt", "reason": "Engine and recorder seams"}
+{"file": "tool/system/src/main/kotlin/com/dougie/tool/system/AndroidSpeechPort.kt", "reason": "Wire AudioRecord"}

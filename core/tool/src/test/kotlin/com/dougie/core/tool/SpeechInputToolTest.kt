@@ -7,6 +7,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import java.nio.file.Files
 
 class SpeechInputToolTest {
     @Test
@@ -45,5 +47,80 @@ class SpeechInputToolTest {
         assertFalse(result.json.contains("base64"))
         assertFalse(result.json.contains("audio"))
         assertEquals(1, port.listenCount)
+    }
+
+    @Test
+    fun sessionReadyCapturesOnceWithoutAudioJson() = runTest {
+        val recorder = FakeSpeechRecorder()
+        val engine = FakeSpeechEngine(transcript = "现在几点")
+        val tool = SpeechInputTool(
+            SpeechSession(
+                foregroundCheck = { true },
+                modelCheck = { true },
+                engine = engine,
+                recorder = recorder,
+            ),
+        )
+        val result = tool.execute("{}", ToolContext("t", "c"))
+        assertFalse(result.isFatal)
+        assertTrue(result.json.contains("现在几点"))
+        assertFalse(result.json.contains("pcm"))
+        assertFalse(result.json.contains("base64"))
+        assertFalse(result.json.contains("audio"))
+        assertEquals(1, recorder.captureCount)
+        assertEquals(1, engine.transcribeCount)
+        assertEquals(2, engine.lastUtterance!!.samples.size)
+    }
+
+    @Test
+    fun sessionGatesDoNotCapture() = runTest {
+        val recorder = FakeSpeechRecorder()
+        val engine = FakeSpeechEngine(ready = false)
+        val tool = SpeechInputTool(
+            SpeechSession(
+                foregroundCheck = { true },
+                modelCheck = { true },
+                engine = engine,
+                recorder = recorder,
+            ),
+        )
+        val result = tool.execute("{}", ToolContext("t", "c"))
+        assertEquals(UserFacingErrors.SPEECH_ENGINE_NOT_READY, result.error)
+        assertEquals(0, recorder.captureCount)
+        assertEquals(0, engine.transcribeCount)
+    }
+
+    @Test
+    fun emptyUtteranceFailsWithoutAudioJson() = runTest {
+        val recorder = FakeSpeechRecorder(SpeechUtterance(floatArrayOf(), 16_000))
+        val engine = FakeSpeechEngine()
+        val tool = SpeechInputTool(
+            SpeechSession(
+                foregroundCheck = { true },
+                modelCheck = { true },
+                engine = engine,
+                recorder = recorder,
+            ),
+        )
+        val result = tool.execute("{}", ToolContext("t", "c"))
+        assertEquals(UserFacingErrors.SPEECH_EMPTY, result.error)
+        assertTrue(result.isFatal)
+        assertEquals(1, recorder.captureCount)
+        assertEquals(0, engine.transcribeCount)
+        assertFalse(result.json.contains("pcm"))
+    }
+
+    @Test
+    fun asrModelLayoutRequiresBothFiles() {
+        val dir = Files.createTempDirectory("asr-layout").toFile()
+        try {
+            assertFalse(AsrModelLayout.isPresent(dir))
+            File(dir, AsrModelLayout.MODEL_FILE).writeText("x")
+            assertFalse(AsrModelLayout.isPresent(dir))
+            File(dir, AsrModelLayout.TOKENS_FILE).writeText("a")
+            assertTrue(AsrModelLayout.isPresent(dir))
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }
