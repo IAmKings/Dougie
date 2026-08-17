@@ -47,8 +47,9 @@
 | `08-17-phase-5h-llama-engine` | §15 Phase 5 / §6.10 | llama 完成缝 + JSON 解析；不入库 GGUF/NDK（已归档） |
 | `08-17-phase-5i-llama-ndk` | §15 Phase 5 / §6.10 | 可选 CMake 编译 `nativeComplete`；不入库 llama.cpp（已归档） |
 | `08-17-phase-5j-model-download` | §15 Phase 5 / §6.8–6.10 | HTTPS+哈希按需安装到 filesDir；非 Agent Tool（已归档） |
-| `08-17-phase-5k-download-ui` | §15 Phase 5 / §6.8–6.10 | 设置页确认流量/存储后下载；进度可取消 |
-| （后续）Phase 5 余下 | §15 Phase 5 | sideload 内置 / 评测集 |
+| `08-17-phase-5k-download-ui` | §15 Phase 5 / §6.8–6.10 | 设置页确认流量/存储后下载；进度可取消（已归档） |
+| `08-17-phase-5l-sideload-models` | §15 Phase 5 / §6.8–6.9 | sideload 内置 ASR+TTS 至 filesDir；play 零模型 |
+| （后续）Phase 5 余下 | §15 Phase 5 | 评测集 |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 

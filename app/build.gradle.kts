@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.util.zip.ZipFile
 
 plugins {
     alias(libs.plugins.android.application)
@@ -158,5 +159,45 @@ tasks.register("checkChannelLeak") {
             component.id.displayName.contains("tool:accessibility")
         }
         check(!leaked) { "playDebugRuntimeClasspath includes :tool:accessibility" }
+
+        val playApk = flavorDebugApk("play")
+        apkEntryNames(playApk).forEach { name ->
+            check(!name.contains("models/asr")) {
+                "play APK leaked models/asr: $name in $playApk"
+            }
+            check(!name.contains("models/tts")) {
+                "play APK leaked models/tts: $name in $playApk"
+            }
+            check(!name.endsWith(".onnx")) {
+                "play APK leaked .onnx: $name in $playApk"
+            }
+            checkNoIntentModel(name, playApk)
+        }
+        val sideloadApk = flavorDebugApk("sideload")
+        apkEntryNames(sideloadApk).forEach { name ->
+            checkNoIntentModel(name, sideloadApk)
+        }
+    }
+}
+
+fun flavorDebugApk(flavor: String): File {
+    val apk = layout.buildDirectory.get().asFile
+        .resolve("outputs/apk/$flavor/debug/app-$flavor-debug.apk")
+    check(apk.isFile) { "Missing $flavor debug APK at ${apk.absolutePath}" }
+    return apk
+}
+
+fun apkEntryNames(apk: File): List<String> {
+    return ZipFile(apk).use { zip ->
+        zip.entries().asSequence().map { it.name.replace('\\', '/') }.toList()
+    }
+}
+
+fun checkNoIntentModel(name: String, apk: File) {
+    check(!name.contains("models/intent")) {
+        "APK leaked models/intent: $name in $apk"
+    }
+    check(!name.endsWith(".gguf")) {
+        "APK leaked .gguf: $name in $apk"
     }
 }

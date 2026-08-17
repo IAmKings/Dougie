@@ -59,6 +59,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   LlamaIntentEngine.kt
   ModelInstaller.kt
   OfficialModelCatalog.kt
+  BundledModelSeed.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -103,7 +104,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
 | `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |
-| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, RoomMemoryStore, DougieTaskStores, recoverInterrupted, `Dispatchers.Default` | Business rules that belong in core |
+| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, RoomMemoryStore, DougieTaskStores, recoverInterrupted, `Dispatchers.Default`; sideload `ChannelHooks.seedBundledModels` | Business rules that belong in core |
 
 New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`.
 
@@ -147,7 +148,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: System `SpeechRecognizer` / online engines can egress audio. Checking in Paraformer int8 (~230MB) blows git and Play APK size.
 
-**Instead**: `SpeechInputTool` in `:core:tool` talks to `SpeechPort`. `SpeechSession` records only after gates pass, then `SherpaSpeechEngine.transcribe`. `AndroidSpeechPort` uses `filesDir/models/asr/{model.int8.onnx,tokens.txt}` and `SherpaJni.isAvailable()` (`System.loadLibrary("sherpa-onnx-jni")`). Do not class-load `OfflineRecognizer` until the library loads. Models and `jniLibs` stay out of git. Trimmed JNI bindings are Apache-2.0 from sherpa-onnx v1.13.4.
+**Instead**: `SpeechInputTool` in `:core:tool` talks to `SpeechPort`. `SpeechSession` records only after gates pass, then `SherpaSpeechEngine.transcribe`. `AndroidSpeechPort` uses `filesDir/models/asr/{model.int8.onnx,tokens.txt}` and `SherpaJni.isAvailable()` (`System.loadLibrary("sherpa-onnx-jni")`). Do not class-load `OfflineRecognizer` until the library loads. Models and `jniLibs` stay out of git. Sideload may ship ASR/TTS under gitignored `app/src/sideload/assets/models/{asr,tts}/`; `BundledModelSeed` copies to `filesDir` when layout is missing. Play sourceSets must not include those assets. `checkChannelLeak` fails if the play Debug APK zip contains `models/asr`, `models/tts`, or `*.onnx`. Intent GGUF is never bundled. Trimmed JNI bindings are Apache-2.0 from sherpa-onnx v1.13.4.
 
 ## Don't: Online TTS or commit VITS ONNX
 

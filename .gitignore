@@ -19,6 +19,7 @@ local.properties
 *.aab
 *.onnx
 *.gguf
+# Sideload may drop weights in app/src/sideload/assets/models/{asr,tts}/ (layout READMEs stay).
 **/jniLibs/
 third_party/llama.cpp/
 

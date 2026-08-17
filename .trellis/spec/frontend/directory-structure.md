@@ -39,6 +39,12 @@ app/src/main/kotlin/com/dougie/app/
   AppOfflineModels.kt
   AppForegroundTracker.kt
   PermissionUsageTracker.kt
+app/src/play/kotlin/com/dougie/app/
+  ChannelHooks.kt
+app/src/sideload/kotlin/com/dougie/app/
+  ChannelHooks.kt
+app/src/sideload/assets/models/asr/
+app/src/sideload/assets/models/tts/
 ```
 
 ## Module Organization
@@ -50,7 +56,7 @@ app/src/main/kotlin/com/dougie/app/
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
 | `:feature:permissions` | Permission Center: calendar read/write status, request runtime grants, clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History routes |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History routes; `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets; play no-op) |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
@@ -71,6 +77,12 @@ app/src/main/kotlin/com/dougie/app/
 ## Don't: Run LoopEngine on Main
 
 `DougieApplication` must pass `Dispatchers.Default` (or a test dispatcher). UI only `collect`s `taskManager.task`.
+
+## Don't: Seed bundled models from play
+
+**Problem**: Play APK must stay light; ASR/TTS ONNX in `main` or `play` assets would leak into the store build.
+
+**Instead**: Only `app/src/sideload/assets/models/{asr,tts}/` may hold layout files. Sideload `ChannelHooks.seedBundledModels` copies via `BundledModelSeed` into `filesDir`. Play `ChannelHooks.seedBundledModels` is a no-op. Do not use `ModelInstaller`/HTTPS for this seed. Intent GGUF stays download-only. Settings rows show 已安装 once `isPresent`.
 
 ## Don't: Let settings download without size confirm
 

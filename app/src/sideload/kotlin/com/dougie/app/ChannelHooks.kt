@@ -31,10 +31,23 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dougie.core.tool.BundledModelSeed
 import com.dougie.feature.chat.DougieColors
+import java.io.IOException
 
 object ChannelHooks {
     fun hasChannelConsent(context: Context): Boolean = SideloadConsentStore.isGranted(context)
+
+    fun seedBundledModels(context: Context) {
+        val app = context.applicationContext
+        BundledModelSeed.seed(app.filesDir) { relative ->
+            try {
+                app.assets.open(relative)
+            } catch (_: IOException) {
+                null
+            }
+        }
+    }
 
     @Composable
     fun Root(content: @Composable () -> Unit) {

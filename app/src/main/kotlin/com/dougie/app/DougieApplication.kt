@@ -71,6 +71,7 @@ class DougieApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        ChannelHooks.seedBundledModels(this)
         preferenceStore = PreferenceStore(this)
         memoryStore = RoomMemoryStore(this)
         taskStores = DougieTaskStores(this)
