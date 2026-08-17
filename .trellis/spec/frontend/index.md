@@ -14,7 +14,7 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | `:feature:chat` / `:feature:settings` / `:feature:memory` / `:feature:history` / `:app` | Filled (Phase 4) |
+| [Directory Structure](./directory-structure.md) | `:feature:chat` / `:feature:settings` / `:feature:memory` / `:feature:history` / `:feature:debug` / `:app` | Filled (Phase 4) |
 | [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
 | [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
 | [State Management](./state-management.md) | TaskManager + PreferenceStore | Filled (Phase 1a) |

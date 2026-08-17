@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dougie.feature.chat.ChatRoute
+import com.dougie.feature.debug.DebugRoute
+import com.dougie.feature.debug.DebugViewModel
 import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
 import com.dougie.feature.history.HistoryRoute
@@ -23,7 +25,7 @@ import com.dougie.feature.memory.MemoryViewModel
 import com.dougie.feature.settings.SettingsRoute
 import com.dougie.feature.settings.SettingsViewModel
 
-private enum class AppRoute { Chat, Settings, Memory, Permissions, History }
+private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debug }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +66,19 @@ class MainActivity : ComponentActivity() {
                         SettingsRoute(
                             viewModel = viewModel,
                             onBack = { route = AppRoute.Chat },
+                            onOpenDebug = { route = AppRoute.Debug },
+                        )
+                    }
+                    AppRoute.Debug -> {
+                        val viewModel: DebugViewModel = viewModel(
+                            factory = DebugViewModel.Factory(
+                                app.taskManager,
+                                app.taskStores.auditLog,
+                            ),
+                        )
+                        DebugRoute(
+                            viewModel = viewModel,
+                            onBack = { route = AppRoute.Settings },
                         )
                     }
                     AppRoute.Memory -> {

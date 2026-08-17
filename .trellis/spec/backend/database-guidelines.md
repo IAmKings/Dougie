@@ -68,6 +68,7 @@ CREATE TABLE audit_log (
 - App start: `recoverInterrupted(store)` — if the latest row is not COMPLETED/FAILED, mark FAILED with `UserFacingErrors.INTERRUPTED` and `TaskManager.seed`. Do **not** resume the LLM stream.
 - `calendar_create` reads/writes `idempotency` via `IdempotencyStore` (INSERT OR IGNORE). A new tool instance with the same store must not call `CalendarPort.createEvent` again for the same key.
 - `AuditLog.record` writes only `task_id`, `tool_name`, `outcome`, `created_at`. Never prompt text, keys, calendar titles, clipboard, coordinates, or image bytes.
+- `AuditLog.listRecent(limit)` (default 50) returns `AuditEntry` rows newest first (`ORDER BY created_at DESC, id DESC`). `NoOpAuditLog` and SAM lambdas default to empty.
 
 JVM tests use `InMemoryTaskStore` / `InMemoryIdempotencyStore` / `NoOpAuditLog`. `TaskManager` defaults `taskStore` to null (no persist).
 

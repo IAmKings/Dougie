@@ -18,6 +18,8 @@ val uiState: StateFlow<ChatUiState> = taskManager.task
 
 `ChatItem`: `UserMessage` | `Thinking(loopNumber)` | `ToolCard` | `ConfirmCard` | `AgentMessage`.
 
+Debug maps `TaskManager.task` to `DebugTaskSnapshot` (`taskId`, `status`, `loopCount`, `lastError`) plus `AuditLog.listRecent` rows — never a second `TaskStatus` store, never `resultJson` / prompt / tool args.
+
 `inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE), including `AWAITING_CONFIRMATION`. `canRetry` is true only when `status == FAILED`. Chat **重试** calls `TaskManager.submit` with the same `input` (new `taskId`). Bottom nav **任务** opens `:feature:history`, which lists `TaskStore.listRecent`.
 
 When `status == AWAITING_CONFIRMATION`, map the last `ToolTraceEntry` to `ConfirmCard(toolName, argsJson, riskLevel, toolCallId)` instead of a `ToolCard`. `ChatViewModel.confirm()` / `reject()` call `TaskManager` and must not store a second confirmation flag.

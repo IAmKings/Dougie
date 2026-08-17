@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt/key/transcript/args on Debug UI"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "feature must not call OkHttp or system APIs"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "AuditLog stays in :core:runtime; SQLite in :data:tasks"}

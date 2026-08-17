@@ -1,6 +1,7 @@
 package com.dougie.feature.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +57,7 @@ const val EGRESS_CONSENT_COPY = "本次请求可能将输入、必要上下文�
 fun SettingsRoute(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
+    onOpenDebug: () -> Unit,
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val models by viewModel.models.collectAsStateWithLifecycle()
@@ -71,6 +74,7 @@ fun SettingsRoute(
         onConfirmModel = viewModel::confirmModel,
         onDismissModelConfirm = viewModel::dismissModelConfirm,
         onCancelModel = viewModel::cancelModel,
+        onOpenDebug = onOpenDebug,
     )
 }
 
@@ -88,6 +92,7 @@ fun SettingsScreen(
     onConfirmModel: () -> Unit,
     onDismissModelConfirm: () -> Unit,
     onCancelModel: (String) -> Unit,
+    onOpenDebug: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -227,6 +232,28 @@ fun SettingsScreen(
                 onRequestModel = onRequestModel,
                 onCancelModel = onCancelModel,
             )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+                    .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+                    .clickable(onClick = onOpenDebug)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "开发者",
+                    color = DougieColors.OnSurface,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    text = "查看当前任务状态与最近工具审计。",
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 14.sp,
+                )
+            }
             if (form.saved) {
                 Text(
                     text = "已保存。下次对话将使用当前策略。",

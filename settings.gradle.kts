@@ -37,5 +37,6 @@ include(
     ":feature:settings",
     ":feature:memory",
     ":feature:history",
+    ":feature:debug",
     ":feature:permissions",
 )

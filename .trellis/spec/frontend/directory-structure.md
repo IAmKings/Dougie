@@ -33,6 +33,11 @@ feature/history/src/main/kotlin/com/dougie/feature/history/
   HistoryViewModel.kt
   HistoryItem.kt
   DougieColors.kt
+feature/debug/src/main/kotlin/com/dougie/feature/debug/
+  DebugScreen.kt
+  DebugViewModel.kt
+  DebugUiState.kt
+  DougieColors.kt
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
@@ -52,17 +57,18 @@ app/src/sideload/assets/models/tts/
 | Module | Owns |
 |--------|------|
 | `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping, Confirm Card; navigate to settings / memory / Permission Center |
-| `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore`; 离线模型三行确认下载（`ModelInstaller`，非 AgentTool） |
+| `:feature:settings` | Provider URL/key/model, egress consent copy, save to `PreferenceStore`; 离线模型三行确认下载（`ModelInstaller`，非 AgentTool）；**开发者** row calls `onOpenDebug` only |
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
 | `:feature:permissions` | Permission Center: calendar read/write status, request runtime grants, clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History routes; `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets; play no-op) |
+| `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError`) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets; play no-op) |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
 ## Naming Conventions
 
-- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`, `MemoryScreen` / `MemoryRoute`, `PermissionsScreen` / `PermissionsRoute`, `HistoryScreen` / `HistoryRoute`
+- Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`, `MemoryScreen` / `MemoryRoute`, `PermissionsScreen` / `PermissionsRoute`, `HistoryScreen` / `HistoryRoute`, `DebugScreen` / `DebugRoute`
 - Mapping: `AgentTask?.toChatUiState()` in `ChatUiState.kt`
 - Product copy: **Dougie**, never Waku
 - Chat colors: Stitch tokens `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`DougieColors`)

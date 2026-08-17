@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "§3.1 Debug/Developer page in MVP UI list"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "New :feature:debug; settings navigates only"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Audit UI same fields as AuditLog: taskId toolName outcome"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Collect TaskManager.task; do not duplicate status"}

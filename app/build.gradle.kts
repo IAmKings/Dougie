@@ -96,6 +96,7 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":feature:memory"))
     implementation(project(":feature:history"))
+    implementation(project(":feature:debug"))
     implementation(project(":feature:permissions"))
     implementation(project(":data:preferences"))
     implementation(project(":data:memory"))

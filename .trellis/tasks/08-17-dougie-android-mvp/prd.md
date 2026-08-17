@@ -49,7 +49,8 @@
 | `08-17-phase-5j-model-download` | §15 Phase 5 / §6.8–6.10 | HTTPS+哈希按需安装到 filesDir；非 Agent Tool（已归档） |
 | `08-17-phase-5k-download-ui` | §15 Phase 5 / §6.8–6.10 | 设置页确认流量/存储后下载；进度可取消（已归档） |
 | `08-17-phase-5l-sideload-models` | §15 Phase 5 / §6.8–6.9 | sideload 内置 ASR+TTS 至 filesDir；play 零模型（已归档） |
-| `08-17-phase-5m-eval-harness` | §15 Phase 5 规则 D/E | CER + 意图准确率 JVM 夹具；不全量音频入库 |
+| `08-17-phase-5m-eval-harness` | §15 Phase 5 规则 D/E | CER + 意图准确率 JVM 夹具；不全量音频入库（已归档） |
+| `08-17-debug-developer-page` | §3.1 UI Debug/Developer | 当前任务 + 审计行（无敏感字段）（已归档） |
 
 后续子任务在本父任务下用 `task.py create --parent 08-17-dougie-android-mvp` 创建。
 
