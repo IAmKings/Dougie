@@ -10,4 +10,7 @@ interface AgentTool {
         get() = ToolDescriptor(name)
 
     suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult
+
+    /** Schema/allowlist checks that must fail the task before Policy/Confirm. */
+    fun validateArguments(argumentsJson: String) {}
 }

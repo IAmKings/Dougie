@@ -729,6 +729,7 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
     "calendar_create" -> "创建日程"
     "clipboard_read" -> "读取剪贴板"
     "clipboard_write" -> "写入剪贴板"
+    "app_intent" -> "打开应用或链接"
     else -> toolName
 }
 

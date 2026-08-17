@@ -14,6 +14,7 @@ import com.dougie.core.runtime.LoopEngine
 import com.dougie.core.runtime.PolicyEngine
 import com.dougie.core.runtime.TaskManager
 import com.dougie.core.runtime.recoverInterrupted
+import com.dougie.core.tool.AppIntentTool
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
@@ -26,6 +27,7 @@ import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
 import com.dougie.data.tasks.DougieTaskStores
+import com.dougie.tool.system.AndroidAppIntentPort
 import com.dougie.tool.system.AndroidCalendarPort
 import com.dougie.tool.system.AndroidClipboardPort
 import com.dougie.tool.system.AndroidLocationPort
@@ -78,6 +80,10 @@ class DougieApplication : Application() {
             isForeground = { foregroundTracker.foreground },
             onUsed = { permissionUsage.mark(SCREEN_CAPTURE_USAGE_KEY) },
         )
+        val appIntentPort = AndroidAppIntentPort(
+            context = this,
+            isForeground = { foregroundTracker.foreground },
+        )
         val tools = mapOf(
             "battery" to DeviceBatteryTool(this),
             "time" to SystemTimeTool(),
@@ -88,6 +94,7 @@ class DougieApplication : Application() {
             LocationTool.NAME to LocationTool(locationPort),
             ScreenCaptureTool.NAME to ScreenCaptureTool(screenPort, screenStore),
             ScreenMatchTool.NAME to ScreenMatchTool(screenStore),
+            AppIntentTool.NAME to AppIntentTool(appIntentPort, taskStores.idempotencyStore),
         )
         val provider = OpenAICompatibleProvider(
             client = http,

@@ -86,6 +86,7 @@ class OpenAICompatibleProviderTest {
         assertTrue(body.contains("\"name\":\"location\""))
         assertTrue(body.contains("\"name\":\"screen_capture\""))
         assertTrue(body.contains("\"name\":\"screen_match\""))
+        assertTrue(body.contains("\"name\":\"app_intent\""))
     }
 
     @Test
@@ -280,6 +281,14 @@ class OpenAICompatibleProviderTest {
                 name = "screen_match",
                 description = "Match a bundled grayscale template against the last screen capture.",
                 properties = mapOf("template_id" to ToolParamSpec(ToolParamType.STRING)),
+            ),
+            ToolDescriptor(
+                name = "app_intent",
+                description = "Open an allowed http(s)/geo link or launch an installed app. Requires user confirmation. Forbidden: tel, sms, file, javascript, content, intent.",
+                properties = mapOf(
+                    "uri" to ToolParamSpec(ToolParamType.STRING),
+                    "package" to ToolParamSpec(ToolParamType.STRING, defaultJson = "\"\""),
+                ),
             ),
         )
         private const val TOOL_CALL_BODY = """

@@ -15,8 +15,10 @@ import com.dougie.core.model.ToolContext
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.AppIntentTool
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.ClipboardReadTool
+import com.dougie.core.tool.FakeAppIntentPort
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.FakeCalendarPort
 import com.dougie.core.tool.FakeClipboardPort
@@ -502,6 +504,84 @@ class LoopEngineTest {
         assertEquals(TaskStatus.FAILED, rejected.status)
         assertEquals(UserFacingErrors.CONFIRM_REJECTED, rejected.lastError)
         assertEquals(0, rejectedPort.createCalls.size)
+    }
+
+    @Test
+    fun l2AppIntentConfirmLaunchesOnceAndRejectSkips() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeAppIntentPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(
+                        id = "intent-1",
+                        name = AppIntentTool.NAME,
+                        argsJson = """{"uri":"https://example.com"}""",
+                    )
+                } else {
+                    LlmResponse.FinalAnswer("已打开链接。")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(AppIntentTool.NAME to AppIntentTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val confirmed = engine.run(AgentTask(taskId = "i1", input = "打开网页")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, confirmed.status)
+        assertEquals(1, port.launchCount)
+
+        val rejectedPort = FakeAppIntentPort()
+        val rejectEngine = LoopEngine(
+            llm = provider,
+            tools = mapOf(AppIntentTool.NAME to AppIntentTool(rejectedPort)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val rejected = rejectEngine.run(AgentTask(taskId = "i2", input = "打开网页")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) rejectEngine.reject()
+        }
+        assertEquals(TaskStatus.FAILED, rejected.status)
+        assertEquals(UserFacingErrors.CONFIRM_REJECTED, rejected.lastError)
+        assertEquals(0, rejectedPort.launchCount)
+    }
+
+    @Test
+    fun disallowedAppIntentSchemeFailsBeforeConfirm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val schemes = listOf("tel:123456", "file:///sdcard/secret.txt")
+        for (uri in schemes) {
+            val port = FakeAppIntentPort()
+            val provider = object : LlmProvider {
+                override val isLocal: Boolean = true
+                override suspend fun generate(context: LoopContext): LlmResponse {
+                    return LlmResponse.ToolCall(
+                        id = "intent-bad",
+                        name = AppIntentTool.NAME,
+                        argsJson = """{"uri":"$uri"}""",
+                    )
+                }
+            }
+            val engine = LoopEngine(
+                llm = provider,
+                tools = mapOf(AppIntentTool.NAME to AppIntentTool(port)),
+                dispatcher = dispatcher,
+                stepDelayMs = 0,
+            )
+            val statuses = mutableListOf<TaskStatus>()
+            val result = engine.run(AgentTask(taskId = "deny-$uri", input = "打开")) { snapshot ->
+                statuses += snapshot.status
+            }
+            assertEquals(uri, TaskStatus.FAILED, result.status)
+            assertEquals(uri, UserFacingErrors.APP_INTENT_DENIED, result.lastError)
+            assertEquals(uri, 0, port.launchCount)
+            assertEquals(uri, false, statuses.contains(TaskStatus.AWAITING_CONFIRMATION))
+        }
     }
 
     @Test

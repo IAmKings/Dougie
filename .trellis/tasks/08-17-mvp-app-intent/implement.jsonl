@@ -1,0 +1,7 @@
+{"file": "PRD.md", "reason": "App Intent MVP tool; no SMS/Call"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Android startActivity only in tool:system"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log full URIs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Invalid URI user copy"}
+{"file": "core/tool/src/main/kotlin/com/dougie/core/tool/CalendarCreateTool.kt", "reason": "Reuse IdempotencyStore + L2 pattern"}
+{"file": "core/runtime/src/main/kotlin/com/dougie/core/runtime/PolicyEngine.kt", "reason": "L2 confirm already exists"}
+{"file": "app/src/main/kotlin/com/dougie/app/DougieApplication.kt", "reason": "Register tool"}

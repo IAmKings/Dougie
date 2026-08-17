@@ -43,10 +43,14 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   ClipboardPort.kt
   ClipboardReadTool.kt
   ClipboardWriteTool.kt
+  AppIntentAllowlist.kt
+  AppIntentPort.kt
+  AppIntentTool.kt
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
   AndroidClipboardPort.kt
+  AndroidAppIntentPort.kt
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
   PreferenceStore.kt
   ProviderSettings.kt
@@ -63,7 +67,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` | `BatteryManager` / other Android APIs |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort` | Loop state machine, LLM HTTP |
+| `:tool:system` (Android) | `DeviceBatteryTool`, `AndroidCalendarPort`, `AndroidClipboardPort`, `AndroidAppIntentPort` | Loop state machine, LLM HTTP |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |

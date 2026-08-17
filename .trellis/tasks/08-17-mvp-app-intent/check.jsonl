@@ -1,0 +1,5 @@
+{"file": "PRD.md", "reason": "No tel/sms; App Intent only"}
+{"file": ".trellis/tasks/08-17-mvp-app-intent/prd.md", "reason": "Acceptance"}
+{"file": ".trellis/tasks/08-17-mvp-app-intent/design.md", "reason": "Allowlist"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "feature no startActivity"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No URI dumps"}

@@ -21,6 +21,9 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Missing Android permission | `PolicyEngine` denies before execute | `未授权，已为你跳过该操作` |
 | L2 confirm reject / timeout | User rejects Confirm Card, or 60s gate timeout | `该操作需你确认后才执行` |
 | Clipboard read while background | `ClipboardReadTool` foreground check | `应用不在前台，无法读取剪贴板。` |
+| Disallowed app intent URI | Allowlist rejects tel/sms/file/javascript/content/intent/mailto and unknown schemes | `该链接不被允许打开。` |
+| App intent while background | `AppIntentTool` foreground check | `应用不在前台，无法打开应用或链接。` |
+| App intent resolve/start fail | No matching activity / launch exception | `无法打开该应用或链接。` |
 
 `AgentException.userMessage` is what LoopEngine copies into `lastError`. Gateway throws before `LlmProvider.stream` is collected, so blocked egress never becomes a network error. Do not map OkHttp `call.cancel()` to `LLM_FAILED`.
 

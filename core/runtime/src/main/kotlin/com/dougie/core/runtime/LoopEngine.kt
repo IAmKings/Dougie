@@ -134,6 +134,15 @@ class LoopEngine(
                     return@withContext fail(task, UserFacingErrors.UNKNOWN_TOOL, emit)
                 }
 
+                try {
+                    tool.validateArguments(sanitizedArgs)
+                } catch (e: AgentException) {
+                    task = updateLastTrace(task, TaskStatus.FAILED) {
+                        it.copy(status = ToolTraceStatus.FAILED)
+                    }
+                    return@withContext fail(task, e.userMessage, emit)
+                }
+
                 when (policyEngine.decide(tool.descriptor)) {
                     is PolicyDecision.DeniedPermission -> {
                         task = updateLastTrace(task, TaskStatus.FAILED) {
