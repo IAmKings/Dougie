@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 15
+- **Total Sessions**: 16
 - **Last Active**: 2026-08-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~322 | Active |
+| `journal-1.md` | ~343 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 16 | 2026-08-17 | llama 意图完成缝 | `1ca77d3` | `main` |
 | 15 | 2026-08-17 | intent_classifier 合同 | `380953a` | `main` |
 | 14 | 2026-08-17 | sherpa VITS 离线合成 | `e0f59b0` | `main` |
 | 13 | 2026-08-17 | speech_output 系统 TTS 降级 | `28f7f23` | `main` |
