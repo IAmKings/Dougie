@@ -425,3 +425,24 @@ sideload 从 assets 植入 ASR/TTS；play APK 不得含 onnx/意图 GGUF。权�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 21: Phase 5m 评测夹具
+
+**Date**: 2026-08-17
+**Task**: Phase 5m 评测夹具
+**Branch**: `main`
+
+### Summary
+
+JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切片收齐。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4df8dde` | (see git log) |
+
+### Status
+
+[OK] **Completed**
