@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Vendor presets live in LlmVendors; OpenAI-compatible POST chat/completions only; do not change DEFAULT to Go"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Preset fills baseUrl/model/maxTokens, keeps key; URL off-preset becomes custom"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Must not log API keys when adding a vendor"}

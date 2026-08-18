@@ -40,6 +40,18 @@ class OpenAICompatibleProviderTest {
     }
 
     @Test
+    fun chatCompletionsUrlJoinsOpenCodeGoBaseWithoutProviderPrefix() {
+        assertEquals(
+            "https://opencode.ai/zen/go/v1/chat/completions",
+            OpenAICompatibleProvider.chatCompletionsUrl("https://opencode.ai/zen/go/v1/"),
+        )
+        assertEquals(
+            "https://opencode.ai/zen/go/v1/chat/completions",
+            OpenAICompatibleProvider.chatCompletionsUrl("https://opencode.ai/zen/go/v1"),
+        )
+    }
+
+    @Test
     fun parsesToolCallThenFinalContentAcrossTwoGenerateCalls() = runTest {
         server.enqueue(MockResponse().setBody(TOOL_CALL_BODY))
         server.enqueue(MockResponse().setBody(FINAL_BODY))

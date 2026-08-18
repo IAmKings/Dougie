@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Presets must not add Anthropic bodies or change DEFAULT to Go"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Saved prefs must not be silently overwritten"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Preset is :core:model; HTTP stays :core:llm"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No keys in logs or tests"}

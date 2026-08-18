@@ -6,7 +6,7 @@
 
 Single source of truth is `TaskManager.task: StateFlow<AgentTask?>`. Compose collects it via `ChatViewModel.uiState`.
 
-Provider settings are a separate store: `PreferenceStore.settings: StateFlow<ProviderSettings>`. Settings form is local until **保存配置**; the next `submit` reads current `allowCloud` / key / `maxTokens` via lambdas on `EgressGateway` and `OpenAICompatibleProvider`. Choosing a vendor preset fills `baseUrl` / `model` / `maxTokens` and keeps the API key; editing the URL off a preset switches `vendorId` to `custom`. `memoryEnabled` (default `true`) is toggled on the Memory screen via `PreferenceStore.setMemoryEnabled`; Settings **保存配置** must copy the current flag so it is not reset.
+Provider settings are a separate store: `PreferenceStore.settings: StateFlow<ProviderSettings>`. Settings form is local until **保存配置**; the next `submit` reads current `allowCloud` / key / `maxTokens` via lambdas on `EgressGateway` and `OpenAICompatibleProvider`. Choosing a vendor preset fills `baseUrl` / `model` / `maxTokens` and keeps the API key; OpenCode Go is an optional preset (`opencode-go`) and does not change the OpenAI install default; DeepSeek’s preset model is `deepseek-v4-flash`. Editing the URL off a preset switches `vendorId` to `custom`. `memoryEnabled` (default `true`) is toggled on the Memory screen via `PreferenceStore.setMemoryEnabled`; Settings **保存配置** must copy the current flag so it is not reset.
 
 ## Pattern
 

@@ -7,6 +7,7 @@ class LlmVendorsTest {
     @Test
     fun idForBaseUrlIgnoresTrailingSlash() {
         assertEquals("deepseek", LlmVendors.idForBaseUrl("https://api.deepseek.com/v1/"))
+        assertEquals("opencode-go", LlmVendors.idForBaseUrl("https://opencode.ai/zen/go/v1/"))
         assertEquals("openai", LlmVendors.idForBaseUrl("https://api.openai.com/v1"))
         assertEquals("siliconflow", LlmVendors.idForBaseUrl("https://api.siliconflow.cn/v1/"))
         assertEquals("groq", LlmVendors.idForBaseUrl("https://api.groq.com/openai/v1"))
@@ -28,6 +29,32 @@ class LlmVendorsTest {
             "deepseek",
             LlmVendors.resolvedVendorId("deepseek", "https://api.deepseek.com/v1/"),
         )
+        assertEquals(
+            "opencode-go",
+            LlmVendors.resolvedVendorId("custom", "https://opencode.ai/zen/go/v1/"),
+        )
+        assertEquals(
+            "opencode-go",
+            LlmVendors.resolvedVendorId("openai", "https://opencode.ai/zen/go/v1"),
+        )
+    }
+
+    @Test
+    fun openCodeGoAndDeepSeekFlashPresetsLeaveOpenAiAsInstallDefault() {
+        assertEquals("openai", LlmVendors.OPENAI.id)
+        assertEquals("gpt-4o-mini", LlmVendors.OPENAI.defaultModel)
+        assertEquals("https://api.openai.com/v1", LlmVendors.OPENAI.baseUrl)
+        assertEquals("deepseek-v4-flash", LlmVendors.DEEPSEEK.defaultModel)
+        assertEquals("https://api.deepseek.com/v1", LlmVendors.DEEPSEEK.baseUrl)
+        assertEquals("opencode-go", LlmVendors.OPENCODE_GO.id)
+        assertEquals("OpenCode Go", LlmVendors.OPENCODE_GO.label)
+        assertEquals("https://opencode.ai/zen/go/v1", LlmVendors.OPENCODE_GO.baseUrl)
+        assertEquals("deepseek-v4-flash", LlmVendors.OPENCODE_GO.defaultModel)
+        assertEquals(LlmVendors.DEFAULT_MAX_TOKENS, LlmVendors.OPENCODE_GO.defaultMaxTokens)
+        assertEquals(LlmVendors.OPENAI, LlmVendors.ALL.first())
+        assertEquals(1, LlmVendors.ALL.indexOf(LlmVendors.DEEPSEEK))
+        assertEquals(2, LlmVendors.ALL.indexOf(LlmVendors.OPENCODE_GO))
+        // ProviderSettings.DEFAULT_* bind to OPENAI in :data:preferences (unchanged this task).
     }
 
     @Test

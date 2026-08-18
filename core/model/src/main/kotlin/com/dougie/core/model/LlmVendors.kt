@@ -25,7 +25,14 @@ object LlmVendors {
         id = "deepseek",
         label = "DeepSeek",
         baseUrl = "https://api.deepseek.com/v1",
-        defaultModel = "deepseek-chat",
+        defaultModel = "deepseek-v4-flash",
+        defaultMaxTokens = DEFAULT_MAX_TOKENS,
+    )
+    val OPENCODE_GO = LlmVendorPreset(
+        id = "opencode-go",
+        label = "OpenCode Go",
+        baseUrl = "https://opencode.ai/zen/go/v1",
+        defaultModel = "deepseek-v4-flash",
         defaultMaxTokens = DEFAULT_MAX_TOKENS,
     )
     val MOONSHOT = LlmVendorPreset(
@@ -67,6 +74,7 @@ object LlmVendors {
     val ALL: List<LlmVendorPreset> = listOf(
         OPENAI,
         DEEPSEEK,
+        OPENCODE_GO,
         MOONSHOT,
         SILICONFLOW,
         GROQ,

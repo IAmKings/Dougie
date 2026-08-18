@@ -153,7 +153,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: Settings can point at many OpenAI-compatible hosts. A native Anthropic `/v1/messages` body would break DeepSeek / Groq / Together / 硅基流动.
 
-**Instead**: `OpenAICompatibleProvider` always POSTs `{baseUrl}/chat/completions` with `model`, `stream`, `max_tokens`, `messages`, and `tools`. Vendor presets live in `LlmVendors` (`:core:model`). `CloudLlmConfig.maxTokens` is clamped to 16..8192. Custom vendor keeps the user's URL.
+**Instead**: `OpenAICompatibleProvider` always POSTs `{baseUrl}/chat/completions` with `model`, `stream`, `max_tokens`, `messages`, and `tools`. Vendor presets live in `LlmVendors` (`:core:model`): optional OpenCode Go (`https://opencode.ai/zen/go/v1`, model `deepseek-v4-flash`); official DeepSeek default model is `deepseek-v4-flash`; new-install default remains OpenAI. Body `model` is the configured model id as-is (`deepseek-v4-flash`, never an `opencode-go/` prefix). `CloudLlmConfig.maxTokens` is clamped to 16..8192. Custom vendor keeps the user's URL.
 
 ## Don't: Android plugin on `:core:*`
 
