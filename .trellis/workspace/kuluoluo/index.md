@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 24
-- **Last Active**: 2026-08-18
+- **Total Sessions**: 25
+- **Last Active**: 2026-08-19
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~511 | Active |
+| `journal-1.md` | ~532 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 25 | 2026-08-19 | OpenCode Go DeepSeek Flash 预设 | `4266207` | `main` |
 | 24 | 2026-08-18 | Case11 截屏崩溃修复 | `eedf1e7` | `main` |
 | 23 | 2026-08-18 | MVP 集成审查归档 | `54e10c2` | `main` |
 | 22 | 2026-08-17 | Debug 开发者页面 | `5e012b1` | `main` |

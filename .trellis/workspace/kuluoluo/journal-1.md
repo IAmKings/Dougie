@@ -509,3 +509,24 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 25: OpenCode Go DeepSeek Flash 预设
+
+**Date**: 2026-08-19
+**Task**: OpenCode Go DeepSeek Flash 预设
+**Branch**: `main`
+
+### Summary
+
+可选预设 opencode-go + 官方 DeepSeek 默认 Flash；PJZ110 人工验收。下周独立任务：本地模型 SAF 导入、官方 SHA-256 校验、设置页测试按钮验证模型可加载。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4266207` | (see git log) |
+
+### Status
+
+[OK] **Completed**
