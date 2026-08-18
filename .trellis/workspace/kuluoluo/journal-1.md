@@ -488,3 +488,24 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 24: Case11 截屏崩溃修复
+
+**Date**: 2026-08-18
+**Task**: Case11 截屏崩溃修复
+**Branch**: `main`
+
+### Summary
+
+主线程停 MediaProjection FGS，HandlerThread 上 stop 后 quitSafely；宽边 720。PJZ110 捕获/拒绝/后台门闩通过。问句不进 MemoryGate，记忆页进入 refresh。未归档签字父任务（07/09/14 受阻）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eedf1e7` | (see git log) |
+
+### Status
+
+[OK] **Completed**
