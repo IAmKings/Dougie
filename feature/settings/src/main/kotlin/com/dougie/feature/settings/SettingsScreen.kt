@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,11 +21,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -50,6 +54,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dougie.core.model.LlmVendors
 
 const val EGRESS_CONSENT_COPY = "本次请求可能将输入、必要上下文和 Tool Result 发送至第三方 LLM 服务。"
 
@@ -66,9 +71,11 @@ fun SettingsRoute(
         models = models,
         onBack = onBack,
         onAllowCloudChange = viewModel::setAllowCloud,
+        onVendorChange = viewModel::setVendor,
         onBaseUrlChange = viewModel::setBaseUrl,
         onApiKeyChange = viewModel::setApiKey,
         onModelChange = viewModel::setModel,
+        onMaxTokensChange = viewModel::setMaxTokensText,
         onSave = viewModel::save,
         onRequestModel = viewModel::requestModel,
         onConfirmModel = viewModel::confirmModel,
@@ -84,9 +91,11 @@ fun SettingsScreen(
     models: OfflineModelsUi,
     onBack: () -> Unit,
     onAllowCloudChange: (Boolean) -> Unit,
+    onVendorChange: (String) -> Unit,
     onBaseUrlChange: (String) -> Unit,
     onApiKeyChange: (String) -> Unit,
     onModelChange: (String) -> Unit,
+    onMaxTokensChange: (String) -> Unit,
     onSave: () -> Unit,
     onRequestModel: (String) -> Unit,
     onConfirmModel: () -> Unit,
@@ -198,6 +207,8 @@ fun SettingsScreen(
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
                 )
+                FieldLabel("厂商")
+                VendorDropdown(vendorId = form.vendorId, onVendorChange = onVendorChange)
                 FieldLabel("基础 URL")
                 SettingsField(value = form.baseUrl, onValueChange = onBaseUrlChange)
                 FieldLabel("API 密钥")
@@ -226,6 +237,12 @@ fun SettingsScreen(
                 )
                 FieldLabel("模型")
                 SettingsField(value = form.model, onValueChange = onModelChange)
+                FieldLabel("max_tokens")
+                SettingsField(
+                    value = form.maxTokensText,
+                    onValueChange = onMaxTokensChange,
+                    keyboardType = KeyboardType.Number,
+                )
             }
             OfflineModelsSection(
                 models = models,
@@ -279,8 +296,9 @@ fun SettingsScreen(
             onDismissRequest = onDismissModelConfirm,
             title = { Text("下载 ${pending.title}？") },
             text = {
+                val overwrite = if (pending.willReplace) "将覆盖当前已安装的意图模型。" else ""
                 Text(
-                    "将下载 ${pending.sizeLabel} 到 Dougie 应用私有目录，会占用存储并消耗流量。确认后才开始下载。",
+                    "将下载 ${pending.sizeLabel} 到 Dougie 应用私有目录，会占用存储并消耗流量。$overwrite 确认后才开始下载。",
                 )
             },
             confirmButton = {
@@ -314,7 +332,7 @@ private fun OfflineModelsSection(
             fontWeight = FontWeight.Medium,
         )
         Text(
-            text = "语音识别、语音合成与意图理解按需下载到本机。Dougie 不会把模型当作 Agent 工具由云端触发。",
+            text = "语音识别、语音合成按需下载。意图理解请选 Q4 或 Q8（共用一份本地文件，换量化会覆盖）。Dougie 不会把模型当作 Agent 工具由云端触发。",
             color = DougieColors.OnSurfaceVariant,
             fontSize = 14.sp,
         )
@@ -400,12 +418,56 @@ private fun FieldLabel(text: String) {
 }
 
 @Composable
-private fun SettingsField(value: String, onValueChange: (String) -> Unit) {
+private fun VendorDropdown(vendorId: String, onVendorChange: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = LlmVendors.byId(vendorId)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = selected.label,
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.ArrowDropDown,
+                    contentDescription = "选择厂商",
+                    tint = DougieColors.OnSurfaceVariant,
+                )
+            },
+            colors = fieldColors(),
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = true },
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            LlmVendors.ALL.forEach { preset ->
+                DropdownMenuItem(
+                    text = { Text(preset.label) },
+                    onClick = {
+                        onVendorChange(preset.id)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    keyboardType: KeyboardType = KeyboardType.Text,
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         colors = fieldColors(),
     )
 }

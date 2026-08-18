@@ -10,6 +10,7 @@ Agent Runtime lives in Gradle `:core:*` modules. These modules use the **Kotlin 
 
 ```
 core/model/src/main/kotlin/com/dougie/core/model/
+  LlmVendors.kt
 core/llm/src/main/kotlin/com/dougie/core/llm/
 core/tool/src/main/kotlin/com/dougie/core/tool/
 core/runtime/src/main/kotlin/com/dougie/core/runtime/
@@ -63,6 +64,13 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   CharacterErrorRate.kt
   IntentEval.kt
   FullEvalSet.kt
+  ScreenFrame.kt
+  ScreenCapturePort.kt
+  ScreenCaptureTool.kt
+  ScreenMatchTool.kt
+  TemplateLibrary.kt
+  GrayscaleNccMatcher.kt
+  ScreenFrameDownscale.kt
 core/tool/src/test/resources/eval/
   asr-gold.json
   intent-gold.json
@@ -99,14 +107,14 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 
 | Module | Owns | Must not own |
 |--------|------|----------------|
-| `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `UserFacingErrors` | I/O, Android, HTTP |
+| `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `CloudLlmConfig`, `LlmVendors` | I/O, Android, HTTP |
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `OpenAICompatibleProvider` SSE (OkHttp) | Tool execution, UI, policy bypass |
-| `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` | `BatteryManager` / other Android APIs |
+| `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech ports, `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
-| `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true | Loop / Chat UI |
+| `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
 | `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |
@@ -138,11 +146,23 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Decision**: Parse SSE off the OkHttp callback, `trySendBlocking` into the channel, then `.buffer(Channel.BUFFERED)`. Cancelled calls must `close()` without mapping to `LLM_FAILED`. `TaskManager.cancel()` cancels the loop job, which cancels the flow (`awaitClose { call.cancel() }`).
 
+## Don't: Speak Anthropic Messages from the Android provider
+
+**Problem**: Settings can point at many OpenAI-compatible hosts. A native Anthropic `/v1/messages` body would break DeepSeek / Groq / Together / 硅基流动.
+
+**Instead**: `OpenAICompatibleProvider` always POSTs `{baseUrl}/chat/completions` with `model`, `stream`, `max_tokens`, `messages`, and `tools`. Vendor presets live in `LlmVendors` (`:core:model`). `CloudLlmConfig.maxTokens` is clamped to 16..8192. Custom vendor keeps the user's URL.
+
 ## Don't: Android plugin on `:core:*`
 
 **Problem**: Adding `com.android.library` to runtime/llm/tool/model breaks the JVM-pure red line and `:cli` reuse.
 
 **Instead**: Put `BatteryManager` in `:tool:system` and inject `AgentTool` into `LoopEngine`. Store API keys in `:data:preferences` via EncryptedSharedPreferences (MasterKey), not plaintext XML prefs.
+
+## Design Decision: Local screen-match catalog is JVM pixels, not OpenCV
+
+**Context**: PRD §6.7 requires a local template library for `screen_match`. Phase 3b deferred OpenCV AAR and a productized template catalog, not “no catalog at all”.
+
+**Decision**: `TemplateLibrary` in `:core:tool` is the catalog: `solid` (8×8 all-white NCC fixture) plus a generated bundled `logo` (24×24 high-contrast D, non-uniform grayscale). `GrayscaleNccMatcher` stays pure JVM. `ScreenMatchTool` downscales captures wider than ~320px before NCC (and the template by the same scale), then maps `x`/`y` back to original capture pixels. Gray bytes stay in process-local `ScreenFrameStore`; tool JSON is `{template_id, found, x, y, confidence}` and is UNTRUSTED_DATA. Do not add OpenCV, `android.*` in `:core:*`, PNG assets `:core:tool` cannot load, or log gray bytes.
 
 ## Don't: Put `TapSwipeTool` in `:core:tool`
 
@@ -179,7 +199,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
 
-**Instead**: `ModelInstaller` is app-owned. Require `userConfirmed`, `https://` only, SHA-256 match, write `.part` then rename. Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); delete `.part` on cancel. `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. Not registered on `LoopEngine`. HTTPS/SHA-256 come from gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` → `AppOfflineModels` / `OfficialModelCatalog`. Blank URL or SHA → offer not configured; UI must not fetch.
+**Instead**: `ModelInstaller` is app-owned. Require `userConfirmed`, `https://` only, SHA-256 match, write `.part` then rename. Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); delete `.part` on cancel. `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. Not registered on `LoopEngine`. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / Unsloth Qwen3-0.6B-Q4_K_M / official Qwen3-0.6B-Q8_0). Both intent quants install to `filesDir/models/intent/model.gguf`; `quant.id` records which is present. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.*` overrides Q8 only). Invalid override URL/SHA → offer not configured; UI must not fetch.
 
 ## Scenario: speech_output TTS contract
 

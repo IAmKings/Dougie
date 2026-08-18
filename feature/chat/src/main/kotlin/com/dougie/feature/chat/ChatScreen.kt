@@ -63,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +77,7 @@ import com.dougie.feature.chat.R as ChatR
 fun ChatRoute(
     viewModel: ChatViewModel,
     allowCloud: Boolean = false,
+    intelligenceMark: IntelligenceMark = IntelligenceMark.NOOB,
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
@@ -89,6 +91,7 @@ fun ChatRoute(
         onReject = viewModel::reject,
         onRetry = viewModel::retry,
         allowCloud = allowCloud,
+        intelligenceMark = intelligenceMark,
         onOpenSettings = onOpenSettings,
         onOpenMemory = onOpenMemory,
         onOpenPermissions = onOpenPermissions,
@@ -104,6 +107,7 @@ fun ChatScreen(
     onReject: () -> Unit = {},
     onRetry: () -> Unit = {},
     allowCloud: Boolean = false,
+    intelligenceMark: IntelligenceMark = IntelligenceMark.NOOB,
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
@@ -119,12 +123,16 @@ fun ChatScreen(
     ) {
         DougieTopBar(
             allowCloud = allowCloud,
+            intelligenceMark = intelligenceMark,
             onOpenSettings = onOpenSettings,
             onOpenPermissions = onOpenPermissions,
         )
         Box(modifier = Modifier.weight(1f)) {
             if (uiState.isEmpty) {
-                EmptyState(onExampleClick = onSend)
+                EmptyState(
+                    intelligenceMark = intelligenceMark,
+                    onExampleClick = onSend,
+                )
             } else {
                 ChatFeed(
                     items = uiState.items,
@@ -150,6 +158,7 @@ fun ChatScreen(
 @Composable
 private fun DougieTopBar(
     allowCloud: Boolean,
+    intelligenceMark: IntelligenceMark,
     onOpenSettings: () -> Unit,
     onOpenPermissions: () -> Unit,
 ) {
@@ -161,9 +170,8 @@ private fun DougieTopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Image(
-            painter = painterResource(ChatR.drawable.dougie_logo),
-            contentDescription = "Dougie",
+        DougieAvatar(
+            intelligenceMark = intelligenceMark,
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
@@ -227,7 +235,33 @@ private fun DougieTopBar(
 }
 
 @Composable
-private fun EmptyState(onExampleClick: (String) -> Unit) {
+private fun DougieAvatar(
+    intelligenceMark: IntelligenceMark,
+    modifier: Modifier = Modifier,
+) {
+    val res = when (intelligenceMark) {
+        IntelligenceMark.SUPER -> ChatR.drawable.super_dougie
+        IntelligenceMark.LOCAL -> ChatR.drawable.dougie_logo
+        IntelligenceMark.NOOB -> ChatR.drawable.dougie_logo_unavailable
+    }
+    val description = when (intelligenceMark) {
+        IntelligenceMark.SUPER -> "Super Dougie"
+        IntelligenceMark.LOCAL -> "Dougie"
+        IntelligenceMark.NOOB -> "智能不可用"
+    }
+    Image(
+        painter = painterResource(res),
+        contentDescription = description,
+        contentScale = ContentScale.Fit,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun EmptyState(
+    intelligenceMark: IntelligenceMark,
+    onExampleClick: (String) -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -235,9 +269,8 @@ private fun EmptyState(onExampleClick: (String) -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Image(
-            painter = painterResource(ChatR.drawable.dougie_logo),
-            contentDescription = "Dougie",
+        DougieAvatar(
+            intelligenceMark = intelligenceMark,
             modifier = Modifier.size(120.dp),
         )
         Spacer(Modifier.height(24.dp))
@@ -317,11 +350,12 @@ private fun ChatFeed(
         ) { item ->
             when (item) {
                 is ChatItem.UserMessage -> UserBubble(item.text)
-                is ChatItem.Thinking -> ThinkingChip(item.loopNumber)
+                is ChatItem.Thinking -> ThinkingChip(item.loopNumber, live = item.live)
                 is ChatItem.ToolCard -> ToolCallCard(item)
                 is ChatItem.ConfirmCard -> ConfirmToolCard(item, onConfirm, onReject)
                 is ChatItem.AgentMessage -> AgentBubble(
                     text = item.text,
+                    memorySources = item.memorySources,
                     showRetry = canRetry && item === items.lastOrNull(),
                     onRetry = onRetry,
                 )
@@ -350,6 +384,7 @@ private fun UserBubble(text: String) {
 @Composable
 private fun AgentBubble(
     text: String,
+    memorySources: List<String> = emptyList(),
     showRetry: Boolean = false,
     onRetry: () -> Unit = {},
 ) {
@@ -365,6 +400,15 @@ private fun AgentBubble(
                     .clip(RoundedCornerShape(16.dp).copy(topStart = androidx.compose.foundation.shape.CornerSize(4.dp)))
                     .background(DougieColors.SurfaceContainer)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        if (memorySources.isNotEmpty()) {
+            Text(
+                text = memorySources.joinToString(separator = "\n") { "来源：$it" },
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
         if (showRetry) {
@@ -385,7 +429,30 @@ private fun AgentBubble(
 }
 
 @Composable
-private fun ThinkingChip(loopNumber: Int) {
+private fun ThinkingChip(loopNumber: Int, live: Boolean) {
+    val label = if (live) "思考中… [循环 $loopNumber]" else "循环 $loopNumber"
+    if (!live) {
+        Row(
+            modifier = Modifier.padding(start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Sync,
+                contentDescription = null,
+                tint = DougieColors.OnSurfaceVariant,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = label,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                letterSpacing = 0.5.sp,
+            )
+        }
+        return
+    }
     val transition = rememberInfiniteTransition(label = "thinking")
     val scale by transition.animateFloat(
         initialValue = 0.95f,
@@ -413,7 +480,7 @@ private fun ThinkingChip(loopNumber: Int) {
             modifier = Modifier.size(16.dp),
         )
         Text(
-            text = "思考中... [KISS 循环 $loopNumber]",
+            text = label,
             color = DougieColors.StatusThinking.copy(alpha = alpha),
             fontSize = 12.sp,
             fontFamily = FontFamily.Monospace,

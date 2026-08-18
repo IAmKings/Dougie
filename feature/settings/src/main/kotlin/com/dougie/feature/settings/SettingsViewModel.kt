@@ -3,6 +3,7 @@ package com.dougie.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.dougie.core.model.LlmVendors
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.OfflineModelOffer
 import com.dougie.data.preferences.PreferenceStore
@@ -15,9 +16,11 @@ import java.io.File
 
 data class SettingsFormState(
     val allowCloud: Boolean = false,
+    val vendorId: String = ProviderSettings.DEFAULT_VENDOR_ID,
     val baseUrl: String = ProviderSettings.DEFAULT_BASE_URL,
     val model: String = ProviderSettings.DEFAULT_MODEL,
     val apiKey: String = "",
+    val maxTokensText: String = ProviderSettings.DEFAULT_MAX_TOKENS.toString(),
     val saved: Boolean = false,
 )
 
@@ -44,8 +47,31 @@ class SettingsViewModel(
         _form.update { it.copy(allowCloud = value, saved = false) }
     }
 
+    fun setVendor(id: String) {
+        val preset = LlmVendors.byId(id)
+        _form.update { current ->
+            if (preset.id == LlmVendors.CUSTOM_ID) {
+                current.copy(vendorId = LlmVendors.CUSTOM_ID, saved = false)
+            } else {
+                current.copy(
+                    vendorId = preset.id,
+                    baseUrl = preset.baseUrl,
+                    model = preset.defaultModel,
+                    maxTokensText = preset.defaultMaxTokens.toString(),
+                    saved = false,
+                )
+            }
+        }
+    }
+
     fun setBaseUrl(value: String) {
-        _form.update { it.copy(baseUrl = value, saved = false) }
+        _form.update {
+            it.copy(
+                baseUrl = value,
+                vendorId = LlmVendors.resolvedVendorId(it.vendorId, value),
+                saved = false,
+            )
+        }
     }
 
     fun setModel(value: String) {
@@ -56,14 +82,26 @@ class SettingsViewModel(
         _form.update { it.copy(apiKey = value, saved = false) }
     }
 
+    fun setMaxTokensText(value: String) {
+        _form.update {
+            it.copy(
+                maxTokensText = value.filter { ch -> ch.isDigit() }.take(6),
+                saved = false,
+            )
+        }
+    }
+
     fun save() {
         val current = _form.value
+        val baseUrl = current.baseUrl.trim().ifBlank { ProviderSettings.DEFAULT_BASE_URL }
         store.save(
             ProviderSettings(
                 allowCloud = current.allowCloud,
-                baseUrl = current.baseUrl.trim().ifBlank { ProviderSettings.DEFAULT_BASE_URL },
+                vendorId = LlmVendors.resolvedVendorId(current.vendorId, baseUrl),
+                baseUrl = baseUrl,
                 model = current.model.trim().ifBlank { ProviderSettings.DEFAULT_MODEL },
                 apiKey = current.apiKey.trim(),
+                maxTokens = LlmVendors.parseMaxTokens(current.maxTokensText),
                 egressConsentAt = store.settings.value.egressConsentAt,
                 memoryEnabled = store.settings.value.memoryEnabled,
             ),
@@ -86,7 +124,9 @@ class SettingsViewModel(
 
 private fun ProviderSettings.toForm() = SettingsFormState(
     allowCloud = allowCloud,
+    vendorId = LlmVendors.resolvedVendorId(vendorId, baseUrl),
     baseUrl = baseUrl,
     model = model,
     apiKey = apiKey,
+    maxTokensText = LlmVendors.clampMaxTokens(maxTokens).toString(),
 )

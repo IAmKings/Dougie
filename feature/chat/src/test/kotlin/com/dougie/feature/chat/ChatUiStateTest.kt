@@ -1,6 +1,7 @@
 package com.dougie.feature.chat
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
@@ -13,14 +14,17 @@ class ChatUiStateTest {
 
     @Test
     fun preparingShowsUserThenThinkingWithLoopNumber() {
-        val state = AgentTask(taskId = "t", input = BATTERY_EXAMPLE, status = TaskStatus.THINKING)
-            .toChatUiState()
-        assertEquals(
-            listOf("user", "thinking-1"),
-            state.items.map { it.kind() },
-        )
-        val thinking = state.items[1] as ChatItem.Thinking
-        assertEquals(1, thinking.loopNumber)
+        listOf(TaskStatus.PREPARING, TaskStatus.THINKING).forEach { status ->
+            val state = AgentTask(taskId = "t", input = BATTERY_EXAMPLE, status = status)
+                .toChatUiState()
+            assertEquals(
+                listOf("user", "thinking-1"),
+                state.items.map { it.kind() },
+            )
+            val thinking = state.items[1] as ChatItem.Thinking
+            assertEquals(1, thinking.loopNumber)
+            assertEquals(true, thinking.live)
+        }
     }
 
     @Test
@@ -58,7 +62,82 @@ class ChatUiStateTest {
         )
         assertTrue(state.inputEnabled)
         assertTrue((state.items.last() as ChatItem.AgentMessage).text.contains("63"))
+        assertEquals(emptyList<String>(), (state.items.last() as ChatItem.AgentMessage).memorySources)
         assertEquals(false, state.canRetry)
+        val past = state.items.filterIsInstance<ChatItem.Thinking>()
+        assertEquals(listOf(false, false, false), past.map { it.live })
+    }
+
+    @Test
+    fun afterToolSuccessLiveThinkingIsOnlyTheNextLoop() {
+        val state = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.THINKING,
+            loopCount = 1,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "battery-1",
+                    toolName = "battery",
+                    argsSummary = "{}",
+                    resultJson = """{"battery_percent":63,"charging":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        ).toChatUiState()
+        val chips = state.items.filterIsInstance<ChatItem.Thinking>()
+        assertEquals(listOf(1, 2), chips.map { it.loopNumber })
+        assertEquals(listOf(false, true), chips.map { it.live })
+    }
+
+    @Test
+    fun completedWithRetrievedMemoriesPutsUniqueSourcesOnFinalAnswer() {
+        val state = AgentTask(
+            taskId = "t",
+            input = "我叫什么",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "你叫小明。",
+            retrievedMemories = listOf(
+                fact("m1", source = "task-0"),
+                fact("m2", source = "task-1"),
+                fact("m3", source = "task-0"),
+                fact("m4", source = "  "),
+            ),
+        ).toChatUiState()
+        val message = state.items.last() as ChatItem.AgentMessage
+        assertEquals("你叫小明。", message.text)
+        assertEquals(listOf("task-0", "task-1"), message.memorySources)
+
+        val blankOnly = AgentTask(
+            taskId = "t",
+            input = "我叫什么",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "你叫小明。",
+            retrievedMemories = listOf(fact("m1", source = "   ")),
+        ).toChatUiState()
+        assertEquals(emptyList<String>(), (blankOnly.items.last() as ChatItem.AgentMessage).memorySources)
+    }
+
+    @Test
+    fun streamingAndFailedMessagesOmitMemorySources() {
+        val memories = listOf(fact("m1", source = "task-0"))
+        val streaming = AgentTask(
+            taskId = "t",
+            input = "我叫什么",
+            status = TaskStatus.THINKING,
+            streamingText = "你叫",
+            retrievedMemories = memories,
+        ).toChatUiState()
+        assertEquals(emptyList<String>(), (streaming.items.last() as ChatItem.AgentMessage).memorySources)
+
+        val failed = AgentTask(
+            taskId = "t",
+            input = "我叫什么",
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.EGRESS_BLOCKED,
+            retrievedMemories = memories,
+        ).toChatUiState()
+        assertEquals(emptyList<String>(), (failed.items.last() as ChatItem.AgentMessage).memorySources)
     }
 
     @Test
@@ -131,6 +210,15 @@ class ChatUiStateTest {
         assertEquals(com.dougie.core.model.RiskLevel.L2, card.riskLevel)
         assertEquals(false, state.inputEnabled)
     }
+
+    private fun fact(id: String, source: String) = MemoryEntry(
+        id = id,
+        content = "我叫小明，住在上海",
+        source = source,
+        confidence = 0.8f,
+        createdAt = 1L,
+        updatedAt = 1L,
+    )
 
     private fun ChatItem.kind(): String = when (this) {
         is ChatItem.UserMessage -> "user"

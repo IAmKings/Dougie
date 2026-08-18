@@ -1,6 +1,7 @@
 package com.dougie.feature.settings
 
 import com.dougie.core.model.AgentException
+import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.OfflineModelOffer
 import com.dougie.core.tool.isConfigured
@@ -25,6 +26,7 @@ data class OfflineModelRowUi(
     val downloaded: Long = 0L,
     val total: Long = -1L,
     val error: String? = null,
+    val willReplace: Boolean = false,
 )
 
 data class OfflineModelsUi(
@@ -51,6 +53,10 @@ class OfflineModelDownloads(
         val offer = offers.find { it.id == id } ?: return
         val row = _ui.value.rows.find { it.id == id } ?: return
         if (row.downloading || row.installed) return
+        if (isDirBusy(offer.pack.relativeDir)) {
+            patch(id) { it.copy(error = DIR_BUSY) }
+            return
+        }
         if (!offer.isConfigured()) {
             patch(id) { it.copy(error = UNCONFIGURED) }
             return
@@ -72,8 +78,13 @@ class OfflineModelDownloads(
             return
         }
         if (jobs.containsKey(id)) return
+        if (isDirBusy(offer.pack.relativeDir)) {
+            patch(id) { it.copy(error = DIR_BUSY) }
+            return
+        }
         jobs[id] = scope.launch {
             patch(id) { it.copy(downloading = true, error = null, downloaded = 0L, total = -1L) }
+            var failure: String? = null
             try {
                 installer.install(
                     pack = offer.pack,
@@ -83,27 +94,25 @@ class OfflineModelDownloads(
                         patch(id) { row -> row.copy(downloaded = downloaded, total = total) }
                     },
                 )
+                if (offer.id == IntentModelLayout.Q4_ID || offer.id == IntentModelLayout.Q8_ID) {
+                    IntentModelLayout.writeQuantId(
+                        File(destRoot, offer.pack.relativeDir),
+                        offer.id,
+                    )
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: AgentException) {
-                patch(id) { it.copy(error = e.userMessage) }
+                failure = e.userMessage
             } finally {
                 jobs.remove(id)
-                val installed = offer.isInstalled(destRoot)
-                patch(id) {
-                    it.copy(
-                        downloading = false,
-                        installed = installed,
-                        downloaded = 0L,
-                        total = -1L,
-                    )
-                }
+                refreshDir(offer.pack.relativeDir, failedId = id, failure = failure)
             }
         }
     }
 
     fun cancel(id: String) {
-        jobs.remove(id)?.cancel()
+        jobs[id]?.cancel()
     }
 
     private fun OfflineModelOffer.toRow() = OfflineModelRowUi(
@@ -112,7 +121,37 @@ class OfflineModelDownloads(
         sizeLabel = sizeLabel,
         configured = isConfigured(),
         installed = isInstalled(destRoot),
+        willReplace = willReplace(this),
     )
+
+    private fun willReplace(offer: OfflineModelOffer): Boolean =
+        offers.any { other ->
+            other.id != offer.id &&
+                other.pack.relativeDir == offer.pack.relativeDir &&
+                other.isInstalled(destRoot)
+        }
+
+    private fun isDirBusy(relativeDir: String): Boolean =
+        jobs.keys.any { jobId -> offers.find { it.id == jobId }?.pack?.relativeDir == relativeDir }
+
+    private fun refreshDir(relativeDir: String, failedId: String, failure: String?) {
+        _ui.update { state ->
+            state.copy(
+                rows = state.rows.map { row ->
+                    val offer = offers.find { it.id == row.id } ?: return@map row
+                    if (offer.pack.relativeDir != relativeDir) return@map row
+                    row.copy(
+                        downloading = false,
+                        installed = offer.isInstalled(destRoot),
+                        willReplace = willReplace(offer),
+                        downloaded = 0L,
+                        total = -1L,
+                        error = if (row.id == failedId) failure else row.error,
+                    )
+                },
+            )
+        }
+    }
 
     private fun patch(id: String, transform: (OfflineModelRowUi) -> OfflineModelRowUi) {
         _ui.update { state ->
@@ -122,5 +161,6 @@ class OfflineModelDownloads(
 
     companion object {
         const val UNCONFIGURED = "尚未配置下载地址"
+        const val DIR_BUSY = "正在下载另一份意图模型，请稍候"
     }
 }

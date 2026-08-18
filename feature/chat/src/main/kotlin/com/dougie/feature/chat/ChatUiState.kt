@@ -17,7 +17,7 @@ data class ChatUiState(
 
 sealed class ChatItem {
     data class UserMessage(val text: String) : ChatItem()
-    data class Thinking(val loopNumber: Int) : ChatItem()
+    data class Thinking(val loopNumber: Int, val live: Boolean = false) : ChatItem()
     data class ToolCard(val entry: ToolTraceEntry) : ChatItem()
     data class ConfirmCard(
         val toolName: String,
@@ -25,7 +25,10 @@ sealed class ChatItem {
         val riskLevel: RiskLevel,
         val toolCallId: String,
     ) : ChatItem()
-    data class AgentMessage(val text: String) : ChatItem()
+    data class AgentMessage(
+        val text: String,
+        val memorySources: List<String> = emptyList(),
+    ) : ChatItem()
 }
 
 fun AgentTask?.toChatUiState(): ChatUiState {
@@ -35,7 +38,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
     val items = buildList {
         add(ChatItem.UserMessage(input))
         toolTrace.forEachIndexed { index, entry ->
-            add(ChatItem.Thinking(loopNumber = index + 1))
+            add(ChatItem.Thinking(loopNumber = index + 1, live = false))
             val awaitingThis = status == TaskStatus.AWAITING_CONFIRMATION && index == toolTrace.lastIndex
             if (awaitingThis) {
                 add(
@@ -53,7 +56,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         val nextLoop = loopCount + 1
         val alreadyShowingNextThinking = toolTrace.size >= nextLoop
         if ((status == TaskStatus.PREPARING || status == TaskStatus.THINKING) && !alreadyShowingNextThinking) {
-            add(ChatItem.Thinking(loopNumber = nextLoop))
+            add(ChatItem.Thinking(loopNumber = nextLoop, live = true))
         }
         val streaming = streamingText
         if (!streaming.isNullOrBlank() && status != TaskStatus.COMPLETED && status != TaskStatus.FAILED) {
@@ -61,7 +64,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         }
         val answer = finalAnswer
         if (status == TaskStatus.COMPLETED && !answer.isNullOrBlank()) {
-            add(ChatItem.AgentMessage(answer))
+            add(ChatItem.AgentMessage(answer, memorySources = citationSources()))
         }
         val error = lastError
         if (status == TaskStatus.FAILED && !error.isNullOrBlank()) {
@@ -75,4 +78,15 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         isEmpty = false,
         canRetry = status == TaskStatus.FAILED,
     )
+}
+
+internal fun AgentTask.citationSources(): List<String> {
+    val seen = LinkedHashSet<String>()
+    for (entry in retrievedMemories) {
+        val source = entry.source.trim()
+        if (source.isNotEmpty()) {
+            seen.add(source)
+        }
+    }
+    return seen.toList()
 }

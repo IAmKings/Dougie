@@ -5,11 +5,29 @@ import java.io.File
 object IntentModelLayout {
     const val DIR = "models/intent"
     const val MODEL_FILE = "model.gguf"
+    const val QUANT_ID_FILE = "quant.id"
+    const val Q4_ID = "intent-q4"
+    const val Q8_ID = "intent-q8"
     const val MIN_CONFIDENCE = 0.5
 
     fun isPresent(modelDir: File): Boolean {
         val model = File(modelDir, MODEL_FILE)
         return model.isFile && model.length() > 0L
+    }
+
+    fun installedQuantId(modelDir: File): String? {
+        if (!isPresent(modelDir)) return null
+        val mark = File(modelDir, QUANT_ID_FILE)
+        if (mark.isFile) {
+            val id = mark.readText().trim()
+            if (id.isNotEmpty()) return id
+        }
+        return Q8_ID
+    }
+
+    fun writeQuantId(modelDir: File, id: String) {
+        modelDir.mkdirs()
+        File(modelDir, QUANT_ID_FILE).writeText(id)
     }
 }
 

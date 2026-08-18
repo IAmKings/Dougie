@@ -3,10 +3,17 @@ package com.dougie.core.tool
 import com.dougie.core.model.ToolContext
 import com.dougie.core.model.UserFacingErrors
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 class LocationToolTest {
 
@@ -32,6 +39,62 @@ class GrayscaleNccMatcherTest {
         assertEquals(12, match!!.x)
         assertEquals(7, match.y)
         assertTrue(match.confidence >= GrayscaleNccMatcher.THRESHOLD)
+    }
+
+    @Test
+    fun findsBundledLogoOnSyntheticScene() {
+        val logo = TemplateLibrary.frame(TemplateLibrary.LOGO)!!
+        val scene = stampOnBlack(logo, canvasWidth = 64, canvasHeight = 64, x = 10, y = 8)
+        val match = GrayscaleNccMatcher.match(scene, logo)
+        assertEquals(10, match!!.x)
+        assertEquals(8, match.y)
+        assertTrue(match.confidence >= GrayscaleNccMatcher.THRESHOLD)
+    }
+}
+
+class TemplateLibraryTest {
+
+    @Test
+    fun idsIncludeSolidAndLogo() {
+        assertTrue(TemplateLibrary.ids().contains(TemplateLibrary.SOLID))
+        assertTrue(TemplateLibrary.ids().contains(TemplateLibrary.LOGO))
+        assertNotNull(TemplateLibrary.frame(TemplateLibrary.SOLID))
+        assertNotNull(TemplateLibrary.frame(TemplateLibrary.LOGO))
+        assertNull(TemplateLibrary.frame("missing"))
+    }
+
+    @Test
+    fun logoHasContrast() {
+        val logo = TemplateLibrary.frame(TemplateLibrary.LOGO)!!
+        assertTrue(logo.width in 16..32)
+        assertTrue(logo.height in 16..32)
+        assertTrue(logo.gray.toSet().size > 1)
+    }
+}
+
+class ScreenFrameDownscaleTest {
+
+    @Test
+    fun smallFramesStayUnscaled() {
+        val image = whiteSquareOnBlack()
+        val template = TemplateLibrary.frame(TemplateLibrary.SOLID)!!
+        val prep = ScreenFrameDownscale.prepare(image, template)
+        assertEquals(32, prep.image.width)
+        assertEquals(1.0, prep.scaleX, 0.0)
+        assertEquals(1.0, prep.scaleY, 0.0)
+        assertEquals(12, prep.toOriginalX(12))
+        assertEquals(7, prep.toOriginalY(7))
+    }
+
+    @Test
+    fun mapsWorkingCoordsBackToOriginal() {
+        val image = ScreenFrame("big", 640, 480, ByteArray(640 * 480))
+        val template = TemplateLibrary.frame(TemplateLibrary.LOGO)!!
+        val prep = ScreenFrameDownscale.prepare(image, template, workingWidth = 320)
+        assertEquals(320, prep.image.width)
+        assertEquals(240, prep.image.height)
+        assertEquals(80, prep.toOriginalX(40))
+        assertEquals(40, prep.toOriginalY(20))
     }
 }
 
@@ -116,5 +179,41 @@ class ScreenMatchToolTest {
         val result = tool.execute("""{"template_id":"missing"}""", ToolContext("t", "c"))
         assertTrue(result.isFatal)
         assertTrue(result.json.contains("\"found\":false"))
+    }
+
+    @Test
+    fun descriptorNamesBundledTemplateIds() {
+        val tool = ScreenMatchTool(InMemoryScreenFrameStore())
+        assertTrue(tool.descriptor.description.contains(TemplateLibrary.SOLID))
+        assertTrue(tool.descriptor.description.contains(TemplateLibrary.LOGO))
+    }
+
+    @Test
+    fun findsLogoOnStoredFrame() = runTest {
+        val logo = TemplateLibrary.frame(TemplateLibrary.LOGO)!!
+        val store = InMemoryScreenFrameStore()
+        store.put(stampOnBlack(logo, canvasWidth = 64, canvasHeight = 64, x = 10, y = 8))
+        val tool = ScreenMatchTool(store)
+        val result = tool.execute("""{"template_id":"logo"}""", ToolContext("t", "c"))
+        assertFalse(result.isFatal)
+        assertTrue(result.json.contains("\"template_id\":\"logo\""))
+        assertTrue(result.json.contains("\"found\":true"))
+        assertTrue(result.json.contains("\"x\":10"))
+        assertTrue(result.json.contains("\"y\":8"))
+    }
+
+    @Test
+    fun findsLogoOnLargeFrameAndMapsCoordsBack() = runTest {
+        val logo = TemplateLibrary.frame(TemplateLibrary.LOGO)!!
+        val store = InMemoryScreenFrameStore()
+        store.put(stampOnBlack(logo, canvasWidth = 640, canvasHeight = 480, x = 80, y = 40))
+        val tool = ScreenMatchTool(store)
+        val result = tool.execute("""{"template_id":"logo"}""", ToolContext("t", "c"))
+        assertFalse(result.isFatal)
+        val obj = Json.parseToJsonElement(result.json).jsonObject
+        val x = obj["x"]!!.jsonPrimitive.int
+        val y = obj["y"]!!.jsonPrimitive.int
+        assertTrue(abs(x - 80) <= 2)
+        assertTrue(abs(y - 40) <= 2)
     }
 }

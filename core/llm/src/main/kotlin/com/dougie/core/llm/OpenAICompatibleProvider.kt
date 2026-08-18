@@ -3,6 +3,7 @@ package com.dougie.core.llm
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.CloudLlmConfig
+import com.dougie.core.model.LlmVendors
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
@@ -69,7 +70,7 @@ class OpenAICompatibleProvider(
     private fun streamOnce(context: LoopContext): Flow<LlmEvent> = callbackFlow {
         val cfg = config()
         val url = chatCompletionsUrl(cfg.baseUrl)
-        val payload = buildRequestJson(cfg.model, context.task, stream = true)
+        val payload = buildRequestJson(cfg.model, context.task, stream = true, maxTokens = cfg.maxTokens)
         val request = Request.Builder()
             .url(url)
             .header("Authorization", "Bearer ${cfg.apiKey}")
@@ -148,7 +149,12 @@ class OpenAICompatibleProvider(
         return LlmResponse.FinalAnswer(content)
     }
 
-    internal fun buildRequestJson(model: String, task: AgentTask, stream: Boolean = false): String {
+    internal fun buildRequestJson(
+        model: String,
+        task: AgentTask,
+        stream: Boolean = false,
+        maxTokens: Int = LlmVendors.DEFAULT_MAX_TOKENS,
+    ): String {
         val messages = buildJsonArray {
             add(
                 buildJsonObject {
@@ -199,6 +205,7 @@ class OpenAICompatibleProvider(
         return buildJsonObject {
             put("model", model)
             put("stream", stream)
+            put("max_tokens", LlmVendors.clampMaxTokens(maxTokens))
             put("messages", messages)
             put("tools", buildToolsArray(toolDescriptors()))
         }.toString()

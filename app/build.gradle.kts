@@ -32,7 +32,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
-        // Optional HTTPS + SHA-256 in local.properties (gitignored). Blank → row disabled.
+        // Optional HTTPS + SHA-256 in local.properties (gitignored). Blank → OfficialModelCatalog.standard() defaults.
         listOf(
             "ASR_MODEL_URL" to "dougie.model.asr.url",
             "ASR_MODEL_SHA256" to "dougie.model.asr.sha256",

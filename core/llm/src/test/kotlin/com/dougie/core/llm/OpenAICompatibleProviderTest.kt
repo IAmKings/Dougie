@@ -77,6 +77,7 @@ class OpenAICompatibleProviderTest {
         assertEquals("Bearer sk-test", recorded.getHeader("Authorization"))
         val body = recorded.body.readUtf8()
         assertTrue(body.contains("\"stream\":true"))
+        assertTrue(body.contains("\"max_tokens\":2048"))
         assertTrue(body.contains("\"name\":\"time\""))
         assertTrue(body.contains("\"name\":\"battery\""))
         assertTrue(body.contains("\"name\":\"calendar_query\""))
@@ -228,6 +229,17 @@ class OpenAICompatibleProviderTest {
             assertTrue(failed)
         }
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun requestJsonIncludesClampedMaxTokens() {
+        val json = testProvider().buildRequestJson(
+            model = "gpt-4o-mini",
+            task = AgentTask(taskId = "t1", input = "hi"),
+            stream = true,
+            maxTokens = 9,
+        )
+        assertTrue(json.contains("\"max_tokens\":16"))
     }
 
     private fun testProvider(): OpenAICompatibleProvider {

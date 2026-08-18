@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index and Quality Check pointers for :feature:chat / :app"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Logo drawable ownership, adaptive-icon contract, intelligenceAvailable predicate"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "App→feature resource merge and prefs/task → Chat avatar data flow"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Single dougie_logo vector reused by Chat and launcher"}

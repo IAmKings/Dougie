@@ -13,11 +13,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dougie.core.model.TaskStatus
 import com.dougie.feature.chat.ChatRoute
 import com.dougie.feature.debug.DebugRoute
 import com.dougie.feature.debug.DebugViewModel
 import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
+import com.dougie.feature.chat.intelligenceMark
 import com.dougie.feature.history.HistoryRoute
 import com.dougie.feature.history.HistoryViewModel
 import com.dougie.feature.memory.MemoryRoute
@@ -40,6 +42,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                 var route by remember { mutableStateOf(AppRoute.Chat) }
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
+                val task by app.taskManager.task.collectAsStateWithLifecycle()
                 when (route) {
                     AppRoute.Chat -> {
                         val viewModel: ChatViewModel = viewModel(
@@ -48,6 +51,15 @@ class MainActivity : ComponentActivity() {
                         ChatRoute(
                             viewModel = viewModel,
                             allowCloud = prefs.allowCloud,
+                            intelligenceMark = intelligenceMark(
+                                allowCloud = prefs.allowCloud,
+                                apiKeyConfigured = prefs.apiKey.isNotBlank(),
+                                // Intent GGUF is not a chat LLM; keep false until a local chat model exists.
+                                localLlmReady = false,
+                                failedLastError = task
+                                    ?.takeIf { it.status == TaskStatus.FAILED }
+                                    ?.lastError,
+                            ),
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },

@@ -19,7 +19,7 @@
 | 能力族 | 必须证明 |
 |---|---|
 | Agent Core | ReAct Loop、StateFlow、超时/取消/重试、Task 持久化与恢复 |
-| LLM | OpenAI-compatible、默认 Cloud Provider、streaming / non-streaming、Tool Calling、Token budget |
+| LLM | OpenAI-compatible、默认 Cloud Provider、streaming / non-streaming、Tool Calling、Token budget（请求体 `max_tokens` 已写；Settings 可配，默认 2048，夹紧 16..8192。§8.3 本地 8K 分词/优先截断 Tool Result 仍非本切片） |
 | Memory | Conversation + FTS5 语义接口（关键词，非向量） |
 | Tools（MVP） | 时间、电量、日历查询/创建、定位、App Intent、剪贴板（仅前台）、屏幕感知（Phase 3） |
 | UI | Chat、Task 状态、Tool 状态、Permission Center、Memory Viewer、Provider Settings、Task History、Error/Retry、Debug |
@@ -56,10 +56,10 @@
 
 ## Cross-child acceptance
 
-- [ ] Phase 0 生死线通过后才允许启动 Phase 1 子任务。
-- [ ] `:core:*` 保持 JVM 纯净（零 `android.*`），`:feature:*` 不直连系统 API。
+- [x] Phase 0 生死线通过后才允许启动 Phase 1 子任务。
+- [x] `:core:*` 保持 JVM 纯净（零 `android.*`），`:feature:*` 不直连系统 API。
 - [x] Play / Sideload 双渠道差异不在 Phase 0 实现；构建 flavors 归后续子任务。
-- [ ] 父任务本身不合并代码；最终集成审查在全部阻塞子任务归档后进行。
+- [x] 父任务本身不合并代码；最终集成审查在全部阻塞子任务归档后进行（工程对照 2026-08-18 第二遍：§16.1 十四 Case 均有代码覆盖；**未**做真机 14/14 签字）。
 
 ## Out of scope（父级，全 MVP 非目标）
 

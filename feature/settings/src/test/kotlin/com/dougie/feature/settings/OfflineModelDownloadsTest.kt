@@ -32,7 +32,7 @@ class OfflineModelDownloadsTest {
             val downloads = OfflineModelDownloads(
                 installer = installer,
                 destRoot = dir,
-                offers = OfficialModelCatalog.standard(),
+                offers = listOf(OfficialModelCatalog.asr()),
                 scope = this,
             )
             downloads.request("asr")
@@ -129,6 +129,74 @@ class OfflineModelDownloadsTest {
             val packDir = File(dir, AsrModelLayout.DIR)
             assertFalse(File(packDir, AsrModelLayout.MODEL_FILE).exists())
             assertFalse(File(packDir, AsrModelLayout.MODEL_FILE + ".part").exists())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun intentDirBusyBlocksTheOtherQuant() = runTest {
+        val started = CompletableDeferred<Unit>()
+        val installer = ModelInstaller { _, dest, progress ->
+            dest.writeBytes(hello)
+            progress(hello.size.toLong(), hello.size.toLong())
+            started.complete(Unit)
+            awaitCancellation()
+        }
+        val dir = Files.createTempDirectory("model-ui").toFile()
+        try {
+            val downloads = OfflineModelDownloads(
+                installer = installer,
+                destRoot = dir,
+                offers = listOf(
+                    OfficialModelCatalog.intentQ4(https),
+                    OfficialModelCatalog.intentQ8(https),
+                ),
+                scope = this,
+            )
+            downloads.request("intent-q4")
+            downloads.confirm()
+            started.await()
+            downloads.request("intent-q8")
+            assertEquals(OfflineModelDownloads.DIR_BUSY, downloads.ui.value.rows[1].error)
+            assertNull(downloads.ui.value.pendingConfirmId)
+            downloads.cancel("intent-q4")
+            advanceUntilIdle()
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun switchingIntentQuantMarksOnlyTheNewOffer() = runTest {
+        val installer = ModelInstaller { _, dest, progress ->
+            dest.writeBytes(hello)
+            progress(hello.size.toLong(), hello.size.toLong())
+        }
+        val dir = Files.createTempDirectory("model-ui").toFile()
+        try {
+            val offers = listOf(
+                OfficialModelCatalog.intentQ4(https),
+                OfficialModelCatalog.intentQ8(https),
+            )
+            val downloads = OfflineModelDownloads(
+                installer = installer,
+                destRoot = dir,
+                offers = offers,
+                scope = this,
+            )
+            downloads.request("intent-q8")
+            downloads.confirm()
+            advanceUntilIdle()
+            assertTrue(downloads.ui.value.rows[1].installed)
+            assertFalse(downloads.ui.value.rows[0].installed)
+            assertTrue(downloads.ui.value.rows[0].willReplace)
+            downloads.request("intent-q4")
+            downloads.confirm()
+            advanceUntilIdle()
+            assertTrue(downloads.ui.value.rows[0].installed)
+            assertFalse(downloads.ui.value.rows[1].installed)
+            assertTrue(downloads.ui.value.rows[1].willReplace)
         } finally {
             dir.deleteRecursively()
         }

@@ -40,3 +40,25 @@ fun whiteSquareOnBlack(
     }
     return ScreenFrame(id = "synthetic", width = size, height = size, gray = gray)
 }
+
+fun stampOnBlack(
+    template: ScreenFrame,
+    canvasWidth: Int,
+    canvasHeight: Int,
+    x: Int,
+    y: Int,
+): ScreenFrame {
+    require(x >= 0 && y >= 0)
+    require(x + template.width <= canvasWidth && y + template.height <= canvasHeight)
+    val gray = ByteArray(canvasWidth * canvasHeight)
+    for (row in 0 until template.height) {
+        System.arraycopy(
+            template.gray,
+            row * template.width,
+            gray,
+            (y + row) * canvasWidth + x,
+            template.width,
+        )
+    }
+    return ScreenFrame(id = "synthetic", width = canvasWidth, height = canvasHeight, gray = gray)
+}

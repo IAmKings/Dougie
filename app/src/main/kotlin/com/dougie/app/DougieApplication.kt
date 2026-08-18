@@ -142,6 +142,7 @@ class DougieApplication : Application() {
                     baseUrl = prefs.baseUrl,
                     apiKey = prefs.apiKey,
                     model = prefs.model,
+                    maxTokens = prefs.maxTokens,
                 )
             },
             toolDescriptors = { tools.values.map { it.descriptor } },
