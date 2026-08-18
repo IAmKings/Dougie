@@ -467,3 +467,24 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 23: MVP 集成审查归档
+
+**Date**: 2026-08-18
+**Task**: MVP 集成审查归档
+**Branch**: `main`
+
+### Summary
+
+§16.1 十四 Case 代码覆盖结论已写入 findings；补厂商预设、max_tokens、记忆来源、ScreenMatch catalog、意图 Q4/Q8 二选一后提交并归档审查任务。未做真机 14/14 签字。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `54e10c2` | (see git log) |
+
+### Status
+
+[OK] **Completed**
