@@ -37,6 +37,7 @@ class MemoryGate(
     companion object {
         private const val MAX_FACT_CHARS = 200
         private val FACT_MARKERS = listOf("我叫", "我是", "我住", "我喜欢")
+        private val QUESTION_MARKERS = listOf("哪里", "哪儿", "什么", "吗", "呢")
         private val DECLINE_MARKERS = listOf("不要记住", "别记住", "don't remember", "do not remember")
 
         fun looksSensitive(text: String): Boolean {
@@ -51,7 +52,14 @@ class MemoryGate(
         }
 
         internal fun looksLikeDurableFact(text: String): Boolean {
+            if (looksLikeQuestion(text)) return false
             return FACT_MARKERS.any { text.contains(it) }
+        }
+
+        internal fun looksLikeQuestion(text: String): Boolean {
+            val trimmed = text.trim()
+            if (trimmed.contains('？') || trimmed.contains('?')) return true
+            return QUESTION_MARKERS.any { trimmed.contains(it) }
         }
 
         private fun userDeclinedMemory(text: String): Boolean {

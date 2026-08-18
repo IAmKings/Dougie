@@ -79,6 +79,9 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   AndroidCalendarPort.kt
   AndroidClipboardPort.kt
   AndroidAppIntentPort.kt
+  AndroidScreenCapturePort.kt
+  ScreenCaptureService.kt
+  ScreenCaptureConsentStore.kt
   AndroidSpeechPort.kt
   AudioRecordSpeechRecorder.kt
   SherpaJni.kt
@@ -112,7 +115,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech ports, `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS |
+| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -157,6 +160,20 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: Adding `com.android.library` to runtime/llm/tool/model breaks the JVM-pure red line and `:cli` reuse.
 
 **Instead**: Put `BatteryManager` in `:tool:system` and inject `AgentTool` into `LoopEngine`. Store API keys in `:data:preferences` via EncryptedSharedPreferences (MasterKey), not plaintext XML prefs.
+
+## Don't: Persist retrieval questions as facts
+
+**Problem**: `MemoryGate` markers include `我住`. User input `我住在哪里` is a question, not a durable fact, but `contains("我住")` still stored it.
+
+**Instead**: `looksLikeDurableFact` returns false when the text looks like a question (`？`/`?`, or `哪里`/`哪儿`/`什么`/`吗`/`呢`). Keep storing `我叫小明，我住上海`.
+
+## Don't: stopForeground MediaProjection from a worker thread
+
+**Problem**: After `screen_capture` returned `capture_id`/`width`/`height`, ColorOS (PJZ110 / API 36) killed the process. `ScreenCaptureService` ran `stopForeground`/`stopSelf` and `MediaProjection.stop()` on a background thread.
+
+**Instead**: `startForeground` with `FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION` on the service thread before `getMediaProjection`. Release `VirtualDisplay` / `ImageReader` / `projection.stop()` on the capture `HandlerThread`, then `quitSafely` on that same thread. Post `stopForeground(STOP_FOREGROUND_REMOVE)` and `stopSelf()` to the main looper only after that teardown is posted. Cap capture width at 720. Tool JSON still has no pixels.
+
+Consent is one-shot: after `projection.stop()`, `ScreenCaptureConsentStore.clear()`; the next `screen_capture` must re-prompt MediaProjection. Background calls fail with `应用不在前台，无法截取屏幕。` before starting the service. PJZ110 / API 36 verified 2026-08-18: capture 720×1584 + match, deny path, background gate, no process kill.
 
 ## Design Decision: Local screen-match catalog is JVM pixels, not OpenCV
 

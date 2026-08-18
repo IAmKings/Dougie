@@ -24,7 +24,7 @@ When `status == COMPLETED`, the Final `AgentMessage` copies citation labels from
 
 Debug maps `TaskManager.task` to `DebugTaskSnapshot` (`taskId`, `status`, `loopCount`, `lastError`) plus `AuditLog.listRecent` rows — never a second `TaskStatus` store, never `resultJson` / prompt / tool args.
 
-`inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE), including `AWAITING_CONFIRMATION`. `canRetry` is true only when `status == FAILED`. Chat **重试** calls `TaskManager.submit` with the same `input` (new `taskId`). Bottom nav **任务** opens `:feature:history`, which lists `TaskStore.listRecent`.
+`inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE), including `AWAITING_CONFIRMATION`. `canRetry` is true only when `status == FAILED`. Chat **重试** calls `TaskManager.submit` with the same `input` (new `taskId`). Bottom nav **任务** opens `:feature:history`, which lists `TaskStore.listRecent`. `:feature:memory` must `refresh()` whenever `MemoryRoute` is shown (`LaunchedEffect`), not only in `ViewModel.init` — the Activity-scoped ViewModel otherwise keeps an empty list after Chat ingests a fact.
 
 When `status == AWAITING_CONFIRMATION`, map the last `ToolTraceEntry` to `ConfirmCard(toolName, argsJson, riskLevel, toolCallId)` instead of a `ToolCard`. `ChatViewModel.confirm()` / `reject()` call `TaskManager` and must not store a second confirmation flag.
 

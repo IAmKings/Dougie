@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Play vs sideload and tool:system owns MediaProjection, not :core:tool"}
+{"file": "PRD.md", "reason": "§6.7 / Case 11 capture JSON contract and foreground requirement"}
+{"file": ".trellis/tasks/08-18-device-e2e-signoff/findings.md", "reason": "Device crash evidence and JSON-pass / process-die split"}
+{"file": ".trellis/tasks/08-18-device-e2e-signoff/protocol.md", "reason": "Case 11 pass/deny/受阻 criteria for retest"}

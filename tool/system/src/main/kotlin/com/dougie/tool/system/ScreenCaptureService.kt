@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Looper
 import android.graphics.PixelFormat
 import androidx.core.app.NotificationCompat
 import com.dougie.core.tool.ScreenFrame
@@ -40,8 +41,11 @@ class ScreenCaptureService : Service() {
             } catch (e: Exception) {
                 ScreenCaptureBridge.pending?.completeExceptionally(e)
             } finally {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
+                // captureOneFrame awaits HandlerThread release; only then stop FGS on main.
+                Handler(Looper.getMainLooper()).post {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
             }
         }, "dougie-capture-run").start()
         return START_NOT_STICKY
@@ -78,9 +82,12 @@ class ScreenCaptureService : Service() {
         val projection = projectionManager.getMediaProjection(ScreenCaptureConsentStore.resultCode, token)
             ?: error("media projection unavailable")
         val metrics = resources.displayMetrics
-        val width = metrics.widthPixels.coerceAtLeast(1)
-        val height = metrics.heightPixels.coerceAtLeast(1)
-        val dpi = metrics.densityDpi
+        val fullW = metrics.widthPixels.coerceAtLeast(1)
+        val fullH = metrics.heightPixels.coerceAtLeast(1)
+        val scale = if (fullW > MAX_CAPTURE_WIDTH) MAX_CAPTURE_WIDTH.toFloat() / fullW else 1f
+        val width = (fullW * scale).toInt().coerceAtLeast(1)
+        val height = (fullH * scale).toInt().coerceAtLeast(1)
+        val dpi = (metrics.densityDpi * scale).toInt().coerceAtLeast(1)
         val thread = HandlerThread("dougie-screen-capture").apply { start() }
         val handler = Handler(thread.looper)
         var reader: ImageReader? = null
@@ -100,6 +107,7 @@ class ScreenCaptureService : Service() {
                     imageReader.acquireLatestImage()?.use { image ->
                         captured = toGrayFrame(image)
                     }
+                    imageReader.setOnImageAvailableListener(null, null)
                     latch.countDown()
                 },
                 handler,
@@ -117,12 +125,25 @@ class ScreenCaptureService : Service() {
             latch.await(5, TimeUnit.SECONDS)
             return captured ?: error("no frame")
         } finally {
-            display?.release()
-            reader?.close()
-            runCatching { projection.unregisterCallback(callback) }
-            runCatching { projection.stop() }
-            ScreenCaptureConsentStore.clear()
-            thread.quitSafely()
+            val released = CountDownLatch(1)
+            val posted = handler.post {
+                try {
+                    display?.release()
+                    reader?.close()
+                    runCatching { projection.unregisterCallback(callback) }
+                    runCatching { projection.stop() }
+                    ScreenCaptureConsentStore.clear()
+                } finally {
+                    thread.quitSafely()
+                    released.countDown()
+                }
+            }
+            if (!posted) {
+                ScreenCaptureConsentStore.clear()
+                thread.quitSafely()
+                released.countDown()
+            }
+            released.await(8, TimeUnit.SECONDS)
         }
     }
 
@@ -158,5 +179,6 @@ class ScreenCaptureService : Service() {
     companion object {
         private const val CHANNEL_ID = "dougie_screen_capture"
         private const val NOTIFICATION_ID = 47
+        private const val MAX_CAPTURE_WIDTH = 720
     }
 }

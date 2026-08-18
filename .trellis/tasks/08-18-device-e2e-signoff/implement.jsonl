@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "§16.1 fourteen E2E cases and §16.5 recovery boundary are the sign-off oracle"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Play vs sideload isolation, checkChannelLeak, Accessibility only on sideload"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Settings save before egress applies; FAILED retry new taskId; confirm card"}
+{"file": ".trellis/tasks/archive/2026-08/08-17-mvp-integration-review/findings.md", "reason": "Code-coverage map to convert into device verdicts"}

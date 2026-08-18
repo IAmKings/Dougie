@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "Case 11 must not leak pixels; deny must not return capture_id"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Must not log capture pixels"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "FGS teardown is Android layer; JSON contract stays in :core:tool"}
+{"file": ".trellis/tasks/08-18-device-e2e-signoff/protocol.md", "reason": "Retest must follow Case 11 steps including stay-in-foreground"}

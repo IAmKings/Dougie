@@ -1,0 +1,4 @@
+{"file": "PRD.md", "reason": "Each Case pass/fail must match §16.1 observable outcomes, not code-coverage labels"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Case 12 must not credit play APK that ships Accessibility or bundled onnx"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Case 13 requires saved allowCloud; Case 04 confirm mapping; Case 10 来源 on completed Final only"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Device evidence vs unit tests must not be mixed when marking 受阻"}

@@ -106,4 +106,13 @@ class MemoryGateTest {
         assertEquals(GateResult.SkippedNoFact, result)
         assertTrue(store.list().isEmpty())
     }
+
+    @Test
+    fun skipsWhereDoILiveQuestion() = runTest {
+        val store = InMemoryMemoryStore()
+        val gate = MemoryGate(store, enabled = { true })
+        val result = gate.ingest("我住在哪里", assistantText = "上海", sourceTaskId = "t")
+        assertEquals(GateResult.SkippedNoFact, result)
+        assertTrue(store.list().isEmpty())
+    }
 }
