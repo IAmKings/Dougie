@@ -2,10 +2,10 @@
 
 | 项目 | 内容 |
 |---|---|
-| 文档版本 | V2.1.10（整合版，含 `:cli`、屏幕感知、多渠道打包、桌面端规划、离线 ASR、TTS、定标规则、验收补全与本地意图理解追加决策） |
+| 文档版本 | V2.1.11（V2.1.10 整合版 + 决策 #21 修订：意图主路径改为 ONNX 中文编码器） |
 | 来源文档 | `source/Waku-Android_Local-First-Agent_PRD_v2.0.md`（V2.0.0 主干）+ `source/Waku-Android_PRD_V2.0_Feasibility_Review.md`（可行性评审修正）+ `source/prd.md`（V1.0.0，仅作背景） |
 | 整合策略 | V2.0 主干 + 吸收可行性评审全部修正；V1.0 仅作背景与演进记录 |
-| 日期 | 2026-08-14 |
+| 日期 | 2026-08-21 |
 | 状态 | 执行验收基线 |
 | 平台 | Android 10+，首期重点适配 Android 13–16 |
 | 产品形态 | Android 原生 App + Agent Runtime |
@@ -111,7 +111,11 @@
 
 | # | 决策 | 内容 | 落点章节 |
 |---|---|---|---|
-| 21 | 本地意图理解 Tool（Qwen3-0.6B） | 为 Agent 增加手机端中文意图理解能力：**`IntentClassifierTool`** 基于 **Qwen3-0.6B-Instruct**（0.6B，官方支持 100+ 语言含中文，thinking/non-thinking 双模式，agentic 工具调用能力，llama.cpp GGUF Q8_0 ≈ 639MB / Q4_K_M ≈ 420–470MB，Apache-2.0），用于离线意图分类、槽位初提取与任务路由。**SmolLM2-135M/360M 排除**（官方声明以英文为主，不适合中文）；**Qwen2.5-0.5B 降为历史版本**（同量级但推理与工具调用能力全面落后，Q8_0 反而更大 676MB）。模型为独立**可选下载模块**，不计入语音闭环预算（规则 A 不变）；与 ASR（决策 #19）构成离线语音意图闭环。归 Phase 5 Beta"Local LLM"能力族；详见 §6.10 | §3.1、§6.10、§15、§17.1、§18 |
+| 21 | 本地意图理解 Tool（ONNX 中文编码器） | 为 Agent 增加手机端中文意图理解能力：**`IntentClassifierTool`** 对封闭意图标签做 **一次前向分类**，不跑自回归 LLM。**主选**：中文小编码器（MiniRBT 量级）+ 在自建意图集上微调的分类头，导出 ONNX；推理复用 ASR/TTS 已有的 **ONNX Runtime**（`libonnxruntime.so`，CPU / XNNPACK / NNAPI）。输出仍为结构化 JSON（意图 / 槽位 / 路由 / 置信度）。槽位 MVP 用规则抽取；复杂槽位低置信时澄清或 Cloud LLM。**SmolLM2 排除**（英文为主）。**Qwen3-0.6B GGUF + llama.cpp / 其它端侧生成式 LLM** 不作本 Tool 主路径（见 §6.10 历史方案）。独立**可选下载**（约 10–20MB），不计入语音预算（规则 A）；与 ASR 构成离线语音意图闭环。归 Phase 5 Beta；详见 §6.10 | §3.1、§6.10、§15、§17.1、§18 |
+
+### V2.1.11 修订（决策 #21）
+
+V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking/non-thinking、Q8 ≈639MB / Q4 ≈420–470MB）。真机上 llama.cpp Vulkan 无法稳定逐 token 生成，CPU 自回归达不到规则 E 的 P95 ≤ 500ms；该路径与「本 Tool 是路由器、MVP 不做完整端侧 LLM 产品化」冲突。**V2.1.11 起以 ONNX 编码器分类为主路径**（上表）。Qwen3-0.6B GGUF、Qwen2.5-0.5B GGUF、llama.cpp JNI 均降为历史方案，不再作为实现与验收依据。
 
 ### V2.1 追加决策（1 项：关键用户流程 / UI 规范 / 技术方案补全）
 
@@ -797,27 +801,29 @@ SpeechOutputTool(TTS 推理, 本地)
 
 ### 定位
 
-为 Agent 提供**离线中文意图理解**：意图分类、槽位初提取与任务路由。它不是主 LLM 的替代——复杂推理仍由 Cloud LLM（或未来端侧大模型）承担；本地小模型负责**快速、离线、隐私**的意图路由。
+为 Agent 提供**离线中文意图理解**：意图分类、槽位初提取与任务路由。它不是主 LLM 的替代——复杂推理仍由 Cloud LLM（或未来端侧大模型）承担；本地分类器负责**快速、离线、隐私**的意图路由。
 
 ```text
 用户输入(文本 / ASR 转录)
    ↓
-IntentClassifierTool(Qwen2.5-0.5B, 本地 llama.cpp)
+IntentClassifierTool(中文编码器 ONNX, 复用 ONNX Runtime)
    ↓ 输出结构化意图(类别 / 槽位 / 路由建议 / 置信度)
 AgentTask 路由 → 匹配 Tool / 决定是否调用 Cloud LLM
 ```
 
-### 模型选型（决策 #21）
+### 模型选型（决策 #21，V2.1.11）
 
-- **主选**：**Qwen3-0.6B-Instruct**（0.6B 参数；官方支持 **100+ 语言含中文**；**thinking / non-thinking 双模式**（意图分类用 non-thinking 提速，复杂槽位可开 thinking 提准）；**agentic 工具调用能力**（契合 Tool 架构）；llama.cpp GGUF Q8_0 ≈ 639MB、Q4_K_M ≈ 420–470MB；Apache-2.0）。
-- **历史版本**：Qwen2.5-0.5B-Instruct（0.49B）——同量级但推理与工具调用能力全面落后，Q8_0 反而更大（676MB），仅作回退参考。
-- **排除**：SmolLM2-135M / 360M —— 官方 Limitations 明确声明"primarily understand and generate content in English"，不适合中文意图理解。
-- **实现注意**：llama.cpp 需支持 Qwen3 架构的版本；建议按官方最佳实践设采样参数（non-thinking: `temperature 0.7 / top-p 0.8 / presence-penalty 1.5`）防量化模型重复输出。
-- **输出契约**：结构化 JSON（意图类别 / 槽位 / 路由建议 / 置信度），与 Tool Result 契约一致（§6.2）。
+- **主选**：**中文小编码器 + 微调分类头**（MiniRBT 量级骨干，约 10–20MB；在覆盖 10+ 常见意图的自建集上微调至规则 E）。一次前向、softmax 得 `intent` 与 `confidence`；`route` 由标签表映射，不采样、不生成 token。
+- **运行时**：ONNX；与 ASR/TTS **共用**已有 `libonnxruntime.so`（CPU / XNNPACK / NNAPI）。禁止再链一份 ORT 或为意图单独引入 llama.cpp / LiteRT-LM / ExecuTorch / MLC。
+- **槽位**：MVP 用规则抽取（应用名、时间短语等）；编码器不负责自由 JSON。复杂槽位在置信度低于阈值时向用户澄清或回退 Cloud LLM（与规则 E 一致）。
+- **包布局**（catalog / 外部目录 / `filesDir` 缓存同名）：`models/intent/` 下为分类包（至少 `model.onnx` + tokenizer + `labels.txt`；具体文件名由官方 catalog 哈希锁定）。**不再**使用 `model.gguf`，**不再**提供意图 Q4/Q8 互斥量化行。
+- **排除**：SmolLM2-135M / 360M（官方 Limitations 声明以英文为主）。
+- **历史方案（不作实现依据）**：Qwen3-0.6B-Instruct GGUF + llama.cpp JNI（含 Vulkan/CPU 回退与 thinking 预填）；Qwen2.5-0.5B GGUF。端侧生成式小 LLM（含 LiteRT-LM Qwen3-0.6B、高通 GenieX）可用于日后「完整端侧 LLM」探索，**不是**本 Tool 的验收路径。
+- **输出契约**：Tool Result 仍为结构化 JSON（意图类别 / 槽位 / 路由建议 / 置信度），与 §6.2 一致；由引擎把分类结果填进该契约，而不是让模型自由生成 JSON。
 
 ### 预算与部署（独立于语音预算）
 
-- **包体隔离**：意图模型是独立**可选下载模块**，**不计入语音闭环预算**（规则 A 的 ≤400MB 不变）；sideload 包可内置或按需下载，play 包一律按需下载。
+- **包体隔离**：意图分类包是独立**可选下载模块**（约 10–20MB），**不计入语音闭环预算**（规则 A 的 ≤400MB 不变）；sideload 包可内置或按需下载，play 包一律按需下载。
 - **部署**：模型文件走 HTTPS + 哈希校验（同 §6.8）；仅本地推理，输入文本与意图结果不出设备（对齐 §9.1 Sensitive 分类）。
 - **定标（规则 E）**：中文意图分类准确率 ≥ 90%（自建意图测试集，覆盖 10+ 常见意图类别）；目标机型单次意图推理 P95 ≤ 500ms；置信度低于阈值时回退到 Cloud LLM 或向用户澄清，不得静默猜测。
 
@@ -1503,7 +1509,7 @@ error_code
 - Accessibility（含 FGA 式屏幕点击/滑动自动化 `TapSwipeTool`，侧载变体，§6.7/§10.2）
 - 离线中文 ASR（语音输入，sherpa-onnx，Paraformer-zh 主选 / SenseVoiceSmall 备选，§6.8）
 - 离线 TTS（语音输出，sherpa-onnx VITS 系为主 / 系统 TTS 降级，§6.9）
-- 本地意图理解（`IntentClassifierTool`，Qwen2.5-0.5B，离线意图路由，§6.10）
+- 本地意图理解（`IntentClassifierTool`，ONNX 中文编码器，离线意图路由，§6.10）
 - Local LLM
 - Notification
 - Quick Settings
@@ -1697,11 +1703,11 @@ Process Death Recovery 的边界明确为：
 | Serialization | Kotlinx Serialization |
 | Background | WorkManager |
 | Secure Storage | Android Keystore |
-| Local LLM | llama.cpp / ONNX Runtime（Beta） |
+| Local LLM | 完整端侧对话 LLM 仍为 Beta 后置（不在本 Tool）；可选栈另议 |
 | 屏幕感知 | MediaProjection + OpenCV 模板匹配（MVP，Phase 3 验证包体积，见 §6.7） |
 | 离线 ASR | sherpa-onnx + Paraformer-zh int8（主选）/ SenseVoiceSmall int8（备选），Beta，见 §6.8 |
 | 离线 TTS | sherpa-onnx VITS 系（`vits-zh-hf-fanchen-C` 主选）/ Kokoro（备选）；Android 原生 TTS 仅降级，Beta，见 §6.9 |
-| 本地意图理解 | Qwen3-0.6B-Instruct GGUF（llama.cpp，Q8_0 ≈639MB / Q4_K_M ≈420–470MB），Beta，独立可选下载，见 §6.10 |
+| 本地意图理解 | 中文编码器 ONNX + 分类头（MiniRBT 量级，复用 ONNX Runtime），Beta，独立可选下载约 10–20MB，见 §6.10 |
 | Testing | JUnit + AndroidX Test |
 | CLI（开发工具） | mosaic + kotlinx-cli（JVM-only，不进 APK，见 §17.3） |
 
@@ -2021,7 +2027,7 @@ sequenceDiagram
 | TTS 模型体积（Kokoro 310MB）与选型 | 中 | VITS 系主选（~116MB）；Kokoro 需评估移动端 RTF 后再启用（§6.9） |
 | 系统 TTS 跨设备不一致 | 低 | 仅作降级回退；主方案用 sherpa-onnx 离线模型保证一致性（§6.9） |
 | 意图误判导致错误路由 | 中 | 置信度阈值回退 Cloud LLM + 向用户澄清，规则 E（§6.10） |
-| 意图模型体积（≈470MB） | 中 | 独立可选下载模块，不计入语音预算；play 按需下载（§6.10） |
+| 意图模型体积 | 低 | 编码器包约 10–20MB，独立可选下载，不计入语音预算（§6.10） |
 
 ---
 
@@ -2048,7 +2054,7 @@ sequenceDiagram
 - 桌面端长期规划（决策 #18）：优先级后置于 Android 端与 `:cli` 稳定发布之后；复用 `:core:*` JVM 纯净架构，平台层届时新增（§15、§17.2）。
 - 离线中文 ASR（决策 #19）：Paraformer-zh int8 主选 / SenseVoiceSmall 备选；play 包不内置模型按需下载，sideload 包内置模型（§6.8）。
 - 离线 TTS（决策 #20）：sherpa-onnx VITS 系主选（`vits-zh-hf-fanchen-C`）/ Kokoro 备选；系统原生 TTS 仅降级回退；与 ASR 构成离线语音闭环（§6.9）。遗留待定项已规则化（§6.9 末节）：包体预算 ≤ 400MB（规则 A）、Kokoro 实机 RTF ≤ 1.0 门槛（规则 B）、系统 TTS 降级边界（规则 C）。
-- 本地意图理解（决策 #21）：`IntentClassifierTool` 基于 Qwen3-0.6B-Instruct（离线意图路由，thinking/non-thinking 双模式，规则 E）；SmolLM2 排除、Qwen2.5-0.5B 降为历史版本；独立可选下载模块，不计入语音预算（§6.10）。
+- 本地意图理解（决策 #21，V2.1.11）：`IntentClassifierTool` 主路径为中文编码器 ONNX + 微调分类头，复用 ONNX Runtime；规则 E（准确率 ≥ 90%、P95 ≤ 500ms）仍有效；SmolLM2 排除；Qwen3-0.6B / llama.cpp GGUF 降为历史方案；独立可选下载，不计入语音预算（§6.10）。
 - 关键用户流程 / UI 规范 / 技术方案补全（决策 #22）：§4.4 六个端到端流程（UF-01–UF-06，Mermaid 图，映射 Case）、§11.4–§11.8 Material Design 3 完整设计规范、§20 接口契约级技术方案（5 接口契约 + 模块依赖图 + 错误映射 + 数据流）；配套 Case 13/14（E2E 共 14 个）与 2 项 DoD。
 
 ## 19.3 最终产品判断

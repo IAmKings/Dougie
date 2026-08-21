@@ -1,9 +1,14 @@
 package com.dougie.app
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
@@ -72,13 +77,42 @@ class MainActivity : ComponentActivity() {
                                 app.preferenceStore,
                                 app.modelInstaller,
                                 app.filesDir,
+                                app.cacheDir,
                                 AppOfflineModels.offers,
+                                probe = AppOfflineModelProbe.create(app),
+                                tree = ExternalModelTreeImpl(
+                                    app,
+                                    uriProvider = { app.preferenceStore.settings.value.modelTreeUri },
+                                ),
                             ),
                         )
+                        val treePicker = rememberLauncherForActivityResult(
+                            PersistableOpenDocumentTree(),
+                        ) { uri ->
+                            if (uri == null) return@rememberLauncherForActivityResult
+                            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            try {
+                                val previous = app.preferenceStore.settings.value.modelTreeUri
+                                contentResolver.takePersistableUriPermission(uri, flags)
+                                if (previous.isNotBlank() && previous != uri.toString()) {
+                                    runCatching {
+                                        contentResolver.releasePersistableUriPermission(
+                                            Uri.parse(previous),
+                                            flags,
+                                        )
+                                    }
+                                }
+                                viewModel.setModelTreeUri(uri.toString())
+                            } catch (_: SecurityException) {
+                                // Persistable grant missing; scan will ask the user to pick again.
+                            }
+                        }
                         SettingsRoute(
                             viewModel = viewModel,
                             onBack = { route = AppRoute.Chat },
                             onOpenDebug = { route = AppRoute.Debug },
+                            onPickModelTree = { treePicker.launch(null) },
                         )
                     }
                     AppRoute.Debug -> {
@@ -137,5 +171,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+private class PersistableOpenDocumentTree : ActivityResultContracts.OpenDocumentTree() {
+    override fun createIntent(context: Context, input: Uri?): Intent {
+        return super.createIntent(context, input).addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+        )
     }
 }

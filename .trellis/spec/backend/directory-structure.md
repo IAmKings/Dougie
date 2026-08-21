@@ -57,8 +57,10 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   IntentPort.kt
   IntentClassifierTool.kt
   IntentJsonParser.kt
-  LlamaIntentEngine.kt
+  OnnxIntentEngine.kt
   ModelInstaller.kt
+  ModelTreeNames.kt
+  ModelImporter.kt
   OfficialModelCatalog.kt
   BundledModelSeed.kt
   CharacterErrorRate.kt
@@ -87,11 +89,12 @@ tool/system/src/main/kotlin/com/dougie/tool/system/
   SherpaJni.kt
   AndroidSystemTtsEngine.kt
   AndroidIntentPort.kt
-  LlamaJni.kt
+  IntentOrtJni.kt
   OkHttpModelGet.kt
   (trimmed) com/k2fsa/sherpa/onnx/Tts.kt
 tool/system/src/main/cpp/
-  llama_jni.cpp
+  intent_ort_jni.cpp
+  include/onnxruntime_c_api.h
   CMakeLists.txt
 tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   DougieAccessibilityService.kt
@@ -112,10 +115,10 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 |--------|------|----------------|
 | `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `CloudLlmConfig`, `LlmVendors` | I/O, Android, HTTP |
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `OpenAICompatibleProvider` SSE (OkHttp) | Tool execution, UI, policy bypass |
-| `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets |
+| `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) + `ModelInstaller` / `ModelImporter` (not AgentTools) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets, SAF / `ContentResolver` |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
-| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS |
+| `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -191,7 +194,7 @@ Consent is one-shot: after `projection.stop()`, `ScreenCaptureConsentStore.clear
 
 **Problem**: System `SpeechRecognizer` / online engines can egress audio. Checking in Paraformer int8 (~230MB) blows git and Play APK size.
 
-**Instead**: `SpeechInputTool` in `:core:tool` talks to `SpeechPort`. `SpeechSession` records only after gates pass, then `SherpaSpeechEngine.transcribe`. `AndroidSpeechPort` uses `filesDir/models/asr/{model.int8.onnx,tokens.txt}` and `SherpaJni.isAvailable()` (`System.loadLibrary("sherpa-onnx-jni")`). Do not class-load `OfflineRecognizer` until the library loads. Models and `jniLibs` stay out of git. Sideload may ship ASR/TTS under gitignored `app/src/sideload/assets/models/{asr,tts}/`; `BundledModelSeed` copies to `filesDir` when layout is missing. Play sourceSets must not include those assets. `checkChannelLeak` fails if the play Debug APK zip contains `models/asr`, `models/tts`, or `*.onnx`. Intent GGUF is never bundled. Trimmed JNI bindings are Apache-2.0 from sherpa-onnx v1.13.4.
+**Instead**: `SpeechInputTool` in `:core:tool` talks to `SpeechPort`. `SpeechSession` records only after gates pass, then `SherpaSpeechEngine.transcribe`. `AndroidSpeechPort` uses `filesDir/models/asr/{model.int8.onnx,tokens.txt}` and `SherpaJni.isAvailable()` (`System.loadLibrary("onnxruntime")` if present, then `sherpa-onnx-jni`). Do not class-load `OfflineRecognizer` until the library loads. Models stay out of git. `:tool:system` `fetchSherpaJni` downloads the v1.13.4 Android static-link tarball into `build/sherpa-jni/jniLibs/arm64-v8a/` (not committed). Sideload may ship ASR/TTS under gitignored `app/src/sideload/assets/models/{asr,tts}/`; `BundledModelSeed` copies to `filesDir` when layout is missing. Play sourceSets must not include those assets. `checkChannelLeak` fails if the play Debug APK zip contains `models/asr`, `models/tts`, or `*.onnx`. Intent ONNX is never bundled in the Play APK. Trimmed JNI bindings are Apache-2.0 from sherpa-onnx v1.13.4. `SherpaJni` keeps the recognizer/TTS session and tries `nnapi` then `xnnpack` then `cpu` (2–4 threads). Do not force `provider="cpu"` / `numThreads=1`.
 
 ## Don't: Online TTS or commit VITS ONNX
 
@@ -201,22 +204,22 @@ Consent is one-shot: after `projection.stop()`, `ScreenCaptureConsentStore.clear
 
 ## Don't: Commit GGUF or silent-cloud intent
 
-**Problem**: Qwen3-0.6B GGUF is 420–639MB. Falling back to the cloud LLM hides that the local classifier is missing.
+**Problem**: Qwen3-0.6B GGUF is 420–639MB and misses P95. Falling back to the cloud LLM hides that the local classifier is missing.
 
-**Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/model.gguf` missing or engine not ready → fail with Chinese errors. `LlamaIntentEngine.isReady` needs GGUF + `LlamaJni.isAvailable()` (`System.loadLibrary("llama")`). Parse the first JSON object from complete text. `confidence < 0.5` → `INTENT_LOW_CONFIDENCE`. Do not call `EgressGateway` from this tool. `*.gguf`, `third_party/llama.cpp/`, and `jniLibs` stay out of git. `:tool:system` CMake runs only if `third_party/llama.cpp/CMakeLists.txt` exists; JNI is `nativeComplete` (CPU, temp 0.7 / top-p 0.8 / presence 1.5). Native code must not log the prompt.
+**Instead**: `IntentClassifierTool` talks to `IntentPort`. `filesDir/models/intent/{model.onnx,tokenizer.json,labels.txt}` missing or engine not ready → fail with Chinese errors (`INTENT_MODEL_MISSING` / `INTENT_ENGINE_NOT_READY`). `OnnxIntentEngine.isReady` needs all three layout files plus injected native (`IntentOrtJni` loads `onnxruntime` then `dougie_intent`). JVM featurize is a char n-gram FNV-1a hash bag from `tokenizer.json`; `infer` returns logits; softmax + argmax vs `labels.txt`. Blank/failed infer is `INTENT_FAILED`. Low confidence still returns a hit (tool maps to `INTENT_LOW_CONFIDENCE`). Do not call `EgressGateway` from this tool. `*.gguf` and `third_party/llama.cpp/` stay out of git. `:tool:system` reuses sherpa `libonnxruntime.so` (no second ORT AAR, no llama.cpp). Tiny ONNX testdata may live under `core/tool/src/test/resources/intent-pack/`. Intent ONNX is never in the Play APK. Never log classifier text or features.
 
 
 ## Don't: Commit full ASR eval dumps
 
 **Problem**: Rule D wants ≥500 wav clips and CER ≤ 5%. Checking in audio, ONNX, or GGUF blows git and CI.
 
-**Instead**: JVM `CharacterErrorRate` + `IntentEval` run on tiny text gold under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`) is gitignored; `FullEvalSet.isPresent()` skips when missing. Do not call sherpa/llama from this path. Fixture `passed` is not a claim that the 500-clip set is done.
+**Instead**: JVM `CharacterErrorRate` + `IntentEval` run on tiny text gold under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`) is gitignored; `FullEvalSet.isPresent()` skips when missing. Do not call sherpa or ORT from this path. Fixture `passed` is not a claim that the 500-clip set is done.
 
 ## Don't: AgentTool with attacker-controlled download URL
 
 **Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
 
-**Instead**: `ModelInstaller` is app-owned. Require `userConfirmed`, `https://` only, SHA-256 match, write `.part` then rename. Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); delete `.part` on cancel. `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. Not registered on `LoopEngine`. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / Unsloth Qwen3-0.6B-Q4_K_M / official Qwen3-0.6B-Q8_0). Both intent quants install to `filesDir/models/intent/model.gguf`; `quant.id` records which is present. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.*` overrides Q8 only). Invalid override URL/SHA → offer not configured; UI must not fetch.
+**Instead**: `ModelInstaller` is app-owned HTTPS download into a cache dir. `ModelImporter` copies hashed sources into `filesDir` (JNI cache). Neither talks to SAF / `DocumentFile`. Both require SHA-256 to match `OfficialModelCatalog` specs (`SHA256.matches` + file hash), safe names / `relativeDir` / canonical, write `.part` then rename, delete `.part` on failure. Importer matches sources to specs by lowercase content hash (one source may fill multiple specs that share a hash; extra unmatched hashes or missing specs fail). `:app` `ExternalModelTreeImpl` streams tree files to temps for scan, and streams cache layout files onto a **reused** `{tree}/models/{asr,tts,intent}` after a confirmed download (`ModelTreeNames` treats SAF uniquified `models (1)` / `models(2)` as the same folder; never `createDirectory` when a match exists; `listFiles` not `findFile`). No tree / lost persistable permission → UI must not fetch. Not registered on `LoopEngine`. Intent pack is `model.onnx` + `tokenizer.json` + `labels.txt` (historical `model.gguf` must not mark installed). Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / optional intent ONNX). Intent HTTPS may be blank; a selected tree with matching hashes may still sync. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.*` overrides the intent ONNX source only). Invalid override URL/SHA → offer not configured; UI must not fetch.
 
 ## Scenario: speech_output TTS contract
 
@@ -226,6 +229,7 @@ Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort` + `SherpaT
 ### 2. Signatures
 - `TtsEngine.isReady(): Boolean` / `suspend fun speak(text: String): TtsOutcome`
 - `SherpaTtsEngine(modelDir, nativeAvailable, speakNative)`
+- `SherpaJni.generatePcm(modelDir, text)` — PCM only, no `AudioTrack`; `speak` still plays
 - `TtsModelLayout.isPresent`: `model.onnx` + `tokens.txt` + `lexicon.txt` non-empty
 - `PreferOfflineTtsPort.speak(text): TtsSpeakResult` (`ok`, `backend` `offline`|`system`, optional `error`)
 - `SpeechOutputTool` name `speech_output`, `RiskLevel.L0`, required `text`

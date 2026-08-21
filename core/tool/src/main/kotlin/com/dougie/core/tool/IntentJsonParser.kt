@@ -9,20 +9,16 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-object IntentPrompt {
-    fun render(userText: String): String =
-        "Output JSON only with keys intent, slots, route, confidence. Thinking off.\nUser: $userText"
-}
-
 object IntentJsonParser {
     fun parse(raw: String): IntentHit {
+        val text = stripThink(raw).replace("```json", "").replace("```", "")
         var searchFrom = 0
-        while (searchFrom < raw.length) {
-            val blob = extractObject(raw, searchFrom) ?: throw AgentException(UserFacingErrors.INTENT_FAILED)
+        while (searchFrom < text.length) {
+            val blob = extractObject(text, searchFrom) ?: throw AgentException(UserFacingErrors.INTENT_FAILED)
             val obj = try {
                 Json.parseToJsonElement(blob).jsonObject
             } catch (_: Exception) {
-                searchFrom = raw.indexOf('{', searchFrom) + 1
+                searchFrom = text.indexOf('{', searchFrom) + 1
                 continue
             }
             return decode(obj)
@@ -33,21 +29,43 @@ object IntentJsonParser {
     private fun decode(obj: JsonObject): IntentHit {
         return try {
             val intent = obj["intent"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-            val route = obj["route"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
-            val confidence = obj["confidence"]?.jsonPrimitive?.doubleOrNull ?: 0.0
-            if (intent.isEmpty() || route.isEmpty()) {
+            if (intent.isEmpty()) {
                 throw AgentException(UserFacingErrors.INTENT_FAILED)
             }
-            val slots = obj["slots"]?.jsonObject?.mapNotNull { (key, value) ->
-                val text = value.jsonPrimitive.contentOrNull ?: return@mapNotNull null
-                key to text
-            }?.toMap().orEmpty()
+            val route = obj["route"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty().ifEmpty { intent }
+            val confidence = obj["confidence"]?.jsonPrimitive?.doubleOrNull
+                ?: obj["confidence"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()
+                ?: 0.0
+            val slotsEl = obj["slots"]
+            val slots = if (slotsEl is JsonObject) {
+                slotsEl.mapNotNull { (key, value) ->
+                    val text = value.jsonPrimitive.contentOrNull ?: return@mapNotNull null
+                    key to text
+                }.toMap()
+            } else {
+                emptyMap()
+            }
             IntentHit(intent = intent, slots = slots, route = route, confidence = confidence)
         } catch (e: AgentException) {
             throw e
         } catch (_: Exception) {
             throw AgentException(UserFacingErrors.INTENT_FAILED)
         }
+    }
+
+    private fun stripThink(raw: String): String {
+        var text = raw
+        while (true) {
+            val start = text.indexOf("<think>")
+            if (start < 0) break
+            val end = text.indexOf("</think>", start)
+            text = if (end < 0) {
+                text.removeRange(start, text.length)
+            } else {
+                text.removeRange(start, end + "</think>".length)
+            }
+        }
+        return text
     }
 
     private fun extractObject(raw: String, from: Int): String? {

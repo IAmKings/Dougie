@@ -37,6 +37,14 @@ object UserFacingErrors {
     const val MODEL_DOWNLOAD_DENIED = "未确认下载，已跳过获取离线模型。"
     const val MODEL_HASH_MISMATCH = "离线模型校验失败，已删除不完整文件。"
     const val MODEL_DOWNLOAD_FAILED = "离线模型下载失败，请检查网络后重试。"
+    const val MODEL_IMPORT_FAILED = "离线模型导入失败，请选择与官方清单一致的全部文件。"
+    const val MODEL_TREE_MISSING = "请选择模型目录"
+    const val MODEL_TREE_RESELECT = "请再次选择模型目录"
+    const val MODEL_TREE_WRITE_FAILED = "无法写入模型目录，请重新选择有写入权限的文件夹。"
+    const val MODEL_PROBE_ASR_OK = "语音识别测试通过。"
+    const val MODEL_PROBE_TTS_OK = "语音合成测试通过。"
+    const val MODEL_PROBE_INTENT_OK = "意图分类测试通过。"
+    const val MODEL_PROBE_TIMEOUT = "离线模型测试超时，请稍后重试。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

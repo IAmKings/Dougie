@@ -63,6 +63,7 @@ fun SettingsRoute(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenDebug: () -> Unit,
+    onPickModelTree: () -> Unit,
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val models by viewModel.models.collectAsStateWithLifecycle()
@@ -77,10 +78,13 @@ fun SettingsRoute(
         onModelChange = viewModel::setModel,
         onMaxTokensChange = viewModel::setMaxTokensText,
         onSave = viewModel::save,
+        onPickModelTree = onPickModelTree,
+        onScanModels = viewModel::scanModels,
         onRequestModel = viewModel::requestModel,
         onConfirmModel = viewModel::confirmModel,
         onDismissModelConfirm = viewModel::dismissModelConfirm,
         onCancelModel = viewModel::cancelModel,
+        onProbeModel = viewModel::probeModel,
         onOpenDebug = onOpenDebug,
     )
 }
@@ -97,10 +101,13 @@ fun SettingsScreen(
     onModelChange: (String) -> Unit,
     onMaxTokensChange: (String) -> Unit,
     onSave: () -> Unit,
+    onPickModelTree: () -> Unit,
+    onScanModels: () -> Unit,
     onRequestModel: (String) -> Unit,
     onConfirmModel: () -> Unit,
     onDismissModelConfirm: () -> Unit,
     onCancelModel: (String) -> Unit,
+    onProbeModel: (String) -> Unit,
     onOpenDebug: () -> Unit,
 ) {
     Column(
@@ -246,8 +253,11 @@ fun SettingsScreen(
             }
             OfflineModelsSection(
                 models = models,
+                onPickModelTree = onPickModelTree,
+                onScanModels = onScanModels,
                 onRequestModel = onRequestModel,
                 onCancelModel = onCancelModel,
+                onProbeModel = onProbeModel,
             )
             Column(
                 modifier = Modifier
@@ -298,7 +308,7 @@ fun SettingsScreen(
             text = {
                 val overwrite = if (pending.willReplace) "将覆盖当前已安装的意图模型。" else ""
                 Text(
-                    "将下载 ${pending.sizeLabel} 到 Dougie 应用私有目录，会占用存储并消耗流量。$overwrite 确认后才开始下载。",
+                    "将下载 ${pending.sizeLabel} 到所选模型目录，并同步到本机缓存供离线引擎使用。$overwrite 确认后才开始下载。",
                 )
             },
             confirmButton = {
@@ -314,8 +324,11 @@ fun SettingsScreen(
 @Composable
 private fun OfflineModelsSection(
     models: OfflineModelsUi,
+    onPickModelTree: () -> Unit,
+    onScanModels: () -> Unit,
     onRequestModel: (String) -> Unit,
     onCancelModel: (String) -> Unit,
+    onProbeModel: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -332,15 +345,49 @@ private fun OfflineModelsSection(
             fontWeight = FontWeight.Medium,
         )
         Text(
-            text = "语音识别、语音合成按需下载。意图理解请选 Q4 或 Q8（共用一份本地文件，换量化会覆盖）。Dougie 不会把模型当作 Agent 工具由云端触发。",
+            text = "选择一个可写入的模型目录。点刷新才会扫描目录并按官方哈希识别已安装文件；缺的那一行可下载到该目录。Play 与侧载选同一个文件夹即可共享。Dougie 不会把模型当作 Agent 工具由云端触发。",
             color = DougieColors.OnSurfaceVariant,
             fontSize = 14.sp,
         )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "模型目录",
+                    color = DougieColors.OnSurface,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    text = when {
+                        models.treeNeedsReselect -> OfflineModelDownloads.TREE_RESELECT
+                        models.treeReady -> models.treeLabel
+                        else -> "未选择"
+                    },
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 14.sp,
+                )
+            }
+            TextButton(onClick = onPickModelTree) { Text("选择") }
+            TextButton(
+                onClick = onScanModels,
+                enabled = models.treeReady && !models.scanning,
+            ) { Text("刷新") }
+        }
+        if (models.scanning) {
+            Text(text = "正在识别模型目录…", color = DougieColors.OnSurfaceVariant, fontSize = 12.sp)
+        }
         models.rows.forEach { row ->
             OfflineModelRow(
                 row = row,
+                treeReady = models.treeReady,
+                anyProbing = models.rows.any { it.probing },
                 onRequest = { onRequestModel(row.id) },
                 onCancel = { onCancelModel(row.id) },
+                onProbe = { onProbeModel(row.id) },
             )
         }
     }
@@ -349,14 +396,18 @@ private fun OfflineModelsSection(
 @Composable
 private fun OfflineModelRow(
     row: OfflineModelRowUi,
+    treeReady: Boolean,
+    anyProbing: Boolean,
     onRequest: () -> Unit,
     onCancel: () -> Unit,
+    onProbe: () -> Unit,
 ) {
+    val busy = row.downloading || row.probing || anyProbing
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -371,13 +422,32 @@ private fun OfflineModelRow(
                     fontSize = 14.sp,
                 )
             }
-            when {
-                row.installed -> Text("已安装", color = DougieColors.TertiaryContainer, fontSize = 14.sp)
-                row.downloading -> TextButton(onClick = onCancel) { Text("取消") }
-                else -> TextButton(onClick = onRequest, enabled = row.configured) { Text("下载") }
+            if (row.installed) {
+                Text("已安装", color = DougieColors.TertiaryContainer, fontSize = 14.sp)
             }
         }
-        if (!row.configured && !row.installed) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (row.installed) {
+                TextButton(
+                    onClick = onProbe,
+                    enabled = !busy && row.probeOk != true,
+                ) { Text("测试") }
+            }
+            when {
+                row.downloading || row.probing -> TextButton(onClick = onCancel) { Text("取消") }
+                !row.installed -> TextButton(
+                    onClick = onRequest,
+                    enabled = row.configured && treeReady && !busy,
+                ) {
+                    Text("下载")
+                }
+            }
+        }
+        if (!row.configured && !row.installed && treeReady) {
             Text(
                 text = OfflineModelDownloads.UNCONFIGURED,
                 color = DougieColors.OnSurfaceVariant,
@@ -400,8 +470,18 @@ private fun OfflineModelRow(
                 fontSize = 12.sp,
             )
         }
-        if (row.error != null && row.configured) {
+        if (row.probing) {
+            Text(text = "测试中…", color = DougieColors.OnSurfaceVariant, fontSize = 12.sp)
+        }
+        if (row.error != null) {
             Text(text = row.error, color = DougieColors.Error, fontSize = 12.sp)
+        }
+        if (row.probeMessage != null) {
+            Text(
+                text = row.probeMessage,
+                color = if (row.probeOk == true) DougieColors.TertiaryContainer else DougieColors.Error,
+                fontSize = 12.sp,
+            )
         }
     }
 }

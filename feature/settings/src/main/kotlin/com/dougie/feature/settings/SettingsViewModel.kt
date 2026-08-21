@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.tool.ModelImporter
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.OfflineModelOffer
 import com.dougie.data.preferences.PreferenceStore
@@ -28,9 +29,24 @@ class SettingsViewModel(
     private val store: PreferenceStore,
     installer: ModelInstaller,
     destRoot: File,
+    cacheRoot: File,
     offers: List<OfflineModelOffer>,
+    importer: ModelImporter = ModelImporter(),
+    probe: OfflineModelProbe = OfflineModelProbe {
+        ProbeResult(ok = false, message = "离线模型测试尚未接入。")
+    },
+    tree: ExternalModelTree = NoExternalModelTree,
 ) : ViewModel() {
-    private val downloads = OfflineModelDownloads(installer, destRoot, offers, viewModelScope)
+    private val downloads = OfflineModelDownloads(
+        installer = installer,
+        destRoot = destRoot,
+        cacheRoot = cacheRoot,
+        offers = offers,
+        scope = viewModelScope,
+        importer = importer,
+        probe = probe,
+        tree = tree,
+    )
     private val _form = MutableStateFlow(store.settings.value.toForm())
     val form: StateFlow<SettingsFormState> = _form.asStateFlow()
     val models: StateFlow<OfflineModelsUi> = downloads.ui
@@ -41,7 +57,16 @@ class SettingsViewModel(
 
     fun dismissModelConfirm() = downloads.dismissConfirm()
 
+    fun probeModel(id: String) = downloads.probe(id)
+
     fun cancelModel(id: String) = downloads.cancel(id)
+
+    fun scanModels() = downloads.scan()
+
+    fun setModelTreeUri(uri: String) {
+        store.setModelTreeUri(uri)
+        downloads.scan()
+    }
 
     fun setAllowCloud(value: Boolean) {
         _form.update { it.copy(allowCloud = value, saved = false) }
@@ -104,6 +129,7 @@ class SettingsViewModel(
                 maxTokens = LlmVendors.parseMaxTokens(current.maxTokensText),
                 egressConsentAt = store.settings.value.egressConsentAt,
                 memoryEnabled = store.settings.value.memoryEnabled,
+                modelTreeUri = store.settings.value.modelTreeUri,
             ),
         )
         _form.update { store.settings.value.toForm().copy(saved = true) }
@@ -113,11 +139,24 @@ class SettingsViewModel(
         private val store: PreferenceStore,
         private val installer: ModelInstaller,
         private val destRoot: File,
+        private val cacheRoot: File,
         private val offers: List<OfflineModelOffer>,
+        private val importer: ModelImporter = ModelImporter(),
+        private val probe: OfflineModelProbe,
+        private val tree: ExternalModelTree,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SettingsViewModel(store, installer, destRoot, offers) as T
+            return SettingsViewModel(
+                store,
+                installer,
+                destRoot,
+                cacheRoot,
+                offers,
+                importer,
+                probe,
+                tree,
+            ) as T
         }
     }
 }

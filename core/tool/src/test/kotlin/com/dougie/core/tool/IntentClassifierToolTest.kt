@@ -68,11 +68,14 @@ class IntentClassifierToolTest {
     }
 
     @Test
-    fun layoutRequiresGguf() {
+    fun layoutRequiresOnnxTokenizerAndLabels() {
         val dir = Files.createTempDirectory("intent-layout").toFile()
         try {
             assertFalse(IntentModelLayout.isPresent(dir))
             File(dir, IntentModelLayout.MODEL_FILE).writeText("x")
+            assertFalse(IntentModelLayout.isPresent(dir))
+            File(dir, IntentModelLayout.TOKENIZER_FILE).writeText("{}")
+            File(dir, IntentModelLayout.LABELS_FILE).writeText("query_time")
             assertTrue(IntentModelLayout.isPresent(dir))
         } finally {
             dir.deleteRecursively()

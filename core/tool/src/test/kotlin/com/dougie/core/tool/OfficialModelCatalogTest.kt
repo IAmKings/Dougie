@@ -18,31 +18,31 @@ class OfficialModelCatalogTest {
     }
 
     @Test
-    fun standardCatalogUsesOfficialHttpsDefaults() {
+    fun standardCatalogHasAsrTtsAndIntent() {
         val offers = OfficialModelCatalog.standard()
-        assertEquals(4, offers.size)
-        assertEquals(listOf("asr", "tts", "intent-q4", "intent-q8"), offers.map { it.id })
+        assertEquals(3, offers.size)
+        assertEquals(listOf("asr", "tts", "intent"), offers.map { it.id })
         assertEquals("语音识别", offers[0].title)
         assertEquals("约 230MB", offers[0].sizeLabel)
         assertEquals("语音合成", offers[1].title)
         assertEquals("约 116MB", offers[1].sizeLabel)
-        assertEquals("意图理解 Q4", offers[2].title)
-        assertTrue(offers[2].sizeLabel.startsWith("约 378MB"))
-        assertEquals("意图理解 Q8", offers[3].title)
-        assertTrue(offers[3].sizeLabel.startsWith("约 639MB"))
-        offers.forEach { offer ->
-            assertTrue(offer.isConfigured())
-            offer.pack.files.forEach { spec ->
-                assertTrue(spec.httpsUrl.startsWith("https://huggingface.co/"))
-                assertTrue(SHA256.matches(spec.sha256))
-            }
-        }
+        assertEquals("意图理解", offers[2].title)
+        assertEquals("约 10–20MB", offers[2].sizeLabel)
+        assertTrue(offers[0].isConfigured())
+        assertTrue(offers[1].isConfigured())
+        assertFalse(offers[2].isConfigured())
         assertEquals(OfficialModelCatalog.DEFAULT_ASR_MODEL.httpsUrl, offers[0].pack.files[0].httpsUrl)
         assertEquals(OfficialModelCatalog.DEFAULT_ASR_MODEL.sha256, offers[0].pack.files[0].sha256)
-        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_Q4.httpsUrl, offers[2].pack.files[0].httpsUrl)
-        assertTrue(offers[2].pack.files[0].httpsUrl.contains("Qwen3-0.6B-Q4_K_M.gguf"))
-        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_Q8.httpsUrl, offers[3].pack.files[0].httpsUrl)
-        assertTrue(offers[3].pack.files[0].httpsUrl.contains("Qwen3-0.6B-Q8_0.gguf"))
+        assertEquals(
+            listOf(
+                IntentModelLayout.MODEL_FILE,
+                IntentModelLayout.TOKENIZER_FILE,
+                IntentModelLayout.LABELS_FILE,
+            ),
+            offers[2].pack.files.map { it.name },
+        )
+        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, offers[2].pack.files[0].sha256)
+        assertTrue(offers[2].pack.files[0].httpsUrl.isEmpty())
     }
 
     @Test
@@ -80,19 +80,31 @@ class OfficialModelCatalogTest {
     }
 
     @Test
-    fun intentQuantMarkerSelectsOneOffer() {
+    fun intentFixtureHashesMatchCatalog() {
+        fun sha(name: String): String {
+            val stream = javaClass.getResourceAsStream("/intent-pack/$name") ?: error(name)
+            val bytes = stream.use { it.readBytes() }
+            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+            return digest.joinToString("") { "%02x".format(it) }
+        }
+        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, sha(IntentModelLayout.MODEL_FILE))
+        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_TOKENIZER.sha256, sha(IntentModelLayout.TOKENIZER_FILE))
+        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_LABELS.sha256, sha(IntentModelLayout.LABELS_FILE))
+    }
+
+    @Test
+    fun intentInstalledRequiresOnnxTokenizerAndLabels() {
         val dir = Files.createTempDirectory("model-root").toFile()
         try {
-            val q4 = OfficialModelCatalog.intentQ4(https)
-            val q8 = OfficialModelCatalog.intentQ8(https)
+            val offer = OfficialModelCatalog.intent(https, https, https)
             val packDir = File(dir, IntentModelLayout.DIR)
             packDir.mkdirs()
+            File(packDir, "model.gguf").writeText("x")
+            assertFalse(offer.isInstalled(dir))
             File(packDir, IntentModelLayout.MODEL_FILE).writeText("x")
-            assertTrue(q8.isInstalled(dir))
-            assertFalse(q4.isInstalled(dir))
-            IntentModelLayout.writeQuantId(packDir, IntentModelLayout.Q4_ID)
-            assertTrue(q4.isInstalled(dir))
-            assertFalse(q8.isInstalled(dir))
+            File(packDir, IntentModelLayout.TOKENIZER_FILE).writeText("{}")
+            File(packDir, IntentModelLayout.LABELS_FILE).writeText("query_time")
+            assertTrue(offer.isInstalled(dir))
         } finally {
             dir.deleteRecursively()
         }

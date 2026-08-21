@@ -35,33 +35,9 @@ class ModelInstaller(
         if (!userConfirmed) {
             throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
         }
+        val dirCanon = preparePackDir(pack, destRoot, requireHttps = true)
         pack.files.forEach { spec ->
-            if (!isHttpsUrl(spec.httpsUrl)) {
-                throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
-            }
-            if (!isSafeFileName(spec.name)) {
-                throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
-            }
-            if (!SHA256.matches(spec.sha256)) {
-                throw AgentException(UserFacingErrors.MODEL_HASH_MISMATCH)
-            }
-        }
-        if (!isSafeRelativeDir(pack.relativeDir)) {
-            throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
-        }
-        val dir = File(destRoot, pack.relativeDir)
-        dir.mkdirs()
-        val rootCanon = destRoot.canonicalFile
-        val dirCanon = dir.canonicalFile
-        if (!dirCanon.path.startsWith(rootCanon.path + File.separator) && dirCanon != rootCanon) {
-            throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
-        }
-        pack.files.forEach { spec ->
-            val target = File(dirCanon, spec.name)
-            val part = File(dirCanon, spec.name + ".part")
-            if (!target.canonicalFile.path.startsWith(dirCanon.path + File.separator)) {
-                throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
-            }
+            val (target, part) = packTargets(dirCanon, spec.name)
             part.delete()
             try {
                 httpGet.get(spec.httpsUrl, part, onProgress)
@@ -70,11 +46,7 @@ class ModelInstaller(
                     part.delete()
                     throw AgentException(UserFacingErrors.MODEL_HASH_MISMATCH)
                 }
-                if (target.exists()) target.delete()
-                if (!part.renameTo(target)) {
-                    part.copyTo(target, overwrite = true)
-                    part.delete()
-                }
+                commitPart(part, target)
             } catch (e: CancellationException) {
                 part.delete()
                 throw e
@@ -101,7 +73,49 @@ internal fun isHttpsUrl(url: String): Boolean {
     }
 }
 
-private fun isSafeFileName(name: String): Boolean =
+internal fun preparePackDir(pack: ModelPack, destRoot: File, requireHttps: Boolean): File {
+    pack.files.forEach { spec ->
+        if (requireHttps && !isHttpsUrl(spec.httpsUrl)) {
+            throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
+        }
+        if (!isSafeFileName(spec.name)) {
+            throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
+        }
+        if (!SHA256.matches(spec.sha256)) {
+            throw AgentException(UserFacingErrors.MODEL_HASH_MISMATCH)
+        }
+    }
+    if (!isSafeRelativeDir(pack.relativeDir)) {
+        throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
+    }
+    val dir = File(destRoot, pack.relativeDir)
+    dir.mkdirs()
+    val rootCanon = destRoot.canonicalFile
+    val dirCanon = dir.canonicalFile
+    if (!dirCanon.path.startsWith(rootCanon.path + File.separator) && dirCanon != rootCanon) {
+        throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
+    }
+    return dirCanon
+}
+
+internal fun packTargets(dirCanon: File, name: String): Pair<File, File> {
+    val target = File(dirCanon, name)
+    val part = File(dirCanon, name + ".part")
+    if (!target.canonicalFile.path.startsWith(dirCanon.path + File.separator)) {
+        throw AgentException(UserFacingErrors.MODEL_DOWNLOAD_DENIED)
+    }
+    return target to part
+}
+
+internal fun commitPart(part: File, target: File) {
+    if (target.exists()) target.delete()
+    if (!part.renameTo(target)) {
+        part.copyTo(target, overwrite = true)
+        part.delete()
+    }
+}
+
+fun isSafeFileName(name: String): Boolean =
     name.isNotEmpty() &&
         !name.contains('/') &&
         !name.contains('\\') &&
@@ -109,7 +123,7 @@ private fun isSafeFileName(name: String): Boolean =
         name != ".." &&
         !name.contains("..")
 
-private fun isSafeRelativeDir(path: String): Boolean {
+fun isSafeRelativeDir(path: String): Boolean {
     if (path.isEmpty() || path.startsWith("/") || path.startsWith("\\")) return false
     val parts = path.split('/', '\\')
     return parts.isNotEmpty() && parts.all { part ->

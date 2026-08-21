@@ -37,13 +37,19 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | TTS fallback too long | Offline TTS unready and `text` longer than 80 chars | `离线语音未就绪，只能播报短提示。` |
 | TTS network voice | System voice `isNetworkConnectionRequired` | `系统语音需要联网，已拒绝播报。` |
 | TTS speak failed | Engine init/speak failed | `语音播报失败，请稍后重试。` |
-| Intent model missing | `filesDir/models/intent/model.gguf` absent | `离线意图模型尚未就绪，无法分类。` |
+| Intent model missing | `filesDir/models/intent/{model.onnx,tokenizer.json,labels.txt}` absent (historical `model.gguf` is not a layout) | `离线意图模型尚未就绪，无法分类。` |
 | Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false` | `离线意图引擎尚未接入，无法分类。` |
 | Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |
-| Intent infer failed | Model text is not JSON / native complete failed | `离线意图推理失败，请稍后重试。` |
+| Intent infer failed | Native logits empty or ORT session fail | `离线意图推理失败，请稍后重试。` Probe still succeeds on low confidence. |
 | Model download not confirmed / not https | `userConfirmed=false` or non-https URL | `未确认下载，已跳过获取离线模型。` |
-| Model hash mismatch | SHA-256 of payload ≠ spec | `离线模型校验失败，已删除不完整文件。` |
+| Model hash mismatch | SHA-256 of payload ≠ spec (download or import) | `离线模型校验失败，已删除不完整文件。` |
 | Model download failed | HTTP/IO error | `离线模型下载失败，请检查网络后重试。` |
+| Model import / scan failed | Missing pack files, unmatched extra hashes, or copy failure | `离线模型导入失败，请选择与官方清单一致的全部文件。` plus `缺少：` layout names when files are absent |
+| Model directory missing | Download or tree write with no SAF tree | `请选择模型目录` |
+| Model directory grant lost | Prefs still have URI after reinstall / revoked persistable permission | `请再次选择模型目录` |
+| Model directory write failed | DocumentFile create/copy failed | `无法写入模型目录，请重新选择有写入权限的文件夹。` |
+| Model smoke probe | Settings 测试: ASR short silence `transcribe` no throw; TTS `generatePcm` non-empty, no play; intent `classify("现在几点")` no throw (low confidence OK). Missing layout/JNI uses existing 尚未就绪 / TTS_FAILED / INTENT_* copy | Success: `语音识别测试通过。` / `语音合成测试通过。` / `意图分类测试通过。` |
+| Model smoke probe timeout | Probe exceeds 90s (ASR/TTS) or 180s (intent); UI must leave 测试中 | `离线模型测试超时，请稍后重试。` |
 
 `AgentException.userMessage` is what LoopEngine copies into `lastError`. Gateway throws before `LlmProvider.stream` is collected, so blocked egress never becomes a network error. Do not map OkHttp `call.cancel()` to `LLM_FAILED`.
 

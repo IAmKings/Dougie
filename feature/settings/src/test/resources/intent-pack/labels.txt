@@ -1,0 +1,11 @@
+query_time
+query_battery
+query_calendar
+create_calendar
+query_location
+clipboard_read
+clipboard_write
+open_app
+screen_capture
+speech_input
+unknown

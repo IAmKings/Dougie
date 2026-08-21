@@ -24,11 +24,20 @@ import kotlin.math.max
 object SherpaJni {
     @Volatile
     private var loaded: Boolean? = null
+    private val lock = Any()
+    private var asrKey: String? = null
+    private var asr: OfflineRecognizer? = null
+    private var ttsKey: String? = null
+    private var tts: OfflineTts? = null
+    private val providers = listOf("nnapi", "xnnpack", "cpu")
 
     fun isAvailable(): Boolean {
         val cached = loaded
         if (cached != null) return cached
-        val ok = runCatching { System.loadLibrary("sherpa-onnx-jni") }.isSuccess
+        val ok = runCatching {
+            runCatching { System.loadLibrary("onnxruntime") }
+            System.loadLibrary("sherpa-onnx-jni")
+        }.isSuccess
         loaded = ok
         return ok
     }
@@ -37,66 +46,126 @@ object SherpaJni {
         if (!isAvailable()) {
             throw AgentException(UserFacingErrors.SPEECH_ENGINE_NOT_READY)
         }
-        val model = File(modelDir, AsrModelLayout.MODEL_FILE).absolutePath
-        val tokens = File(modelDir, AsrModelLayout.TOKENS_FILE).absolutePath
-        val recognizer = OfflineRecognizer(
-            config = OfflineRecognizerConfig(
-                featConfig = FeatureConfig(sampleRate = utterance.sampleRate, featureDim = 80),
-                modelConfig = OfflineModelConfig(
-                    paraformer = OfflineParaformerModelConfig(model = model),
-                    tokens = tokens,
-                    modelType = "paraformer",
-                    numThreads = 1,
-                    provider = "cpu",
-                ),
-            ),
-        )
-        val stream = recognizer.createStream()
-        return try {
-            stream.acceptWaveform(utterance.samples, utterance.sampleRate)
-            recognizer.decode(stream)
-            recognizer.getResult(stream).text.trim()
-        } catch (_: Throwable) {
-            throw AgentException(UserFacingErrors.TOOL_FAILED)
-        } finally {
-            stream.release()
-            recognizer.release()
+        synchronized(lock) {
+            val recognizer = asrRecognizer(modelDir, utterance.sampleRate)
+            val stream = recognizer.createStream()
+            return try {
+                stream.acceptWaveform(utterance.samples, utterance.sampleRate)
+                recognizer.decode(stream)
+                recognizer.getResult(stream).text.trim()
+            } catch (_: Throwable) {
+                throw AgentException(UserFacingErrors.TOOL_FAILED)
+            } finally {
+                stream.release()
+            }
         }
     }
 
+    fun generatePcm(modelDir: File, text: String): FloatArray {
+        val audio = synthesize(modelDir, text)
+            ?: throw AgentException(UserFacingErrors.TTS_FAILED)
+        if (audio.samples.isEmpty()) {
+            throw AgentException(UserFacingErrors.TTS_FAILED)
+        }
+        return audio.samples
+    }
+
     fun speak(modelDir: File, text: String): TtsOutcome {
-        if (!isAvailable()) return TtsOutcome.FAILED
-        var tts: OfflineTts? = null
-        return try {
-            val dict = File(modelDir, TtsModelLayout.DICT_DIR)
-            tts = OfflineTts(
-                config = OfflineTtsConfig(
-                    model = OfflineTtsModelConfig(
-                        vits = OfflineTtsVitsModelConfig(
-                            model = File(modelDir, TtsModelLayout.MODEL_FILE).absolutePath,
-                            lexicon = File(modelDir, TtsModelLayout.LEXICON_FILE).absolutePath,
-                            tokens = File(modelDir, TtsModelLayout.TOKENS_FILE).absolutePath,
-                            dictDir = if (dict.isDirectory) dict.absolutePath else "",
-                        ),
-                        numThreads = 1,
-                        debug = false,
-                        provider = "cpu",
-                    ),
-                ),
-            )
-            val audio = tts.generate(text, sid = 0, speed = 1.0f)
-            if (audio.samples.isEmpty()) {
-                TtsOutcome.FAILED
-            } else {
-                playPcm(audio.samples, audio.sampleRate)
-                TtsOutcome.SPOKEN
-            }
-        } catch (_: Throwable) {
+        val audio = synthesize(modelDir, text) ?: return TtsOutcome.FAILED
+        return if (audio.samples.isEmpty()) {
             TtsOutcome.FAILED
-        } finally {
-            tts?.release()
+        } else {
+            playPcm(audio.samples, audio.sampleRate)
+            TtsOutcome.SPOKEN
         }
     }
+
+    private class PcmAudio(val samples: FloatArray, val sampleRate: Int)
+
+    private fun synthesize(modelDir: File, text: String): PcmAudio? {
+        if (!isAvailable()) return null
+        return synchronized(lock) {
+            try {
+                val engine = ttsEngine(modelDir)
+                val audio = engine.generate(text, sid = 0, speed = 1.0f)
+                PcmAudio(audio.samples, audio.sampleRate)
+            } catch (_: Throwable) {
+                null
+            }
+        }
+    }
+
+    private fun asrRecognizer(modelDir: File, sampleRate: Int): OfflineRecognizer {
+        val key = modelDir.absolutePath
+        val cached = asr
+        if (cached != null && asrKey == key) return cached
+        asr?.release()
+        asr = null
+        asrKey = null
+        val model = File(modelDir, AsrModelLayout.MODEL_FILE).absolutePath
+        val tokens = File(modelDir, AsrModelLayout.TOKENS_FILE).absolutePath
+        for (provider in providers) {
+            try {
+                val recognizer = OfflineRecognizer(
+                    config = OfflineRecognizerConfig(
+                        featConfig = FeatureConfig(sampleRate = sampleRate, featureDim = 80),
+                        modelConfig = OfflineModelConfig(
+                            paraformer = OfflineParaformerModelConfig(model = model),
+                            tokens = tokens,
+                            modelType = "paraformer",
+                            numThreads = threadCount(),
+                            provider = provider,
+                        ),
+                    ),
+                )
+                asr = recognizer
+                asrKey = key
+                return recognizer
+            } catch (_: Throwable) {
+                continue
+            }
+        }
+        throw AgentException(UserFacingErrors.SPEECH_ENGINE_NOT_READY)
+    }
+
+    private fun ttsEngine(modelDir: File): OfflineTts {
+        val key = modelDir.absolutePath
+        val cached = tts
+        if (cached != null && ttsKey == key) return cached
+        tts?.release()
+        tts = null
+        ttsKey = null
+        val dict = File(modelDir, TtsModelLayout.DICT_DIR)
+        var last: Throwable? = null
+        for (provider in providers) {
+            try {
+                val engine = OfflineTts(
+                    config = OfflineTtsConfig(
+                        model = OfflineTtsModelConfig(
+                            vits = OfflineTtsVitsModelConfig(
+                                model = File(modelDir, TtsModelLayout.MODEL_FILE).absolutePath,
+                                lexicon = File(modelDir, TtsModelLayout.LEXICON_FILE).absolutePath,
+                                tokens = File(modelDir, TtsModelLayout.TOKENS_FILE).absolutePath,
+                                dictDir = if (dict.isDirectory) dict.absolutePath else "",
+                            ),
+                            numThreads = threadCount(),
+                            debug = false,
+                            provider = provider,
+                        ),
+                    ),
+                )
+                tts = engine
+                ttsKey = key
+                return engine
+            } catch (t: Throwable) {
+                last = t
+            }
+        }
+        throw last ?: AgentException(UserFacingErrors.TTS_FAILED)
+    }
+
+    private fun threadCount(): Int =
+        Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
 
     private fun playPcm(samples: FloatArray, sampleRate: Int) {
         val pcm = ShortArray(samples.size) { i ->

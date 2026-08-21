@@ -1,0 +1,6 @@
+{
+  "algorithm": "char_ngram_fnv1a32_hash_bag",
+  "ngram_min": 1,
+  "ngram_max": 2,
+  "dim": 64
+}

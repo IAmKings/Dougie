@@ -247,10 +247,6 @@ class OfflineRecognizer(
  private external fun getResult(streamPtr: Long): OfflineRecognizerResult
 
  companion object {
- init {
- System.loadLibrary("sherpa-onnx-jni")
- }
-
  @JvmStatic
  external fun prependAdspLibraryPath(newPath: String) // for qnn
  }

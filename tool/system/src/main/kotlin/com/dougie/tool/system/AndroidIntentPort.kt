@@ -5,7 +5,7 @@ import com.dougie.core.tool.IntentEngine
 import com.dougie.core.tool.IntentHit
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.IntentPort
-import com.dougie.core.tool.LlamaIntentEngine
+import com.dougie.core.tool.OnnxIntentEngine
 import java.io.File
 
 class AndroidIntentPort(
@@ -13,10 +13,10 @@ class AndroidIntentPort(
     engine: IntentEngine? = null,
 ) : IntentPort {
     private val modelDir = File(context.applicationContext.filesDir, IntentModelLayout.DIR)
-    private val resolved = engine ?: LlamaIntentEngine(
+    private val resolved = engine ?: OnnxIntentEngine(
         modelDir = modelDir,
-        nativeAvailable = { LlamaJni.isAvailable() },
-        complete = { dir, prompt -> LlamaJni.complete(dir, prompt) },
+        nativeAvailable = { IntentOrtJni.isAvailable() },
+        infer = { dir, features -> IntentOrtJni.infer(dir, features) },
     )
 
     override fun isModelPresent(): Boolean = IntentModelLayout.isPresent(modelDir)

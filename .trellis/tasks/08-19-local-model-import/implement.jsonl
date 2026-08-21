@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "ModelInstaller/Importer, filesDir layouts, not Agent Tool"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Settings model rows and confirm-before-download"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Hash mismatch and engine-not-ready copy"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No keys, no PCM; tree URI is OK to persist but not log as secret dump"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "PreferenceStore is the settings source of truth"}

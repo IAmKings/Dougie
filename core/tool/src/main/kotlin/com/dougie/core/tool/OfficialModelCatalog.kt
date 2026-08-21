@@ -23,8 +23,7 @@ fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
     return when (id) {
         "asr" -> AsrModelLayout.isPresent(dir)
         "tts" -> TtsModelLayout.isPresent(dir)
-        IntentModelLayout.Q4_ID, IntentModelLayout.Q8_ID ->
-            IntentModelLayout.installedQuantId(dir) == id
+        IntentModelLayout.ID -> IntentModelLayout.isPresent(dir)
         else -> false
     }
 }
@@ -50,15 +49,18 @@ object OfficialModelCatalog {
         httpsUrl = "https://huggingface.co/csukuangfj/vits-zh-hf-fanchen-C/resolve/main/lexicon.txt",
         sha256 = "9af2824e49e731bf615927c768fdc36bbbe894cac57d8e0088d9c94331b07320",
     )
-    val DEFAULT_INTENT_Q4 = ModelSource(
-        httpsUrl = "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf",
-        sha256 = "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a",
+    val DEFAULT_INTENT_MODEL = ModelSource(
+        httpsUrl = "",
+        sha256 = "90aa53472bfb23b5b43535eb5430719c27cef8b796553e404784ab87b850afee",
     )
-    val DEFAULT_INTENT_Q8 = ModelSource(
-        httpsUrl = "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf",
-        sha256 = "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+    val DEFAULT_INTENT_TOKENIZER = ModelSource(
+        httpsUrl = "",
+        sha256 = "647780993168a2bfc0c9f192b05f082b47bf6b55ff565a7cdade2821fc09536d",
     )
-    val DEFAULT_INTENT_MODEL = DEFAULT_INTENT_Q8
+    val DEFAULT_INTENT_LABELS = ModelSource(
+        httpsUrl = "",
+        sha256 = "a559c08ec65060b6298d8fc15cd2a183ed0dc9a3c7328515c2ece8dbf6648245",
+    )
 
     fun asr(
         model: ModelSource = ModelSource(),
@@ -96,18 +98,23 @@ object OfficialModelCatalog {
         ),
     )
 
-    fun intentQ4(model: ModelSource = ModelSource()): OfflineModelOffer = intentOffer(
-        id = IntentModelLayout.Q4_ID,
-        title = "意图理解 Q4",
-        sizeLabel = "约 378MB，更快更省存储，精度略低",
-        model = model,
-    )
-
-    fun intentQ8(model: ModelSource = ModelSource()): OfflineModelOffer = intentOffer(
-        id = IntentModelLayout.Q8_ID,
-        title = "意图理解 Q8",
-        sizeLabel = "约 639MB，精度更高，更吃内存与算力",
-        model = model,
+    fun intent(
+        model: ModelSource = ModelSource(),
+        tokenizer: ModelSource = ModelSource(),
+        labels: ModelSource = ModelSource(),
+    ): OfflineModelOffer = OfflineModelOffer(
+        id = IntentModelLayout.ID,
+        title = "意图理解",
+        sizeLabel = "约 10–20MB",
+        pack = ModelPack(
+            id = IntentModelLayout.ID,
+            relativeDir = IntentModelLayout.DIR,
+            files = listOf(
+                ModelFileSpec(IntentModelLayout.MODEL_FILE, model.sha256, model.httpsUrl),
+                ModelFileSpec(IntentModelLayout.TOKENIZER_FILE, tokenizer.sha256, tokenizer.httpsUrl),
+                ModelFileSpec(IntentModelLayout.LABELS_FILE, labels.sha256, labels.httpsUrl),
+            ),
+        ),
     )
 
     fun standard(
@@ -116,8 +123,7 @@ object OfficialModelCatalog {
         ttsModel: ModelSource = ModelSource(),
         ttsTokens: ModelSource = ModelSource(),
         ttsLexicon: ModelSource = ModelSource(),
-        intentQ4Source: ModelSource = ModelSource(),
-        intentQ8Source: ModelSource = ModelSource(),
+        intentModel: ModelSource = ModelSource(),
     ): List<OfflineModelOffer> = listOf(
         asr(asrModel.ifBlank(DEFAULT_ASR_MODEL), asrTokens.ifBlank(DEFAULT_ASR_TOKENS)),
         tts(
@@ -125,25 +131,10 @@ object OfficialModelCatalog {
             ttsTokens.ifBlank(DEFAULT_TTS_TOKENS),
             ttsLexicon.ifBlank(DEFAULT_TTS_LEXICON),
         ),
-        intentQ4(intentQ4Source.ifBlank(DEFAULT_INTENT_Q4)),
-        intentQ8(intentQ8Source.ifBlank(DEFAULT_INTENT_Q8)),
-    )
-
-    private fun intentOffer(
-        id: String,
-        title: String,
-        sizeLabel: String,
-        model: ModelSource,
-    ): OfflineModelOffer = OfflineModelOffer(
-        id = id,
-        title = title,
-        sizeLabel = sizeLabel,
-        pack = ModelPack(
-            id = id,
-            relativeDir = IntentModelLayout.DIR,
-            files = listOf(
-                ModelFileSpec(IntentModelLayout.MODEL_FILE, model.sha256, model.httpsUrl),
-            ),
+        intent(
+            intentModel.ifBlank(DEFAULT_INTENT_MODEL),
+            DEFAULT_INTENT_TOKENIZER,
+            DEFAULT_INTENT_LABELS,
         ),
     )
 }

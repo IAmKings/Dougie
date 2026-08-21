@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "JNI stays on filesDir; tree I/O stays in app"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "No Agent-triggered installs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Failed hash must not mark installed"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "SAF in app, hash in core, engines in tool:system"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No PCM or transcripts from probe"}
