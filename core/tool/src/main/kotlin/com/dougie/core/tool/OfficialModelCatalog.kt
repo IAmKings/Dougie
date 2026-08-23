@@ -29,6 +29,8 @@ fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
 }
 
 object OfficialModelCatalog {
+    private const val INTENT_PACK_BASE =
+        "https://raw.githubusercontent.com/IAmKings/Dougie/master/core/tool/src/test/resources/intent-pack/"
     val DEFAULT_ASR_MODEL = ModelSource(
         httpsUrl = "https://huggingface.co/csukuangfj/sherpa-onnx-paraformer-zh-2023-09-14/resolve/main/model.int8.onnx",
         sha256 = "f36a0433bcf096bd6d6f11b80a3ac8bed110bdca632fe0d731df8d1a84475945",
@@ -50,15 +52,15 @@ object OfficialModelCatalog {
         sha256 = "9af2824e49e731bf615927c768fdc36bbbe894cac57d8e0088d9c94331b07320",
     )
     val DEFAULT_INTENT_MODEL = ModelSource(
-        httpsUrl = "",
+        httpsUrl = "$INTENT_PACK_BASE${IntentModelLayout.MODEL_FILE}",
         sha256 = "90aa53472bfb23b5b43535eb5430719c27cef8b796553e404784ab87b850afee",
     )
     val DEFAULT_INTENT_TOKENIZER = ModelSource(
-        httpsUrl = "",
+        httpsUrl = "$INTENT_PACK_BASE${IntentModelLayout.TOKENIZER_FILE}",
         sha256 = "647780993168a2bfc0c9f192b05f082b47bf6b55ff565a7cdade2821fc09536d",
     )
     val DEFAULT_INTENT_LABELS = ModelSource(
-        httpsUrl = "",
+        httpsUrl = "$INTENT_PACK_BASE${IntentModelLayout.LABELS_FILE}",
         sha256 = "a559c08ec65060b6298d8fc15cd2a183ed0dc9a3c7328515c2ece8dbf6648245",
     )
 
@@ -124,6 +126,8 @@ object OfficialModelCatalog {
         ttsTokens: ModelSource = ModelSource(),
         ttsLexicon: ModelSource = ModelSource(),
         intentModel: ModelSource = ModelSource(),
+        intentTokenizer: ModelSource = ModelSource(),
+        intentLabels: ModelSource = ModelSource(),
     ): List<OfflineModelOffer> = listOf(
         asr(asrModel.ifBlank(DEFAULT_ASR_MODEL), asrTokens.ifBlank(DEFAULT_ASR_TOKENS)),
         tts(
@@ -133,8 +137,8 @@ object OfficialModelCatalog {
         ),
         intent(
             intentModel.ifBlank(DEFAULT_INTENT_MODEL),
-            DEFAULT_INTENT_TOKENIZER,
-            DEFAULT_INTENT_LABELS,
+            intentTokenizer.ifBlank(DEFAULT_INTENT_TOKENIZER),
+            intentLabels.ifBlank(DEFAULT_INTENT_LABELS),
         ),
     )
 }

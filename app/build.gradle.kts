@@ -47,6 +47,10 @@ android {
             "TTS_LEXICON_SHA256" to "dougie.model.tts.lexicon.sha256",
             "INTENT_MODEL_URL" to "dougie.model.intent.url",
             "INTENT_MODEL_SHA256" to "dougie.model.intent.sha256",
+            "INTENT_TOKENIZER_URL" to "dougie.model.intent.tokenizer.url",
+            "INTENT_TOKENIZER_SHA256" to "dougie.model.intent.tokenizer.sha256",
+            "INTENT_LABELS_URL" to "dougie.model.intent.labels.url",
+            "INTENT_LABELS_SHA256" to "dougie.model.intent.labels.sha256",
         ).forEach { (field, prop) ->
             buildConfigField("String", field, quotedBuildConfig(prop))
         }

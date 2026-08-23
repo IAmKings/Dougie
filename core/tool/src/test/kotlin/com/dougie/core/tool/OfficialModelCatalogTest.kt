@@ -30,7 +30,7 @@ class OfficialModelCatalogTest {
         assertEquals("约 10–20MB", offers[2].sizeLabel)
         assertTrue(offers[0].isConfigured())
         assertTrue(offers[1].isConfigured())
-        assertFalse(offers[2].isConfigured())
+        assertTrue(offers[2].isConfigured())
         assertEquals(OfficialModelCatalog.DEFAULT_ASR_MODEL.httpsUrl, offers[0].pack.files[0].httpsUrl)
         assertEquals(OfficialModelCatalog.DEFAULT_ASR_MODEL.sha256, offers[0].pack.files[0].sha256)
         assertEquals(
@@ -42,7 +42,8 @@ class OfficialModelCatalogTest {
             offers[2].pack.files.map { it.name },
         )
         assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, offers[2].pack.files[0].sha256)
-        assertTrue(offers[2].pack.files[0].httpsUrl.isEmpty())
+        assertTrue(offers[2].pack.files[0].httpsUrl.startsWith("https://"))
+        assertTrue(offers[2].pack.files.all { it.httpsUrl.startsWith("https://") })
     }
 
     @Test
