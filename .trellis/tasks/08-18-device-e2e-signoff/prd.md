@@ -26,10 +26,10 @@
 
 ## Acceptance Criteria
 
-- [ ] `protocol.md` 覆盖 Case 01–14，另一人可按文档复做。
-- [ ] `findings.md` 14 行均有结论与证据字段。
-- [ ] Case 12 有双包构建/安装/共存与 play 不含侧载 Accessibility 的核对记录。
-- [ ] 14/14 通过 → 更新父任务交叉项为已勾；否则交叉项保持打开并列出非通过 Case。
+- [x] `protocol.md` 覆盖 Case 01–14，另一人可按文档复做。
+- [x] `findings.md` 14 行均有结论与证据字段。
+- [x] Case 12 有双包构建/安装/共存与 play 不含侧载 Accessibility 的核对记录。
+- [x] 14/14 通过 → 更新父任务交叉项为已勾；否则交叉项保持打开并列出非通过 Case。
 
 ## Out of Scope
 
