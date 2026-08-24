@@ -58,6 +58,8 @@ if (ndkReady) {
             externalNativeBuild {
                 cmake {
                     arguments += "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                    arguments +=
+                        "-DDOUGIE_ONNXRUNTIME_SO=${sherpaJniDir.get().asFile.resolve("arm64-v8a/libonnxruntime.so").absolutePath}"
                 }
             }
         }
@@ -75,15 +77,20 @@ tasks.register("fetchSherpaJni") {
     doLast {
         val abiDir = outDir.resolve("arm64-v8a")
         val jniSo = abiDir.resolve("libsherpa-onnx-jni.so")
-        if (jniSo.isFile && jniSo.length() > 1_000_000L) return@doLast
+        val ortSo = abiDir.resolve("libonnxruntime.so")
+        if (jniSo.isFile && jniSo.length() > 1_000_000L &&
+            ortSo.isFile && ortSo.length() > 1_000_000L
+        ) {
+            return@doLast
+        }
         abiDir.mkdirs()
         val cache = layout.buildDirectory.get().asFile.resolve("sherpa-jni")
         cache.mkdirs()
-        val archive = cache.resolve("sherpa-onnx-android.tar.bz2")
+        val archive = cache.resolve("sherpa-onnx-v1.13.4-android.tar.bz2")
         if (!archive.isFile || archive.length() < 1_000_000L) {
             URI(
                 "https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/" +
-                    "sherpa-onnx-v1.13.4-android-static-link-onnxruntime.tar.bz2",
+                    "sherpa-onnx-v1.13.4-android.tar.bz2",
             ).toURL().openStream().use { input ->
                 archive.outputStream().use { output -> input.copyTo(output) }
             }
@@ -98,9 +105,10 @@ tasks.register("fetchSherpaJni") {
             file.name == "libsherpa-onnx-jni.so" && file.path.contains("arm64-v8a")
         } ?: error("arm64-v8a libsherpa-onnx-jni.so missing from sherpa archive")
         found.copyTo(jniSo, overwrite = true)
-        extract.walkTopDown().firstOrNull { file ->
+        val foundOrt = extract.walkTopDown().firstOrNull { file ->
             file.name == "libonnxruntime.so" && file.path.contains("arm64-v8a")
-        }?.copyTo(abiDir.resolve("libonnxruntime.so"), overwrite = true)
+        } ?: error("arm64-v8a libonnxruntime.so missing from sherpa archive")
+        foundOrt.copyTo(ortSo, overwrite = true)
     }
 }
 
@@ -108,7 +116,9 @@ tasks.named("preBuild").configure {
     dependsOn("fetchSherpaJni")
 }
 afterEvaluate {
-    tasks.matching { task -> task.name.contains("JniLibFolders") }.configureEach {
+    tasks.matching { task ->
+        task.name.contains("JniLibFolders") || task.name.startsWith("configureCMake")
+    }.configureEach {
         dependsOn("fetchSherpaJni")
     }
 }

@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <dlfcn.h>
 #include <jni.h>
 #include <mutex>
 #include <string>
@@ -26,18 +25,7 @@ bool ensureApi() {
     if (g_api != nullptr) {
         return true;
     }
-    void* handle = dlopen("libonnxruntime.so", RTLD_NOW | RTLD_NOLOAD);
-    if (handle == nullptr) {
-        handle = dlopen("libonnxruntime.so", RTLD_NOW);
-    }
-    if (handle == nullptr) {
-        return false;
-    }
-    auto get_base = reinterpret_cast<const OrtApiBase* (*)()>(dlsym(handle, "OrtGetApiBase"));
-    if (get_base == nullptr) {
-        return false;
-    }
-    const OrtApiBase* base = get_base();
+    const OrtApiBase* base = OrtGetApiBase();
     if (base == nullptr || base->GetApi == nullptr) {
         return false;
     }
