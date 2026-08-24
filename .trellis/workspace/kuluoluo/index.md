@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 26
+- **Total Sessions**: 27
 - **Last Active**: 2026-08-24
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~555 | Active |
+| `journal-1.md` | ~578 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 27 | 2026-08-24 | 归档 MVP 签字与 Bootstrap | `5c730e7`, `b574f17`, `9513043` | `master` |
 | 26 | 2026-08-24 | 本地模型目录与意图 ONNX | `40f79fc`, `3d0e7b9`, `d4276ea` | `master` |
 | 25 | 2026-08-19 | OpenCode Go DeepSeek Flash 预设 | `4266207` | `main` |
 | 24 | 2026-08-18 | Case11 截屏崩溃修复 | `eedf1e7` | `main` |

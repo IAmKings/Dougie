@@ -553,3 +553,26 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 27: 归档 MVP 签字与 Bootstrap
+
+**Date**: 2026-08-24
+**Task**: 归档 MVP 签字与 Bootstrap
+**Branch**: `master`
+
+### Summary
+
+§16.1 十四 Case 签名通过；补全并收紧 Trellis spec；归档签字、MVP 父任务与 Bootstrap。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5c730e7` | (see git log) |
+| `b574f17` | (see git log) |
+| `9513043` | (see git log) |
+
+### Status
+
+[OK] **Completed**
