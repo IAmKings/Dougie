@@ -13,6 +13,9 @@ room = "2.6.1"
 ksp = "2.0.21-1.0.28"
 securityCrypto = "1.1.0-alpha06"
 documentfile = "1.0.1"
+# 0.18.0 is Kotlin 2.2 metadata; this repo is Kotlin 2.0.21. 0.14.0 is the newest Mosaic compiled with Kotlin 2.0.x.
+mosaic = "0.14.0"
+kotlinxCli = "0.3.6"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -26,6 +29,8 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 junit = { module = "junit:junit", version.ref = "junit" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
+mosaic-runtime = { module = "com.jakewharton.mosaic:mosaic-runtime", version.ref = "mosaic" }
+kotlinx-cli = { module = "org.jetbrains.kotlinx:kotlinx-cli", version.ref = "kotlinxCli" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }

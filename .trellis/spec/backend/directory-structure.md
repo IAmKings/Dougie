@@ -6,6 +6,8 @@
 
 Agent Runtime lives in Gradle `:core:*` modules. These modules use the **Kotlin JVM plugin only** — never `com.android.library`. Android SDK types (`android.*`) are forbidden so `:core:*` can be reused by `:cli` and a future desktop app (`PRD.md` §17.2).
 
+`:cli` is a **JVM application** (`com.dougie.cli`, `application` + Kotlin JVM + Compose compiler for mosaic). No Android plugin. It is **not** in the APK. Direct Gradle dependency is `:core:runtime` only (runtime already pulls `:core:model` / `:core:llm` / `:core:tool`). Mosaic is **0.14.0**, not 0.18.0.
+
 ## Directory Layout
 
 ```
@@ -105,6 +107,11 @@ tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
   PreferenceStore.kt
   ProviderSettings.kt
+cli/src/main/kotlin/com/dougie/cli/
+  Cli.kt
+  FakeBatteryLoop.kt
+cli/src/test/kotlin/com/dougie/cli/
+  FakeBatteryLoopTest.kt
 ```
 
 Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.kt`, `LoopEngine.kt`).
@@ -125,8 +132,9 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
 | `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |
 | `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, RoomMemoryStore, DougieTaskStores, recoverInterrupted, `Dispatchers.Default`; sideload `ChannelHooks.seedBundledModels` | Business rules that belong in core |
+| `:cli` (JVM application, not in APK) | `com.dougie.cli` Agent Console: kotlinx-cli `--log-only`, mosaic **0.14.0** TTY UI, `FakeLlmProvider` + `FakeBatteryTool` via `:core:runtime` | `com.android.*` plugin, Play/Sideload APK, `:tool:*` / `:data:*`, mosaic **0.18.0** |
 
-New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`.
+New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`. CLI snapshot / flag tests go in `:cli` `src/test`.
 
 ## Naming Conventions
 
@@ -138,7 +146,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Context**: Phase 0 needed a deterministic 3-loop proof without a network.
 
-**Decision**: `FakeLlmProvider` (`isLocal = true`) always emits three `battery` ToolCalls then a FinalAnswer. App chat path uses `OpenAICompatibleProvider` only — never silent-fallback to Fake. Keep Fake for JVM tests.
+**Decision**: `FakeLlmProvider` (`isLocal = true`) always emits three `battery` ToolCalls then a FinalAnswer. App chat path uses `OpenAICompatibleProvider` only — never silent-fallback to Fake. Keep Fake for JVM tests and `:cli`.
 
 ## Design Decision: EgressGateway in `:core:runtime`
 
@@ -163,6 +171,18 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 **Problem**: Adding `com.android.library` to runtime/llm/tool/model breaks the JVM-pure red line and `:cli` reuse.
 
 **Instead**: Put `BatteryManager` in `:tool:system` and inject `AgentTool` into `LoopEngine`. Store API keys in `:data:preferences` via EncryptedSharedPreferences (MasterKey), not plaintext XML prefs.
+
+## Don't: Android plugin or APK membership for `:cli`
+
+**Problem**: `com.android.application` / `com.android.library` on `:cli` would pull Android SDK into the console and could ship mosaic/JLine in the phone APK (`PRD.md` §17.3).
+
+**Instead**: `:cli` uses Kotlin JVM + `application` (`mainClass` `com.dougie.cli.CliKt`). `include(":cli")` in `settings.gradle.kts` only. `:app` must not `implementation(project(":cli"))`. Direct module dependency is `project(":core:runtime")` only.
+
+## Design Decision: Mosaic 0.14.0, not 0.18.0
+
+**Context**: JakeWharton mosaic 0.18.0 is compiled with Kotlin 2.2 metadata. This repo is Kotlin **2.0.21**. 0.18 also added `NonInteractivePolicy`; 0.14 has no such API.
+
+**Decision**: Pin `libs.versions.toml` `mosaic = "0.14.0"` (newest mosaic built for Kotlin 2.0.x). Parse `--log-only` with kotlinx-cli. When mosaic TTY/raw-mode setup throws, print the same `formatSnapshot` lines as `--log-only`. Do not bump mosaic to 0.18 until the repo Kotlin version can read 2.2 metadata.
 
 ## Don't: Persist retrieval questions as facts
 
@@ -220,6 +240,54 @@ Consent is one-shot: after `projection.stop()`, `ScreenCaptureConsentStore.clear
 **Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
 
 **Instead**: `ModelInstaller` is app-owned HTTPS download into a cache dir. `ModelImporter` copies hashed sources into `filesDir` (JNI cache). Neither talks to SAF / `DocumentFile`. Both require SHA-256 to match `OfficialModelCatalog` specs (`SHA256.matches` + file hash), safe names / `relativeDir` / canonical, write `.part` then rename, delete `.part` on failure. Importer matches sources to specs by lowercase content hash (one source may fill multiple specs that share a hash; extra unmatched hashes or missing specs fail). `:app` `ExternalModelTreeImpl` streams tree files to temps for scan, and streams cache layout files onto a **reused** `{tree}/models/{asr,tts,intent}` after a confirmed download (`ModelTreeNames` treats SAF uniquified `models (1)` / `models(2)` as the same folder; never `createDirectory` when a match exists; `listFiles` not `findFile`). No tree / lost persistable permission → UI must not fetch. Not registered on `LoopEngine`. Intent pack is `model.onnx` + `tokenizer.json` + `labels.txt` (historical `model.gguf` must not mark installed). Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / GitHub raw `IAmKings/Dougie` `master` testdata `core/tool/src/test/resources/intent-pack/` for intent `model.onnx` + `tokenizer.json` + `labels.txt`). A selected tree with matching hashes may still sync without HTTP. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.url` / `tokenizer.url` / `labels.url` plus matching sha256 keys). Invalid override URL/SHA → offer not configured; UI must not fetch.
+
+## Scenario: `:cli` fake battery console
+
+### 1. Scope / Trigger
+New Gradle command / process entry: `com.dougie.cli.CliKt` + kotlinx-cli `--log-only`. Cross-layer: CLI hosts `TaskManager` / `LoopEngine` from `:core:runtime` with Fake LLM + Fake battery only.
+
+### 2. Signatures
+- `fun main(args: Array<String>)` — `application.mainClass` `com.dougie.cli.CliKt`
+- `parseLogOnly(args): Boolean` — `ArgParser("dougie-cli")`, boolean option `fullName = "log-only"`, default `false` (flag needs no value)
+- `fakeBatteryManager(dispatcher, scope, stepDelayMs): TaskManager` — `FakeLlmProvider()`, `tools = mapOf("battery" to FakeBatteryTool())`
+- `formatSnapshot(task: AgentTask?): String`
+
+### 3. Contracts
+- Prompt is fixed `FAKE_BATTERY_PROMPT` (`我现在手机还有多少电？`). No cloud provider, no API key, no Android ports.
+- `--log-only`: print each `formatSnapshot` line to stdout; no mosaic TTY.
+- Default (no flag): `runMosaic { MosaicConsole }`. Mosaic 0.14 has no `NonInteractivePolicy`; on TTY/raw-mode failure, print the collected snapshot lines instead.
+- Snapshot line: `taskId=… status=… loop=… tools=<last 3 traces as name:status;…> end=<finalAnswer or lastError>`. Idle: `status=IDLE`.
+- Process exit `1` + snapshot on stderr if terminal status is not `COMPLETED`.
+- Stdout must not contain `resultJson`, `battery_percent`, the prompt, or tool `argsSummary`.
+
+### 4. Validation & Error Matrix
+- `--log-only` present → log mode (`true`); omitted → mosaic-first
+- Unknown kotlinx-cli flags → parser error (process does not start the loop)
+- Terminal `FAILED` → stderr snapshot, exit 1
+- Mosaic setup exception (not `CancellationException`) → fallback to printed snapshots
+
+### 5. Good/Base/Bad Cases
+- Good: `--log-only` completes with `status=COMPLETED`, `loop=3`, three `battery:SUCCESS`
+- Base: empty args tries mosaic, then the same snapshot contract if TTY fails
+- Bad: mosaic 0.18.0 on Kotlin 2.0.21; `:cli` in `:app`; logging `resultJson` / percent / prompt
+
+### 6. Tests Required
+- `FakeBatteryLoopTest.fakeLoopCompletesThreeBatteryTools` — COMPLETED, 3 SUCCESS battery traces, `loop=3`; snapshot has `status=COMPLETED` / `battery:SUCCESS` / `loop=3` and not `resultJson` / `battery_percent` / prompt / args
+- `FakeBatteryLoopTest.logOnlyFlagNeedsNoValue` — `--log-only` true, empty args false
+- `./gradlew :cli:test` and `./gradlew :cli:run --args='--log-only'` (JDK 17)
+
+### 7. Wrong vs Correct
+#### Wrong
+```kotlin
+implementation("com.jakewharton.mosaic:mosaic-runtime:0.18.0")
+plugins { id("com.android.library") }
+```
+#### Correct
+```kotlin
+// libs.versions.toml: mosaic = "0.14.0"  // 0.18.0 needs Kotlin 2.2 metadata
+plugins { alias(libs.plugins.kotlin.jvm); application }
+dependencies { implementation(project(":core:runtime")) }
+```
 
 ## Scenario: speech_output TTS contract
 

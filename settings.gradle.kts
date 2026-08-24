@@ -39,4 +39,5 @@ include(
     ":feature:history",
     ":feature:debug",
     ":feature:permissions",
+    ":cli",
 )

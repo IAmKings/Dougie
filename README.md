@@ -41,6 +41,7 @@ Android 上的本地优先 Agent：对话走 ReAct Loop，Tool 受权限与确�
 :feature:history        任务历史
 :feature:permissions    权限中心
 :feature:debug          开发者页（无 Prompt / 密钥 / 工具参数）
+:cli                    本机 JVM 终端（Fake Loop + mosaic；不进 APK）
 ```
 
 底栏：**对话** / **任务** / **记忆** / **设置**。开发者入口在设置页。
@@ -73,6 +74,20 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
 ```
 
 若 `extractDebugAnnotations` 失败，可加 `-x extractDebugAnnotations`。
+
+## `:cli`（本机 Fake Loop 控制台）
+
+JVM 模块，不依赖 Android，也不被 `:app` 引用。用 `FakeLlmProvider` + `FakeBatteryTool` 跑三次电量 Tool，再给出终答。有 TTY 时 mosaic 展示当前 `TaskStatus` / `loopCount` / 最近 tool 名与状态 / `finalAnswer`；无 TTY 或 mosaic 失败时用 stdout。`--log-only` 跳过 mosaic。输出不含 Prompt、密钥、工具参数、`resultJson`。
+
+Mosaic 锁定 **0.14.0**（Kotlin 2.0.20 元数据，匹配本仓库 Kotlin 2.0.21）。**0.18.0** 以 Kotlin 2.2 编译，K2 2.0.21 无法读取其 metadata。0.14 没有 `NonInteractivePolicy`；非 TTY / mosaic 异常时降级 `--log-only` 同样字段。
+
+```bash
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+./gradlew :cli:test :cli:run --args='--log-only'
+./gradlew :app:assemblePlayDebug
+```
+
+Gradle 有时需要 `-x extractDebugAnnotations`。Windows cmd 请用 `--log-only`。不接真实 Cloud LLM。
 
 ## 使用要点
 
