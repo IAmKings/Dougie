@@ -1,43 +1,50 @@
 # Component Guidelines
 
-> Jetpack Compose screens in `:feature:*`. This is not a React component library.
+> Compose screens in Dougie. There is no React, no `:core:ui` design-system module, and no `@Preview` composables in the tree today.
 
 ## Overview
 
-Each feature exposes a `*Route` composable that collects `StateFlow` and a stateless `*Screen` that takes data + lambdas. `MainActivity` owns navigation (`remember { mutableStateOf(AppRoute) }`) and ViewModel factories. There is no `:core:ui` module yet; `DougieColors` is copied per feature.
-
-Reference files:
-- `feature/chat/src/main/kotlin/com/dougie/feature/chat/ChatScreen.kt` (`ChatRoute` / `ChatScreen`)
-- `feature/settings/src/main/kotlin/com/dougie/feature/settings/SettingsScreen.kt`
-- `app/src/main/kotlin/com/dougie/app/MainActivity.kt`
-- `feature/chat/src/main/kotlin/com/dougie/feature/chat/DougieColors.kt`
+Each feature module owns one primary screen file plus a ViewModel. `:app` `MainActivity` switches a private `AppRoute` enum (`Chat`, `Settings`, `Memory`, `Permissions`, `History`, `Debug`) — not Navigation Compose.
 
 ## Component Structure
 
-- `FooRoute(viewModel, onBack, …)`: `collectAsStateWithLifecycle()`, forward events as `viewModel::method`.
-- `FooScreen(uiState, onSend, …)`: no `ViewModel`, no `TaskManager`, no OkHttp.
-- Private `@Composable` helpers in the same file (`ThinkingChip`, model rows). Do not extract a design-system module for one-off chrome.
-- Product copy is **Dougie**, never Waku. User-facing strings are Chinese.
+Pattern used everywhere (`ChatScreen.kt`, `SettingsScreen.kt`, `MemoryScreen.kt`, `HistoryScreen.kt`, `DebugScreen.kt`, `PermissionsScreen.kt`):
+
+1. `FooRoute(viewModel, navigation lambdas)` — `collectAsStateWithLifecycle`, optional `LaunchedEffect` refresh, then `FooScreen(...)`.
+2. `FooScreen(uiState, onEvent: ...)` — stateless UI. Local `remember { mutableStateOf }` is allowed for draft text, password visibility, dialogs — not for `TaskStatus`.
+3. Private helpers in the same file (bubbles, nav rail, confirm card). Do not extract a new module for a single repeated `Row`.
+
+Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` for `UserMessage` / `Thinking` / `ToolCard` / `ConfirmCard` / `AgentMessage`.
 
 ## Props Conventions
 
-Callbacks are named `on*` (`onSend`, `onConfirm`, `onPickModelTree`). Screens receive already-mapped UI models (`ChatUiState`, `OfflineModelsUi`), not `AgentTask` or `DocumentFile`.
-
-Do not pass `android.content.Context` into `:feature:settings` download logic. SAF and `ContentResolver` stay in `:app` (`ExternalModelTreeImpl`).
+- Navigation is `() -> Unit` callbacks (`onOpenSettings`, `onBack`, `onOpenDebug`), injected from `MainActivity`.
+- Domain events are method references (`onSend = viewModel::send`, `onConfirm = viewModel::confirm`).
+- Pass `ChatUiState` / `SettingsFormState` / `MemoryUiState` as one data class, not dozens of scalars.
+- Defaults on Route/Screen parameters (`allowCloud: Boolean = false`) exist so previews *could* be added; they are not a second source of truth for prefs. Live `allowCloud` comes from `PreferenceStore` in `MainActivity`.
 
 ## Styling Patterns
 
-Material 3 primitives (`TextField`, `OutlinedTextField`, `Button`, `Switch`, `AlertDialog`) plus `DougieColors` tokens (Stitch: primary `#3D5198`, surface `#F8FAF9`). Feature screens use `statusBarsPadding` / `navigationBarsPadding` / `imePadding`. Do not introduce Compose Material theming XML or Tailwind.
-
-Color objects may be duplicated once per `:feature:*`. Extract `:core:ui` only when more than colors is shared.
+- Material3 `Text`, `IconButton`, `OutlinedTextField`, `Switch`, `AlertDialog`, `LazyColumn` — plus raw `Modifier.background` / `border` / `clip`.
+- Colors: `DougieColors` object copied per feature. Stitch tokens: `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`feature/chat/.../DougieColors.kt`).
+- Type: hardcoded `sp` / `FontWeight` / `FontFamily` in the screen file. No `Typography` theme object.
+- Chat avatar drawables: `super_dougie.xml`, `dougie_logo.xml`, `dougie_logo_unavailable.xml`. Launcher in `app/src/main/res` stays `dougie_logo` with inset — not Super/Noob.
+- Bottom nav labels in Chat: **对话 / 记忆 / 任务 / 设置** (product copy).
 
 ## Accessibility
 
-No TalkBack suite in CI. Practical rules in code: icon buttons need a `contentDescription` when they have no text; confirm dialogs use Chinese title/body; download confirm must state size (`约 230MB` / `约 116MB` / `约 10–20MB`) before HTTPS. Do not add Espresso a11y checks as a gate.
+Current bar is light, not WCAG-audited:
+
+- Action icons use Chinese `contentDescription` (`发送`, `返回`, `权限中心`, `显示密钥` / `隐藏密钥`, `编辑`, `删除`).
+- Decorative / branded images often use `contentDescription = null` (Chat avatar, some status icons).
+- Confirm Card is visible buttons (confirm / reject), not a system permission dialog.
+- Do not dump API keys into TalkBack: the key field is a password `TextField`; toggle visibility does not log the value.
+
+Do not add a Compose semantics test suite unless the task asks for it — none exists.
 
 ## Common Mistakes
 
-- Running `LoopEngine` or model probe on Main. Probes use `Dispatchers.Default` (`AppOfflineModelProbe`).
-- Showing **Noob-Dougie** as the launcher or default chat avatar (see directory-structure).
-- Auto-scanning the SAF tree when Settings opens; only **刷新** or picking a folder scans.
-- Using system TTS as intent/ASR/TTS **测试** success.
+- Putting mapping logic in the composable (`if (status == FAILED)`) instead of `AgentTask.toChatUiState()` / `toHistoryItem()`. UI tests cannot see that; JVM tests can (`ChatUiStateTest`).
+- Hardcoding tool label “电池” for every `ToolCard`. Chat maps known ids to Chinese (`battery` → 电池工具, `time` → 时间工具) and otherwise shows raw `toolName`.
+- Using the sketch SVG as the default avatar regardless of `IntelligenceMark`.
+- Forgetting IME/nav padding (`imePadding`, `navigationBarsPadding`, `statusBarsPadding`) on new full-screen columns — Chat and Settings already do this.

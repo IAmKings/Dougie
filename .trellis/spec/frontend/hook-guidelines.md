@@ -1,41 +1,62 @@
 # Hook Guidelines
 
-> Compose `remember` / `LaunchedEffect` / activity-result launchers. There are no React `use*` hooks and no Retrofit/OkHttp in `:feature:*`.
+> Dougie is Jetpack Compose + ViewModel, not React. There are no `use*` hooks and no Retrofit/Room in feature modules. This file is the local equivalent: how screens subscribe to state and when to refresh.
 
 ## Overview
 
-Stateful UI logic lives in `*ViewModel` + `StateFlow`. Composables only remember scroll/list/launcher state and refresh when a route is shown.
+Shared stateful logic lives in `*ViewModel` (`androidx.lifecycle.ViewModel`). Compose uses:
 
-Reference files:
-- `feature/memory/src/main/kotlin/com/dougie/feature/memory/MemoryScreen.kt` (`LaunchedEffect(Unit) { viewModel.refresh() }`)
-- `feature/history/src/main/kotlin/com/dougie/feature/history/HistoryScreen.kt`
-- `feature/debug/src/main/kotlin/com/dougie/feature/debug/DebugScreen.kt`
-- `feature/chat/src/main/kotlin/com/dougie/feature/chat/ChatScreen.kt` (`rememberLazyListState`, `LaunchedEffect` scroll)
-- `app/src/main/kotlin/com/dougie/app/MainActivity.kt` (`rememberLauncherForActivityResult` for `OpenDocumentTree`)
-- `feature/permissions/src/main/kotlin/com/dougie/feature/permissions/PermissionsScreen.kt` (runtime permission + projection launchers)
+- `collectAsStateWithLifecycle()` on `StateFlow`
+- `LaunchedEffect` for one-shot refresh / scroll
+- `remember` / `mutableStateOf` for ephemeral UI (input draft, dialog, key visibility)
+
+`PermissionsViewModel` is an `AndroidViewModel` because it reads `ContextCompat.checkSelfPermission`. That is the exception; Chat/Settings/Memory/History/Debug ViewModels take interfaces (`TaskManager`, `PreferenceStore`, `MemoryStore`, `TaskStore`, `AuditLog`) via `ViewModelProvider.Factory`.
 
 ## Custom Hook Patterns
 
-Do not add a `useFoo` layer. If several screens need the same effect, put it in the ViewModel or a small named composable in that feature (`ChatRoute`), not a shared hooks package.
+Do **not** introduce `useChat()`-style Compose wrapper functions. The repeated pattern is:
 
-`ViewModelProvider.Factory` inner classes (e.g. `ChatViewModel.Factory`) are the DI seam. `MainActivity` constructs them with `DougieApplication` fields.
+```kotlin
+@Composable
+fun ChatRoute(viewModel: ChatViewModel, ...) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    ChatScreen(uiState = uiState, onSend = viewModel::send, ...)
+}
+```
+
+Factories live as inner `class Factory(...) : ViewModelProvider.Factory` with `@Suppress("UNCHECKED_CAST")`. `MainActivity` calls `viewModel(factory = ChatViewModel.Factory(app.taskManager))`.
+
+`OfflineModelDownloads` is a helper class owned by `SettingsViewModel` (not a composable hook). It holds download/probe `StateFlow` and coroutine jobs on `viewModelScope`.
 
 ## Data Fetching
 
-- Chat: collect `TaskManager.task` (already mapped in `ChatViewModel`). Never open SQLite in `:feature:chat`.
-- Memory / History / Debug: `refresh()` on first composition of the route (`LaunchedEffect(Unit)`). Activity-scoped ViewModels otherwise keep an empty list after Chat writes a fact.
-- Settings form is local until **保存配置**. `modelTreeUri` is written immediately via `PreferenceStore.setModelTreeUri`.
-- Offline model HTTP is `ModelInstaller` in `:core:tool`, triggered from `OfflineModelDownloads` after confirm — not from a Compose effect.
+There is no React Query / SWR. Reads are:
+
+| Data | Owner | How UI gets it |
+|------|--------|----------------|
+| Current agent task | `TaskManager.task` | Chat/Debug `map`/`combine` → `stateIn(WhileSubscribed(5_000))` |
+| Provider prefs | `PreferenceStore.settings` | Settings form seed; Chat `allowCloud` from Activity collect |
+| Memory list | `MemoryStore.list()` | `MemoryViewModel.refresh()` |
+| Task history | `TaskStore.listRecent(50)` | `HistoryViewModel.refresh()` |
+| Audit rows | `AuditLog.listRecent(50)` | `DebugViewModel.refresh()` |
+| Runtime permission bits | `ContextCompat` | `PermissionsViewModel.refresh()` |
+
+Do not open SQLite from `:feature:chat`. Chat maps `AgentTask` only (including `retrievedMemories` → citation `source` labels).
+
+SAF `OpenDocumentTree` stays in `:app` (`rememberLauncherForActivityResult`). Settings receives `onPickModelTree` and `setModelTreeUri`.
 
 ## Naming Conventions
 
-- Remembered UI: `rememberLazyListState`, `rememberScrollState`, `rememberLauncherForActivityResult`.
-- One-shot refresh: `LaunchedEffect(Unit)` on the Route, not only `init {}` in the ViewModel.
-- Collect: `collectAsStateWithLifecycle()`, not `collectAsState()`.
+- ViewModels: `ChatViewModel`, `SettingsViewModel`, …
+- UI state: `ChatUiState`, `SettingsFormState`, `MemoryUiState`, `HistoryUiState`, `DebugUiState`, `PermissionUiState`
+- Routes: `ChatRoute`, `SettingsRoute`, …
+- Mappers: `toChatUiState()`, `toHistoryItem()`, `toDebugTaskSnapshot()`, `intelligenceMark(...)`
+
+Do not name Compose functions `useXxx`.
 
 ## Common Mistakes
 
-- Forgetting `MemoryRoute` `refresh()` → empty memory list after ingest (already documented in state-management).
-- Putting `OpenDocumentTree` inside `:feature:settings`. The picker stays in `MainActivity`.
-- Starting a probe/`LoopEngine` from `LaunchedEffect` without a user click.
-- A second `mutableStateOf` copy of `TaskStatus` (map from `AgentTask` only).
+- Refreshing Memory/History only in `ViewModel.init`. Activity-scoped ViewModels survive navigation; Chat can ingest a fact while Memory is off-screen. `MemoryRoute` and `HistoryRoute` call `refresh()` in `LaunchedEffect(Unit)`.
+- Keeping confirmation as a boolean in Chat ViewModel. `confirm()` / `reject()` must call `TaskManager`; UI maps `AWAITING_CONFIRMATION` to `ConfirmCard`.
+- Collecting flows without `viewModelScope` / `stateIn`, or launching probes on Main. Offline probe runs on `Dispatchers.Default` (`state-management.md`).
+- Auto-collecting `PreferenceStore` into Settings fields on every emission in a way that wipes unsaved edits. Form is a local `MutableStateFlow` until **保存配置**.
