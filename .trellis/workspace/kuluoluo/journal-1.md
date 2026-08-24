@@ -530,3 +530,26 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 26: 本地模型目录与意图 ONNX
+
+**Date**: 2026-08-24
+**Task**: 本地模型目录与意图 ONNX
+**Branch**: `master`
+
+### Summary
+
+外部模型目录 + 单一 ONNX 意图分类；GitHub HTTPS 下载；sherpa shared ORT 修复真机推理。真机测试已通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `40f79fc` | (see git log) |
+| `3d0e7b9` | (see git log) |
+| `d4276ea` | (see git log) |
+
+### Status
+
+[OK] **Completed**
