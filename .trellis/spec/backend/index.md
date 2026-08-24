@@ -1,38 +1,19 @@
 # Backend Development Guidelines
 
-> Best practices for backend development in this project.
-
----
+> JVM/core conventions for Dougie (`:core:*`, `:data:*`, `:tool:system`).
 
 ## Overview
 
-This directory contains guidelines for backend development. Fill in each file with your project's specific conventions.
-
----
+Agent runtime is Kotlin JVM. Android SDK types stay out of `:core:*`. Spec files below are filled from this repository.
 
 ## Guidelines Index
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | `:core:*` JVM-pure, `:data:memory`, `:data:tasks` | Filled (Phase 4) |
-| [Database Guidelines](./database-guidelines.md) | SQLite FTS4 `memory_facts` + `dougie_tasks.db` | Filled (Phase 4) |
-| [Error Handling](./error-handling.md) | `UserFacingErrors` → Chat FAILED | Filled (Phase 1a) |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Logging Guidelines](./logging-guidelines.md) | No prompts/keys/HTTP bodies | Filled (Phase 1a) |
+| [Directory Structure](./directory-structure.md) | `:core:*` JVM-pure, `:data:memory`, `:data:tasks` | Filled |
+| [Database Guidelines](./database-guidelines.md) | SQLite FTS4 `memory_facts` + `dougie_tasks.db` | Filled |
+| [Error Handling](./error-handling.md) | `UserFacingErrors` → Chat FAILED | Filled |
+| [Quality Guidelines](./quality-guidelines.md) | JUnit, `checkChannelLeak`, no second ORT | Filled |
+| [Logging Guidelines](./logging-guidelines.md) | No prompts/keys/HTTP bodies | Filled |
 
----
-
-## How to Fill These Guidelines
-
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+**Language**: Spec text is English; user-facing product strings are Chinese.

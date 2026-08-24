@@ -1,39 +1,20 @@
 # Frontend Development Guidelines
 
-> Best practices for frontend development in this project.
-
----
+> Jetpack Compose conventions for Dougie (`:feature:*`, `:app`).
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
-
----
+Screens collect `StateFlow` from ViewModels. There is no React, no Hilt, and no shared `:core:ui` module yet.
 
 ## Guidelines Index
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | `:feature:chat` / `:feature:settings` / `:feature:memory` / `:feature:history` / `:feature:debug` / `:app` | Filled (Phase 4) |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | TaskManager + PreferenceStore | Filled (Phase 1a) |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Directory Structure](./directory-structure.md) | `:feature:chat` / settings / memory / history / debug / `:app` | Filled |
+| [Component Guidelines](./component-guidelines.md) | `*Route` / `*Screen`, `DougieColors` | Filled |
+| [Hook Guidelines](./hook-guidelines.md) | Compose `remember` / `LaunchedEffect` (not React `use*`) | Filled |
+| [State Management](./state-management.md) | TaskManager + PreferenceStore | Filled |
+| [Quality Guidelines](./quality-guidelines.md) | JVM UI tests, channel leak | Filled |
+| [Type Safety](./type-safety.md) | Kotlin sealed UI models, kotlinx.serialization at tool boundary | Filled |
 
----
-
-## How to Fill These Guidelines
-
-For each guideline file:
-
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
-
-The goal is to help AI assistants and new team members understand how YOUR project works.
-
----
-
-**Language**: All documentation should be written in **English**.
+**Language**: Spec text is English; user-facing product strings are Chinese.

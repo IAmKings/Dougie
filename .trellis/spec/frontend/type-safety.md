@@ -1,51 +1,46 @@
 # Type Safety
 
-> Type safety patterns in this project.
-
----
+> Kotlin on Android. There is no TypeScript and no Zod/Yup.
 
 ## Overview
 
-<!--
-Document your project's type safety conventions here.
+UI models are Kotlin `data class` / `sealed class` in the feature package. Domain types live in `:core:model`. JSON at tool/LLM boundaries is `kotlinx.serialization.json`, parsed in `:core:tool` / `:core:runtime`, not in Compose.
 
-Questions to answer:
-- What type system do you use?
-- How are types organized?
-- What validation library do you use?
-- How do you handle type inference?
--->
-
-(To be filled by the team)
-
----
+Reference files:
+- `feature/chat/src/main/kotlin/com/dougie/feature/chat/ChatUiState.kt` (`ChatItem` sealed)
+- `core/model/src/main/kotlin/com/dougie/core/model/AgentTask.kt`
+- `core/runtime/src/main/kotlin/com/dougie/core/runtime/ToolCallSanitizer.kt`
+- `core/tool/src/main/kotlin/com/dougie/core/tool/IntentClassifierTool.kt`
 
 ## Type Organization
 
-<!-- Where types are defined, shared types vs local types -->
+| Layer | Types |
+|-------|--------|
+| `:core:model` | `AgentTask`, `TaskStatus`, `ToolDescriptor`, `UserFacingErrors`, vendor ids |
+| `:core:tool` | `OfflineModelOffer`, `IntentHit`, layout objects (`IntentModelLayout`) |
+| `:feature:chat` | `ChatUiState`, `ChatItem`, `IntelligenceMark` |
+| `:feature:settings` | `SettingsFormState`, `OfflineModelRowUi`, `ProbeResult` |
 
-(To be filled by the team)
-
----
+Map `AgentTask?` → `ChatUiState` in `toChatUiState()`. Debug uses `DebugTaskSnapshot`, never a second status enum.
 
 ## Validation
 
-<!-- Runtime validation patterns (Zod, Yup, io-ts, etc.) -->
+- LLM tool args: `ToolCallSanitizer` + `AgentTool.validateArguments`. Unrepairable fields → `INVALID_TOOL_ARGS`.
+- Settings numbers: `maxTokens` parsed in the ViewModel; invalid override URL/SHA → offer `isConfigured() == false` (no fetch).
+- Model bytes: SHA-256 hex via `SHA256.matches`, not a JSON schema library.
+- Intents: `IntentJsonParser` / labels file; blank logits → `INTENT_FAILED`.
 
-(To be filled by the team)
-
----
+Do not validate SAF URIs with regex in Compose. Persist the tree URI; `ExternalModelTreeImpl` reports missing grant as Chinese errors.
 
 ## Common Patterns
 
-<!-- Type utilities, generics, type guards -->
-
-(To be filled by the team)
-
----
+- `sealed class ChatItem` with `UserMessage` / `Thinking` / `ToolCard` / `ConfirmCard` / `AgentMessage`.
+- `StateFlow<T>` + `stateIn(WhileSubscribed(5_000), …)`.
+- `@Suppress("UNCHECKED_CAST")` only on `ViewModelProvider.Factory.create`.
 
 ## Forbidden Patterns
 
-<!-- any, type assertions, etc. -->
-
-(To be filled by the team)
+- `Any` / untyped `Map<String, Any>` in UI state when a data class exists.
+- Opening `org.json` in `:feature:*` to parse `resultJson` for display beyond the mapped card fields.
+- Casting payload fields from the LLM in Compose. Sanitizer + tools own that boundary.
+- TypeScript/Zod examples in new code. This module is Kotlin.
