@@ -576,3 +576,24 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 28: JVM :cli Fake Loop 控制台
+
+**Date**: 2026-08-25
+**Task**: JVM :cli Fake Loop 控制台
+**Branch**: `master`
+
+### Summary
+
+新增 Gradle :cli：FakeLlm + FakeBattery 三次循环，mosaic 0.14.0 / --log-only，不进 APK；spec 记录目录与测试命令。Check 通过后提交并归档 08-24-cli-agent-console。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `51665e4` | (see git log) |
+
+### Status
+
+[OK] **Completed**
