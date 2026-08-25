@@ -597,3 +597,24 @@ JVM CER 与意图准确率小金标；全量 wav gitignore。Phase 5 地图切�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 29: 快捷设置 Tile 打开对话
+
+**Date**: 2026-08-25
+**Task**: 快捷设置 Tile 打开对话
+**Branch**: `master`
+
+### Summary
+
+Quick Settings Tile 打开 Chat，不 submit；checkChannelLeak 校验 Tile 与禁止 NotificationListener。父任务 08-25-phase-5-system-surfaces 保留。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9240df9` | (see git log) |
+
+### Status
+
+[OK] **Completed**
