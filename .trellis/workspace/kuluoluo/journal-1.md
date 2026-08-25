@@ -639,3 +639,24 @@ Quick Settings Tile 打开 Chat，不 submit；checkChannelLeak 校验 Tile 与�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 31: Play 气泡与 sideload 悬浮球
+
+**Date**: 2026-08-25
+**Task**: Play 气泡与 sideload 悬浮球
+**Branch**: `master`
+
+### Summary
+
+Play 任务通知气泡 + sideload overlay 打开 Chat；气泡 PendingIntent 改为 mutable，避免发任务时主线程崩溃。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8feb45d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
