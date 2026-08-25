@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Tile lives in :app not :feature:chat"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "checkChannelLeak and no feature-layer system APIs"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Tile must not submit or duplicate TaskStatus"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play leak scanner and JDK 17 Gradle"}

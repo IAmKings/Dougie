@@ -124,6 +124,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material3)
+    testImplementation(libs.junit)
 }
 
 fun mergedManifestFor(variantDirName: String): File {
@@ -146,7 +147,12 @@ tasks.register("checkChannelLeak") {
     doLast {
         val playManifestFile = mergedManifestFor("playDebug")
         val playManifest = playManifestFile.readText()
-        listOf("AccessibilityService", "BIND_ACCESSIBILITY_SERVICE", "TapSwipeTool").forEach { needle ->
+        listOf(
+            "AccessibilityService",
+            "BIND_ACCESSIBILITY_SERVICE",
+            "TapSwipeTool",
+            "NotificationListenerService",
+        ).forEach { needle ->
             check(!playManifest.contains(needle)) {
                 "play merged manifest leaked $needle in $playManifestFile"
             }
@@ -157,6 +163,18 @@ tasks.register("checkChannelLeak") {
         }
         check(sideloadManifest.contains("BIND_ACCESSIBILITY_SERVICE")) {
             "sideload merged manifest missing BIND_ACCESSIBILITY_SERVICE"
+        }
+        check(playManifest.contains("DougieChatTileService")) {
+            "play merged manifest missing DougieChatTileService"
+        }
+        check(playManifest.contains("android.service.quicksettings.action.QS_TILE")) {
+            "play merged manifest missing QS_TILE"
+        }
+        check(sideloadManifest.contains("DougieChatTileService")) {
+            "sideload merged manifest missing DougieChatTileService"
+        }
+        check(sideloadManifest.contains("android.service.quicksettings.action.QS_TILE")) {
+            "sideload merged manifest missing QS_TILE"
         }
         check(Regex("""android:name="[^"]*DougieAccessibilityService"[^>]*android:exported="false"""").containsMatchIn(sideloadManifest.replace("\n", " "))) {
             "sideload DougieAccessibilityService must be exported=false"

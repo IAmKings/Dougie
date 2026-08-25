@@ -4,7 +4,7 @@
 
 ## Overview
 
-User-facing screens live in `:feature:*` Android libraries. `:app` only hosts `MainActivity`, `Application`, and dependency injection. Features collect `StateFlow` from `:core:runtime`; they do not run the Agent loop on Main.
+User-facing screens live in `:feature:*` Android libraries. `:app` hosts `MainActivity`, `Application`, DI, and the Quick Settings `TileService`. Features collect `StateFlow` from `:core:runtime`; they do not run the Agent loop on Main.
 
 ## Directory Layout
 
@@ -45,6 +45,8 @@ feature/debug/src/main/kotlin/com/dougie/feature/debug/
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
+  ChatLaunch.kt
+  DougieChatTileService.kt
   AppOfflineModels.kt
   AppOfflineModelProbe.kt
   ExternalModelTreeImpl.kt
@@ -69,7 +71,7 @@ app/src/sideload/assets/models/tts/
 | `:feature:permissions` | Permission Center: calendar read/write status, request runtime grants, clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
 | `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError`) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
@@ -90,6 +92,53 @@ app/src/sideload/assets/models/tts/
 ## Don't: Run LoopEngine on Main
 
 `DougieApplication` must pass `Dispatchers.Default` (or a test dispatcher). UI only `collect`s `taskManager.task`.
+
+## Don't: Put TileService in `:feature:chat`
+
+**Problem**: Quick Settings is an exported system service and must start `MainActivity`. Putting it in a feature module still merges into the APK but splits Activity launch from routing.
+
+**Instead**: `DougieChatTileService` and `ChatLaunch` live in `:app`. Play and sideload share `app/src/main` (not a flavor split).
+
+## Scenario: Quick Settings Tile opens Chat
+
+### 1. Scope / Trigger
+System QS tile is a new Android component (`TileService`) that must not call `TaskManager.submit` or skip L2 confirm cards.
+
+### 2. Signatures
+- `fun chatLaunchIntent(context: Context): Intent`
+- `object ChatLaunch` — `EXTRA_OPEN_CHAT = "com.dougie.app.extra.OPEN_CHAT"`; `activityFlags` = `NEW_TASK | SINGLE_TOP | CLEAR_TOP`; `requestsChat(intent): Boolean`
+- `class DougieChatTileService : TileService` — `onClick` → `unlockAndRun` → `startActivityAndCollapse` (API 34+ `PendingIntent` `FLAG_IMMUTABLE`)
+
+### 3. Contracts
+- Manifest (`app/src/main`): `service` `.DougieChatTileService`, `exported=true`, `android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"`, `android:label="@string/app_name"` (**Dougie**), `QS_TILE` action. `MainActivity` `launchMode=singleTop`.
+- Extra `OPEN_CHAT=true` forces `AppRoute.Chat` on cold start (`savedInstanceState == null`) and `onNewIntent`. Launcher icon without extra does not reset an in-memory route.
+- No API keys, prompts, `taskId`, or tool args in extras. Tile does not write `PreferenceStore`.
+
+### 4. Validation & Error Matrix
+- Missing extra / extra false → `requestsChat` false
+- Play merged manifest missing `DougieChatTileService` or `QS_TILE` → `checkChannelLeak` fails
+- Play merged manifest contains `NotificationListenerService` / `AccessibilityService` / `TapSwipeTool` → `checkChannelLeak` fails
+
+### 5. Good/Base/Bad Cases
+- Good: Tile click opens Chat; `taskId` unchanged until the user sends
+- Base: App already on Chat; `singleTop` reuses Activity
+- Bad: Tile in `:feature:chat`; Tile `submit()`; flavor-only Tile on sideload
+
+### 6. Tests Required
+- `ChatLaunchTest` — extra name stable, not `key`/`prompt`; flags match; `requestsChat(null)` is false (do not call `Intent.putExtra` on JVM stubs)
+- `./gradlew :app:testPlayDebugUnitTest :app:checkChannelLeak`
+- Manual: add Tile, open Chat from Settings via Tile
+
+### 7. Wrong vs Correct
+#### Wrong
+```kotlin
+// :feature:chat TileService
+taskManager.submit("我现在手机还有多少电？")
+```
+#### Correct
+```kotlin
+startActivityAndCollapse(chatLaunchIntent(this)) // extra OPEN_CHAT only
+```
 
 ## Don't: Seed bundled models from play
 

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,8 +34,13 @@ import com.dougie.feature.settings.SettingsViewModel
 private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debug }
 
 class MainActivity : ComponentActivity() {
+    private val routeState = mutableStateOf(AppRoute.Chat)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) {
+            applyChatIntent(intent)
+        }
         enableEdgeToEdge()
         val app = application as DougieApplication
         setContent {
@@ -45,7 +49,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = DougieColors.Surface,
                 ) {
-                var route by remember { mutableStateOf(AppRoute.Chat) }
+                var route by routeState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
                 when (route) {
@@ -170,6 +174,18 @@ class MainActivity : ComponentActivity() {
                 }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        applyChatIntent(intent)
+    }
+
+    private fun applyChatIntent(intent: Intent?) {
+        if (ChatLaunch.requestsChat(intent)) {
+            routeState.value = AppRoute.Chat
         }
     }
 }
