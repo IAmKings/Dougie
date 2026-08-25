@@ -1,9 +1,9 @@
 {
-  "id": "phase-5-system-surfaces",
-  "name": "phase-5-system-surfaces",
-  "title": "Phase 5 系统入口：通知 / Tile / 悬浮窗 / 定时",
+  "id": "notification-agent",
+  "name": "notification-agent",
+  "title": "任务进度通知（无 Listener）",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -18,11 +18,8 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "08-25-qs-tile",
-    "08-25-notification-agent"
-  ],
-  "parent": null,
+  "children": [],
+  "parent": "08-25-phase-5-system-surfaces",
   "relatedFiles": [],
   "notes": "",
   "meta": {}

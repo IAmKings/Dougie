@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Tile vs task notification stay in :app"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Permission Center notification row; no Listener"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "FAILED notice must not paste lastError"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "checkChannelLeak NotificationListener assertion"}

@@ -17,7 +17,7 @@
 - Committing weights or native blobs: `*.onnx` (except the tiny testdata allowlisted in `.gitignore`), `*.gguf`, `**/jniLibs/`, `third_party/llama.cpp/`, `/eval/` wav dumps.
 - Logging prompts, keys, HTTP bodies, PCM, transcripts, fact `content`, or `snapshot_json` — see `logging-guidelines.md`.
 - Registering `ModelInstaller` / `ModelImporter` as `AgentTool`. The LLM must not pick download URLs.
-- Putting `TapSwipeTool` or `DougieAccessibilityService` on the Play classpath. `checkChannelLeak` fails if play merged manifest contains `AccessibilityService` / `TapSwipeTool` / `NotificationListenerService`, or the play APK contains `models/asr`, `models/tts`, `*.onnx`, `models/intent`, or `*.gguf`. It also fails if play or sideload merged manifest is missing `DougieChatTileService` or `android.service.quicksettings.action.QS_TILE`.
+- Putting `TapSwipeTool` or `DougieAccessibilityService` on the Play classpath. `checkChannelLeak` fails if play merged manifest contains `AccessibilityService` / `TapSwipeTool` / `NotificationListenerService`, or the play APK contains `models/asr`, `models/tts`, `*.onnx`, `models/intent`, or `*.gguf`. It also fails if play or sideload merged manifest is missing `DougieChatTileService` or `android.service.quicksettings.action.QS_TILE`. Manifest `POST_NOTIFICATIONS` is **not** a leak.
 - `com.android.library` on `:core:*`. Same for `:cli`: no Android plugin, not in the APK, mosaic **0.14.0** only (0.18.0 is Kotlin 2.2 metadata vs repo 2.0.21).
 
 ## Required Patterns
@@ -37,7 +37,7 @@
 | Tool JSON, gates, model install/import | Matching `*ToolTest` / `ModelInstallerTest` / `ModelImporterTest` | `./gradlew :core:tool:test` |
 | Memory gate / FTS behavior | `MemoryGateTest`; Android SQLite stays in `:data:memory` | `./gradlew :core:memory:test` |
 | Vendor presets | `LlmVendorsTest` | `./gradlew :core:model:test` |
-| Play/Sideload leak, Tile, or model assets | `checkChannelLeak` (Tile present both flavors; Play has no Accessibility / TapSwipe / NotificationListener / model blobs) | `./gradlew :app:checkChannelLeak` |
+| Play/Sideload leak, Tile, notice, or model assets | `checkChannelLeak` (Tile present both flavors; Play has no Accessibility / TapSwipe / NotificationListener / model blobs). Shade copy: `TaskNoticeTest` | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
 | `:cli` Agent Console | `FakeBatteryLoopTest` (3-loop fake battery + `--log-only` flag) | `./gradlew :cli:test` and `./gradlew :cli:run --args='--log-only'` |
 
 There are no Compose UI / Espresso tests and no jacoco threshold. Do not add a CI lint job as a substitute for the module tests above.
@@ -50,6 +50,6 @@ Full-eval ASR (`eval/asr/*.wav`, CER ≤ 5%) is gitignored. `FullEvalSet.isPrese
 - [ ] `lastError` is a `UserFacingErrors` Chinese string, not a stack trace or HTTP body
 - [ ] No new Logcat of prompts, keys, tool secret args, audio, or facts
 - [ ] Cancel / timeout paths do not become `LLM_FAILED`
-- [ ] Play APK cannot see Accessibility, NotificationListener, or ONNX/GGUF; both flavors still declare the QS Tile (run `checkChannelLeak` if flavors, manifests, assets, or JNI changed)
+- [ ] Play APK cannot see Accessibility, NotificationListener, or ONNX/GGUF; both flavors still declare the QS Tile; `POST_NOTIFICATIONS` is allowed (run `checkChannelLeak` if flavors, manifests, assets, or JNI changed)
 - [ ] Tests use Fake ports / Fake LLM / MockWebServer, not live cloud
 - [ ] New user-facing strings added to `UserFacingErrors` and asserted in a test

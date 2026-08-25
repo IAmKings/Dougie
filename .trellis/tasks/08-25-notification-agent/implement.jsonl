@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Notifier and ChatLaunch live in :app; features do not post notifications"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Single TaskManager.task source; do not duplicate TaskStatus"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM format tests; no Compose UI tests; checkChannelLeak"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Notice body must not include prompts, errors, tool args, resultJson"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play must not gain NotificationListener; JDK 17 Gradle"}

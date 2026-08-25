@@ -79,6 +79,7 @@ object AndroidPermissions {
     const val WRITE_CALENDAR = "android.permission.WRITE_CALENDAR"
     const val ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION"
     const val RECORD_AUDIO = "android.permission.RECORD_AUDIO"
+    const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
 }
 
 data class ToolParamSpec(

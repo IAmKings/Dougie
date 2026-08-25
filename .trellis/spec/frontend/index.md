@@ -10,7 +10,7 @@ Screens collect `StateFlow` from ViewModels. There is no React, no Hilt, and no 
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | `:feature:*`, `:app` TileService / ChatLaunch | Filled |
+| [Directory Structure](./directory-structure.md) | `:feature:*`, `:app` Tile + task-progress notice | Filled |
 | [Component Guidelines](./component-guidelines.md) | `*Route` / `*Screen`, `DougieColors` | Filled |
 | [Hook Guidelines](./hook-guidelines.md) | Compose `remember` / `LaunchedEffect` (not React `use*`) | Filled |
 | [State Management](./state-management.md) | TaskManager + PreferenceStore | Filled |

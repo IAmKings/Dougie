@@ -4,7 +4,7 @@
 
 ## Overview
 
-User-facing screens live in `:feature:*` Android libraries. `:app` hosts `MainActivity`, `Application`, DI, and the Quick Settings `TileService`. Features collect `StateFlow` from `:core:runtime`; they do not run the Agent loop on Main.
+User-facing screens live in `:feature:*` Android libraries. `:app` hosts `MainActivity`, `Application`, DI, the Quick Settings `TileService`, and the task-progress notifier. Features collect `StateFlow` from `:core:runtime`; they do not run the Agent loop on Main.
 
 ## Directory Layout
 
@@ -47,6 +47,8 @@ app/src/main/kotlin/com/dougie/app/
   MainActivity.kt
   ChatLaunch.kt
   DougieChatTileService.kt
+  TaskNotice.kt
+  TaskProgressNotifier.kt
   AppOfflineModels.kt
   AppOfflineModelProbe.kt
   ExternalModelTreeImpl.kt
@@ -68,10 +70,10 @@ app/src/sideload/assets/models/tts/
 | `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping, Confirm Card; navigate to settings / memory / Permission Center |
 | `:feature:settings` | Provider vendor preset + URL/key/model/`max_tokens`, egress consent copy, save to `PreferenceStore`; **模型目录** (`OpenDocumentTree` URI in `modelTreeUri`) + **刷新** 扫描外部树 + 离线模型三行确认下载（ASR / TTS / 意图 ONNX，写入外部树再同步 `filesDir`）+ 已安装烟测（`OfflineModelProbe` 由 `:app` 注入，非 AgentTool）；**开发者** row calls `onOpenDebug` only |
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
-| `:feature:permissions` | Permission Center: calendar read/write status, request runtime grants, clipboard note |
+| `:feature:permissions` | Permission Center: calendar / location / mic / screen capture; API 33+ **通知** row (`POST_NOTIFICATIONS`); clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
 | `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError`) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
@@ -138,6 +140,53 @@ taskManager.submit("我现在手机还有多少电？")
 #### Correct
 ```kotlin
 startActivityAndCollapse(chatLaunchIntent(this)) // extra OPEN_CHAT only
+```
+
+## Don't: Post task progress from `:feature:chat` or use NotificationListener
+
+**Problem**: Chat is not composed on History/Settings; a Listener would read other apps' notifications (`PRD.md` §3.2) and fail `checkChannelLeak`.
+
+**Instead**: `DougieApplication` collects `taskManager.task` into `TaskProgressNotifier` (channel `dougie_task_progress`, id **48**; capture FGS stays `dougie_screen_capture` / **47**). Tap uses `chatLaunchIntent`. No `NotificationListenerService`.
+
+## Scenario: Task-progress notification
+
+### 1. Scope / Trigger
+System shade shows current Agent task without a second Loop or L2 confirm in the notification.
+
+### 2. Signatures
+- `fun formatTaskNotice(task: AgentTask?): String?` — `null` means cancel
+- `fun isTaskBusy(task: AgentTask?): Boolean`
+- `class TaskProgressNotifier(context)` — `start(scope, tasks)`, `apply(task)`
+- `AndroidPermissions.POST_NOTIFICATIONS`
+
+### 3. Contracts
+- Title **Dougie**. Body: `思考中 · 循环 n` / `工具 · 循环 n · {toolName}` / `待确认 · {toolName}` / `已完成 · 循环 n` / `任务失败 · 循环 n`. Last `toolTrace.toolName` only — never `input`, `finalAnswer`, `lastError`, `streamingText`, `argsSummary`, `resultJson`.
+- IDLE/null → cancel. Busy → `ongoing`. COMPLETED/FAILED → not ongoing; keep until next task or user dismisses.
+- API 33+: request `POST_NOTIFICATIONS` once per process on first busy task; deny → no crash, no post. Permission Center item id `notifications` only if `SDK_INT >= 33`. `MainActivity.onResume` republishes **only if** `isTaskBusy` (do not restore a swipe-dismissed COMPLETED notice). After a grant from Permission Center, `republishTaskNotice()`.
+- Manifest `uses-permission POST_NOTIFICATIONS`. Channel name **任务状态**, `IMPORTANCE_LOW`.
+
+### 4. Validation & Error Matrix
+- Ungranted API 33+ → skip `notify` (do not crash)
+- Play manifest contains `NotificationListenerService` → `checkChannelLeak` fails
+- `POST_NOTIFICATIONS` in Play manifest is **not** a leak
+
+### 5. Good/Base/Bad Cases
+- Good: Loop updates shade with status + tool name; tap opens Chat, `taskId` unchanged
+- Base: minSdk 26 posts without runtime permission
+- Bad: shade shows `lastError` / prompt; Listener; posting from ChatViewModel only
+
+### 6. Tests Required
+- `TaskNoticeTest` — null/IDLE cancel; FAILED omits error/prompt; tool line has name not args
+- `./gradlew :app:testPlayDebugUnitTest :app:checkChannelLeak`
+
+### 7. Wrong vs Correct
+#### Wrong
+```kotlin
+.setContentText(task.lastError ?: task.finalAnswer)
+```
+#### Correct
+```kotlin
+.setContentText(formatTaskNotice(task) ?: return cancel())
 ```
 
 ## Don't: Seed bundled models from play

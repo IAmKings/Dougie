@@ -2,7 +2,9 @@ package com.dougie.app
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -11,12 +13,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.dougie.core.model.AndroidPermissions
 import com.dougie.core.model.TaskStatus
 import com.dougie.feature.chat.ChatRoute
 import com.dougie.feature.debug.DebugRoute
@@ -52,6 +57,23 @@ class MainActivity : ComponentActivity() {
                 var route by routeState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
+                val notifyLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission(),
+                ) { granted ->
+                    if (granted) app.republishTaskNotice()
+                }
+                LaunchedEffect(task?.status) {
+                    if (Build.VERSION.SDK_INT < 33) return@LaunchedEffect
+                    if (!isTaskBusy(task)) return@LaunchedEffect
+                    val granted = ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        AndroidPermissions.POST_NOTIFICATIONS,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (granted) return@LaunchedEffect
+                    if (NotificationPermissionGate.tryMarkRequested()) {
+                        notifyLauncher.launch(AndroidPermissions.POST_NOTIFICATIONS)
+                    }
+                }
                 when (route) {
                     AppRoute.Chat -> {
                         val viewModel: ChatViewModel = viewModel(
@@ -174,6 +196,14 @@ class MainActivity : ComponentActivity() {
                 }
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val app = application as DougieApplication
+        if (isTaskBusy(app.taskManager.task.value)) {
+            app.republishTaskNotice()
         }
     }
 

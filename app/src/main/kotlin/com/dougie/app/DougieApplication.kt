@@ -46,7 +46,9 @@ import com.dougie.tool.system.AndroidSystemTtsEngine
 import com.dougie.tool.system.DeviceBatteryTool
 import com.dougie.tool.system.OkHttpModelGet
 import com.dougie.tool.system.SherpaJni
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import java.io.File
@@ -65,8 +67,10 @@ class DougieApplication : Application() {
         private set
     lateinit var modelInstaller: ModelInstaller
         private set
+    private lateinit var taskProgressNotifier: TaskProgressNotifier
 
     private val foregroundTracker = AppForegroundTracker()
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var tools: LinkedHashMap<String, AgentTool>
 
     override fun onCreate() {
@@ -171,6 +175,12 @@ class DougieApplication : Application() {
         runBlocking {
             recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
         }
+        TaskProgressNotifier(this).also { taskProgressNotifier = it }
+            .start(appScope, taskManager.task)
+    }
+
+    fun republishTaskNotice() {
+        taskProgressNotifier.apply(taskManager.task.value)
     }
 
     fun refreshChannelTools() {

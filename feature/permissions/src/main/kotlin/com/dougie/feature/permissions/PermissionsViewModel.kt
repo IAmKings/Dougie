@@ -2,6 +2,7 @@ package com.dougie.feature.permissions
 
 import android.app.Application
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -56,7 +57,7 @@ class PermissionsViewModel(
     }
 
     private fun buildItems(): List<PermissionItem> {
-        return listOf(
+        val items = mutableListOf(
             item(
                 id = "calendar_read",
                 title = "读取日历",
@@ -107,6 +108,16 @@ class PermissionsViewModel(
                 kind = PermissionKind.SCREEN_CAPTURE,
             ),
         )
+        if (Build.VERSION.SDK_INT >= 33) {
+            items += item(
+                id = "notifications",
+                title = "通知",
+                subtitle = "任务进行时显示状态，不含对话原文",
+                permission = AndroidPermissions.POST_NOTIFICATIONS,
+                riskLabel = "L0",
+            )
+        }
+        return items
     }
 
     private fun item(
