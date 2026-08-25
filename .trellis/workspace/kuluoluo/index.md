@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 29
+- **Total Sessions**: 30
 - **Last Active**: 2026-08-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~620 | Active |
+| `journal-1.md` | ~641 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 30 | 2026-08-25 | 任务进度通知 | `84eb666` | `master` |
 | 29 | 2026-08-25 | 快捷设置 Tile 打开对话 | `9240df9` | `master` |
 | 28 | 2026-08-25 | JVM :cli Fake Loop 控制台 | `51665e4` | `master` |
 | 27 | 2026-08-24 | 归档 MVP 签字与 Bootstrap | `5c730e7`, `b574f17`, `9513043` | `master` |

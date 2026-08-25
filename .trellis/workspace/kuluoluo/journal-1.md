@@ -618,3 +618,24 @@ Quick Settings Tile 打开 Chat，不 submit；checkChannelLeak 校验 Tile 与�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 30: 任务进度通知
+
+**Date**: 2026-08-25
+**Task**: 任务进度通知
+**Branch**: `master`
+
+### Summary
+
+状态机通知渠道、点开 Chat、无 Listener；权限中心 API 33+ 通知行。归档 08-25-notification-agent，父任务保留。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `84eb666` | (see git log) |
+
+### Status
+
+[OK] **Completed**
