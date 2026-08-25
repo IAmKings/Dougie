@@ -10,20 +10,17 @@
 
 ## Confirmed facts
 
-- `PRD.md` §15 Phase 5：Notification、Quick Settings、Floating Widget、Scheduled Agent。
-- 证据：`08-25-qs-tile` 已归档（Tile 打开 Chat）。截屏前台通知仍在 `:tool:system`。无定时 / overlay。
-- 下一 child：`08-25-notification-agent`（规划中）。
+- Tile 与任务进度通知已归档。悬浮窗已验收：Play 通知气泡 / sideload `SYSTEM_ALERT_WINDOW`。
+- 下一项：Scheduled Agent（未建）。
 
 ## Task map
 
 | Child | 状态 | 独立验收 |
 |---|---|---|
 | `08-25-qs-tile` | archived | 快捷设置 Tile 打开 Chat |
-| `08-25-notification-agent` | planning | 任务进度通知；无 NotificationListener |
-| Floating Widget | 未建 | overlay 气泡 |
+| `08-25-notification-agent` | archived | 任务进度通知；无 Listener |
+| `08-25-floating-widget` | 验收通过 | Play 气泡 / sideload 真悬浮；点开 Chat |
 | Scheduled Agent | 未建 | 本地调度走既有 Loop |
-
-依赖写在各 child 文档。通知不依赖 Tile。悬浮窗 / 定时仍未立项。
 
 ## Requirements
 
@@ -36,10 +33,10 @@
 
 - `:cli`、桌面端、向量记忆、端侧对话 LLM。
 - 自动读取或摘要全部通知。
-- 本父任务本回合实现范围以当前 child 为准（现为通知）。
 
 ## Acceptance Criteria（父级）
 
 - [x] `08-25-qs-tile` 归档。
-- [ ] 当前 child 按该 child AC 归档。
-- [ ] Play `checkChannelLeak` 仍通过。
+- [x] `08-25-notification-agent` 归档。
+- [x] `08-25-floating-widget` 按 child AC 验收。
+- [x] Play `checkChannelLeak` 仍通过。

@@ -208,7 +208,7 @@ Consent is one-shot: after `projection.stop()`, `ScreenCaptureConsentStore.clear
 
 **Problem**: `:core:tool` is on the Play classpath. A TapSwipe class there would ship in the Play APK even if unregistered.
 
-**Instead**: Keep `TapSwipeTool` and `AccessibilityService` in `:tool:accessibility`, wired only with `sideloadImplementation`. Play `ChannelTools` must not import those types. `PolicyEngine` treats `RiskLevel.L3` as always `NeedsConfirmation`. Sideload `TapSwipeTool` dispatches via `GesturePort` (`dispatchGesture`); refuse bank/payment/password-manager foreground packages in `HighRiskForeground` before any gesture.
+**Instead**: Keep `TapSwipeTool` and `AccessibilityService` in `:tool:accessibility`, wired only with `sideloadImplementation`. Play `ChannelTools` must not import those types. `PolicyEngine` treats `RiskLevel.L3` as always `NeedsConfirmation`. Sideload `TapSwipeTool` dispatches via `GesturePort` (`dispatchGesture`); refuse bank/payment/password-manager foreground packages in `HighRiskForeground` before any gesture. Overlay is the same split: `DougieOverlayService` / `SYSTEM_ALERT_WINDOW` live only under `app/src/sideload/` (not `:feature:settings`, not play). Play uses `NotificationCompat.BubbleMetadata` on the existing task notice when `!BuildConfig.IS_SIDELOAD` and API ≥ 29.
 
 ## Don't: Cloud STT or commit 230MB ASR models
 

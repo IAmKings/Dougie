@@ -72,4 +72,14 @@ class TaskNoticeTest {
         assertEquals("已完成 · 循环 1", formatTaskNotice(AgentTask("t", "x", TaskStatus.COMPLETED, loopCount = 1)))
         assertFalse(isTaskBusy(failed))
     }
+
+    @Test
+    fun bubblePendingIntentIsMutableOnApi31() {
+        val flags = taskNoticeBubblePendingFlags(31)
+        assertTrue(flags and android.app.PendingIntent.FLAG_MUTABLE != 0)
+        assertEquals(0, flags and android.app.PendingIntent.FLAG_IMMUTABLE)
+        val preS = taskNoticeBubblePendingFlags(30)
+        assertEquals(0, preS and android.app.PendingIntent.FLAG_IMMUTABLE)
+        assertEquals(0, preS and android.app.PendingIntent.FLAG_MUTABLE)
+    }
 }

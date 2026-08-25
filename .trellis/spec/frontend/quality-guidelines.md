@@ -17,6 +17,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 - Using `Noob-Dougie` as the launcher or as the default Chat avatar when a provider is usable. Mapping is `intelligenceMark(...)` in `:feature:chat`.
 - English-only user chrome, “KISS”, or a lone “正在思考” without a loop number (`PRD` §11.1).
 - A TileService or `TaskProgressNotifier` in `:feature:chat`, a Tile/notice that calls `TaskManager.submit`, or a `NotificationListenerService`.
+- Overlay types (`DougieOverlayService`, `TYPE_APPLICATION_OVERLAY`) or `SYSTEM_ALERT_WINDOW` in play / `:feature:settings` / `app/src/main`. Play settings must not mention sideload or 上层显示.
 
 ## Required Patterns
 
@@ -34,7 +35,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
 | `:feature:history` | `HistoryItemTest` | `./gradlew :feature:history:testDebugUnitTest` |
 | `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak) | `./gradlew :feature:debug:testDebugUnitTest` |
-| `:app` Tile / notice / leak | `ChatLaunchTest`, `TaskNoticeTest`; no Compose UI test for Tile or shade | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
+| `:app` Tile / notice / leak | `ChatLaunchTest`, `TaskNoticeTest`, `PlayShortcutCopyTest`; no Compose UI test for Tile, shade, overlay, or bubbles | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
 
 `:feature:memory` and `:feature:permissions` currently have **no** unit tests. Do not invent Compose UI tests as a bootstrap requirement. If a mapping function is added there, follow the chat/history style (JUnit on the mapper).
 
@@ -48,4 +49,4 @@ Play/Sideload asset leaks are an `:app` concern: `./gradlew :app:checkChannelLea
 - [ ] Debug/History do not dump tool args or fact `content` as citations (Chat citations use `source` only)
 - [ ] Settings download/probe/tree rules still match `directory-structure.md` “Don't: Let settings download without size confirm”
 - [ ] Icons that are actions have Chinese `contentDescription`; decorative icons may be `null` (current Chat/Settings mix)
-- [ ] QS Tile and task-progress notice stay in `:app`, open Chat only, shade copy is status-only, and `checkChannelLeak` still requires Tile + forbids NotificationListener on Play
+- [ ] QS Tile and task-progress notice stay in `:app`, open Chat only, shade copy is status-only, Play bubbles skip sideload, overlay stays sideload-only, and `checkChannelLeak` still requires Tile + forbids NotificationListener / overlay on Play

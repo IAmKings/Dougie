@@ -139,6 +139,7 @@ class MainActivity : ComponentActivity() {
                             onBack = { route = AppRoute.Chat },
                             onOpenDebug = { route = AppRoute.Debug },
                             onPickModelTree = { treePicker.launch(null) },
+                            shortcutLayer = { ChannelHooks.ShortcutLayerSettings() },
                         )
                     }
                     AppRoute.Debug -> {
@@ -202,6 +203,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         val app = application as DougieApplication
+        ChannelHooks.syncOverlay(this)
         if (isTaskBusy(app.taskManager.task.value)) {
             app.republishTaskNotice()
         }

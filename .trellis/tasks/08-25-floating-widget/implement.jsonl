@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Flavor sourceSets; overlay must not live in :feature:chat or play"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "checkChannelLeak and zero sideload traces on Play"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play leak scanner; SYSTEM_ALERT_WINDOW sideload-only"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Play vs sideload Gradle isolation same as Accessibility"}

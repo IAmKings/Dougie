@@ -64,6 +64,7 @@ fun SettingsRoute(
     onBack: () -> Unit,
     onOpenDebug: () -> Unit,
     onPickModelTree: () -> Unit,
+    shortcutLayer: @Composable () -> Unit = {},
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val models by viewModel.models.collectAsStateWithLifecycle()
@@ -86,6 +87,7 @@ fun SettingsRoute(
         onCancelModel = viewModel::cancelModel,
         onProbeModel = viewModel::probeModel,
         onOpenDebug = onOpenDebug,
+        shortcutLayer = shortcutLayer,
     )
 }
 
@@ -109,6 +111,7 @@ fun SettingsScreen(
     onCancelModel: (String) -> Unit,
     onProbeModel: (String) -> Unit,
     onOpenDebug: () -> Unit,
+    shortcutLayer: @Composable () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -259,6 +262,7 @@ fun SettingsScreen(
                 onCancelModel = onCancelModel,
                 onProbeModel = onProbeModel,
             )
+            shortcutLayer()
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

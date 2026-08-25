@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play must not contain SYSTEM_ALERT_WINDOW or overlay service"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "ChannelHooks flavor UI; ChatLaunch shared"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Play copy must not advertise sideload"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Overlay ball must not show prompt or lastError"}

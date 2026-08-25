@@ -57,8 +57,13 @@ app/src/main/kotlin/com/dougie/app/
 app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 app/src/play/kotlin/com/dougie/app/
   ChannelHooks.kt
+app/src/play/res/values/strings.xml
 app/src/sideload/kotlin/com/dougie/app/
   ChannelHooks.kt
+  DougieOverlayService.kt
+  OverlayController.kt
+  OverlayPrefs.kt
+app/src/sideload/AndroidManifest.xml
 app/src/sideload/assets/models/asr/
 app/src/sideload/assets/models/tts/
 ```
@@ -73,7 +78,7 @@ app/src/sideload/assets/models/tts/
 | `:feature:permissions` | Permission Center: calendar / location / mic / screen capture; API 33+ **通知** row (`POST_NOTIFICATIONS`); clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
 | `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError`) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat; Play attaches `BubbleMetadata` API 29+); sideload overlay via `ChannelHooks.syncOverlay` / `DougieOverlayService` (default off); Settings `shortcutLayer` slot from `ChannelHooks.ShortcutLayerSettings` (play copy = 系统气泡 only); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
@@ -119,7 +124,7 @@ System QS tile is a new Android component (`TileService`) that must not call `Ta
 ### 4. Validation & Error Matrix
 - Missing extra / extra false → `requestsChat` false
 - Play merged manifest missing `DougieChatTileService` or `QS_TILE` → `checkChannelLeak` fails
-- Play merged manifest contains `NotificationListenerService` / `AccessibilityService` / `TapSwipeTool` → `checkChannelLeak` fails
+- Play merged manifest contains `NotificationListenerService` / `AccessibilityService` / `TapSwipeTool` / `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `TYPE_APPLICATION_OVERLAY` → `checkChannelLeak` fails
 
 ### 5. Good/Base/Bad Cases
 - Good: Tile click opens Chat; `taskId` unchanged until the user sends
@@ -162,12 +167,14 @@ System shade shows current Agent task without a second Loop or L2 confirm in the
 ### 3. Contracts
 - Title **Dougie**. Body: `思考中 · 循环 n` / `工具 · 循环 n · {toolName}` / `待确认 · {toolName}` / `已完成 · 循环 n` / `任务失败 · 循环 n`. Last `toolTrace.toolName` only — never `input`, `finalAnswer`, `lastError`, `streamingText`, `argsSummary`, `resultJson`.
 - IDLE/null → cancel. Busy → `ongoing`. COMPLETED/FAILED → not ongoing; keep until next task or user dismisses.
-- API 33+: request `POST_NOTIFICATIONS` once per process on first busy task; deny → no crash, no post. Permission Center item id `notifications` only if `SDK_INT >= 33`. `MainActivity.onResume` republishes **only if** `isTaskBusy` (do not restore a swipe-dismissed COMPLETED notice). After a grant from Permission Center, `republishTaskNotice()`.
+- Play (`!BuildConfig.IS_SIDELOAD`, API ≥ 29): attach `NotificationCompat.BubbleMetadata` (`setAutoExpandBubble(false)`, desired height 640, **mutable** bubble `PendingIntent` — NMS rejects `FLAG_IMMUTABLE` with a main-thread crash). Shade tap stays `FLAG_IMMUTABLE`. `notify` failures must not crash Chat (strip bubble and retry). Sideload skips bubble metadata. OEM may ignore bubbles; shade notice remains.
+- API 33+: request `POST_NOTIFICATIONS` once per process on first busy task; deny → no crash, no post. Permission Center item id `notifications` only if `SDK_INT >= 33`. `MainActivity.onResume` republishes **only if** `isTaskBusy` (do not restore a swipe-dismissed COMPLETED notice) and calls `ChannelHooks.syncOverlay`. After a grant from Permission Center, `republishTaskNotice()`.
 - Manifest `uses-permission POST_NOTIFICATIONS`. Channel name **任务状态**, `IMPORTANCE_LOW`.
 
 ### 4. Validation & Error Matrix
 - Ungranted API 33+ → skip `notify` (do not crash)
 - Play manifest contains `NotificationListenerService` → `checkChannelLeak` fails
+- Play manifest contains `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` → `checkChannelLeak` fails
 - `POST_NOTIFICATIONS` in Play manifest is **not** a leak
 
 ### 5. Good/Base/Bad Cases
@@ -176,7 +183,8 @@ System shade shows current Agent task without a second Loop or L2 confirm in the
 - Bad: shade shows `lastError` / prompt; Listener; posting from ChatViewModel only
 
 ### 6. Tests Required
-- `TaskNoticeTest` — null/IDLE cancel; FAILED omits error/prompt; tool line has name not args
+- `TaskNoticeTest` — null/IDLE cancel; FAILED omits error/prompt; tool line has name not args; bubble PI flags are mutable on API 31
+- `PlayShortcutCopyTest` — play `strings.xml` has 气泡, no `sideload` / `上层显示`
 - `./gradlew :app:testPlayDebugUnitTest :app:checkChannelLeak`
 
 ### 7. Wrong vs Correct

@@ -1,0 +1,4 @@
+<resources>
+    <string name="shortcut_layer_title">通知气泡</string>
+    <string name="shortcut_layer_body">任务进行时的通知可在系统设置中开成气泡。不含对话原文。请在系统通知设置里自行开启气泡。</string>
+</resources>

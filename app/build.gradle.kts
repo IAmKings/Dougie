@@ -152,6 +152,9 @@ tasks.register("checkChannelLeak") {
             "BIND_ACCESSIBILITY_SERVICE",
             "TapSwipeTool",
             "NotificationListenerService",
+            "SYSTEM_ALERT_WINDOW",
+            "DougieOverlayService",
+            "TYPE_APPLICATION_OVERLAY",
         ).forEach { needle ->
             check(!playManifest.contains(needle)) {
                 "play merged manifest leaked $needle in $playManifestFile"
@@ -175,6 +178,12 @@ tasks.register("checkChannelLeak") {
         }
         check(sideloadManifest.contains("android.service.quicksettings.action.QS_TILE")) {
             "sideload merged manifest missing QS_TILE"
+        }
+        check(sideloadManifest.contains("SYSTEM_ALERT_WINDOW")) {
+            "sideload merged manifest missing SYSTEM_ALERT_WINDOW"
+        }
+        check(sideloadManifest.contains("DougieOverlayService")) {
+            "sideload merged manifest missing DougieOverlayService"
         }
         check(Regex("""android:name="[^"]*DougieAccessibilityService"[^>]*android:exported="false"""").containsMatchIn(sideloadManifest.replace("\n", " "))) {
             "sideload DougieAccessibilityService must be exported=false"

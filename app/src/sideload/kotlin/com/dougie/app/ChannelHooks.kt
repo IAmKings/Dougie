@@ -2,6 +2,10 @@ package com.dougie.app
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,10 +18,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,6 +72,63 @@ object ChannelHooks {
             },
             onExit = { (context as? Activity)?.finish() },
         )
+    }
+
+    fun syncOverlay(context: Context) {
+        OverlayController.sync(context)
+    }
+
+    @Composable
+    fun ShortcutLayerSettings() {
+        val context = LocalContext.current
+        var enabled by remember { mutableStateOf(OverlayPrefs.isEnabled(context)) }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.overlay_title),
+                color = DougieColors.OnSurface,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = stringResource(R.string.overlay_body),
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 14.sp,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.overlay_toggle),
+                    color = DougieColors.OnSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = { on ->
+                        if (on && !Settings.canDrawOverlays(context)) {
+                            OverlayPrefs.setEnabled(context, true)
+                            enabled = true
+                            val uri = Uri.parse("package:${context.packageName}")
+                            context.startActivity(
+                                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, uri)
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        } else {
+                            OverlayPrefs.setEnabled(context, on)
+                            enabled = on
+                        }
+                        OverlayController.sync(context)
+                    },
+                )
+            }
+        }
     }
 }
 

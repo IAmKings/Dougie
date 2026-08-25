@@ -177,6 +177,7 @@ class DougieApplication : Application() {
         }
         TaskProgressNotifier(this).also { taskProgressNotifier = it }
             .start(appScope, taskManager.task)
+        ChannelHooks.syncOverlay(this)
     }
 
     fun republishTaskNotice() {

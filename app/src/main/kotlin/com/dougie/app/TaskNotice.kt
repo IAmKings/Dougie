@@ -1,5 +1,6 @@
 package com.dougie.app
 
+import android.app.PendingIntent
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.TaskStatus
 
@@ -26,4 +27,13 @@ fun isTaskBusy(task: AgentTask?): Boolean {
     return status != TaskStatus.IDLE &&
         status != TaskStatus.COMPLETED &&
         status != TaskStatus.FAILED
+}
+
+/** Bubble intents must be mutable (NMS: "PendingIntents attached to bubbles must be mutable"). */
+fun taskNoticeBubblePendingFlags(sdkInt: Int): Int {
+    var flags = PendingIntent.FLAG_UPDATE_CURRENT
+    if (sdkInt >= 31) {
+        flags = flags or PendingIntent.FLAG_MUTABLE
+    }
+    return flags
 }

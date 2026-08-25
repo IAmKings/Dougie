@@ -6,4 +6,7 @@
     <string name="sideload_consent_item_revoke">我可随时在系统设置中关闭无障碍服务以撤销该能力。</string>
     <string name="sideload_consent_agree">同意并继续</string>
     <string name="sideload_consent_exit">退出</string>
+    <string name="overlay_title">悬浮窗</string>
+    <string name="overlay_body">在其他应用上层显示 Dougie 图标，点按打开对话。默认关闭。需系统「显示在其他应用上层」授权，不含对话原文。</string>
+    <string name="overlay_toggle">显示悬浮球</string>
 </resources>
