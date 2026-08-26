@@ -113,13 +113,13 @@ System QS tile is a new Android component (`TileService`) that must not call `Ta
 
 ### 2. Signatures
 - `fun chatLaunchIntent(context: Context): Intent`
-- `object ChatLaunch` — `EXTRA_OPEN_CHAT = "com.dougie.app.extra.OPEN_CHAT"`; `activityFlags` = `NEW_TASK | SINGLE_TOP | CLEAR_TOP`; `requestsChat(intent): Boolean`
+- `object ChatLaunch` — `EXTRA_OPEN_CHAT = "com.dougie.app.extra.OPEN_CHAT"`; `EXTRA_SCHEDULE_ID` (UUID, **not** prompt); `activityFlags` = `NEW_TASK | SINGLE_TOP | CLEAR_TOP`; `requestsChat(intent): Boolean`; `scheduleId(intent): String?`
 - `class DougieChatTileService : TileService` — `onClick` → `unlockAndRun` → `startActivityAndCollapse` (API 34+ `PendingIntent` `FLAG_IMMUTABLE`)
 
 ### 3. Contracts
 - Manifest (`app/src/main`): `service` `.DougieChatTileService`, `exported=true`, `android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"`, `android:label="@string/app_name"` (**Dougie**), `QS_TILE` action. `MainActivity` `launchMode=singleTop`.
 - Extra `OPEN_CHAT=true` forces `AppRoute.Chat` on cold start (`savedInstanceState == null`) and `onNewIntent`. Launcher icon without extra does not reset an in-memory route.
-- No API keys, prompts, `taskId`, or tool args in extras. Tile does not write `PreferenceStore`.
+- No API keys, prompts, `taskId`, or tool args in extras. Tile does not write `PreferenceStore`. Schedule tap may pass `SCHEDULE_ID` only; Chat loads draft from `filesDir` (`dougie_schedule_pending.txt` if the one-shot row was already removed on fire).
 
 ### 4. Validation & Error Matrix
 - Missing extra / extra false → `requestsChat` false

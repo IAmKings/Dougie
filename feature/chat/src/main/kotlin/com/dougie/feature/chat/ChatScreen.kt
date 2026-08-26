@@ -78,6 +78,8 @@ fun ChatRoute(
     viewModel: ChatViewModel,
     allowCloud: Boolean = false,
     intelligenceMark: IntelligenceMark = IntelligenceMark.NOOB,
+    composerText: String = "",
+    onComposerChange: (String) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
@@ -92,6 +94,8 @@ fun ChatRoute(
         onRetry = viewModel::retry,
         allowCloud = allowCloud,
         intelligenceMark = intelligenceMark,
+        composerText = composerText,
+        onComposerChange = onComposerChange,
         onOpenSettings = onOpenSettings,
         onOpenMemory = onOpenMemory,
         onOpenPermissions = onOpenPermissions,
@@ -112,6 +116,8 @@ fun ChatScreen(
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
+    composerText: String = "",
+    onComposerChange: (String) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -145,6 +151,8 @@ fun ChatScreen(
         }
         ChatInputBar(
             enabled = uiState.inputEnabled,
+            text = composerText,
+            onTextChange = onComposerChange,
             onSend = onSend,
         )
         DougieBottomBar(
@@ -660,9 +668,10 @@ private fun ConfirmActionButton(
 @Composable
 private fun ChatInputBar(
     enabled: Boolean,
+    text: String,
+    onTextChange: (String) -> Unit,
     onSend: (String) -> Unit,
 ) {
-    var draft by remember { mutableStateOf("") }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -677,8 +686,8 @@ private fun ChatInputBar(
                 .background(DougieColors.SurfaceContainerLowest),
         ) {
             TextField(
-                value = draft,
-                onValueChange = { draft = it },
+                value = text,
+                onValueChange = onTextChange,
                 enabled = enabled,
                 placeholder = { Text("给 Dougie 发消息...") },
                 modifier = Modifier.fillMaxWidth(),
@@ -724,13 +733,13 @@ private fun ChatInputBar(
                 Spacer(Modifier.weight(1f))
                 IconButton(
                     onClick = {
-                        val text = draft.trim()
-                        if (text.isNotEmpty()) {
-                            onSend(text)
-                            draft = ""
+                        val trimmed = text.trim()
+                        if (trimmed.isNotEmpty()) {
+                            onSend(trimmed)
+                            onTextChange("")
                         }
                     },
-                    enabled = enabled && draft.isNotBlank(),
+                    enabled = enabled && text.isNotBlank(),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(DougieColors.Primary),

@@ -10,8 +10,8 @@
 
 ## Confirmed facts
 
-- Tile 与任务进度通知已归档。悬浮窗已验收：Play 通知气泡 / sideload `SYSTEM_ALERT_WINDOW`。
-- 下一项：Scheduled Agent（未建）。
+- Tile、任务进度通知、悬浮窗、定时提醒均已验收。
+- 父任务地图上的 child 已齐；无下一项。
 
 ## Task map
 
@@ -19,8 +19,8 @@
 |---|---|---|
 | `08-25-qs-tile` | archived | 快捷设置 Tile 打开 Chat |
 | `08-25-notification-agent` | archived | 任务进度通知；无 Listener |
-| `08-25-floating-widget` | 验收通过 | Play 气泡 / sideload 真悬浮；点开 Chat |
-| Scheduled Agent | 未建 | 本地调度走既有 Loop |
+| `08-25-floating-widget` | archived | Play 气泡 / sideload 真悬浮；点开 Chat |
+| `08-25-scheduled-agent` | 验收通过 | 本机闹钟通知开 Chat；不自动 submit |
 
 ## Requirements
 
@@ -39,4 +39,5 @@
 - [x] `08-25-qs-tile` 归档。
 - [x] `08-25-notification-agent` 归档。
 - [x] `08-25-floating-widget` 按 child AC 验收。
+- [x] `08-25-scheduled-agent` 按 child AC 验收。
 - [x] Play `checkChannelLeak` 仍通过。

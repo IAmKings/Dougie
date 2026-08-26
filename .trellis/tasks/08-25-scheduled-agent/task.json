@@ -1,9 +1,9 @@
 {
-  "id": "phase-5-system-surfaces",
-  "name": "phase-5-system-surfaces",
-  "title": "Phase 5 系统入口：通知 / Tile / 悬浮窗 / 定时",
+  "id": "scheduled-agent",
+  "name": "scheduled-agent",
+  "title": "定时触发既有 Agent Loop",
   "description": "",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -18,13 +18,8 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [
-    "08-25-qs-tile",
-    "08-25-notification-agent",
-    "08-25-floating-widget",
-    "08-25-scheduled-agent"
-  ],
-  "parent": null,
+  "children": [],
+  "parent": "08-25-phase-5-system-surfaces",
   "relatedFiles": [],
   "notes": "",
   "meta": {}

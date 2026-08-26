@@ -40,9 +40,11 @@ private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debu
 
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
+    private val chatDraftState = mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        savedInstanceState?.getString(KEY_CHAT_DRAFT)?.let { chatDraftState.value = it }
         if (savedInstanceState == null) {
             applyChatIntent(intent)
         }
@@ -55,6 +57,7 @@ class MainActivity : ComponentActivity() {
                     color = DougieColors.Surface,
                 ) {
                 var route by routeState
+                var chatDraft by chatDraftState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
                 val notifyLauncher = rememberLauncherForActivityResult(
@@ -91,6 +94,8 @@ class MainActivity : ComponentActivity() {
                                     ?.takeIf { it.status == TaskStatus.FAILED }
                                     ?.lastError,
                             ),
+                            composerText = chatDraft,
+                            onComposerChange = { chatDraft = it },
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
@@ -140,6 +145,7 @@ class MainActivity : ComponentActivity() {
                             onOpenDebug = { route = AppRoute.Debug },
                             onPickModelTree = { treePicker.launch(null) },
                             shortcutLayer = { ChannelHooks.ShortcutLayerSettings() },
+                            scheduleLayer = { ScheduleSettings() },
                         )
                     }
                     AppRoute.Debug -> {
@@ -200,6 +206,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_CHAT_DRAFT, chatDraftState.value)
+    }
+
     override fun onResume() {
         super.onResume()
         val app = application as DougieApplication
@@ -219,6 +230,15 @@ class MainActivity : ComponentActivity() {
         if (ChatLaunch.requestsChat(intent)) {
             routeState.value = AppRoute.Chat
         }
+        ChatLaunch.scheduleId(intent)?.let { applyScheduleDraft(it) }
+    }
+
+    private fun applyScheduleDraft(id: String) {
+        ScheduleStore(filesDir).draftForNotificationTap(id)?.let { chatDraftState.value = it }
+    }
+
+    companion object {
+        private const val KEY_CHAT_DRAFT = "dougie.chat.draft"
     }
 }
 

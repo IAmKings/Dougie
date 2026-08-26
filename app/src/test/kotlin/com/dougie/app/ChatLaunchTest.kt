@@ -17,5 +17,9 @@ class ChatLaunchTest {
                 Intent.FLAG_ACTIVITY_CLEAR_TOP
         assertEquals(expected, ChatLaunch.activityFlags)
         assertFalse(ChatLaunch.requestsChat(null))
+        assertEquals("com.dougie.app.extra.SCHEDULE_ID", ChatLaunch.EXTRA_SCHEDULE_ID)
+        assertFalse(ChatLaunch.EXTRA_SCHEDULE_ID.contains("key", ignoreCase = true))
+        assertFalse(ChatLaunch.EXTRA_SCHEDULE_ID.contains("prompt", ignoreCase = true))
+        assertEquals(null, ChatLaunch.scheduleId(null))
     }
 }
