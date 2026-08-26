@@ -681,3 +681,24 @@ AlarmManager 到点通知打开对话并预填草稿，不自动 submit；一次
 ### Status
 
 [OK] **Completed**
+
+
+## Session 33: Chat 附上当前屏幕
+
+**Date**: 2026-08-26
+**Task**: Chat 附上当前屏幕
+**Branch**: `master`
+
+### Summary
+
+Chat 输入栏绑定当前前台截屏供本地 Tools；LLM 只见 capture_id/宽高。Play 已测可用。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4de4b8e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
