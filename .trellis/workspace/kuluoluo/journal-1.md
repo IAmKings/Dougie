@@ -660,3 +660,24 @@ Play 任务通知气泡 + sideload overlay 打开 Chat；气泡 PendingIntent �
 ### Status
 
 [OK] **Completed**
+
+
+## Session 32: 本机定时提醒开 Chat
+
+**Date**: 2026-08-26
+**Task**: 本机定时提醒开 Chat
+**Branch**: `master`
+
+### Summary
+
+AlarmManager 到点通知打开对话并预填草稿，不自动 submit；一次性响铃先另存草稿再删条目。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `15c3ed4` | (see git log) |
+
+### Status
+
+[OK] **Completed**
