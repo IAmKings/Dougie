@@ -40,7 +40,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
@@ -84,11 +86,25 @@ fun ChatRoute(
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
+    attachedScreen: ScreenAttachUi? = null,
+    attachedError: String? = null,
+    attachingScreen: Boolean = false,
+    onAttachScreen: () -> Unit = {},
+    onClearAttachedScreen: () -> Unit = {},
+    onDismissAttachedScreen: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
         uiState = uiState,
-        onSend = viewModel::send,
+        onSend = { text ->
+            viewModel.send(
+                text,
+                attachedScreen?.captureId,
+                attachedScreen?.width,
+                attachedScreen?.height,
+            )
+            onClearAttachedScreen()
+        },
         onConfirm = viewModel::confirm,
         onReject = viewModel::reject,
         onRetry = viewModel::retry,
@@ -100,6 +116,11 @@ fun ChatRoute(
         onOpenMemory = onOpenMemory,
         onOpenPermissions = onOpenPermissions,
         onOpenHistory = onOpenHistory,
+        attachedScreen = attachedScreen,
+        attachedError = attachedError,
+        attachingScreen = attachingScreen,
+        onAttachScreen = onAttachScreen,
+        onDismissAttachedScreen = onDismissAttachedScreen,
     )
 }
 
@@ -118,6 +139,11 @@ fun ChatScreen(
     onOpenHistory: () -> Unit = {},
     composerText: String = "",
     onComposerChange: (String) -> Unit = {},
+    attachedScreen: ScreenAttachUi? = null,
+    attachedError: String? = null,
+    attachingScreen: Boolean = false,
+    onAttachScreen: () -> Unit = {},
+    onDismissAttachedScreen: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -154,6 +180,11 @@ fun ChatScreen(
             text = composerText,
             onTextChange = onComposerChange,
             onSend = onSend,
+            attachedScreen = attachedScreen,
+            attachedError = attachedError,
+            attachingScreen = attachingScreen,
+            onAttachScreen = onAttachScreen,
+            onDismissAttachedScreen = onDismissAttachedScreen,
         )
         DougieBottomBar(
             onOpenSettings = onOpenSettings,
@@ -671,6 +702,11 @@ private fun ChatInputBar(
     text: String,
     onTextChange: (String) -> Unit,
     onSend: (String) -> Unit,
+    attachedScreen: ScreenAttachUi? = null,
+    attachedError: String? = null,
+    attachingScreen: Boolean = false,
+    onAttachScreen: () -> Unit = {},
+    onDismissAttachedScreen: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -685,6 +721,42 @@ private fun ChatInputBar(
                 .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
                 .background(DougieColors.SurfaceContainerLowest),
         ) {
+            if (attachedScreen != null || !attachedError.isNullOrBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (attachedScreen != null) {
+                        Text(
+                            text = screenAttachChipLabel(attachedScreen.width, attachedScreen.height),
+                            color = DougieColors.OnSurface,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(
+                            onClick = onDismissAttachedScreen,
+                            enabled = enabled,
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "取消附上屏幕",
+                                tint = DougieColors.OnSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = attachedError.orEmpty(),
+                            color = DougieColors.Error,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
             TextField(
                 value = text,
                 onValueChange = onTextChange,
@@ -709,6 +781,25 @@ private fun ChatInputBar(
                 IconButton(onClick = {}, enabled = false) {
                     Icon(Icons.Filled.Mic, contentDescription = "麦克风", tint = DougieColors.OnSurfaceVariant)
                 }
+                IconButton(
+                    onClick = onAttachScreen,
+                    enabled = enabled && !attachingScreen,
+                ) {
+                    Icon(
+                        Icons.Filled.PhotoCamera,
+                        contentDescription = "附上屏幕",
+                        tint = if (enabled && !attachingScreen) {
+                            DougieColors.OnSurface
+                        } else {
+                            DougieColors.OnSurfaceVariant
+                        },
+                    )
+                }
+                Text(
+                    text = "将截取当前屏幕",
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 10.sp,
+                )
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))

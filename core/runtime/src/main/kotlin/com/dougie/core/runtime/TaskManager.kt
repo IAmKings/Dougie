@@ -3,6 +3,7 @@ package com.dougie.core.runtime
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.UserFacingErrors
+import com.dougie.core.tool.ScreenFrameStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +20,7 @@ class TaskManager(
     private val dispatcher: CoroutineDispatcher,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher),
     private val taskStore: TaskStore? = null,
+    private val screenFrames: ScreenFrameStore? = null,
 ) {
     private val _task = MutableStateFlow<AgentTask?>(null)
     val task: StateFlow<AgentTask?> = _task.asStateFlow()
@@ -29,7 +31,12 @@ class TaskManager(
         _task.value = task
     }
 
-    fun submit(input: String) {
+    fun submit(
+        input: String,
+        attachedCaptureId: String? = null,
+        attachedWidth: Int? = null,
+        attachedHeight: Int? = null,
+    ) {
         val trimmed = input.trim()
         if (trimmed.isEmpty()) return
         val current = _task.value
@@ -38,9 +45,17 @@ class TaskManager(
         ) {
             return
         }
+        val captureId = attachedCaptureId?.takeIf { it.isNotBlank() }
+        val frames = screenFrames
+        if (captureId != null && frames != null && frames.last()?.id == captureId) {
+            frames.pin()
+        }
         val created = AgentTask(
             taskId = UUID.randomUUID().toString(),
             input = trimmed,
+            attachedCaptureId = captureId,
+            attachedWidth = attachedWidth?.takeIf { it > 0 },
+            attachedHeight = attachedHeight?.takeIf { it > 0 },
         )
         _task.value = created
         running = scope.launch(dispatcher) {
@@ -53,6 +68,8 @@ class TaskManager(
             } catch (e: CancellationException) {
                 markCancelled()
                 throw e
+            } finally {
+                screenFrames?.clearPin()
             }
         }
     }

@@ -16,6 +16,8 @@ Pattern used everywhere (`ChatScreen.kt`, `SettingsScreen.kt`, `MemoryScreen.kt`
 
 Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` for `UserMessage` / `Thinking` / `ToolCard` / `ConfirmCard` / `AgentMessage`.
 
+- Chat composer: `composerText` / schedule draft and **附上屏幕** chip are hoisted in `MainActivity`. Capture runs in `:app` (`pinCurrentScreen`); `:feature:chat` only gets `ScreenAttachUi` (id + width + height) and callbacks. × is dismiss (`clearPin`); send is consume chip only. Copy: **附上屏幕** / **将截取当前屏幕** / **已附上 · 宽×高** / **取消附上屏幕**.
+
 ## Props Conventions
 
 - Navigation is `() -> Unit` callbacks (`onOpenSettings`, `onBack`, `onOpenDebug`), injected from `MainActivity`.

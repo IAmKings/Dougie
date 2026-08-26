@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "MediaProjection FGS thread, one-shot consent, foreground gate, ScreenFrameStore no pixels in JSON"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Tool JSON contract, JVM tests, no android in core"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "SCREEN_NOT_FOREGROUND and PERMISSION_DENIED copy"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No capture pixels or prompts in logs/notices"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "feature:chat vs app ownership; no overlay on Play"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ChatRoute/Screen callbacks, Chinese contentDescription"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No Loop/MediaProjection from feature composables; JVM mapping tests"}
+{"file": ".trellis/tasks/08-26-multimodal-context/design.md", "reason": "Pin store, AgentTask fields, systemPrompt line, app capture callback"}
+{"file": ".trellis/tasks/08-26-multimodal-context/prd.md", "reason": "MVP scope and acceptance"}

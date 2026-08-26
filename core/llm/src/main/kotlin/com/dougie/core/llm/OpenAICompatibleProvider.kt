@@ -295,9 +295,19 @@ class OpenAICompatibleProvider(
     }
 
     private fun systemPrompt(task: AgentTask): String {
-        if (task.retrievedMemories.isEmpty()) return SYSTEM_PROMPT
-        val facts = task.retrievedMemories.joinToString(separator = "\n") { "- ${it.content}" }
-        return "$SYSTEM_PROMPT\n\nKnown facts:\n$facts"
+        val parts = mutableListOf(SYSTEM_PROMPT)
+        val captureId = task.attachedCaptureId
+        val width = task.attachedWidth
+        val height = task.attachedHeight
+        if (!captureId.isNullOrBlank() && width != null && height != null) {
+            parts += "User attached screen capture_id=$captureId (${width}x$height). " +
+                "Use screen_match on this frame. Do not call screen_capture unless the user asks for a new capture."
+        }
+        if (task.retrievedMemories.isNotEmpty()) {
+            val facts = task.retrievedMemories.joinToString(separator = "\n") { "- ${it.content}" }
+            parts += "Known facts:\n$facts"
+        }
+        return parts.joinToString("\n\n")
     }
 
     companion object {

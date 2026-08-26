@@ -149,6 +149,30 @@ class OpenAICompatibleProviderTest {
     }
 
     @Test
+    fun attachedScreenMetadataIsInSystemPromptWithoutPixels() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val provider = testProvider()
+        provider.generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "cap",
+                    input = "匹配一下",
+                    attachedCaptureId = "cap1",
+                    attachedWidth = 720,
+                    attachedHeight = 1584,
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("capture_id=cap1"))
+        assertTrue(body.contains("720x1584"))
+        assertTrue(body.contains("匹配一下"))
+        assertTrue(!body.contains("data:image"))
+        assertTrue(!body.contains("base64,"))
+        assertTrue(!body.contains("\"gray\":"))
+    }
+
+    @Test
     fun requestBodyIncludesKnownFactsFromRetrievedMemories() = runTest {
         server.enqueue(MockResponse().setBody(FINAL_BODY))
         val provider = testProvider()

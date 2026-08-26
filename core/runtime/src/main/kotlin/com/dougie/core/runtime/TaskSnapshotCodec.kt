@@ -41,6 +41,9 @@ object TaskSnapshotCodec {
             "retrievedMemories",
             JsonArray(task.retrievedMemories.map { encodeMemory(it) }),
         )
+        putNullable("attachedCaptureId", task.attachedCaptureId)
+        if (task.attachedWidth != null) put("attachedWidth", task.attachedWidth)
+        if (task.attachedHeight != null) put("attachedHeight", task.attachedHeight)
     }.toString()
 
     fun decode(raw: String): AgentTask {
@@ -58,6 +61,9 @@ object TaskSnapshotCodec {
             retrievedMemories = obj["retrievedMemories"]?.jsonArray
                 ?.map { decodeMemory(it.jsonObject) }
                 .orEmpty(),
+            attachedCaptureId = obj.optionalString("attachedCaptureId"),
+            attachedWidth = obj["attachedWidth"]?.jsonPrimitive?.intOrNull,
+            attachedHeight = obj["attachedHeight"]?.jsonPrimitive?.intOrNull,
         )
     }
 

@@ -22,13 +22,20 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dougie.core.model.AndroidPermissions
+import androidx.lifecycle.lifecycleScope
+import com.dougie.core.model.AgentException
 import com.dougie.core.model.TaskStatus
+import com.dougie.core.model.UserFacingErrors
 import com.dougie.feature.chat.ChatRoute
 import com.dougie.feature.debug.DebugRoute
 import com.dougie.feature.debug.DebugViewModel
 import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
+import com.dougie.feature.chat.ScreenAttachUi
 import com.dougie.feature.chat.intelligenceMark
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.dougie.feature.history.HistoryRoute
 import com.dougie.feature.history.HistoryViewModel
 import com.dougie.feature.memory.MemoryRoute
@@ -41,6 +48,9 @@ private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debu
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
     private val chatDraftState = mutableStateOf("")
+    private val screenAttachState = mutableStateOf<ScreenAttachUi?>(null)
+    private val screenAttachErrorState = mutableStateOf<String?>(null)
+    private val screenAttachingState = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +68,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                 var route by routeState
                 var chatDraft by chatDraftState
+                var screenAttach by screenAttachState
+                var screenAttachError by screenAttachErrorState
+                var screenAttaching by screenAttachingState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
                 val notifyLauncher = rememberLauncherForActivityResult(
@@ -96,6 +109,19 @@ class MainActivity : ComponentActivity() {
                             ),
                             composerText = chatDraft,
                             onComposerChange = { chatDraft = it },
+                            attachedScreen = screenAttach,
+                            attachedError = screenAttachError,
+                            attachingScreen = screenAttaching,
+                            onAttachScreen = { attachCurrentScreen() },
+                            onClearAttachedScreen = {
+                                screenAttach = null
+                                screenAttachError = null
+                            },
+                            onDismissAttachedScreen = {
+                                screenAttach = null
+                                screenAttachError = null
+                                app.screenFrameStore.clearPin()
+                            },
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
@@ -224,6 +250,32 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         applyChatIntent(intent)
+    }
+
+    private fun attachCurrentScreen() {
+        if (screenAttachingState.value) return
+        val app = application as DougieApplication
+        screenAttachingState.value = true
+        screenAttachErrorState.value = null
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.Default) { app.pinCurrentScreen() }
+            screenAttachingState.value = false
+            result.fold(
+                onSuccess = { frame ->
+                    screenAttachState.value = ScreenAttachUi(
+                        captureId = frame.id,
+                        width = frame.width,
+                        height = frame.height,
+                    )
+                    screenAttachErrorState.value = null
+                },
+                onFailure = { error ->
+                    screenAttachState.value = null
+                    screenAttachErrorState.value = (error as? AgentException)?.userMessage
+                        ?: UserFacingErrors.TOOL_FAILED
+                },
+            )
+        }
     }
 
     private fun applyChatIntent(intent: Intent?) {

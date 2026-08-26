@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Tool JSON, tests, channel leak, UserFacingErrors"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No pixels/prompts in logs, AuditLog, shade"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Foreground and permission failure copy"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Chat mapping tests, no Agent loop on Main, checkChannelLeak"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Capture wiring stays in app; chat is UI only"}
+{"file": ".trellis/tasks/08-26-multimodal-context/prd.md", "reason": "AC1–AC5 observable outcomes"}
+{"file": ".trellis/tasks/08-26-multimodal-context/design.md", "reason": "Pin must not be overwritten; snapshot has no gray bytes"}

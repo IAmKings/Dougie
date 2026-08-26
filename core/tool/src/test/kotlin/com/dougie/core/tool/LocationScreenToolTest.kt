@@ -135,6 +135,23 @@ class ScreenCaptureToolTest {
         assertEquals(UserFacingErrors.PERMISSION_DENIED, result.error)
         assertEquals(0, port.captureCount)
     }
+
+    @Test
+    fun pinnedFrameSkipsCaptureAndIgnoresLaterPuts() = runTest {
+        val port = FakeScreenCapturePort()
+        val store = InMemoryScreenFrameStore()
+        store.put(whiteSquareOnBlack())
+        store.pin()
+        store.put(ScreenFrame("other", 8, 8, ByteArray(64)))
+        assertEquals("synthetic", store.last()?.id)
+        val result = ScreenCaptureTool(port, store).execute("{}", ToolContext("t", "c"))
+        assertEquals(0, port.captureCount)
+        assertTrue(result.json.contains("\"capture_id\":\"synthetic\""))
+        assertFalse(result.json.contains("data:image"))
+        store.clearPin()
+        store.put(ScreenFrame("other", 8, 8, ByteArray(64)))
+        assertEquals("other", store.last()?.id)
+    }
 }
 
 class ScreenMatchToolTest {

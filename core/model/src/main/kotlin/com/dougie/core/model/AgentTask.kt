@@ -11,6 +11,9 @@ data class AgentTask(
     val lastError: String? = null,
     val streamingText: String? = null,
     val retrievedMemories: List<MemoryEntry> = emptyList(),
+    val attachedCaptureId: String? = null,
+    val attachedWidth: Int? = null,
+    val attachedHeight: Int? = null,
 )
 
 enum class TaskStatus {

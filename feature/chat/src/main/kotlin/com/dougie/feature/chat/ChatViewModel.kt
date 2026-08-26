@@ -18,14 +18,24 @@ class ChatViewModel(
         .map { it.toChatUiState() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
 
-    fun send(text: String) {
-        taskManager.submit(text)
+    fun send(
+        text: String,
+        attachedCaptureId: String? = null,
+        attachedWidth: Int? = null,
+        attachedHeight: Int? = null,
+    ) {
+        taskManager.submit(text, attachedCaptureId, attachedWidth, attachedHeight)
     }
 
     fun retry() {
         val current = taskManager.task.value ?: return
         if (current.status != TaskStatus.FAILED) return
-        taskManager.submit(current.input)
+        taskManager.submit(
+            current.input,
+            current.attachedCaptureId,
+            current.attachedWidth,
+            current.attachedHeight,
+        )
     }
 
     fun confirm() {

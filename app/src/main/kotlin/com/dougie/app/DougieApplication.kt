@@ -46,10 +46,14 @@ import com.dougie.tool.system.AndroidSystemTtsEngine
 import com.dougie.tool.system.DeviceBatteryTool
 import com.dougie.tool.system.OkHttpModelGet
 import com.dougie.tool.system.SherpaJni
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import com.dougie.core.model.AgentException
+import com.dougie.core.model.UserFacingErrors
+import com.dougie.core.tool.ScreenFrame
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -66,6 +70,10 @@ class DougieApplication : Application() {
     lateinit var permissionUsage: PermissionUsageTracker
         private set
     lateinit var modelInstaller: ModelInstaller
+        private set
+    lateinit var screenFrameStore: InMemoryScreenFrameStore
+        private set
+    lateinit var screenCapturePort: AndroidScreenCapturePort
         private set
     private lateinit var taskProgressNotifier: TaskProgressNotifier
 
@@ -112,12 +120,14 @@ class DougieApplication : Application() {
             fallback = AndroidSystemTtsEngine(this),
         )
         val intentPort = AndroidIntentPort(this)
-        val screenStore = InMemoryScreenFrameStore()
-        val screenPort = AndroidScreenCapturePort(
+        screenFrameStore = InMemoryScreenFrameStore()
+        screenCapturePort = AndroidScreenCapturePort(
             context = this,
             isForeground = { foregroundTracker.foreground },
             onUsed = { permissionUsage.mark(SCREEN_CAPTURE_USAGE_KEY) },
         )
+        val screenStore = screenFrameStore
+        val screenPort = screenCapturePort
         val appIntentPort = AndroidAppIntentPort(
             context = this,
             isForeground = { foregroundTracker.foreground },
@@ -171,6 +181,7 @@ class DougieApplication : Application() {
             ),
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,
+            screenFrames = screenStore,
         )
         runBlocking {
             recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
@@ -183,6 +194,29 @@ class DougieApplication : Application() {
 
     fun republishTaskNotice() {
         taskProgressNotifier.apply(taskManager.task.value)
+    }
+
+    suspend fun pinCurrentScreen(): Result<ScreenFrame> {
+        val port = screenCapturePort
+        if (!port.isAppForeground()) {
+            return Result.failure(AgentException(UserFacingErrors.SCREEN_NOT_FOREGROUND))
+        }
+        if (!port.hasProjectionConsent()) {
+            return Result.failure(AgentException(UserFacingErrors.PERMISSION_DENIED))
+        }
+        return try {
+            val frame = port.capture()
+            screenFrameStore.clearPin()
+            screenFrameStore.put(frame)
+            screenFrameStore.pin()
+            Result.success(frame)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: AgentException) {
+            Result.failure(e)
+        } catch (_: Exception) {
+            Result.failure(AgentException(UserFacingErrors.TOOL_FAILED))
+        }
     }
 
     fun refreshChannelTools() {

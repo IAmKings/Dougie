@@ -211,6 +211,11 @@ class ChatUiStateTest {
         assertEquals(false, state.inputEnabled)
     }
 
+    @Test
+    fun screenAttachChipLabelHasSizeNotPixels() {
+        assertEquals("已附上 · 720×1584", screenAttachChipLabel(720, 1584))
+    }
+
     private fun fact(id: String, source: String) = MemoryEntry(
         id = id,
         content = "我叫小明，住在上海",

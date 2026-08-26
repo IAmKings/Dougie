@@ -204,6 +204,12 @@ Consent is one-shot: after `projection.stop()`, `ScreenCaptureConsentStore.clear
 
 **Decision**: `TemplateLibrary` in `:core:tool` is the catalog: `solid` (8×8 all-white NCC fixture) plus a generated bundled `logo` (24×24 high-contrast D, non-uniform grayscale). `GrayscaleNccMatcher` stays pure JVM. `ScreenMatchTool` downscales captures wider than ~320px before NCC (and the template by the same scale), then maps `x`/`y` back to original capture pixels. Gray bytes stay in process-local `ScreenFrameStore`; tool JSON is `{template_id, found, x, y, confidence}` and is UNTRUSTED_DATA. Do not add OpenCV, `android.*` in `:core:*`, PNG assets `:core:tool` cannot load, or log gray bytes.
 
+## Don't: Put screenshot pixels in the LLM Prompt when Chat attaches a frame
+
+**Problem**: Multi-modal Chat attach could dump grayscale/`data:image` into `task.input` or OpenAI `messages`.
+
+**Instead**: User attach in `:app` calls the same `AndroidScreenCapturePort` as `screen_capture`, then `ScreenFrameStore.put` + `pin()`. `AgentTask` stores only `attachedCaptureId` / `attachedWidth` / `attachedHeight` (codec omits gray). `OpenAICompatibleProvider` appends a one-line system note with those fields. While pinned, `ScreenCaptureTool` returns the same metadata and does not call `port.capture()`; `put` of a different id is ignored. `TaskManager` `clearPin()` in `finally` after the loop (last frame stays). Chat chip is `已附上 · 宽×高` with no thumbnail. Send consumes the chip without `clearPin`; × dismisses and `clearPin()`. Foreground gate is unchanged (Chat in front captures Chat).
+
 ## Don't: Put `TapSwipeTool` in `:core:tool`
 
 **Problem**: `:core:tool` is on the Play classpath. A TapSwipe class there would ship in the Play APK even if unregistered.

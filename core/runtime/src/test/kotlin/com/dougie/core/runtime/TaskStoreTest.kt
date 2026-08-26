@@ -10,6 +10,8 @@ import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.FakeBatteryTool
+import com.dougie.core.tool.InMemoryScreenFrameStore
+import com.dougie.core.tool.whiteSquareOnBlack
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -113,6 +115,30 @@ class TaskStoreTest {
     }
 
     @Test
+    fun submitClearsPinWhenTaskCompletes() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val frames = InMemoryScreenFrameStore()
+        frames.put(whiteSquareOnBlack())
+        frames.pin()
+        val manager = TaskManager(
+            loopEngine = LoopEngine(
+                llm = FakeLlmProvider(),
+                tools = mapOf("battery" to FakeBatteryTool()),
+                dispatcher = dispatcher,
+                stepDelayMs = 0,
+            ),
+            dispatcher = dispatcher,
+            scope = this,
+            screenFrames = frames,
+        )
+        manager.submit("我现在手机还有多少电？", "synthetic", 32, 32)
+        advanceUntilIdle()
+        assertNull(frames.pinned())
+        assertEquals("synthetic", frames.last()?.id)
+        assertEquals("synthetic", manager.task.value?.attachedCaptureId)
+    }
+
+    @Test
     fun snapshotRoundTripPreservesTrace() {
         val original = AgentTask(
             taskId = "snap",
@@ -136,5 +162,33 @@ class TaskStoreTest {
         assertEquals(original.lastError, restored.lastError)
         assertEquals(original.toolTrace.single().toolName, restored.toolTrace.single().toolName)
         assertEquals(original.toolTrace.single().argsSummary, restored.toolTrace.single().argsSummary)
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesAttachedScreenMetadata() {
+        val original = AgentTask(
+            taskId = "snap-cap",
+            input = "看屏幕",
+            attachedCaptureId = "cap1",
+            attachedWidth = 720,
+            attachedHeight = 1584,
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals("cap1", restored.attachedCaptureId)
+        assertEquals(720, restored.attachedWidth)
+        assertEquals(1584, restored.attachedHeight)
+        val encoded = TaskSnapshotCodec.encode(original)
+        assertTrue(!encoded.contains("gray"))
+        assertTrue(!encoded.contains("base64"))
+    }
+
+    @Test
+    fun snapshotDecodeWithoutAttachedFieldsStaysNull() {
+        val restored = TaskSnapshotCodec.decode(
+            TaskSnapshotCodec.encode(AgentTask(taskId = "old", input = "查电量")),
+        )
+        assertNull(restored.attachedCaptureId)
+        assertNull(restored.attachedWidth)
+        assertNull(restored.attachedHeight)
     }
 }

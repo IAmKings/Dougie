@@ -21,6 +21,10 @@ class ScreenCaptureTool(
 
     override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
         require(context.idempotencyKey == context.taskId + context.toolCallId)
+        val pinned = store.pinned()
+        if (pinned != null) {
+            return metadata(pinned)
+        }
         if (!port.isAppForeground()) {
             return ToolResult(
                 json = failJson(UserFacingErrors.SCREEN_NOT_FOREGROUND),
@@ -37,14 +41,16 @@ class ScreenCaptureTool(
         }
         val frame = port.capture()
         store.put(frame)
-        return ToolResult(
-            json = buildJsonObject {
-                put("capture_id", frame.id)
-                put("width", frame.width)
-                put("height", frame.height)
-            }.toString(),
-        )
+        return metadata(frame)
     }
+
+    private fun metadata(frame: ScreenFrame): ToolResult = ToolResult(
+        json = buildJsonObject {
+            put("capture_id", frame.id)
+            put("width", frame.width)
+            put("height", frame.height)
+        }.toString(),
+    )
 
     private fun failJson(message: String): String = buildJsonObject {
         put("ok", false)
