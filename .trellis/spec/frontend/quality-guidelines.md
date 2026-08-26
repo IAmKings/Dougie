@@ -17,7 +17,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 - Using `Noob-Dougie` as the launcher or as the default Chat avatar when a provider is usable. Mapping is `intelligenceMark(...)` in `:feature:chat`.
 - English-only user chrome, “KISS”, or a lone “正在思考” without a loop number (`PRD` §11.1).
 - A TileService or `TaskProgressNotifier` in `:feature:chat`, a Tile/notice that calls `TaskManager.submit`, or a `NotificationListenerService`.
-- Overlay types (`DougieOverlayService`, `TYPE_APPLICATION_OVERLAY`) or `SYSTEM_ALERT_WINDOW` in play / `:feature:settings` / `app/src/main`. Play settings must not mention sideload or 上层显示.
+- Overlay types (`DougieOverlayService`, `TYPE_APPLICATION_OVERLAY`) or `SYSTEM_ALERT_WINDOW` in play / `:feature:settings` / `app/src/main`. Play settings must not mention sideload or 上层显示. Sideload overlay tap may pin a screen (`requireForeground = false`) then `chatLaunchIntent(applyPinnedScreen = true)`; it must not `TaskManager.submit`. LLM `screen_capture` stays foreground-only.
 
 ## Required Patterns
 

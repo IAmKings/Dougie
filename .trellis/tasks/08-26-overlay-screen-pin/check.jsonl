@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Channel leak, tool JSON, JVM tests"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Overlay sideload-only, ChatLaunch tests, no submit"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Permission and capture errors"}
+{"file": ".trellis/tasks/08-26-overlay-screen-pin/prd.md", "reason": "AC1–AC5"}
+{"file": ".trellis/tasks/08-26-overlay-screen-pin/design.md", "reason": "Do not relax ScreenCaptureTool foreground"}

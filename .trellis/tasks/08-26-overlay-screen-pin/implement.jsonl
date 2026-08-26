@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "MediaProjection FGS thread, foreground gate, pin store, overlay sideload-only"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "SCREEN_NOT_FOREGROUND vs overlay background capture"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No pixels in intents or logs"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Overlay sideload; ChatLaunch extras; no submit from overlay"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Attach chip hoisted in MainActivity"}
+{"file": ".trellis/tasks/08-26-overlay-screen-pin/prd.md", "reason": "AC and sideload-only scope"}
+{"file": ".trellis/tasks/08-26-overlay-screen-pin/design.md", "reason": "Hide overlay, extra boolean, pin reuse"}

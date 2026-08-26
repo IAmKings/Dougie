@@ -283,6 +283,26 @@ class MainActivity : ComponentActivity() {
             routeState.value = AppRoute.Chat
         }
         ChatLaunch.scheduleId(intent)?.let { applyScheduleDraft(it) }
+        if (ChatLaunch.applyPinnedScreen(intent)) {
+            applyPinnedScreenChip()
+        }
+    }
+
+    private fun applyPinnedScreenChip() {
+        val app = application as DougieApplication
+        val pinned = app.screenFrameStore.pinned()
+        if (pinned != null) {
+            screenAttachState.value = ScreenAttachUi(
+                captureId = pinned.id,
+                width = pinned.width,
+                height = pinned.height,
+            )
+            screenAttachErrorState.value = null
+        } else {
+            screenAttachState.value = null
+            screenAttachErrorState.value =
+                app.overlayAttachError ?: UserFacingErrors.TOOL_FAILED
+        }
     }
 
     private fun applyScheduleDraft(id: String) {

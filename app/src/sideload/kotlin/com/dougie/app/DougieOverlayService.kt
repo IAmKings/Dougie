@@ -11,12 +11,23 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
+import com.dougie.core.model.AgentException
+import com.dougie.core.model.UserFacingErrors
 import kotlin.math.abs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class DougieOverlayService : Service() {
     private var windowManager: WindowManager? = null
     private var ball: View? = null
     private var params: WindowManager.LayoutParams? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    @Volatile
+    private var capturing = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -91,7 +102,7 @@ class DougieOverlayService : Service() {
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     if (!dragged) {
-                        startActivity(chatLaunchIntent(this))
+                        captureThenOpenChat()
                     }
                     true
                 }
@@ -100,9 +111,36 @@ class DougieOverlayService : Service() {
         }
     }
 
+    private fun captureThenOpenChat() {
+        if (capturing) return
+        capturing = true
+        val app = application as DougieApplication
+        scope.launch {
+            try {
+                ball?.visibility = View.INVISIBLE
+                val result = withContext(Dispatchers.Default) {
+                    app.pinCurrentScreen(requireForeground = false)
+                }
+                result.fold(
+                    onSuccess = { app.overlayAttachError = null },
+                    onFailure = { error ->
+                        app.screenFrameStore.clearPin()
+                        app.overlayAttachError = (error as? AgentException)?.userMessage
+                            ?: UserFacingErrors.TOOL_FAILED
+                    },
+                )
+            } finally {
+                ball?.visibility = View.VISIBLE
+                capturing = false
+                startActivity(chatLaunchIntent(this@DougieOverlayService, applyPinnedScreen = true))
+            }
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
+        scope.cancel()
         ball?.let { view ->
             runCatching { windowManager?.removeView(view) }
         }

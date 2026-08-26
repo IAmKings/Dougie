@@ -21,7 +21,7 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Missing Android permission | `PolicyEngine` denies before execute | `未授权，已为你跳过该操作` |
 | L2 confirm reject / timeout | User rejects Confirm Card, or 60s gate timeout | `该操作需你确认后才执行` |
 | Clipboard read while background | `ClipboardReadTool` foreground check | `应用不在前台，无法读取剪贴板。` |
-| Screen capture while background | `ScreenCaptureTool` foreground check (before starting FGS) | `应用不在前台，无法截取屏幕。` |
+| Screen capture while background | `ScreenCaptureTool` foreground check (before starting FGS). Overlay pin uses `pinCurrentScreen(requireForeground = false)` and does not go through this tool gate. | `应用不在前台，无法截取屏幕。` |
 | Screen capture without MediaProjection token | `ScreenCaptureTool` consent check | `未授权，已为你跳过该操作` |
 | Screen match failed / low confidence | `ScreenMatchTool` must not guess | `未能匹配屏幕内容，已停止以免误操作。` |
 | Disallowed app intent URI | Allowlist rejects tel/sms/file/javascript/content/intent/mailto and unknown schemes | `该链接不被允许打开。` |

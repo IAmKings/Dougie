@@ -21,5 +21,10 @@ class ChatLaunchTest {
         assertFalse(ChatLaunch.EXTRA_SCHEDULE_ID.contains("key", ignoreCase = true))
         assertFalse(ChatLaunch.EXTRA_SCHEDULE_ID.contains("prompt", ignoreCase = true))
         assertEquals(null, ChatLaunch.scheduleId(null))
+        assertEquals("com.dougie.app.extra.APPLY_PINNED_SCREEN", ChatLaunch.EXTRA_APPLY_PINNED_SCREEN)
+        assertFalse(ChatLaunch.EXTRA_APPLY_PINNED_SCREEN.contains("key", ignoreCase = true))
+        assertFalse(ChatLaunch.EXTRA_APPLY_PINNED_SCREEN.contains("prompt", ignoreCase = true))
+        assertFalse(ChatLaunch.EXTRA_APPLY_PINNED_SCREEN.contains("base64", ignoreCase = true))
+        assertFalse(ChatLaunch.applyPinnedScreen(null))
     }
 }

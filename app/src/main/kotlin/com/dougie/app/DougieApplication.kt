@@ -75,6 +75,8 @@ class DougieApplication : Application() {
         private set
     lateinit var screenCapturePort: AndroidScreenCapturePort
         private set
+    @Volatile
+    var overlayAttachError: String? = null
     private lateinit var taskProgressNotifier: TaskProgressNotifier
 
     private val foregroundTracker = AppForegroundTracker()
@@ -196,9 +198,9 @@ class DougieApplication : Application() {
         taskProgressNotifier.apply(taskManager.task.value)
     }
 
-    suspend fun pinCurrentScreen(): Result<ScreenFrame> {
+    suspend fun pinCurrentScreen(requireForeground: Boolean = true): Result<ScreenFrame> {
         val port = screenCapturePort
-        if (!port.isAppForeground()) {
+        if (requireForeground && !port.isAppForeground()) {
             return Result.failure(AgentException(UserFacingErrors.SCREEN_NOT_FOREGROUND))
         }
         if (!port.hasProjectionConsent()) {
