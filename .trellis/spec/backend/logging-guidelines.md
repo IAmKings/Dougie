@@ -14,6 +14,7 @@
 - Native intent JNI must not log features, labels, or input text.
 - Model download URLs (especially query strings) and partial `.part` paths in Logcat
 - SAF content URIs and import source paths in Logcat
+- Gallery/camera content URIs, JPEG/base64 payloads, and capture gray bytes in Logcat or notification extras
 - Task-progress notification body: user `input`, `finalAnswer`, `lastError`, `streamingText`, tool `argsSummary`, or `resultJson` (shade may show `TaskStatus` + `loopCount` + last **tool name** only)
 - Overlay ball / Play bubble chrome: user prompt, `lastError`, loop status, or tool args — sideload `DougieOverlayService` shows **Dougie** (`app_name`) only
 - Schedule reminder notification: user draft/prompt (body is `定时提醒 · HH:mm` only)

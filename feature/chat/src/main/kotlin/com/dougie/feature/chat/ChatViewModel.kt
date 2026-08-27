@@ -20,11 +20,18 @@ class ChatViewModel(
 
     fun send(
         text: String,
-        attachedCaptureId: String? = null,
-        attachedWidth: Int? = null,
-        attachedHeight: Int? = null,
+        attachments: List<com.dougie.core.model.AttachmentMeta> = emptyList(),
     ) {
-        taskManager.submit(text, attachedCaptureId, attachedWidth, attachedHeight)
+        val lastScreen = attachments.lastOrNull {
+            it.kind == com.dougie.core.model.AttachmentKind.SCREEN
+        }
+        taskManager.submit(
+            text,
+            lastScreen?.id,
+            lastScreen?.width,
+            lastScreen?.height,
+            attachments,
+        )
     }
 
     fun retry() {
@@ -35,6 +42,7 @@ class ChatViewModel(
             current.attachedCaptureId,
             current.attachedWidth,
             current.attachedHeight,
+            current.attachments,
         )
     }
 

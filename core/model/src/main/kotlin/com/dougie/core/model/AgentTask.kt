@@ -14,6 +14,7 @@ data class AgentTask(
     val attachedCaptureId: String? = null,
     val attachedWidth: Int? = null,
     val attachedHeight: Int? = null,
+    val attachments: List<AttachmentMeta> = emptyList(),
 )
 
 enum class TaskStatus {
@@ -83,6 +84,7 @@ object AndroidPermissions {
     const val ACCESS_COARSE_LOCATION = "android.permission.ACCESS_COARSE_LOCATION"
     const val RECORD_AUDIO = "android.permission.RECORD_AUDIO"
     const val POST_NOTIFICATIONS = "android.permission.POST_NOTIFICATIONS"
+    const val CAMERA = "android.permission.CAMERA"
 }
 
 data class ToolParamSpec(

@@ -212,8 +212,19 @@ class ChatUiStateTest {
     }
 
     @Test
-    fun screenAttachChipLabelHasSizeNotPixels() {
-        assertEquals("已附上 · 720×1584", screenAttachChipLabel(720, 1584))
+    fun attachmentChipLabelsHaveKindAndSizeNotPixels() {
+        assertEquals(
+            "屏幕 · 720×1584",
+            ChatAttachmentUi("c1", com.dougie.core.model.AttachmentKind.SCREEN, 720, 1584).chipLabel(),
+        )
+        assertEquals(
+            "相册 · 800×600",
+            ChatAttachmentUi("g1", com.dougie.core.model.AttachmentKind.GALLERY, 800, 600).chipLabel(),
+        )
+        assertEquals(
+            "拍照 · 640×480",
+            ChatAttachmentUi("p1", com.dougie.core.model.AttachmentKind.CAMERA, 640, 480).chipLabel(),
+        )
     }
 
     private fun fact(id: String, source: String) = MemoryEntry(

@@ -45,6 +45,7 @@ object UserFacingErrors {
     const val MODEL_PROBE_TTS_OK = "语音合成测试通过。"
     const val MODEL_PROBE_INTENT_OK = "意图分类测试通过。"
     const val MODEL_PROBE_TIMEOUT = "离线模型测试超时，请稍后重试。"
+    const val ATTACHMENTS_FULL = "最多附上 4 张"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

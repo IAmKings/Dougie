@@ -1,6 +1,8 @@
 package com.dougie.core.runtime
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
@@ -44,6 +46,10 @@ object TaskSnapshotCodec {
         putNullable("attachedCaptureId", task.attachedCaptureId)
         if (task.attachedWidth != null) put("attachedWidth", task.attachedWidth)
         if (task.attachedHeight != null) put("attachedHeight", task.attachedHeight)
+        put(
+            "attachments",
+            JsonArray(task.attachments.map { encodeAttachment(it) }),
+        )
     }.toString()
 
     fun decode(raw: String): AgentTask {
@@ -64,7 +70,28 @@ object TaskSnapshotCodec {
             attachedCaptureId = obj.optionalString("attachedCaptureId"),
             attachedWidth = obj["attachedWidth"]?.jsonPrimitive?.intOrNull,
             attachedHeight = obj["attachedHeight"]?.jsonPrimitive?.intOrNull,
+            attachments = obj["attachments"]?.jsonArray
+                ?.mapNotNull { decodeAttachment(it.jsonObject) }
+                .orEmpty(),
         )
+    }
+
+    private fun encodeAttachment(meta: AttachmentMeta): JsonObject = buildJsonObject {
+        put("id", meta.id)
+        put("kind", meta.kind.name)
+        put("width", meta.width)
+        put("height", meta.height)
+    }
+
+    private fun decodeAttachment(obj: JsonObject): AttachmentMeta? {
+        val id = obj.string("id").ifBlank { return null }
+        val kind = obj["kind"]?.jsonPrimitive?.contentOrNull
+            ?.let { runCatching { AttachmentKind.valueOf(it) }.getOrNull() }
+            ?: return null
+        val width = obj["width"]?.jsonPrimitive?.intOrNull ?: return null
+        val height = obj["height"]?.jsonPrimitive?.intOrNull ?: return null
+        if (width <= 0 || height <= 0) return null
+        return AttachmentMeta(id = id, kind = kind, width = width, height = height)
     }
 
     private fun encodeTrace(entry: ToolTraceEntry): JsonObject = buildJsonObject {

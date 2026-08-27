@@ -2,6 +2,7 @@ package com.dougie.core.llm
 
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.LlmVendors
 import com.dougie.core.model.LlmEvent
@@ -47,6 +48,8 @@ class OpenAICompatibleProvider(
     private val client: OkHttpClient,
     private val toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
     private val config: () -> CloudLlmConfig,
+    private val allowCloud: () -> Boolean = { false },
+    private val attachmentJpeg: (String) -> ByteArray? = { null },
 ) : LlmProvider {
     override val isLocal: Boolean = false
 
@@ -165,7 +168,7 @@ class OpenAICompatibleProvider(
             add(
                 buildJsonObject {
                     put("role", "user")
-                    put("content", task.input)
+                    put("content", userContent(task))
                 },
             )
             for (trace in task.toolTrace) {
@@ -294,14 +297,59 @@ class OpenAICompatibleProvider(
         return element.toString()
     }
 
+    private fun userContent(task: AgentTask): JsonElement {
+        val images = if (allowCloud()) {
+            task.attachments.mapNotNull { meta ->
+                if (meta.kind == AttachmentKind.SCREEN) return@mapNotNull null
+                val jpeg = attachmentJpeg(meta.id) ?: return@mapNotNull null
+                if (jpeg.isEmpty()) return@mapNotNull null
+                val b64 = java.util.Base64.getEncoder().encodeToString(jpeg)
+                buildJsonObject {
+                    put("type", "image_url")
+                    put(
+                        "image_url",
+                        buildJsonObject {
+                            put("url", "data:image/jpeg;base64,$b64")
+                        },
+                    )
+                }
+            }
+        } else {
+            emptyList()
+        }
+        if (images.isEmpty()) return JsonPrimitive(task.input)
+        return buildJsonArray {
+            add(
+                buildJsonObject {
+                    put("type", "text")
+                    put("text", task.input)
+                },
+            )
+            images.forEach { add(it) }
+        }
+    }
+
     private fun systemPrompt(task: AgentTask): String {
         val parts = mutableListOf(SYSTEM_PROMPT)
-        val captureId = task.attachedCaptureId
-        val width = task.attachedWidth
-        val height = task.attachedHeight
-        if (!captureId.isNullOrBlank() && width != null && height != null) {
-            parts += "User attached screen capture_id=$captureId (${width}x$height). " +
-                "Use screen_match on this frame. Do not call screen_capture unless the user asks for a new capture."
+        val lines = task.attachments.map { meta ->
+            val kind = meta.kind.name.lowercase()
+            val extra = if (meta.kind == AttachmentKind.SCREEN) {
+                " Pixels stay on device; use screen_match on this capture_id. Do not expect image bytes."
+            } else {
+                " Photo metadata only unless cloud vision parts are present."
+            }
+            "attachment id=${meta.id} kind=$kind ${meta.width}x${meta.height}.$extra"
+        }
+        if (lines.isEmpty()) {
+            val captureId = task.attachedCaptureId
+            val width = task.attachedWidth
+            val height = task.attachedHeight
+            if (!captureId.isNullOrBlank() && width != null && height != null) {
+                parts += "User attached screen capture_id=$captureId (${width}x$height). " +
+                    "Use screen_match on this frame. Do not call screen_capture unless the user asks for a new capture."
+            }
+        } else {
+            parts += "User attached:\n" + lines.joinToString("\n")
         }
         if (task.retrievedMemories.isNotEmpty()) {
             val facts = task.retrievedMemories.joinToString(separator = "\n") { "- ${it.content}" }

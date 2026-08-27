@@ -1,6 +1,8 @@
 package com.dougie.core.runtime
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.ScreenFrameStore
@@ -21,6 +23,7 @@ class TaskManager(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher),
     private val taskStore: TaskStore? = null,
     private val screenFrames: ScreenFrameStore? = null,
+    private val onTaskFinished: () -> Unit = {},
 ) {
     private val _task = MutableStateFlow<AgentTask?>(null)
     val task: StateFlow<AgentTask?> = _task.asStateFlow()
@@ -36,6 +39,7 @@ class TaskManager(
         attachedCaptureId: String? = null,
         attachedWidth: Int? = null,
         attachedHeight: Int? = null,
+        attachments: List<AttachmentMeta> = emptyList(),
     ) {
         val trimmed = input.trim()
         if (trimmed.isEmpty()) return
@@ -45,17 +49,20 @@ class TaskManager(
         ) {
             return
         }
-        val captureId = attachedCaptureId?.takeIf { it.isNotBlank() }
+        val lastScreen = attachments.lastOrNull { it.kind == AttachmentKind.SCREEN }
+        val captureId = lastScreen?.id?.takeIf { it.isNotBlank() }
+            ?: attachedCaptureId?.takeIf { it.isNotBlank() }
         val frames = screenFrames
-        if (captureId != null && frames != null && frames.last()?.id == captureId) {
-            frames.pin()
+        if (captureId != null) {
+            frames?.pinId(captureId)
         }
         val created = AgentTask(
             taskId = UUID.randomUUID().toString(),
             input = trimmed,
             attachedCaptureId = captureId,
-            attachedWidth = attachedWidth?.takeIf { it > 0 },
-            attachedHeight = attachedHeight?.takeIf { it > 0 },
+            attachedWidth = (lastScreen?.width ?: attachedWidth)?.takeIf { it > 0 },
+            attachedHeight = (lastScreen?.height ?: attachedHeight)?.takeIf { it > 0 },
+            attachments = attachments,
         )
         _task.value = created
         running = scope.launch(dispatcher) {
@@ -70,6 +77,7 @@ class TaskManager(
                 throw e
             } finally {
                 screenFrames?.clearPin()
+                onTaskFinished()
             }
         }
     }

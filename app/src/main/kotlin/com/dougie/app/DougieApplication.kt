@@ -75,6 +75,8 @@ class DougieApplication : Application() {
         private set
     lateinit var screenCapturePort: AndroidScreenCapturePort
         private set
+    lateinit var attachmentSession: ChatAttachmentSession
+        private set
     @Volatile
     var overlayAttachError: String? = null
     private lateinit var taskProgressNotifier: TaskProgressNotifier
@@ -130,6 +132,7 @@ class DougieApplication : Application() {
         )
         val screenStore = screenFrameStore
         val screenPort = screenCapturePort
+        attachmentSession = ChatAttachmentSession(screenStore)
         val appIntentPort = AndroidAppIntentPort(
             context = this,
             isForeground = { foregroundTracker.foreground },
@@ -162,6 +165,8 @@ class DougieApplication : Application() {
                 )
             },
             toolDescriptors = { tools.values.map { it.descriptor } },
+            allowCloud = { preferenceStore.settings.value.allowCloud },
+            attachmentJpeg = { attachmentSession.jpeg(it) },
         )
         val gateway = EgressGateway(
             policy = { EgressPolicy(allowCloud = preferenceStore.settings.value.allowCloud) },
@@ -184,6 +189,7 @@ class DougieApplication : Application() {
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,
             screenFrames = screenStore,
+            onTaskFinished = { attachmentSession.releaseAfterTask() },
         )
         runBlocking {
             recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
@@ -208,10 +214,7 @@ class DougieApplication : Application() {
         }
         return try {
             val frame = port.capture()
-            screenFrameStore.clearPin()
-            screenFrameStore.put(frame)
-            screenFrameStore.pin()
-            Result.success(frame)
+            attachmentSession.addScreen(frame).map { frame }
         } catch (e: CancellationException) {
             throw e
         } catch (e: AgentException) {

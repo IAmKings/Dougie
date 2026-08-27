@@ -39,10 +39,17 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Memory
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.zIndex
+import com.dougie.core.model.AttachmentMeta
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
@@ -86,12 +93,17 @@ fun ChatRoute(
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
-    attachedScreen: ScreenAttachUi? = null,
+    attachments: List<ChatAttachmentUi> = emptyList(),
     attachedError: String? = null,
-    attachingScreen: Boolean = false,
-    onAttachScreen: () -> Unit = {},
-    onClearAttachedScreen: () -> Unit = {},
-    onDismissAttachedScreen: () -> Unit = {},
+    attaching: Boolean = false,
+    onCaptureScreen: () -> Unit = {},
+    onPickGallery: () -> Unit = {},
+    onTakePhoto: () -> Unit = {},
+    onRemoveAttachment: (String) -> Unit = {},
+    onPreviewAttachment: (String) -> Unit = {},
+    previewImage: ImageBitmap? = null,
+    onClosePreview: () -> Unit = {},
+    onAttachmentsConsumed: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
@@ -99,11 +111,9 @@ fun ChatRoute(
         onSend = { text ->
             viewModel.send(
                 text,
-                attachedScreen?.captureId,
-                attachedScreen?.width,
-                attachedScreen?.height,
+                attachments.map { AttachmentMeta(it.id, it.kind, it.width, it.height) },
             )
-            onClearAttachedScreen()
+            onAttachmentsConsumed()
         },
         onConfirm = viewModel::confirm,
         onReject = viewModel::reject,
@@ -116,11 +126,16 @@ fun ChatRoute(
         onOpenMemory = onOpenMemory,
         onOpenPermissions = onOpenPermissions,
         onOpenHistory = onOpenHistory,
-        attachedScreen = attachedScreen,
+        attachments = attachments,
         attachedError = attachedError,
-        attachingScreen = attachingScreen,
-        onAttachScreen = onAttachScreen,
-        onDismissAttachedScreen = onDismissAttachedScreen,
+        attaching = attaching,
+        onCaptureScreen = onCaptureScreen,
+        onPickGallery = onPickGallery,
+        onTakePhoto = onTakePhoto,
+        onRemoveAttachment = onRemoveAttachment,
+        onPreviewAttachment = onPreviewAttachment,
+        previewImage = previewImage,
+        onClosePreview = onClosePreview,
     )
 }
 
@@ -139,12 +154,18 @@ fun ChatScreen(
     onOpenHistory: () -> Unit = {},
     composerText: String = "",
     onComposerChange: (String) -> Unit = {},
-    attachedScreen: ScreenAttachUi? = null,
+    attachments: List<ChatAttachmentUi> = emptyList(),
     attachedError: String? = null,
-    attachingScreen: Boolean = false,
-    onAttachScreen: () -> Unit = {},
-    onDismissAttachedScreen: () -> Unit = {},
+    attaching: Boolean = false,
+    onCaptureScreen: () -> Unit = {},
+    onPickGallery: () -> Unit = {},
+    onTakePhoto: () -> Unit = {},
+    onRemoveAttachment: (String) -> Unit = {},
+    onPreviewAttachment: (String) -> Unit = {},
+    previewImage: ImageBitmap? = null,
+    onClosePreview: () -> Unit = {},
 ) {
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -180,17 +201,38 @@ fun ChatScreen(
             text = composerText,
             onTextChange = onComposerChange,
             onSend = onSend,
-            attachedScreen = attachedScreen,
+            attachments = attachments,
             attachedError = attachedError,
-            attachingScreen = attachingScreen,
-            onAttachScreen = onAttachScreen,
-            onDismissAttachedScreen = onDismissAttachedScreen,
+            attaching = attaching,
+            onCaptureScreen = onCaptureScreen,
+            onPickGallery = onPickGallery,
+            onTakePhoto = onTakePhoto,
+            onRemoveAttachment = onRemoveAttachment,
+            onPreviewAttachment = onPreviewAttachment,
         )
         DougieBottomBar(
             onOpenSettings = onOpenSettings,
             onOpenMemory = onOpenMemory,
             onOpenHistory = onOpenHistory,
         )
+    }
+    if (previewImage != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(2f)
+                .background(Color.Black.copy(alpha = 0.92f))
+                .clickable(onClick = onClosePreview),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                bitmap = previewImage,
+                contentDescription = "附件预览",
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.Fit,
+            )
+        }
+    }
     }
 }
 
@@ -702,12 +744,17 @@ private fun ChatInputBar(
     text: String,
     onTextChange: (String) -> Unit,
     onSend: (String) -> Unit,
-    attachedScreen: ScreenAttachUi? = null,
+    attachments: List<ChatAttachmentUi> = emptyList(),
     attachedError: String? = null,
-    attachingScreen: Boolean = false,
-    onAttachScreen: () -> Unit = {},
-    onDismissAttachedScreen: () -> Unit = {},
+    attaching: Boolean = false,
+    onCaptureScreen: () -> Unit = {},
+    onPickGallery: () -> Unit = {},
+    onTakePhoto: () -> Unit = {},
+    onRemoveAttachment: (String) -> Unit = {},
+    onPreviewAttachment: (String) -> Unit = {},
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val full = attachments.size >= ATTACHMENT_MAX
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -721,39 +768,52 @@ private fun ChatInputBar(
                 .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
                 .background(DougieColors.SurfaceContainerLowest),
         ) {
-            if (attachedScreen != null || !attachedError.isNullOrBlank()) {
-                Row(
+            if (attachments.isNotEmpty() || !attachedError.isNullOrBlank()) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (attachedScreen != null) {
+                    if (!attachedError.isNullOrBlank()) {
                         Text(
-                            text = screenAttachChipLabel(attachedScreen.width, attachedScreen.height),
-                            color = DougieColors.OnSurface,
-                            fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IconButton(
-                            onClick = onDismissAttachedScreen,
-                            enabled = enabled,
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(
-                                Icons.Filled.Close,
-                                contentDescription = "取消附上屏幕",
-                                tint = DougieColors.OnSurfaceVariant,
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = attachedError.orEmpty(),
+                            text = attachedError,
                             color = DougieColors.Error,
                             fontSize = 12.sp,
-                            modifier = Modifier.weight(1f),
                         )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        attachments.forEach { item ->
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(DougieColors.SurfaceContainer)
+                                    .clickable { onPreviewAttachment(item.id) }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = item.chipLabel(),
+                                    color = DougieColors.OnSurface,
+                                    fontSize = 12.sp,
+                                )
+                                IconButton(
+                                    onClick = { onRemoveAttachment(item.id) },
+                                    enabled = enabled,
+                                    modifier = Modifier.size(28.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = "移除附件",
+                                        tint = DougieColors.OnSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -781,25 +841,48 @@ private fun ChatInputBar(
                 IconButton(onClick = {}, enabled = false) {
                     Icon(Icons.Filled.Mic, contentDescription = "麦克风", tint = DougieColors.OnSurfaceVariant)
                 }
-                IconButton(
-                    onClick = onAttachScreen,
-                    enabled = enabled && !attachingScreen,
-                ) {
-                    Icon(
-                        Icons.Filled.PhotoCamera,
-                        contentDescription = "附上屏幕",
-                        tint = if (enabled && !attachingScreen) {
-                            DougieColors.OnSurface
-                        } else {
-                            DougieColors.OnSurfaceVariant
-                        },
-                    )
+                Box {
+                    IconButton(
+                        onClick = { menuOpen = true },
+                        enabled = enabled && !attaching,
+                    ) {
+                        Icon(
+                            Icons.Filled.AttachFile,
+                            contentDescription = "附件",
+                            tint = if (enabled && !attaching) {
+                                DougieColors.OnSurface
+                            } else {
+                                DougieColors.OnSurfaceVariant
+                            },
+                        )
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("截取屏幕") },
+                            enabled = !full,
+                            onClick = {
+                                menuOpen = false
+                                onCaptureScreen()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("相册") },
+                            enabled = !full,
+                            onClick = {
+                                menuOpen = false
+                                onPickGallery()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("拍照") },
+                            enabled = !full,
+                            onClick = {
+                                menuOpen = false
+                                onTakePhoto()
+                            },
+                        )
+                    }
                 }
-                Text(
-                    text = "将截取当前屏幕",
-                    color = DougieColors.OnSurfaceVariant,
-                    fontSize = 10.sp,
-                )
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(6.dp))

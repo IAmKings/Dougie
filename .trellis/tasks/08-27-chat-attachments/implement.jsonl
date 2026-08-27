@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "pin store, pixels not in prompt, overlay sideload"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Tool JSON, JVM tests, no android in core"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No capture pixels, prompts, SAF URIs in logs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "PERMISSION_DENIED and screen foreground copy"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ChatRoute callbacks, Chinese chrome"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No Loop from feature; mapping tests; overlay not on Play"}
+{"file": ".trellis/tasks/08-27-chat-attachments/prd.md", "reason": "Hybrid egress and max 4"}
+{"file": ".trellis/tasks/08-27-chat-attachments/design.md", "reason": "Vision parts, Photo Picker, store-by-id"}

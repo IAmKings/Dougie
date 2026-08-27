@@ -16,7 +16,7 @@ Pattern used everywhere (`ChatScreen.kt`, `SettingsScreen.kt`, `MemoryScreen.kt`
 
 Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` for `UserMessage` / `Thinking` / `ToolCard` / `ConfirmCard` / `AgentMessage`.
 
-- Chat composer: `composerText` / schedule draft and **附上屏幕** chip are hoisted in `MainActivity`. Capture runs in `:app` (`pinCurrentScreen`); `:feature:chat` only gets `ScreenAttachUi` (id + width + height) and callbacks. × is dismiss (`clearPin`); send is consume chip only. Copy: **附上屏幕** / **将截取当前屏幕** / **已附上 · 宽×高** / **取消附上屏幕**.
+- Chat composer: `composerText` / schedule draft and attachment chips are hoisted in `MainActivity`. Capture, Photo Picker, and `TakePicture` run in `:app` (`ChatAttachmentSession`); `:feature:chat` only gets `ChatAttachmentUi` (id, kind, width, height) plus menu/preview callbacks. One **附件** menu: **截取屏幕 / 相册 / 拍照**. Chips: **屏幕|相册|拍照 · 宽×高**. × removes that item; send consumes the composer list. Max 4. Overlay still adds a screenshot only.
 
 ## Props Conventions
 

@@ -152,6 +152,17 @@ class ScreenCaptureToolTest {
         store.put(ScreenFrame("other", 8, 8, ByteArray(64)))
         assertEquals("other", store.last()?.id)
     }
+
+    @Test
+    fun storeHoldsFourFramesAndRejectsFifth() {
+        val store = InMemoryScreenFrameStore()
+        repeat(4) { i ->
+            assertTrue(store.put(ScreenFrame("f$i", 2, 2, ByteArray(4))))
+        }
+        assertFalse(store.put(ScreenFrame("f4", 2, 2, ByteArray(4))))
+        assertEquals(4, store.size())
+        assertEquals("f3", store.last()?.id)
+    }
 }
 
 class ScreenMatchToolTest {

@@ -10,7 +10,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.content.FileProvider
+import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentLimits
+import com.dougie.feature.chat.ChatAttachmentUi
+import com.dougie.feature.chat.toUi
+import java.io.File
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +40,6 @@ import com.dougie.feature.debug.DebugRoute
 import com.dougie.feature.debug.DebugViewModel
 import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
-import com.dougie.feature.chat.ScreenAttachUi
 import com.dougie.feature.chat.intelligenceMark
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,9 +56,25 @@ private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debu
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
     private val chatDraftState = mutableStateOf("")
-    private val screenAttachState = mutableStateOf<ScreenAttachUi?>(null)
-    private val screenAttachErrorState = mutableStateOf<String?>(null)
-    private val screenAttachingState = mutableStateOf(false)
+    private val attachmentsState = mutableStateOf<List<ChatAttachmentUi>>(emptyList())
+    private val attachErrorState = mutableStateOf<String?>(null)
+    private val attachingState = mutableStateOf(false)
+    private val previewState = mutableStateOf<ImageBitmap?>(null)
+    private var cameraOutput: File? = null
+
+    private val galleryPicker = registerForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(AttachmentLimits.MAX),
+    ) { uris -> ingestGallery(uris) }
+
+    private val takePicture = registerForActivityResult(
+        ActivityResultContracts.TakePicture(),
+    ) { ok -> ingestCamera(ok) }
+
+    private val cameraPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) startCamera() else attachErrorState.value = UserFacingErrors.PERMISSION_DENIED
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,9 +92,10 @@ class MainActivity : ComponentActivity() {
                 ) {
                 var route by routeState
                 var chatDraft by chatDraftState
-                var screenAttach by screenAttachState
-                var screenAttachError by screenAttachErrorState
-                var screenAttaching by screenAttachingState
+                var attachments by attachmentsState
+                var attachError by attachErrorState
+                var attaching by attachingState
+                var previewImage by previewState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
                 val notifyLauncher = rememberLauncherForActivityResult(
@@ -109,18 +134,24 @@ class MainActivity : ComponentActivity() {
                             ),
                             composerText = chatDraft,
                             onComposerChange = { chatDraft = it },
-                            attachedScreen = screenAttach,
-                            attachedError = screenAttachError,
-                            attachingScreen = screenAttaching,
-                            onAttachScreen = { attachCurrentScreen() },
-                            onClearAttachedScreen = {
-                                screenAttach = null
-                                screenAttachError = null
+                            attachments = attachments,
+                            attachedError = attachError,
+                            attaching = attaching,
+                            onCaptureScreen = { attachCurrentScreen() },
+                            onPickGallery = { pickGallery() },
+                            onTakePhoto = { requestCamera() },
+                            onRemoveAttachment = { id ->
+                                app.attachmentSession.remove(id)
+                                previewImage = null
+                                syncChips()
                             },
-                            onDismissAttachedScreen = {
-                                screenAttach = null
-                                screenAttachError = null
-                                app.screenFrameStore.clearPin()
+                            onPreviewAttachment = { id -> previewAttachment(id) },
+                            previewImage = previewImage,
+                            onClosePreview = { previewImage = null },
+                            onAttachmentsConsumed = {
+                                app.attachmentSession.clearComposer()
+                                previewImage = null
+                                syncChips()
                             },
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
@@ -253,29 +284,156 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun attachCurrentScreen() {
-        if (screenAttachingState.value) return
+        if (attachingState.value) return
         val app = application as DougieApplication
-        screenAttachingState.value = true
-        screenAttachErrorState.value = null
+        if (app.attachmentSession.remaining() == 0) {
+            attachErrorState.value = UserFacingErrors.ATTACHMENTS_FULL
+            return
+        }
+        attachingState.value = true
+        attachErrorState.value = null
         lifecycleScope.launch {
             val result = withContext(Dispatchers.Default) { app.pinCurrentScreen() }
-            screenAttachingState.value = false
+            attachingState.value = false
             result.fold(
-                onSuccess = { frame ->
-                    screenAttachState.value = ScreenAttachUi(
-                        captureId = frame.id,
-                        width = frame.width,
-                        height = frame.height,
-                    )
-                    screenAttachErrorState.value = null
+                onSuccess = {
+                    attachErrorState.value = null
+                    syncChips()
                 },
                 onFailure = { error ->
-                    screenAttachState.value = null
-                    screenAttachErrorState.value = (error as? AgentException)?.userMessage
+                    attachErrorState.value = (error as? AgentException)?.userMessage
                         ?: UserFacingErrors.TOOL_FAILED
+                    syncChips()
                 },
             )
         }
+    }
+
+    private fun pickGallery() {
+        val app = application as DougieApplication
+        if (app.attachmentSession.remaining() == 0) {
+            attachErrorState.value = UserFacingErrors.ATTACHMENTS_FULL
+            return
+        }
+        galleryPicker.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+        )
+    }
+
+    private fun requestCamera() {
+        val app = application as DougieApplication
+        if (app.attachmentSession.remaining() == 0) {
+            attachErrorState.value = UserFacingErrors.ATTACHMENTS_FULL
+            return
+        }
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            AndroidPermissions.CAMERA,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) startCamera() else cameraPermission.launch(AndroidPermissions.CAMERA)
+    }
+
+    private fun startCamera() {
+        val dir = File(cacheDir, "camera").apply { mkdirs() }
+        val file = File.createTempFile("shot", ".jpg", dir)
+        cameraOutput = file
+        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        takePicture.launch(uri)
+    }
+
+    private fun ingestGallery(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        val app = application as DougieApplication
+        attachingState.value = true
+        attachErrorState.value = null
+        lifecycleScope.launch {
+            val overflow = withContext(Dispatchers.Default) {
+                var full = false
+                for (uri in uris) {
+                    if (app.attachmentSession.remaining() == 0) {
+                        full = true
+                        break
+                    }
+                    val raw = runCatching {
+                        contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    }.getOrNull() ?: continue
+                    val jpeg = ChatImageCodec.jpegFromGalleryBytes(raw) ?: continue
+                    val added = app.attachmentSession.addPhoto(
+                        AttachmentKind.GALLERY,
+                        jpeg.first,
+                        jpeg.second,
+                        jpeg.third,
+                    )
+                    if (added.isFailure) {
+                        full = true
+                        break
+                    }
+                }
+                full
+            }
+            attachingState.value = false
+            if (overflow) attachErrorState.value = UserFacingErrors.ATTACHMENTS_FULL
+            syncChips()
+        }
+    }
+
+    private fun ingestCamera(ok: Boolean) {
+        val file = cameraOutput
+        cameraOutput = null
+        if (!ok || file == null) {
+            file?.delete()
+            return
+        }
+        val app = application as DougieApplication
+        attachingState.value = true
+        attachErrorState.value = null
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.Default) {
+                val raw = runCatching { file.readBytes() }.getOrNull()
+                file.delete()
+                if (raw == null) {
+                    return@withContext Result.failure(AgentException(UserFacingErrors.TOOL_FAILED))
+                }
+                val jpeg = ChatImageCodec.jpegFromGalleryBytes(raw)
+                    ?: return@withContext Result.failure(AgentException(UserFacingErrors.TOOL_FAILED))
+                app.attachmentSession.addPhoto(
+                    AttachmentKind.CAMERA,
+                    jpeg.first,
+                    jpeg.second,
+                    jpeg.third,
+                )
+            }
+            attachingState.value = false
+            result.fold(
+                onSuccess = { attachErrorState.value = null },
+                onFailure = { error ->
+                    attachErrorState.value = (error as? AgentException)?.userMessage
+                        ?: UserFacingErrors.TOOL_FAILED
+                },
+            )
+            syncChips()
+        }
+    }
+
+    private fun previewAttachment(id: String) {
+        val app = application as DougieApplication
+        val meta = app.attachmentSession.snapshot().find { it.id == id } ?: return
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.Default) {
+                when (meta.kind) {
+                    AttachmentKind.SCREEN ->
+                        app.screenFrameStore.get(id)?.let { ChatImageCodec.grayPreview(it) }
+                    AttachmentKind.GALLERY, AttachmentKind.CAMERA ->
+                        app.attachmentSession.jpeg(id)?.let { ChatImageCodec.jpegPreview(it) }
+                }
+            }
+            previewState.value = bitmap?.asImageBitmap()
+        }
+    }
+
+    private fun syncChips() {
+        val app = application as DougieApplication
+        attachmentsState.value = app.attachmentSession.snapshot().map { it.toUi() }
     }
 
     private fun applyChatIntent(intent: Intent?) {
@@ -290,18 +448,14 @@ class MainActivity : ComponentActivity() {
 
     private fun applyPinnedScreenChip() {
         val app = application as DougieApplication
-        val pinned = app.screenFrameStore.pinned()
-        if (pinned != null) {
-            screenAttachState.value = ScreenAttachUi(
-                captureId = pinned.id,
-                width = pinned.width,
-                height = pinned.height,
-            )
-            screenAttachErrorState.value = null
+        syncChips()
+        val error = app.overlayAttachError
+        if (error != null) {
+            attachErrorState.value = error
+        } else if (attachmentsState.value.isEmpty()) {
+            attachErrorState.value = UserFacingErrors.TOOL_FAILED
         } else {
-            screenAttachState.value = null
-            screenAttachErrorState.value =
-                app.overlayAttachError ?: UserFacingErrors.TOOL_FAILED
+            attachErrorState.value = null
         }
     }
 

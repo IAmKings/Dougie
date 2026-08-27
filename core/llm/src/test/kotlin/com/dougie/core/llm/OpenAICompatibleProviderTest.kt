@@ -1,6 +1,8 @@
 package com.dougie.core.llm
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
@@ -173,6 +175,86 @@ class OpenAICompatibleProviderTest {
     }
 
     @Test
+    fun screenAttachmentNeverAddsVisionPartsEvenWhenCloudAllowed() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val jpeg = ByteArray(8) { 1 }
+        testProvider(allowCloud = true, jpeg = { jpeg }).generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "cap",
+                    input = "看屏幕",
+                    attachments = listOf(
+                        AttachmentMeta("cap1", AttachmentKind.SCREEN, 720, 1584),
+                    ),
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("kind=screen"))
+        assertTrue(body.contains("cap1"))
+        assertTrue(!body.contains("data:image"))
+        assertTrue(!body.contains("image_url"))
+    }
+
+    @Test
+    fun galleryAttachmentStaysMetadataWhenCloudDenied() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val jpeg = ByteArray(8) { 1 }
+        testProvider(allowCloud = false, jpeg = { jpeg }).generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "gal",
+                    input = "这是什么",
+                    attachments = listOf(
+                        AttachmentMeta("g1", AttachmentKind.GALLERY, 800, 600),
+                    ),
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("kind=gallery"))
+        assertTrue(body.contains("g1"))
+        assertTrue(body.contains("这是什么"))
+        assertTrue(!body.contains("data:image"))
+        assertTrue(!body.contains("image_url"))
+    }
+
+    @Test
+    fun galleryAttachmentAddsVisionPartWhenCloudAllowed() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte())
+        val expected = java.util.Base64.getEncoder().encodeToString(jpeg)
+        testProvider(allowCloud = true, jpeg = { if (it == "g1") jpeg else null }).generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "gal-v",
+                    input = "描述图片",
+                    attachments = listOf(
+                        AttachmentMeta("g1", AttachmentKind.GALLERY, 800, 600),
+                    ),
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("image_url"))
+        assertTrue(body.contains("data:image/jpeg;base64,$expected"))
+        assertTrue(body.contains("描述图片"))
+        assertTrue(!body.contains("\"gray\":"))
+    }
+
+    @Test
+    fun noAttachmentsStayPlainTextUserContent() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        testProvider(allowCloud = true, jpeg = { byteArrayOf(1) }).generate(
+            LoopContext(AgentTask(taskId = "plain", input = "查电量")),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("查电量"))
+        assertTrue(!body.contains("image_url"))
+        assertTrue(!body.contains("data:image"))
+    }
+
+    @Test
     fun requestBodyIncludesKnownFactsFromRetrievedMemories() = runTest {
         server.enqueue(MockResponse().setBody(FINAL_BODY))
         val provider = testProvider()
@@ -278,7 +360,10 @@ class OpenAICompatibleProviderTest {
         assertTrue(json.contains("\"max_tokens\":16"))
     }
 
-    private fun testProvider(): OpenAICompatibleProvider {
+    private fun testProvider(
+        allowCloud: Boolean = false,
+        jpeg: (String) -> ByteArray? = { null },
+    ): OpenAICompatibleProvider {
         return OpenAICompatibleProvider(
             client = OkHttpClient(),
             config = {
@@ -289,6 +374,8 @@ class OpenAICompatibleProviderTest {
                 )
             },
             toolDescriptors = { PHASE_3B_TOOLS },
+            allowCloud = { allowCloud },
+            attachmentJpeg = jpeg,
         )
     }
 

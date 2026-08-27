@@ -3,6 +3,8 @@ package com.dougie.core.runtime
 import com.dougie.core.llm.FakeLlmProvider
 import com.dougie.core.llm.LlmProvider
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.TaskStatus
@@ -180,6 +182,29 @@ class TaskStoreTest {
         val encoded = TaskSnapshotCodec.encode(original)
         assertTrue(!encoded.contains("gray"))
         assertTrue(!encoded.contains("base64"))
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesAttachmentsWithoutPixels() {
+        val original = AgentTask(
+            taskId = "snap-att",
+            input = "看这些图",
+            attachedCaptureId = "cap1",
+            attachedWidth = 720,
+            attachedHeight = 1584,
+            attachments = listOf(
+                AttachmentMeta("cap1", AttachmentKind.SCREEN, 720, 1584),
+                AttachmentMeta("g1", AttachmentKind.GALLERY, 800, 600),
+            ),
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals(2, restored.attachments.size)
+        assertEquals(AttachmentKind.SCREEN, restored.attachments[0].kind)
+        assertEquals("g1", restored.attachments[1].id)
+        val encoded = TaskSnapshotCodec.encode(original)
+        assertTrue(!encoded.contains("gray"))
+        assertTrue(!encoded.contains("base64"))
+        assertTrue(!encoded.contains("data:image"))
     }
 
     @Test

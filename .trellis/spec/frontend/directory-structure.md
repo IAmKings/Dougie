@@ -46,6 +46,8 @@ app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
   ChatLaunch.kt
+  ChatAttachmentSession.kt
+  ChatImageCodec.kt
   DougieChatTileService.kt
   TaskNotice.kt
   TaskProgressNotifier.kt
@@ -78,7 +80,7 @@ app/src/sideload/assets/models/tts/
 | `:feature:permissions` | Permission Center: calendar / location / mic / screen capture; API 33+ **通知** row (`POST_NOTIFICATIONS`); clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
 | `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError`) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat; Play attaches `BubbleMetadata` API 29+); sideload overlay via `ChannelHooks.syncOverlay` / `DougieOverlayService` (default off); Settings `shortcutLayer` slot from `ChannelHooks.ShortcutLayerSettings` (play copy = 系统气泡 only); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op) |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat; Play attaches `BubbleMetadata` API 29+); sideload overlay via `ChannelHooks.syncOverlay` / `DougieOverlayService` (default off); Settings `shortcutLayer` slot from `ChannelHooks.ShortcutLayerSettings` (play copy = 系统气泡 only); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op); `ChatAttachmentSession` + Photo Picker / `TakePicture` / FileProvider camera JPEG (longest edge ≤ 1280); `CAMERA` in the main manifest is not an overlay leak |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 
