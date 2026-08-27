@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 33
-- **Last Active**: 2026-08-26
+- **Total Sessions**: 34
+- **Last Active**: 2026-08-27
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~704 | Active |
+| `journal-1.md` | ~739 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 34 | 2026-08-27 | 多源附件与悬浮球冻帧 | `59bd94f`, `bdbd4eb` | `master` |
 | 33 | 2026-08-26 | Chat 附上当前屏幕 | `4de4b8e` | `master` |
 | 32 | 2026-08-26 | 本机定时提醒开 Chat | `15c3ed4` | `master` |
 | 31 | 2026-08-25 | Play 气泡与 sideload 悬浮球 | `8feb45d` | `master` |

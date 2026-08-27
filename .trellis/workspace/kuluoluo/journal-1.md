@@ -702,3 +702,38 @@ Chat 输入栏绑定当前前台截屏供本地 Tools；LLM 只见 capture_id/�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 34: 多源附件与悬浮球冻帧
+
+**Date**: 2026-08-27
+**Task**: 多源附件与悬浮球冻帧
+**Branch**: `master`
+
+### Summary
+
+Chat 最多四张多源附件与本地预览已上 master。侧载验收截屏/相册/拍照/预览；Play 除截屏外与侧载一致。悬浮球冻帧此前已落地。已归档附件、悬浮球冻帧与 Phase 5 系统入口父任务。
+
+### Main Changes
+
+- Chat 附件菜单：截屏/相册/拍照，最多 4 张，应用内预览
+- 截屏像素不出云；相册拍照仅 allowCloud 时 vision
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `59bd94f` | (see git log) |
+| `bdbd4eb` | (see git log) |
+
+### Testing
+
+- [OK] 侧载真机验收通过；Play 相册拍照预览通过（截屏未测）
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 规划 Chat 麦克风识别进草稿
