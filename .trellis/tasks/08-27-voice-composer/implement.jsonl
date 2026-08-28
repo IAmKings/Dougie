@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "SpeechInputTool vs AndroidSpeechPort; no PCM in core"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No PCM or transcripts in Logcat/AuditLog"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "SPEECH_* and PERMISSION_DENIED copy"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Chat composer callbacks hoisted in MainActivity"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No Loop from feature; mapping tests; Play leak"}
+{"file": ".trellis/tasks/08-27-voice-composer/prd.md", "reason": "Hold 15s, append, in-Chat permission"}
+{"file": ".trellis/tasks/08-27-voice-composer/design.md", "reason": "Hold recorder vs 3s listen(); append helper"}

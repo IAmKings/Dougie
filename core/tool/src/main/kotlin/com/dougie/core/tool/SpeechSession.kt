@@ -23,6 +23,15 @@ interface SpeechRecorder {
     suspend fun capture(): SpeechUtterance
 }
 
+object SpeechHold {
+    const val MAX_MS = 15_000
+}
+
+interface HoldSpeechRecorder {
+    fun start(): Boolean
+    suspend fun stop(): SpeechUtterance
+}
+
 interface SpeechEngine {
     fun isReady(): Boolean
     suspend fun transcribe(utterance: SpeechUtterance): String
@@ -43,6 +52,29 @@ class FakeSpeechRecorder(
 
     override suspend fun capture(): SpeechUtterance {
         captureCount += 1
+        return utterance
+    }
+}
+
+class FakeHoldSpeechRecorder(
+    var utterance: SpeechUtterance = SpeechUtterance(floatArrayOf(0.1f, -0.1f), 16_000),
+) : HoldSpeechRecorder {
+    var startCount: Int = 0
+        private set
+    var stopCount: Int = 0
+        private set
+    private var running: Boolean = false
+
+    override fun start(): Boolean {
+        if (running) return false
+        running = true
+        startCount += 1
+        return true
+    }
+
+    override suspend fun stop(): SpeechUtterance {
+        running = false
+        stopCount += 1
         return utterance
     }
 }
@@ -76,7 +108,10 @@ class SpeechSession(
     override fun isEngineReady(): Boolean = engine.isReady()
 
     override suspend fun listen(): String {
-        val utterance = recorder.capture()
+        return transcribe(recorder.capture())
+    }
+
+    suspend fun transcribe(utterance: SpeechUtterance): String {
         if (utterance.samples.isEmpty()) {
             return ""
         }

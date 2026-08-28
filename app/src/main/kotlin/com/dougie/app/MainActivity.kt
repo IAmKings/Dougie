@@ -41,7 +41,11 @@ import com.dougie.feature.debug.DebugViewModel
 import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
 import com.dougie.feature.chat.intelligenceMark
+import com.dougie.core.tool.SpeechHold
+import com.dougie.feature.chat.appendVoiceTranscript
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dougie.feature.history.HistoryRoute
@@ -60,7 +64,12 @@ class MainActivity : ComponentActivity() {
     private val attachErrorState = mutableStateOf<String?>(null)
     private val attachingState = mutableStateOf(false)
     private val previewState = mutableStateOf<ImageBitmap?>(null)
+    private val holdingMicState = mutableStateOf(false)
+    private val voiceTranscribingState = mutableStateOf(false)
     private var cameraOutput: File? = null
+    private var holdActive = false
+    private var ignoreUntilUp = false
+    private var holdLimitJob: Job? = null
 
     private val galleryPicker = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(AttachmentLimits.MAX),
@@ -74,6 +83,12 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
         if (granted) startCamera() else attachErrorState.value = UserFacingErrors.PERMISSION_DENIED
+    }
+
+    private val micPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (!granted) attachErrorState.value = UserFacingErrors.PERMISSION_DENIED
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,6 +111,8 @@ class MainActivity : ComponentActivity() {
                 var attachError by attachErrorState
                 var attaching by attachingState
                 var previewImage by previewState
+                var holdingMic by holdingMicState
+                var voiceTranscribing by voiceTranscribingState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
                 val notifyLauncher = rememberLauncherForActivityResult(
@@ -153,6 +170,10 @@ class MainActivity : ComponentActivity() {
                                 previewImage = null
                                 syncChips()
                             },
+                            onMicDown = { onMicDown() },
+                            onMicUp = { onMicUp() },
+                            holdingMic = holdingMic,
+                            transcribingVoice = voiceTranscribing,
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
@@ -281,6 +302,86 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         applyChatIntent(intent)
+    }
+
+    private fun onMicDown() {
+        if (ignoreUntilUp || holdActive || attachingState.value) return
+        val app = application as DougieApplication
+        if (!app.speechPort.isAppForeground()) {
+            attachErrorState.value = UserFacingErrors.SPEECH_NOT_FOREGROUND
+            return
+        }
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            AndroidPermissions.RECORD_AUDIO,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            micPermission.launch(AndroidPermissions.RECORD_AUDIO)
+            return
+        }
+        if (!app.speechPort.isModelPresent()) {
+            attachErrorState.value = UserFacingErrors.SPEECH_MODEL_MISSING
+            return
+        }
+        if (!app.speechPort.isEngineReady()) {
+            attachErrorState.value = UserFacingErrors.SPEECH_ENGINE_NOT_READY
+            return
+        }
+        if (!app.speechPort.holdRecorder.start()) return
+        holdActive = true
+        holdingMicState.value = true
+        attachErrorState.value = null
+        holdLimitJob?.cancel()
+        holdLimitJob = lifecycleScope.launch {
+            delay(SpeechHold.MAX_MS.toLong())
+            finishHold(fromLimit = true)
+        }
+    }
+
+    private fun onMicUp() {
+        if (ignoreUntilUp) {
+            ignoreUntilUp = false
+            return
+        }
+        finishHold(fromLimit = false)
+    }
+
+    private fun finishHold(fromLimit: Boolean) {
+        if (!holdActive) return
+        holdActive = false
+        holdingMicState.value = false
+        holdLimitJob?.cancel()
+        holdLimitJob = null
+        if (fromLimit) ignoreUntilUp = true
+        val app = application as DougieApplication
+        attachingState.value = true
+        voiceTranscribingState.value = true
+        lifecycleScope.launch {
+            val result = withContext(Dispatchers.Default) {
+                val utterance = app.speechPort.holdRecorder.stop()
+                if (utterance.samples.isEmpty()) {
+                    return@withContext Result.failure(AgentException(UserFacingErrors.SPEECH_EMPTY))
+                }
+                val text = app.speechPort.transcribe(utterance)
+                if (text.isBlank()) {
+                    Result.failure(AgentException(UserFacingErrors.SPEECH_EMPTY))
+                } else {
+                    Result.success(text)
+                }
+            }
+            attachingState.value = false
+            voiceTranscribingState.value = false
+            result.fold(
+                onSuccess = { spoken ->
+                    chatDraftState.value = appendVoiceTranscript(chatDraftState.value, spoken)
+                    attachErrorState.value = null
+                },
+                onFailure = { error ->
+                    attachErrorState.value = (error as? AgentException)?.userMessage
+                        ?: UserFacingErrors.TOOL_FAILED
+                },
+            )
+        }
     }
 
     private fun attachCurrentScreen() {

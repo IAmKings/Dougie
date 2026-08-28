@@ -75,6 +75,8 @@ class DougieApplication : Application() {
         private set
     lateinit var screenCapturePort: AndroidScreenCapturePort
         private set
+    lateinit var speechPort: AndroidSpeechPort
+        private set
     lateinit var attachmentSession: ChatAttachmentSession
         private set
     @Volatile
@@ -109,11 +111,12 @@ class DougieApplication : Application() {
         val locationPort = AndroidLocationPort(this) {
             permissionUsage.mark(AndroidPermissions.ACCESS_COARSE_LOCATION)
         }
-        val speechPort = AndroidSpeechPort(
+        speechPort = AndroidSpeechPort(
             context = this,
             isForeground = { foregroundTracker.foreground },
             onUsed = { permissionUsage.mark(AndroidPermissions.RECORD_AUDIO) },
         )
+        val speechPort = this.speechPort
         val ttsDir = File(filesDir, TtsModelLayout.DIR)
         val ttsPort = PreferOfflineTtsPort(
             offline = SherpaTtsEngine(

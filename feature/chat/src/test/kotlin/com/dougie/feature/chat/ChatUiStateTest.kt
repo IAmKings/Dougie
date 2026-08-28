@@ -227,6 +227,20 @@ class ChatUiStateTest {
         )
     }
 
+    @Test
+    fun appendVoiceTranscriptJoinsWithSpaceAndIgnoresBlankSpoken() {
+        assertEquals("查电量", appendVoiceTranscript("", " 查电量 "))
+        assertEquals("查电量 现在几点", appendVoiceTranscript("查电量", "现在几点"))
+        assertEquals("已有", appendVoiceTranscript("已有", "  "))
+    }
+
+    @Test
+    fun voiceOverlayStatusMatchesRecordingAndLocalRecognizeCopy() {
+        assertEquals("正在录音", voiceOverlayStatus(holding = true, transcribing = false))
+        assertEquals("正在进行本地识别...", voiceOverlayStatus(holding = false, transcribing = true))
+        assertEquals("", voiceOverlayStatus(holding = false, transcribing = false))
+    }
+
     private fun fact(id: String, source: String) = MemoryEntry(
         id = id,
         content = "我叫小明，住在上海",

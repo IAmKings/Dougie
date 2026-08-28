@@ -16,7 +16,7 @@ Pattern used everywhere (`ChatScreen.kt`, `SettingsScreen.kt`, `MemoryScreen.kt`
 
 Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` for `UserMessage` / `Thinking` / `ToolCard` / `ConfirmCard` / `AgentMessage`.
 
-- Chat composer: `composerText` / schedule draft and attachment chips are hoisted in `MainActivity`. Capture, Photo Picker, and `TakePicture` run in `:app` (`ChatAttachmentSession`); `:feature:chat` only gets `ChatAttachmentUi` (id, kind, width, height) plus menu/preview callbacks. One **附件** menu: **截取屏幕 / 相册 / 拍照**. Chips: **屏幕|相册|拍照 · 宽×高**. × removes that item; send consumes the composer list. Max 4. Overlay still adds a screenshot only.
+- Chat composer: `composerText` / schedule draft and attachment chips are hoisted in `MainActivity`. Capture, Photo Picker, and `TakePicture` run in `:app` (`ChatAttachmentSession`); `:feature:chat` only gets `ChatAttachmentUi` (id, kind, width, height) plus menu/preview callbacks. One **附件** menu: **截取屏幕 / 相册 / 拍照**. Chips: **屏幕|相册|拍照 · 宽×高**. × removes that item; send consumes the composer list. Max 4. Overlay still adds a screenshot only. Microphone is hold-to-talk (`onMicDown` / `onMicUp`). While holding, Chat shows the design-folder voice overlay (waveform + pulsing primary mic + **正在录音**; after release **正在进行本地识别...**; footer **音频仅在本地处理，不会离开设备**). PCM stays in `:app` / `:tool:system`. Transcript appends via `appendVoiceTranscript`.
 
 ## Props Conventions
 

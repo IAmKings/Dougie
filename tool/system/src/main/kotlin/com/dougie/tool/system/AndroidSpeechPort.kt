@@ -2,11 +2,13 @@ package com.dougie.tool.system
 
 import android.content.Context
 import com.dougie.core.tool.AsrModelLayout
+import com.dougie.core.tool.HoldSpeechRecorder
 import com.dougie.core.tool.SherpaSpeechEngine
 import com.dougie.core.tool.SpeechEngine
 import com.dougie.core.tool.SpeechPort
 import com.dougie.core.tool.SpeechRecorder
 import com.dougie.core.tool.SpeechSession
+import com.dougie.core.tool.SpeechUtterance
 import java.io.File
 
 class AndroidSpeechPort(
@@ -15,6 +17,7 @@ class AndroidSpeechPort(
     onUsed: () -> Unit = {},
     engine: SpeechEngine? = null,
     recorder: SpeechRecorder = AudioRecordSpeechRecorder(onUsed = onUsed),
+    val holdRecorder: HoldSpeechRecorder = AudioRecordHoldRecorder(onUsed = onUsed),
 ) : SpeechPort {
     private val modelDir = File(context.applicationContext.filesDir, AsrModelLayout.DIR)
     private val session = SpeechSession(
@@ -32,4 +35,6 @@ class AndroidSpeechPort(
     override fun isModelPresent(): Boolean = session.isModelPresent()
     override fun isEngineReady(): Boolean = session.isEngineReady()
     override suspend fun listen(): String = session.listen()
+
+    suspend fun transcribe(utterance: SpeechUtterance): String = session.transcribe(utterance)
 }

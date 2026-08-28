@@ -172,3 +172,21 @@ class SpeechInputToolTest {
         }
     }
 }
+
+class HoldSpeechRecorderTest {
+    @Test
+    fun secondStartFailsUntilStop() = runTest {
+        val hold = FakeHoldSpeechRecorder()
+        assertTrue(hold.start())
+        assertFalse(hold.start())
+        hold.stop()
+        assertTrue(hold.start())
+        assertEquals(2, hold.startCount)
+        assertEquals(1, hold.stopCount)
+    }
+
+    @Test
+    fun holdMaxIsFifteenSeconds() {
+        assertEquals(15_000, SpeechHold.MAX_MS)
+    }
+}

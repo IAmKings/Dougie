@@ -52,6 +52,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   SpeechPort.kt
   SpeechInputTool.kt
   SpeechSession.kt
+  SpeechHold / HoldSpeechRecorder (composer hold-to-talk; Tool still uses 3s capture())
   SherpaSpeechEngine.kt
   TtsPort.kt
   SpeechOutputTool.kt

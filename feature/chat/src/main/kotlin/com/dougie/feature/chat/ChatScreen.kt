@@ -1,5 +1,6 @@
 package com.dougie.feature.chat
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -9,6 +10,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -70,6 +76,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -104,6 +111,10 @@ fun ChatRoute(
     previewImage: ImageBitmap? = null,
     onClosePreview: () -> Unit = {},
     onAttachmentsConsumed: () -> Unit = {},
+    onMicDown: () -> Unit = {},
+    onMicUp: () -> Unit = {},
+    holdingMic: Boolean = false,
+    transcribingVoice: Boolean = false,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
@@ -136,6 +147,10 @@ fun ChatRoute(
         onPreviewAttachment = onPreviewAttachment,
         previewImage = previewImage,
         onClosePreview = onClosePreview,
+        onMicDown = onMicDown,
+        onMicUp = onMicUp,
+        holdingMic = holdingMic,
+        transcribingVoice = transcribingVoice,
     )
 }
 
@@ -164,6 +179,10 @@ fun ChatScreen(
     onPreviewAttachment: (String) -> Unit = {},
     previewImage: ImageBitmap? = null,
     onClosePreview: () -> Unit = {},
+    onMicDown: () -> Unit = {},
+    onMicUp: () -> Unit = {},
+    holdingMic: Boolean = false,
+    transcribingVoice: Boolean = false,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
     Column(
@@ -209,11 +228,22 @@ fun ChatScreen(
             onTakePhoto = onTakePhoto,
             onRemoveAttachment = onRemoveAttachment,
             onPreviewAttachment = onPreviewAttachment,
+            onMicDown = onMicDown,
+            onMicUp = onMicUp,
+            holdingMic = holdingMic,
         )
         DougieBottomBar(
             onOpenSettings = onOpenSettings,
             onOpenMemory = onOpenMemory,
             onOpenHistory = onOpenHistory,
+        )
+    }
+    if (holdingMic || transcribingVoice) {
+        VoiceRecordOverlay(
+            holding = holdingMic,
+            transcribing = transcribingVoice,
+            onRelease = onMicUp,
+            modifier = Modifier.zIndex(3f),
         )
     }
     if (previewImage != null) {
@@ -752,6 +782,9 @@ private fun ChatInputBar(
     onTakePhoto: () -> Unit = {},
     onRemoveAttachment: (String) -> Unit = {},
     onPreviewAttachment: (String) -> Unit = {},
+    onMicDown: () -> Unit = {},
+    onMicUp: () -> Unit = {},
+    holdingMic: Boolean = false,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val full = attachments.size >= ATTACHMENT_MAX
@@ -838,8 +871,41 @@ private fun ChatInputBar(
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = {}, enabled = false) {
-                    Icon(Icons.Filled.Mic, contentDescription = "麦克风", tint = DougieColors.OnSurfaceVariant)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .pointerInput(enabled, attaching) {
+                            if (!enabled || attaching) return@pointerInput
+                            awaitEachGesture {
+                                awaitFirstDown()
+                                onMicDown()
+                                waitForUpOrCancellation()
+                                onMicUp()
+                            }
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (holdingMic) {
+                        ComposerMicPulse()
+                    }
+                    Icon(
+                        Icons.Filled.Mic,
+                        contentDescription = "麦克风",
+                        tint = when {
+                            holdingMic -> DougieColors.OnPrimary
+                            enabled && !attaching -> DougieColors.OnSurface
+                            else -> DougieColors.OnSurfaceVariant
+                        },
+                        modifier = if (holdingMic) {
+                            Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(DougieColors.Primary)
+                                .padding(6.dp)
+                        } else {
+                            Modifier
+                        },
+                    )
                 }
                 Box {
                     IconButton(
@@ -995,3 +1061,194 @@ internal fun toolResultSummary(toolName: String, resultJson: String): String {
 }
 
 internal fun batterySummary(resultJson: String): String = toolResultSummary("battery", resultJson)
+
+@Composable
+private fun VoiceRecordOverlay(
+    holding: Boolean,
+    transcribing: Boolean,
+    onRelease: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val pulse = rememberInfiniteTransition(label = "voice-overlay")
+    val ringScale by pulse.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.45f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "ring-scale",
+    )
+    val ringAlpha by pulse.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 0.12f,
+        animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+        label = "ring-alpha",
+    )
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(DougieColors.Surface.copy(alpha = 0.55f))
+            .pointerInput(holding) {
+                if (!holding) return@pointerInput
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.changes.any { it.changedToUp() || !it.pressed }) {
+                            onRelease()
+                            return@awaitPointerEventScope
+                        }
+                    }
+                }
+            },
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                .background(DougieColors.Surface)
+                .navigationBarsPadding()
+                .padding(top = 20.dp, bottom = 28.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(48.dp)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(DougieColors.OutlineVariant.copy(alpha = 0.5f)),
+            )
+            Spacer(Modifier.height(20.dp))
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(DougieColors.SurfaceContainerLow)
+                    .border(1.dp, DougieColors.OutlineVariant.copy(alpha = 0.3f), RoundedCornerShape(50))
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(DougieColors.StatusThinking)
+                        .scale(if (holding) ringScale.coerceIn(0.85f, 1.2f) else 1f),
+                )
+                Text(
+                    text = voiceOverlayStatus(holding, transcribing),
+                    color = DougieColors.StatusThinking,
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+            Spacer(Modifier.height(28.dp))
+            if (holding) {
+                VoiceWaveform()
+            } else {
+                Spacer(Modifier.height(56.dp))
+            }
+            Spacer(Modifier.height(28.dp))
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(112.dp)) {
+                if (holding) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .scale(ringScale)
+                            .clip(CircleShape)
+                            .background(DougieColors.PrimaryContainer.copy(alpha = ringAlpha)),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(DougieColors.Primary),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Mic,
+                        contentDescription = if (holding) "正在录音" else "正在识别",
+                        tint = DougieColors.OnPrimary,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    Icons.Filled.Lock,
+                    contentDescription = null,
+                    tint = DougieColors.OnSurfaceVariant,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = "音频仅在本地处理，不会离开设备",
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VoiceWaveform() {
+    val heights = listOf(24, 36, 48, 32, 56, 40, 28, 44, 20)
+    val delays = listOf(0, 100, 200, 300, 400, 500, 600, 700, 800)
+    Row(
+        modifier = Modifier.height(56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        heights.forEachIndexed { index, heightDp ->
+            val wave = rememberInfiniteTransition(label = "wave-$index")
+            val scale by wave.animateFloat(
+                initialValue = 0.2f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1200, delayMillis = delays[index], easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "wave-scale-$index",
+            )
+            Box(
+                modifier = Modifier
+                    .width(if (index == 4) 8.dp else 6.dp)
+                    .height(heightDp.dp)
+                    .graphicsLayer { scaleY = scale }
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        if (index == 4) DougieColors.Primary else DougieColors.PrimaryContainer,
+                    ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ComposerMicPulse() {
+    val pulse = rememberInfiniteTransition(label = "composer-mic")
+    val scale by pulse.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.5f,
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
+        label = "composer-scale",
+    )
+    val alpha by pulse.animateFloat(
+        initialValue = 0.42f,
+        targetValue = 0.08f,
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
+        label = "composer-alpha",
+    )
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .scale(scale)
+            .clip(CircleShape)
+            .background(DougieColors.PrimaryContainer.copy(alpha = alpha)),
+    )
+}

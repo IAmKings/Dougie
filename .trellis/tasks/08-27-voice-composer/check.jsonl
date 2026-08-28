@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Chinese speech/permission errors"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No transcript/PCM leak"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM mapping tests; checkChannelLeak"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "SpeechInputToolTest regression"}
+{"file": ".trellis/tasks/08-27-voice-composer/prd.md", "reason": "AC hold/append/15s/permission"}
+{"file": ".trellis/tasks/08-27-voice-composer/implement.md", "reason": "Validation gradle command"}
