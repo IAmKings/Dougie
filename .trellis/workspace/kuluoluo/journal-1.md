@@ -737,3 +737,24 @@ Chat 最多四张多源附件与本地预览已上 master。侧载验收截屏/�
 ### Next Steps
 
 - 规划 Chat 麦克风识别进草稿
+
+
+## Session 35: Chat 麦克风识别进草稿
+
+**Date**: 2026-08-28
+**Task**: Chat 麦克风识别进草稿
+**Branch**: `master`
+
+### Summary
+
+Chat 按住麦克风离线转写追加草稿，不自动发送；按住展示波形与本地识别状态。下一步待选：UF-02 闭环（TTS 播报 / 流式回显 / 意图路由）或 Play 截屏补测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cd8030a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
