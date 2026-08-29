@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.ImageBitmap
@@ -64,6 +65,7 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -87,6 +89,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.ToolTraceStatus
+import com.dougie.core.model.UserFacingErrors
 import com.dougie.feature.chat.R as ChatR
 
 @Composable
@@ -115,20 +118,33 @@ fun ChatRoute(
     onMicUp: () -> Unit = {},
     holdingMic: Boolean = false,
     transcribingVoice: Boolean = false,
+    speakReplyOnSend: Boolean = false,
+    speakingReply: Boolean = false,
+    asrReady: Boolean = false,
+    ttsReady: Boolean = false,
+    onStopReply: () -> Unit = {},
+    onSpeakReply: (String) -> Unit = {},
+    onSpeakReplyConsumed: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
         uiState = uiState,
         onSend = { text ->
+            onStopReply()
             viewModel.send(
                 text,
                 attachments.map { AttachmentMeta(it.id, it.kind, it.width, it.height) },
+                speakReply = speakReplyOnSend,
             )
+            onSpeakReplyConsumed()
             onAttachmentsConsumed()
         },
         onConfirm = viewModel::confirm,
         onReject = viewModel::reject,
-        onRetry = viewModel::retry,
+        onRetry = {
+            onStopReply()
+            viewModel.retry()
+        },
         allowCloud = allowCloud,
         intelligenceMark = intelligenceMark,
         composerText = composerText,
@@ -151,6 +167,11 @@ fun ChatRoute(
         onMicUp = onMicUp,
         holdingMic = holdingMic,
         transcribingVoice = transcribingVoice,
+        speakingReply = speakingReply,
+        asrReady = asrReady,
+        ttsReady = ttsReady,
+        onStopReply = onStopReply,
+        onSpeakReply = onSpeakReply,
     )
 }
 
@@ -183,6 +204,11 @@ fun ChatScreen(
     onMicUp: () -> Unit = {},
     holdingMic: Boolean = false,
     transcribingVoice: Boolean = false,
+    speakingReply: Boolean = false,
+    asrReady: Boolean = false,
+    ttsReady: Boolean = false,
+    onStopReply: () -> Unit = {},
+    onSpeakReply: (String) -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
     Column(
@@ -209,9 +235,14 @@ fun ChatScreen(
                 ChatFeed(
                     items = uiState.items,
                     canRetry = uiState.canRetry,
+                    canSpeakReply = uiState.canSpeakReply,
+                    ttsReady = ttsReady,
+                    speakingReply = speakingReply,
                     onConfirm = onConfirm,
                     onReject = onReject,
                     onRetry = onRetry,
+                    onStopReply = onStopReply,
+                    onSpeakReply = onSpeakReply,
                 )
             }
         }
@@ -231,6 +262,10 @@ fun ChatScreen(
             onMicDown = onMicDown,
             onMicUp = onMicUp,
             holdingMic = holdingMic,
+            speakingReply = speakingReply,
+            asrReady = asrReady,
+            onStopReply = onStopReply,
+            onOpenSettings = onOpenSettings,
         )
         DougieBottomBar(
             onOpenSettings = onOpenSettings,
@@ -430,9 +465,14 @@ private fun ExampleChip(text: String, onClick: (String) -> Unit) {
 private fun ChatFeed(
     items: List<ChatItem>,
     canRetry: Boolean,
+    canSpeakReply: Boolean,
+    ttsReady: Boolean,
+    speakingReply: Boolean,
     onConfirm: () -> Unit,
     onReject: () -> Unit,
     onRetry: () -> Unit,
+    onStopReply: () -> Unit,
+    onSpeakReply: (String) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val lastAgent = (items.lastOrNull() as? ChatItem.AgentMessage)?.text
@@ -464,12 +504,20 @@ private fun ChatFeed(
                 is ChatItem.Thinking -> ThinkingChip(item.loopNumber, live = item.live)
                 is ChatItem.ToolCard -> ToolCallCard(item)
                 is ChatItem.ConfirmCard -> ConfirmToolCard(item, onConfirm, onReject)
-                is ChatItem.AgentMessage -> AgentBubble(
-                    text = item.text,
-                    memorySources = item.memorySources,
-                    showRetry = canRetry && item === items.lastOrNull(),
-                    onRetry = onRetry,
-                )
+                is ChatItem.AgentMessage -> {
+                    val isLast = item === items.lastOrNull()
+                    val showRetry = canRetry && isLast
+                    AgentBubble(
+                        text = item.text,
+                        memorySources = item.memorySources,
+                        showRetry = showRetry,
+                        showSpeak = showAgentReplySpeak(isLast, canSpeakReply, ttsReady, item.text),
+                        speakingReply = speakingReply,
+                        onRetry = onRetry,
+                        onStopReply = onStopReply,
+                        onSpeakReply = onSpeakReply,
+                    )
+                }
             }
         }
     }
@@ -497,7 +545,11 @@ private fun AgentBubble(
     text: String,
     memorySources: List<String> = emptyList(),
     showRetry: Boolean = false,
+    showSpeak: Boolean = false,
+    speakingReply: Boolean = false,
     onRetry: () -> Unit = {},
+    onStopReply: () -> Unit = {},
+    onSpeakReply: (String) -> Unit = {},
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
@@ -533,6 +585,22 @@ private fun AgentBubble(
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, DougieColors.Outline, RoundedCornerShape(8.dp))
                     .clickable(onClick = onRetry)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        if (showSpeak) {
+            Text(
+                text = agentReplySpeakLabel(speakingReply),
+                color = DougieColors.Primary,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, DougieColors.Outline, RoundedCornerShape(8.dp))
+                    .clickable {
+                        if (speakingReply) onStopReply() else onSpeakReply(text)
+                    }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
@@ -785,9 +853,18 @@ private fun ChatInputBar(
     onMicDown: () -> Unit = {},
     onMicUp: () -> Unit = {},
     holdingMic: Boolean = false,
+    speakingReply: Boolean = false,
+    asrReady: Boolean = false,
+    onStopReply: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val full = attachments.size >= ATTACHMENT_MAX
+    val statusLine = attachmentStatusLine(speakingReply, attachedError)
+    val statusError = attachmentStatusIsError(speakingReply, attachedError)
+    val showDownload = !speakingReply && attachmentOffersDownload(attachedError)
+    val micHoldEnabled = enabled && !attaching && !speakingReply && asrReady
+    val micGuideEnabled = enabled && !attaching && !speakingReply && !asrReady
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -801,18 +878,30 @@ private fun ChatInputBar(
                 .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
                 .background(DougieColors.SurfaceContainerLowest),
         ) {
-            if (attachments.isNotEmpty() || !attachedError.isNullOrBlank()) {
+            if (attachments.isNotEmpty() || !statusLine.isNullOrBlank()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
-                    if (!attachedError.isNullOrBlank()) {
-                        Text(
-                            text = attachedError,
-                            color = DougieColors.Error,
-                            fontSize = 12.sp,
-                        )
+                    if (!statusLine.isNullOrBlank()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = statusLine,
+                                color = if (statusError) DougieColors.Error else DougieColors.OnSurfaceVariant,
+                                fontSize = 12.sp,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (showDownload) {
+                                TextButton(onClick = onOpenSettings) {
+                                    Text(UserFacingErrors.GO_DOWNLOAD_MODELS)
+                                }
+                            }
+                        }
                     }
                     Row(
                         modifier = Modifier
@@ -874,13 +963,23 @@ private fun ChatInputBar(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .pointerInput(enabled, attaching) {
-                            if (!enabled || attaching) return@pointerInput
-                            awaitEachGesture {
-                                awaitFirstDown()
-                                onMicDown()
-                                waitForUpOrCancellation()
-                                onMicUp()
+                        .pointerInput(micHoldEnabled, micGuideEnabled) {
+                            when {
+                                micHoldEnabled -> {
+                                    awaitEachGesture {
+                                        awaitFirstDown()
+                                        onMicDown()
+                                        waitForUpOrCancellation()
+                                        onMicUp()
+                                    }
+                                }
+                                micGuideEnabled -> {
+                                    awaitEachGesture {
+                                        awaitFirstDown()
+                                        onMicDown()
+                                        waitForUpOrCancellation()
+                                    }
+                                }
                             }
                         },
                     contentAlignment = Alignment.Center,
@@ -890,10 +989,10 @@ private fun ChatInputBar(
                     }
                     Icon(
                         Icons.Filled.Mic,
-                        contentDescription = "麦克风",
+                        contentDescription = if (asrReady) "麦克风" else "语音识别未安装",
                         tint = when {
                             holdingMic -> DougieColors.OnPrimary
-                            enabled && !attaching -> DougieColors.OnSurface
+                            micHoldEnabled -> DougieColors.OnSurface
                             else -> DougieColors.OnSurfaceVariant
                         },
                         modifier = if (holdingMic) {
@@ -973,20 +1072,24 @@ private fun ChatInputBar(
                 Spacer(Modifier.weight(1f))
                 IconButton(
                     onClick = {
+                        if (speakingReply) {
+                            onStopReply()
+                            return@IconButton
+                        }
                         val trimmed = text.trim()
                         if (trimmed.isNotEmpty()) {
                             onSend(trimmed)
                             onTextChange("")
                         }
                     },
-                    enabled = enabled && text.isNotBlank(),
+                    enabled = speakingReply || (enabled && text.isNotBlank()),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(DougieColors.Primary),
                 ) {
                     Icon(
-                        Icons.AutoMirrored.Filled.Send,
-                        contentDescription = "发送",
+                        if (speakingReply) Icons.Filled.Stop else Icons.AutoMirrored.Filled.Send,
+                        contentDescription = if (speakingReply) "停止播报" else "发送",
                         tint = DougieColors.OnPrimary,
                     )
                 }

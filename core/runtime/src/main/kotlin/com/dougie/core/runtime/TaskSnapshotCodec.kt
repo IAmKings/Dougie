@@ -15,6 +15,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
@@ -50,6 +51,7 @@ object TaskSnapshotCodec {
             "attachments",
             JsonArray(task.attachments.map { encodeAttachment(it) }),
         )
+        put("speakReply", task.speakReply)
     }.toString()
 
     fun decode(raw: String): AgentTask {
@@ -73,6 +75,7 @@ object TaskSnapshotCodec {
             attachments = obj["attachments"]?.jsonArray
                 ?.mapNotNull { decodeAttachment(it.jsonObject) }
                 .orEmpty(),
+            speakReply = obj.optionalBoolean("speakReply"),
         )
     }
 
@@ -145,6 +148,12 @@ object TaskSnapshotCodec {
 
     private fun JsonObject.int(key: String): Int =
         this[key]?.jsonPrimitive?.intOrNull ?: 0
+
+    private fun JsonObject.optionalBoolean(key: String): Boolean {
+        val value = this[key] ?: return false
+        if (value is JsonNull) return false
+        return value.jsonPrimitive.booleanOrNull ?: false
+    }
 
     private fun kotlinx.serialization.json.JsonObjectBuilder.putNullable(key: String, value: String?) {
         if (value == null) put(key, JsonNull) else put(key, value)

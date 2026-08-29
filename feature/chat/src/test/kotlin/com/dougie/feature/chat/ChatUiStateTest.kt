@@ -64,6 +64,7 @@ class ChatUiStateTest {
         assertTrue((state.items.last() as ChatItem.AgentMessage).text.contains("63"))
         assertEquals(emptyList<String>(), (state.items.last() as ChatItem.AgentMessage).memorySources)
         assertEquals(false, state.canRetry)
+        assertEquals(true, state.canSpeakReply)
         val past = state.items.filterIsInstance<ChatItem.Thinking>()
         assertEquals(listOf(false, false, false), past.map { it.live })
     }
@@ -119,6 +120,53 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun completedBlankFinalAnswerHasNoAgentBubble() {
+        val state = AgentTask(
+            taskId = "t",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            loopCount = 1,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "time-1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"iso_local":"2026-08-29T12:00:00+08:00"}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+            finalAnswer = "",
+        ).toChatUiState()
+        assertEquals(
+            listOf("user", "thinking-1", "tool-time-1"),
+            state.items.map { it.kind() },
+        )
+        assertTrue(state.inputEnabled)
+    }
+
+    @Test
+    fun emptyLlmReplyAfterTimeToolShowsRetry() {
+        val state = AgentTask(
+            taskId = "t",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.FAILED,
+            loopCount = 1,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "time-1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"iso_local":"2026-08-29T12:00:00+08:00"}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+            lastError = UserFacingErrors.LLM_EMPTY_REPLY,
+        ).toChatUiState()
+        assertTrue(state.canRetry)
+        assertTrue((state.items.last() as ChatItem.AgentMessage).text.contains(UserFacingErrors.LLM_EMPTY_REPLY))
+    }
+
+    @Test
     fun streamingAndFailedMessagesOmitMemorySources() {
         val memories = listOf(fact("m1", source = "task-0"))
         val streaming = AgentTask(
@@ -152,6 +200,7 @@ class ChatUiStateTest {
         assertTrue(message.text.contains(UserFacingErrors.EGRESS_BLOCKED))
         assertTrue(state.inputEnabled)
         assertTrue(state.canRetry)
+        assertEquals(false, state.canSpeakReply)
     }
 
     @Test
@@ -178,6 +227,7 @@ class ChatUiStateTest {
         assertEquals(listOf("user", "thinking-1", "agent"), state.items.map { it.kind() })
         assertEquals("你现在的手机", (state.items.last() as ChatItem.AgentMessage).text)
         assertEquals(false, state.inputEnabled)
+        assertEquals(false, state.canSpeakReply)
     }
 
     @Test
@@ -239,6 +289,48 @@ class ChatUiStateTest {
         assertEquals("正在录音", voiceOverlayStatus(holding = true, transcribing = false))
         assertEquals("正在进行本地识别...", voiceOverlayStatus(holding = false, transcribing = true))
         assertEquals("", voiceOverlayStatus(holding = false, transcribing = false))
+    }
+
+    @Test
+    fun attachmentStatusLineShowsSpeakingThenUnavailable() {
+        assertEquals("正在播报...", attachmentStatusLine(speakingReply = true, error = null))
+        assertEquals(
+            "正在播报...",
+            attachmentStatusLine(speakingReply = true, error = UserFacingErrors.TTS_REPLY_UNAVAILABLE),
+        )
+        assertEquals(false, attachmentStatusIsError(speakingReply = true, error = null))
+        assertEquals(
+            UserFacingErrors.TTS_REPLY_UNAVAILABLE,
+            attachmentStatusLine(speakingReply = false, error = UserFacingErrors.TTS_REPLY_UNAVAILABLE),
+        )
+        assertEquals(
+            true,
+            attachmentStatusIsError(
+                speakingReply = false,
+                error = UserFacingErrors.TTS_REPLY_UNAVAILABLE,
+            ),
+        )
+        assertEquals(null, attachmentStatusLine(speakingReply = false, error = null))
+    }
+
+    @Test
+    fun lastCompletedAgentBubbleShowsSpeakNotRetry() {
+        assertEquals(
+            true,
+            showAgentReplySpeak(isLastItem = true, canSpeakReply = true, ttsReady = true, text = "现在是15点"),
+        )
+        assertEquals(
+            false,
+            showAgentReplySpeak(isLastItem = true, canSpeakReply = true, ttsReady = false, text = "现在是15点"),
+        )
+        assertEquals(false, showAgentReplySpeak(isLastItem = true, canSpeakReply = false, ttsReady = true, text = "你现在的手机"))
+        assertEquals(false, showAgentReplySpeak(isLastItem = true, canSpeakReply = false, ttsReady = true, text = "失败"))
+        assertEquals(false, showAgentReplySpeak(isLastItem = false, canSpeakReply = true, ttsReady = true, text = "旧回复"))
+        assertEquals("播报", agentReplySpeakLabel(speakingReply = false))
+        assertEquals("停止播报", agentReplySpeakLabel(speakingReply = true))
+        assertEquals(true, attachmentOffersDownload(UserFacingErrors.SPEECH_MODEL_MISSING))
+        assertEquals(true, attachmentOffersDownload(UserFacingErrors.TTS_REPLY_UNAVAILABLE))
+        assertEquals(false, attachmentOffersDownload(UserFacingErrors.SPEECH_EMPTY))
     }
 
     private fun fact(id: String, source: String) = MemoryEntry(

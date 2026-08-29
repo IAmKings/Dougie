@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.tool.TtsVoices
 
 const val EGRESS_CONSENT_COPY = "本次请求可能将输入、必要上下文和 Tool Result 发送至第三方 LLM 服务。"
 
@@ -69,9 +70,13 @@ fun SettingsRoute(
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val models by viewModel.models.collectAsStateWithLifecycle()
+    val ttsSpeakerId by viewModel.ttsSpeakerId.collectAsStateWithLifecycle()
     SettingsScreen(
         form = form,
         models = models,
+        ttsSpeakerId = ttsSpeakerId,
+        ttsVoiceEnabled = models.rows.any { it.id == "tts" && it.installed },
+        onTtsSpeakerChange = viewModel::setTtsSpeakerId,
         onBack = onBack,
         onAllowCloudChange = viewModel::setAllowCloud,
         onVendorChange = viewModel::setVendor,
@@ -97,6 +102,9 @@ fun SettingsRoute(
 fun SettingsScreen(
     form: SettingsFormState,
     models: OfflineModelsUi,
+    ttsSpeakerId: Int = 0,
+    ttsVoiceEnabled: Boolean = false,
+    onTtsSpeakerChange: (Int) -> Unit = {},
     onBack: () -> Unit,
     onAllowCloudChange: (Boolean) -> Unit,
     onVendorChange: (String) -> Unit,
@@ -264,6 +272,11 @@ fun SettingsScreen(
                 onRequestModel = onRequestModel,
                 onCancelModel = onCancelModel,
                 onProbeModel = onProbeModel,
+            )
+            TtsVoiceSection(
+                speakerId = ttsSpeakerId,
+                enabled = ttsVoiceEnabled,
+                onSpeakerChange = onTtsSpeakerChange,
             )
             shortcutLayer()
             scheduleLayer()
@@ -490,6 +503,89 @@ private fun OfflineModelRow(
                 color = if (row.probeOk == true) DougieColors.TertiaryContainer else DougieColors.Error,
                 fontSize = 12.sp,
             )
+        }
+    }
+}
+
+@Composable
+private fun TtsVoiceSection(
+    speakerId: Int,
+    enabled: Boolean,
+    onSpeakerChange: (Int) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "播报音色",
+            color = DougieColors.OnSurface,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        Text(
+            text = if (enabled) {
+                "用于离线念回复。立即生效，不必保存配置。"
+            } else {
+                "先在上方安装语音合成，然后才能选择音色。"
+            },
+            color = DougieColors.OnSurfaceVariant,
+            fontSize = 14.sp,
+        )
+        TtsVoiceDropdown(
+            speakerId = speakerId,
+            enabled = enabled,
+            onSpeakerChange = onSpeakerChange,
+        )
+    }
+}
+
+@Composable
+private fun TtsVoiceDropdown(
+    speakerId: Int,
+    enabled: Boolean,
+    onSpeakerChange: (Int) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selected = TtsVoices.label(speakerId)
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            trailingIcon = {
+                Icon(
+                    Icons.Filled.ArrowDropDown,
+                    contentDescription = "选择音色",
+                    tint = DougieColors.OnSurfaceVariant,
+                )
+            },
+            colors = fieldColors(),
+        )
+        if (enabled) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clickable { expanded = true },
+            )
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            TtsVoices.OPTIONS.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label) },
+                    onClick = {
+                        onSpeakerChange(option.sid)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.dougie.core.llm
 
+import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
@@ -358,17 +359,79 @@ class OpenAICompatibleProviderTest {
             maxTokens = 9,
         )
         assertTrue(json.contains("\"max_tokens\":16"))
+        assertTrue(!json.contains("\"thinking\""))
+    }
+
+    @Test
+    fun flashRequestKeepsThinkingAndRaisesMaxTokens() {
+        val json = testProvider().buildRequestJson(
+            model = " deepseek-v4-flash ",
+            task = AgentTask(taskId = "t1", input = "hi"),
+            stream = true,
+            maxTokens = 2048,
+        )
+        assertTrue(json.contains("\"model\":\"deepseek-v4-flash\""))
+        assertTrue(json.contains("\"max_tokens\":8192"))
+        assertTrue(!json.contains("\"thinking\""))
+        val gpt = testProvider().buildRequestJson(
+            model = "gpt-4o-mini",
+            task = AgentTask(taskId = "t1", input = "hi"),
+            maxTokens = 2048,
+        )
+        assertTrue(gpt.contains("\"max_tokens\":2048"))
+    }
+
+    @Test
+    fun emptyToolCallsArrayDoesNotDropContentDelta() = runTest {
+        val sse = """
+            data: {"choices":[{"delta":{"tool_calls":[],"content":"现在三点"}}]}
+
+            data: [DONE]
+
+        """.trimIndent() + "\n"
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(sse),
+        )
+        val events = testProvider().stream(LoopContext(AgentTask(taskId = "t1", input = "几点"))).toList()
+        assertEquals("现在三点", (events.single() as LlmEvent.TextDelta).text)
+    }
+
+    @Test
+    fun openCodeGoAddsSessionHeader() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val provider = testProvider(baseUrl = server.url("/zen/go/v1/").toString())
+        provider.generate(LoopContext(AgentTask(taskId = "task-go", input = "hi")))
+        val recorded = server.takeRequest()
+        assertEquals("task-go", recorded.getHeader(OpenAICompatibleProvider.HEADER_OPENCODE_SESSION))
+    }
+
+    @Test
+    fun unavailableHttpMapsToModelUnavailable() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(400)
+                .setBody("""{"error":{"message":"Upstream request failed: Model is unavailable."}}"""),
+        )
+        try {
+            testProvider().generate(LoopContext(AgentTask(taskId = "t1", input = "hi")))
+            throw AssertionError("expected failure")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.LLM_MODEL_UNAVAILABLE, e.userMessage)
+        }
     }
 
     private fun testProvider(
         allowCloud: Boolean = false,
         jpeg: (String) -> ByteArray? = { null },
+        baseUrl: String = server.url("/v1/").toString(),
     ): OpenAICompatibleProvider {
         return OpenAICompatibleProvider(
             client = OkHttpClient(),
             config = {
                 CloudLlmConfig(
-                    baseUrl = server.url("/v1/").toString(),
+                    baseUrl = baseUrl,
                     apiKey = "sk-test",
                     model = "gpt-4o-mini",
                 )

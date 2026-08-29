@@ -227,6 +227,33 @@ class LoopEngineTest {
     }
 
     @Test
+    fun emptyFinalAfterTimeToolFailsInsteadOfSilentComplete() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "time-1", name = "time", argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer("  ")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "time-empty", input = "现在几点了？")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.LLM_EMPTY_REPLY, result.lastError)
+        assertEquals(1, result.toolTrace.size)
+        assertEquals(ToolTraceStatus.SUCCESS, result.toolTrace.single().status)
+        assertEquals(null, result.finalAnswer)
+    }
+
+    @Test
     fun extraToolArgsAreStrippedAndDoNotFailTask() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val provider = object : LlmProvider {

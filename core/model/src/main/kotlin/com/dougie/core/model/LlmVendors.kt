@@ -13,6 +13,8 @@ object LlmVendors {
     const val DEFAULT_MAX_TOKENS = 2048
     const val MIN_MAX_TOKENS = 16
     const val MAX_MAX_TOKENS = 8192
+    /** V4 thinking shares this budget with visible content; 2048 often yields empty `content`. */
+    const val V4_THINKING_MAX_TOKENS = MAX_MAX_TOKENS
 
     val OPENAI = LlmVendorPreset(
         id = "openai",
@@ -26,14 +28,14 @@ object LlmVendors {
         label = "DeepSeek",
         baseUrl = "https://api.deepseek.com/v1",
         defaultModel = "deepseek-v4-flash",
-        defaultMaxTokens = DEFAULT_MAX_TOKENS,
+        defaultMaxTokens = V4_THINKING_MAX_TOKENS,
     )
     val OPENCODE_GO = LlmVendorPreset(
         id = "opencode-go",
         label = "OpenCode Go",
         baseUrl = "https://opencode.ai/zen/go/v1",
         defaultModel = "deepseek-v4-flash",
-        defaultMaxTokens = DEFAULT_MAX_TOKENS,
+        defaultMaxTokens = V4_THINKING_MAX_TOKENS,
     )
     val MOONSHOT = LlmVendorPreset(
         id = "moonshot",
@@ -103,6 +105,17 @@ object LlmVendors {
     }
 
     fun clampMaxTokens(value: Int): Int = value.coerceIn(MIN_MAX_TOKENS, MAX_MAX_TOKENS)
+
+    fun usesV4ThinkingBudget(model: String): Boolean {
+        val id = model.trim().lowercase()
+        return id.startsWith("deepseek-v4") || id == "deepseek-reasoner"
+    }
+
+    fun effectiveMaxTokens(model: String, requested: Int): Int {
+        val clamped = clampMaxTokens(requested)
+        if (!usesV4ThinkingBudget(model)) return clamped
+        return clamped.coerceAtLeast(V4_THINKING_MAX_TOKENS)
+    }
 
     fun parseMaxTokens(raw: String): Int {
         return clampMaxTokens(raw.trim().toIntOrNull() ?: DEFAULT_MAX_TOKENS)

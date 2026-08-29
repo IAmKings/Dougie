@@ -15,6 +15,7 @@ data class AgentTask(
     val attachedWidth: Int? = null,
     val attachedHeight: Int? = null,
     val attachments: List<AttachmentMeta> = emptyList(),
+    val speakReply: Boolean = false,
 )
 
 enum class TaskStatus {

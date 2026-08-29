@@ -15,6 +15,8 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | LLM / tool timeout | `withTimeout` in `LoopEngine` | `模型响应超时…` / `工具执行超时…` |
 | Network (`IOException`) | OkHttp failure in provider | `网络请求失败，请检查连接后重试。` |
 | Other LLM HTTP/parse | Non-success or bad JSON | `模型调用失败，请稍后重试。` |
+| LLM model unavailable | HTTP 4xx body `unavailable` / `not supported` / `RegionError` (OpenCode Go Flash 常见) | `该模型当前不可用，请更换模型后重试。` |
+| LLM empty final | Loop 2+ `stop` with blank `content` after tools (SSE no `TextDelta`) | `模型没有给出回复，请重试。` 任务 `FAILED`，保留已成功 Tool 卡，可重试。禁止 `COMPLETED` + 空 `finalAnswer`（Chat 不会画 Agent 气泡）。 |
 | Unknown tool | Sanitizer / unregistered name | `模型调用了未知工具，已拒绝执行。` |
 | Unrepairable tool args | Sanitizer cannot coerce a typed field, or a required property is missing | `工具参数无效，已拒绝执行。` |
 | `TaskManager.cancel()` | User/runtime cancels the loop job | `任务已取消。` |
@@ -32,12 +34,14 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Tap/swipe without Accessibility | Service instance null | `未开启无障碍服务，无法执行屏幕操作` |
 | Tap/swipe on bank/pay/password app | `HighRiskForeground` | `该应用不允许自动点击或滑动。` |
 | Speech while background | `SpeechInputTool` foreground check | `应用不在前台，无法使用语音输入。` |
-| Speech model file missing | `filesDir/models/asr/model.int8.onnx` + `tokens.txt` absent | `离线语音模型尚未就绪，无法识别。` |
+| Speech model file missing | `filesDir/models/asr/` layout absent. Chat mic stays visible, does not record; attachment line + **去下载** opens Settings. Permission dialog is not shown first. | `离线语音模型尚未就绪，无法识别。` |
+| Chat TTS pack missing | Host `speakFinal` / **播报** hidden unless `isReplyTtsReady`. Autoplay fail still uses attachment line + **去下载**. Voice picker disabled until TTS row 已安装. | `语音回复暂不可用` |
 | Speech engine not wired | `UnwiredSpeechEngine` / `isEngineReady() == false` | `离线语音引擎尚未接入，无法识别。` |
 | Speech capture empty | Recorder returned zero samples | `没有听到有效语音，请靠近麦克风后重试。` |
 | TTS fallback too long | Offline TTS unready and `text` longer than 80 chars | `离线语音未就绪，只能播报短提示。` |
 | TTS network voice | System voice `isNetworkConnectionRequired` | `系统语音需要联网，已拒绝播报。` |
 | TTS speak failed | Engine init/speak failed | `语音播报失败，请稍后重试。` |
+| Chat final-answer autoplay unready / failed | Host `speakFinal` after `COMPLETED` (`speakReply`); offline TTS missing or speak failed. Task stays `COMPLETED`; attachment line only. Never system TTS for the official reply. | `语音回复暂不可用` |
 | Intent model missing | `filesDir/models/intent/{model.onnx,tokenizer.json,labels.txt}` absent (historical `model.gguf` is not a layout) | `离线意图模型尚未就绪，无法分类。` |
 | Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false` | `离线意图引擎尚未接入，无法分类。` |
 | Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |

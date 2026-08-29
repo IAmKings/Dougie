@@ -13,6 +13,7 @@ feature/chat/src/main/kotlin/com/dougie/feature/chat/
   ChatScreen.kt
   ChatViewModel.kt
   ChatUiState.kt
+  ScreenAttachUi.kt
   DougieColors.kt
   IntelligenceAvailable.kt
 feature/chat/src/main/res/drawable/dougie_logo.xml
@@ -56,6 +57,7 @@ app/src/main/kotlin/com/dougie/app/
   ExternalModelTreeImpl.kt
   AppForegroundTracker.kt
   PermissionUsageTracker.kt
+  ReplyPlayback.kt
 app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 app/src/play/kotlin/com/dougie/app/
   ChannelHooks.kt

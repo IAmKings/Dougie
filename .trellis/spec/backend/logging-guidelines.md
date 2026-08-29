@@ -9,7 +9,7 @@
 - Raw LLM HTTP request/response bodies and SSE `data:` payloads (Release and Debug)
 - Tool arguments that contain secrets
 - Raw microphone PCM / WAV / audio byte arrays, and ASR transcripts in Logcat or `AuditLog`
-- TTS utterance text (what `speech_output` speaks)
+- TTS utterance text (what `speech_output` speaks) and host reply playback (`finalAnswer` / PCM)
 - Intent classifier input text, intent labels, slots, or route JSON
 - Native intent JNI must not log features, labels, or input text.
 - Model download URLs (especially query strings) and partial `.part` paths in Logcat

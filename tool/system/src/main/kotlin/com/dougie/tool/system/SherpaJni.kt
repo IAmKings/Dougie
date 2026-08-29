@@ -9,6 +9,7 @@ import com.dougie.core.tool.AsrModelLayout
 import com.dougie.core.tool.SpeechUtterance
 import com.dougie.core.tool.TtsModelLayout
 import com.dougie.core.tool.TtsOutcome
+import com.dougie.core.tool.TtsVoices
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineParaformerModelConfig
@@ -62,7 +63,7 @@ object SherpaJni {
     }
 
     fun generatePcm(modelDir: File, text: String): FloatArray {
-        val audio = synthesize(modelDir, text)
+        val audio = synthesize(modelDir, text, sid = 0)
             ?: throw AgentException(UserFacingErrors.TTS_FAILED)
         if (audio.samples.isEmpty()) {
             throw AgentException(UserFacingErrors.TTS_FAILED)
@@ -70,24 +71,53 @@ object SherpaJni {
         return audio.samples
     }
 
-    fun speak(modelDir: File, text: String): TtsOutcome {
-        val audio = synthesize(modelDir, text) ?: return TtsOutcome.FAILED
-        return if (audio.samples.isEmpty()) {
-            TtsOutcome.FAILED
-        } else {
-            playPcm(audio.samples, audio.sampleRate)
-            TtsOutcome.SPOKEN
+    @Volatile
+    private var stopPlayback = false
+    @Volatile
+    private var speakEpoch = 0
+    private val playbackLock = Any()
+    private var playbackTrack: AudioTrack? = null
+
+    fun stopSpeak() {
+        synchronized(playbackLock) {
+            stopPlayback = true
+            speakEpoch += 1
+            val track = playbackTrack ?: return
+            try {
+                track.pause()
+                track.flush()
+                track.stop()
+            } catch (_: Throwable) {
+            }
         }
     }
 
+    fun speak(modelDir: File, text: String, sid: Int = 0): TtsOutcome {
+        val myEpoch = synchronized(playbackLock) {
+            stopPlayback = false
+            speakEpoch += 1
+            speakEpoch
+        }
+        val audio = synthesize(modelDir, text, TtsVoices.clamp(sid)) ?: return TtsOutcome.FAILED
+        if (playbackStopped(myEpoch)) return TtsOutcome.STOPPED
+        return if (audio.samples.isEmpty()) {
+            TtsOutcome.FAILED
+        } else {
+            playPcm(audio.samples, audio.sampleRate, myEpoch)
+        }
+    }
+
+    private fun playbackStopped(myEpoch: Int): Boolean =
+        stopPlayback || speakEpoch != myEpoch
+
     private class PcmAudio(val samples: FloatArray, val sampleRate: Int)
 
-    private fun synthesize(modelDir: File, text: String): PcmAudio? {
+    private fun synthesize(modelDir: File, text: String, sid: Int): PcmAudio? {
         if (!isAvailable()) return null
         return synchronized(lock) {
             try {
                 val engine = ttsEngine(modelDir)
-                val audio = engine.generate(text, sid = 0, speed = 1.0f)
+                val audio = engine.generate(text, sid = sid, speed = 1.0f)
                 PcmAudio(audio.samples, audio.sampleRate)
             } catch (_: Throwable) {
                 null
@@ -167,7 +197,8 @@ object SherpaJni {
     private fun threadCount(): Int =
         Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
 
-    private fun playPcm(samples: FloatArray, sampleRate: Int) {
+    private fun playPcm(samples: FloatArray, sampleRate: Int, myEpoch: Int): TtsOutcome {
+        if (playbackStopped(myEpoch)) return TtsOutcome.STOPPED
         val pcm = ShortArray(samples.size) { i ->
             (samples[i].coerceIn(-1f, 1f) * Short.MAX_VALUE).toInt().toShort()
         }
@@ -192,10 +223,13 @@ object SherpaJni {
             .setBufferSizeInBytes(max(minBuf, pcm.size * 2))
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
+        synchronized(playbackLock) { playbackTrack = track }
         try {
+            if (playbackStopped(myEpoch)) return TtsOutcome.STOPPED
             track.play()
             var offset = 0
             while (offset < pcm.size) {
+                if (playbackStopped(myEpoch)) return TtsOutcome.STOPPED
                 val written = track.write(pcm, offset, pcm.size - offset)
                 if (written <= 0) break
                 offset += written
@@ -204,6 +238,7 @@ object SherpaJni {
             val deadlineMs = (pcm.size * 1000L) / rate + 200L
             var waited = 0L
             while (
+                !playbackStopped(myEpoch) &&
                 waited < deadlineMs &&
                 track.playState == AudioTrack.PLAYSTATE_PLAYING &&
                 track.playbackHeadPosition < pcm.size
@@ -211,9 +246,19 @@ object SherpaJni {
                 Thread.sleep(20L)
                 waited += 20L
             }
+            if (playbackStopped(myEpoch)) return TtsOutcome.STOPPED
             track.stop()
+            return TtsOutcome.SPOKEN
+        } catch (_: Throwable) {
+            return if (playbackStopped(myEpoch)) TtsOutcome.STOPPED else TtsOutcome.FAILED
         } finally {
-            track.release()
+            synchronized(playbackLock) {
+                if (playbackTrack === track) playbackTrack = null
+            }
+            try {
+                track.release()
+            } catch (_: Throwable) {
+            }
         }
     }
 }

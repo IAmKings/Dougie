@@ -48,6 +48,7 @@ class PreferenceStore(context: Context) {
             .putInt(KEY_MAX_TOKENS, stored.maxTokens)
             .putBoolean(KEY_MEMORY_ENABLED, stored.memoryEnabled)
             .putString(KEY_MODEL_TREE_URI, stored.modelTreeUri)
+            .putInt(KEY_TTS_SPEAKER_ID, stored.ttsSpeakerId)
             .apply {
                 if (stored.egressConsentAt != null) {
                     putLong(KEY_CONSENT_AT, stored.egressConsentAt)
@@ -65,6 +66,10 @@ class PreferenceStore(context: Context) {
 
     fun setModelTreeUri(uri: String) {
         save(settings.value.copy(modelTreeUri = uri))
+    }
+
+    fun setTtsSpeakerId(sid: Int) {
+        save(settings.value.copy(ttsSpeakerId = sid))
     }
 
     private fun read(): ProviderSettings {
@@ -85,6 +90,7 @@ class PreferenceStore(context: Context) {
             egressConsentAt = consent?.takeIf { it > 0L },
             memoryEnabled = prefs.getBoolean(KEY_MEMORY_ENABLED, true),
             modelTreeUri = prefs.getString(KEY_MODEL_TREE_URI, "").orEmpty(),
+            ttsSpeakerId = prefs.getInt(KEY_TTS_SPEAKER_ID, 0),
         )
     }
 
@@ -99,5 +105,6 @@ class PreferenceStore(context: Context) {
         const val KEY_CONSENT_AT = "egress_consent_at"
         const val KEY_MEMORY_ENABLED = "memory_enabled"
         const val KEY_MODEL_TREE_URI = "model_tree_uri"
+        const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
     }
 }

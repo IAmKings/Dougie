@@ -87,9 +87,13 @@ class LoopEngine(
                 task = task.copy(streamingText = turn.streamingText)
                 val toolEvent = turn.toolCall
                 if (toolEvent == null) {
+                    val answer = turn.streamingText?.trim().orEmpty()
+                    if (answer.isEmpty()) {
+                        return@withContext fail(task, UserFacingErrors.LLM_EMPTY_REPLY, emit)
+                    }
                     task = task.copy(
                         status = TaskStatus.COMPLETED,
-                        finalAnswer = turn.streamingText.orEmpty(),
+                        finalAnswer = answer,
                         streamingText = null,
                     )
                     ingestMemory(task)

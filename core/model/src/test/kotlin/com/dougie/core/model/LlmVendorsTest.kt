@@ -50,7 +50,8 @@ class LlmVendorsTest {
         assertEquals("OpenCode Go", LlmVendors.OPENCODE_GO.label)
         assertEquals("https://opencode.ai/zen/go/v1", LlmVendors.OPENCODE_GO.baseUrl)
         assertEquals("deepseek-v4-flash", LlmVendors.OPENCODE_GO.defaultModel)
-        assertEquals(LlmVendors.DEFAULT_MAX_TOKENS, LlmVendors.OPENCODE_GO.defaultMaxTokens)
+        assertEquals(LlmVendors.V4_THINKING_MAX_TOKENS, LlmVendors.OPENCODE_GO.defaultMaxTokens)
+        assertEquals(LlmVendors.V4_THINKING_MAX_TOKENS, LlmVendors.DEEPSEEK.defaultMaxTokens)
         assertEquals(LlmVendors.OPENAI, LlmVendors.ALL.first())
         assertEquals(1, LlmVendors.ALL.indexOf(LlmVendors.DEEPSEEK))
         assertEquals(2, LlmVendors.ALL.indexOf(LlmVendors.OPENCODE_GO))
@@ -63,5 +64,8 @@ class LlmVendorsTest {
         assertEquals(8192, LlmVendors.clampMaxTokens(99_999))
         assertEquals(2048, LlmVendors.parseMaxTokens(" "))
         assertEquals(512, LlmVendors.parseMaxTokens("512"))
+        assertEquals(8192, LlmVendors.effectiveMaxTokens("deepseek-v4-flash", 2048))
+        assertEquals(2048, LlmVendors.effectiveMaxTokens("gpt-4o-mini", 2048))
+        assertEquals(8192, LlmVendors.effectiveMaxTokens("deepseek-v4-pro", 512))
     }
 }

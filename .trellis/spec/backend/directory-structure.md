@@ -54,7 +54,9 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   SpeechSession.kt
   SpeechHold / HoldSpeechRecorder (composer hold-to-talk; Tool still uses 3s capture())
   SherpaSpeechEngine.kt
-  TtsPort.kt
+  TtsPort.kt (stop(); PreferOfflineTtsPort.speakFinal offline-only for Chat replies)
+  TtsSpeakText.kt (ASCII digits → Chinese numerals before offline speakFinal; Chat still shows original finalAnswer)
+  TtsVoices.kt (curated fanchen-C sid 0/14/100: 默认/音色一/音色二; clamp unknown)
   SpeechOutputTool.kt
   SherpaTtsEngine.kt
   IntentPort.kt
@@ -165,7 +167,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Problem**: Settings can point at many OpenAI-compatible hosts. A native Anthropic `/v1/messages` body would break DeepSeek / Groq / Together / 硅基流动.
 
-**Instead**: `OpenAICompatibleProvider` always POSTs `{baseUrl}/chat/completions` with `model`, `stream`, `max_tokens`, `messages`, and `tools`. Vendor presets live in `LlmVendors` (`:core:model`): optional OpenCode Go (`https://opencode.ai/zen/go/v1`, model `deepseek-v4-flash`); official DeepSeek default model is `deepseek-v4-flash`; new-install default remains OpenAI. Body `model` is the configured model id as-is (`deepseek-v4-flash`, never an `opencode-go/` prefix). `CloudLlmConfig.maxTokens` is clamped to 16..8192. Custom vendor keeps the user's URL.
+**Instead**: `OpenAICompatibleProvider` always POSTs `{baseUrl}/chat/completions` with `model`, `stream`, `max_tokens`, `messages`, and `tools`. Vendor presets live in `LlmVendors` (`:core:model`): optional OpenCode Go (`https://opencode.ai/zen/go/v1`, model `deepseek-v4-flash`); official DeepSeek default model is `deepseek-v4-flash`; new-install default remains OpenAI. Body `model` is the configured model id trimmed (`deepseek-v4-flash`, never an `opencode-go/` prefix). DeepSeek V4 / `deepseek-reasoner` keep default thinking (do not send `thinking:disabled`). Their request `max_tokens` is `effectiveMaxTokens` (at least `V4_THINKING_MAX_TOKENS` = 8192) so reasoning does not starve `content`; OpenAI default remains 2048. Empty SSE `tool_calls:[]` must not skip `content`. Go bases (`/zen/go`) send `x-opencode-session: taskId`. Custom vendor keeps the user's URL.
 
 ## Don't: Android plugin on `:core:*`
 
@@ -336,6 +338,47 @@ Cross-layer: `:core:tool` `SpeechOutputTool` + `PreferOfflineTtsPort` + `SherpaT
 - Wrong: `TextToSpeech` with a network voice, checking the voice only before `setLanguage`, or logging utterance text
 - Correct: reject `isNetworkConnectionRequired` on the voice actually used; AuditLog stores tool name/outcome only
 
+## Scenario: Chat final-answer host TTS
+
+### 1. Scope / Trigger
+Cross-layer: `AgentTask.speakReply` on `:core:model` / `TaskManager.submit` / `TaskSnapshotCodec`; host `speakFinal` in `:app` + `:tool:system`; Chat gets `speakingReply` + `onStopReply` + bubble `onSpeakReply`.
+
+### 2. Signatures
+- `AgentTask.speakReply: Boolean = false`
+- `TaskManager.submit(..., speakReply: Boolean = false)`
+- `PreferOfflineTtsPort.speakFinal(text): TtsSpeakResult` — offline only; engine hears `TtsSpeakText.forOffline(text)`
+- `TtsSpeakText.forOffline(text): String`
+- `TtsEngine.stop()` / `SherpaJni.stopSpeak()`
+
+### 3. Contracts
+- `speakReply` true only after a successful hold-to-talk append in this compose session; retry copies the flag.
+- After `COMPLETED`, host speaks `finalAnswer` once per `taskId`. Typed send does not autoplay.
+- Last completed Agent bubble: **播报** only if `ttsReady`; replays via `speakFinal`. While `speakingReply`, that control is **停止播报**. FAILED last bubble keeps **重试**, no 播报.
+- Official replies never use system TTS. Unready/fail → `TTS_REPLY_UNAVAILABLE`; task stays `COMPLETED`.
+- VITS lexicon skips ASCII `0-9`; `speakFinal` expands digits (year digit-by-digit, 1–2 digit 十/二十, `HH:MM` → 点). Bubble text stays original. Do not log the expanded utterance.
+- `speech_output` success JSON unchanged (`ok` + `backend`).
+- Codec: missing `speakReply` → false.
+
+### 4. Validation & Error Matrix
+- Offline unready / speak fail (not user stop) → attachment line `语音回复暂不可用`
+- User stop / `onStop` / new send → silent stop, no unavailable banner
+- Empty `finalAnswer` or `speakReply=false` → no playback
+
+### 5. Good / Base / Bad
+- Good: voice append then send → autoplay offline
+- Base: typed send → silence
+- Bad: `speakFinal` falling through to system TTS; treating stop as `TTS_FAILED`; sending ASCII digits straight to VITS
+- Good replay: last COMPLETED bubble **播报** → `speakFinal` again
+
+### 6. Tests Required
+- `ReplyPlaybackTest` / `TaskStoreTest` speakReply round-trip; `SpeechOutputToolTest` still prefers offline for the Tool; `TtsSpeakTextTest` date/time digits
+- `ChatUiStateTest` bubble 播报 vs 重试; voice overlay copy unchanged; composer stop is callback-driven
+- `./gradlew :core:runtime:test :core:tool:test :feature:chat:testDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak`
+
+### 7. Wrong vs Correct
+- Wrong: put `speakingReply` on `ChatUiState`/`TaskStatus`; log `finalAnswer`; `PreferOfflineTtsPort.speak` for host replies; mutate bubble text to Chinese numerals
+- Correct: Activity flag + `speakFinal` + `TtsSpeakText`; Stop does not fail the task
+
 ## Scenario: LoopEngine status contract
 
 ### 1. Scope / Trigger
@@ -354,13 +397,15 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `ToolTraceEntry.toolCallId` is unique per task; `idempotencyKey == taskId + toolCallId`.
 - LLM timeout default 60s, tool timeout default 15s → `FAILED` + `UserFacingErrors.LLM_TIMEOUT` / `TOOL_TIMEOUT`.
 - Cloud provider + `allowCloud=false` → `FAILED` + `UserFacingErrors.EGRESS_BLOCKED`; provider `stream`/`generate` is not invoked.
-- `TextDelta` snapshots set `AgentTask.streamingText` while `THINKING`; `COMPLETED.finalAnswer` is the joined text and `streamingText` is cleared.
+- `TextDelta` snapshots set `AgentTask.streamingText` while `THINKING`; `COMPLETED.finalAnswer` is the joined trimmed text and `streamingText` is cleared.
+- Blank / whitespace-only final (no tool_call) → `FAILED` / `UserFacingErrors.LLM_EMPTY_REPLY`, not `COMPLETED` with empty `finalAnswer`.
 - `TaskManager.cancel()` → `FAILED` + `UserFacingErrors.CANCELLED`; in-flight HTTP/SSE is cancelled.
 
 ### 4. Validation & Error Matrix
 - Unknown tool name → `FAILED`, `lastError` set, no further LLM calls
 - `result.isFatal` → `FAILED`
 - `loopCount >= maxLoops` without FinalAnswer → `FAILED` / `MaxLoopExceeded`
+- Blank final text with no tool_call → `FAILED` / `LLM_EMPTY_REPLY`
 - Empty trimmed input → `TaskManager` no-op
 - New submit while status is not COMPLETED/FAILED → ignored (no overlapping loops), including `AWAITING_CONFIRMATION`
 - Missing Android permission → `FAILED` / `PERMISSION_DENIED`, no `AgentTool.execute`
@@ -388,6 +433,7 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `OpenAICompatibleProviderTest.streamsTextDeltasIntoFinalAnswer`
 - `OpenAICompatibleProviderTest.assemblesStreamedToolCallArguments`
 - `ToolCallSanitizerTest.coercesNumericStringForTypedField`
+- `LoopEngineTest.emptyFinalAfterTimeToolFailsInsteadOfSilentComplete`
 - `LoopEngineTest.unknownToolFailsWithoutExecuting`
 - `LoopEngineTest.canCallTimeThenBatteryInOneTask`
 - `LoopEngineTest.cancelStopsInFlightStreamAndFailsTask`

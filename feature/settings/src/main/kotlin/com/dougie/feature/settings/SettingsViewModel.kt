@@ -9,9 +9,13 @@ import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.OfflineModelOffer
 import com.dougie.data.preferences.PreferenceStore
 import com.dougie.data.preferences.ProviderSettings
+import com.dougie.core.tool.TtsVoices
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.io.File
 
@@ -50,6 +54,13 @@ class SettingsViewModel(
     private val _form = MutableStateFlow(store.settings.value.toForm())
     val form: StateFlow<SettingsFormState> = _form.asStateFlow()
     val models: StateFlow<OfflineModelsUi> = downloads.ui
+    val ttsSpeakerId: StateFlow<Int> = store.settings
+        .map { TtsVoices.clamp(it.ttsSpeakerId) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            TtsVoices.clamp(store.settings.value.ttsSpeakerId),
+        )
 
     fun requestModel(id: String) = downloads.request(id)
 
@@ -66,6 +77,10 @@ class SettingsViewModel(
     fun setModelTreeUri(uri: String) {
         store.setModelTreeUri(uri)
         downloads.scan()
+    }
+
+    fun setTtsSpeakerId(sid: Int) {
+        store.setTtsSpeakerId(TtsVoices.clamp(sid))
     }
 
     fun setAllowCloud(value: Boolean) {
@@ -130,6 +145,7 @@ class SettingsViewModel(
                 egressConsentAt = store.settings.value.egressConsentAt,
                 memoryEnabled = store.settings.value.memoryEnabled,
                 modelTreeUri = store.settings.value.modelTreeUri,
+                ttsSpeakerId = store.settings.value.ttsSpeakerId,
             ),
         )
         _form.update { store.settings.value.toForm().copy(saved = true) }

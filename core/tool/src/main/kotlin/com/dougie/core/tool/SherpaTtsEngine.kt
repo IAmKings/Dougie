@@ -23,8 +23,17 @@ class SherpaTtsEngine(
     private val modelDir: File,
     private val nativeAvailable: () -> Boolean,
     private val speakNative: (File, String) -> TtsOutcome,
+    private val stopNative: () -> Unit = {},
 ) : TtsEngine {
     override fun isReady(): Boolean = TtsModelLayout.isPresent(modelDir) && nativeAvailable()
 
-    override suspend fun speak(text: String): TtsOutcome = speakNative(modelDir, text)
+    override suspend fun speak(text: String): TtsOutcome = try {
+        speakNative(modelDir, text)
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        TtsOutcome.FAILED
+    }
+
+    override fun stop() = stopNative()
 }

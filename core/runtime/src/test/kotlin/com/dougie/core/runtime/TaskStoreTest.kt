@@ -215,5 +215,62 @@ class TaskStoreTest {
         assertNull(restored.attachedCaptureId)
         assertNull(restored.attachedWidth)
         assertNull(restored.attachedHeight)
+        assertEquals(false, restored.speakReply)
+    }
+
+    @Test
+    fun snapshotDecodeWithoutSpeakReplyDefaultsFalse() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"old","input":"查电量","status":"COMPLETED","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":"好了","lastError":null,"streamingText":null,"retrievedMemories":[],"attachments":[]}""",
+        )
+        assertEquals(false, restored.speakReply)
+        assertEquals("好了", restored.finalAnswer)
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesSpeakReply() {
+        val original = AgentTask(
+            taskId = "snap-voice",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "63%",
+            speakReply = true,
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals(true, restored.speakReply)
+    }
+
+    @Test
+    fun submitSpeakReplySurvivesCompletedAndRetryCopy() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val manager = TaskManager(
+            loopEngine = LoopEngine(
+                llm = FakeLlmProvider(),
+                tools = mapOf("battery" to FakeBatteryTool()),
+                dispatcher = dispatcher,
+                stepDelayMs = 0,
+            ),
+            dispatcher = dispatcher,
+            scope = this,
+            taskStore = store,
+        )
+        manager.submit("我现在手机还有多少电？", speakReply = true)
+        advanceUntilIdle()
+        val completed = manager.task.value
+        requireNotNull(completed)
+        assertEquals(TaskStatus.COMPLETED, completed.status)
+        assertEquals(true, completed.speakReply)
+        assertEquals(true, store.listRecent(1).single().speakReply)
+        manager.seed(
+            completed.copy(status = TaskStatus.FAILED, lastError = UserFacingErrors.NETWORK_FAILED),
+        )
+        manager.submit(completed.input, speakReply = completed.speakReply)
+        advanceUntilIdle()
+        val retried = manager.task.value
+        requireNotNull(retried)
+        assertEquals(TaskStatus.COMPLETED, retried.status)
+        assertEquals(true, retried.speakReply)
+        assertEquals(TaskStatus.COMPLETED, retried.status)
     }
 }

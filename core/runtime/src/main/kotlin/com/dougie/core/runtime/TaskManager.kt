@@ -40,6 +40,7 @@ class TaskManager(
         attachedWidth: Int? = null,
         attachedHeight: Int? = null,
         attachments: List<AttachmentMeta> = emptyList(),
+        speakReply: Boolean = false,
     ) {
         val trimmed = input.trim()
         if (trimmed.isEmpty()) return
@@ -63,6 +64,7 @@ class TaskManager(
             attachedWidth = (lastScreen?.width ?: attachedWidth)?.takeIf { it > 0 },
             attachedHeight = (lastScreen?.height ?: attachedHeight)?.takeIf { it > 0 },
             attachments = attachments,
+            speakReply = speakReply,
         )
         _task.value = created
         running = scope.launch(dispatcher) {

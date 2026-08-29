@@ -12,6 +12,7 @@ data class ProviderSettings(
     val egressConsentAt: Long? = null,
     val memoryEnabled: Boolean = true,
     val modelTreeUri: String = "",
+    val ttsSpeakerId: Int = 0,
 ) {
     companion object {
         val DEFAULT_VENDOR_ID = LlmVendors.OPENAI.id

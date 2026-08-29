@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "SpeechOutputTool vs PreferOfflineTtsPort; host must not leak AudioTrack into feature"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No TTS utterance text in Logcat/AuditLog"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "TTS_* copy; new reply-unavailable vs system fallback"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Composer callbacks hoisted; no Loop in feature"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Mapping tests; Play leak; no finalAnswer on notices"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "speakReply on AgentTask vs speaking UI in app"}
+{"file": ".trellis/tasks/08-28-chat-final-tts/prd.md", "reason": "Voice-originated speakReply; stop send button; rule C"}
+{"file": ".trellis/tasks/08-28-chat-final-tts/design.md", "reason": "speakFinal offline-only; stop AudioTrack; onStop"}

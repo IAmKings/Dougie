@@ -13,6 +13,7 @@ data class ChatUiState(
     val inputEnabled: Boolean = true,
     val isEmpty: Boolean = true,
     val canRetry: Boolean = false,
+    val canSpeakReply: Boolean = false,
 )
 
 sealed class ChatItem {
@@ -77,6 +78,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         inputEnabled = !busy,
         isEmpty = false,
         canRetry = status == TaskStatus.FAILED,
+        canSpeakReply = status == TaskStatus.COMPLETED,
     )
 }
 

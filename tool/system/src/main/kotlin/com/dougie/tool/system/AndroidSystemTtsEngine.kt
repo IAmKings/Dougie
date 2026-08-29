@@ -16,13 +16,23 @@ class AndroidSystemTtsEngine(
     context: Context,
 ) : TtsEngine {
     private val appContext = context.applicationContext
+    @Volatile
+    private var active: TextToSpeech? = null
 
     override fun isReady(): Boolean = true
+
+    override fun stop() {
+        val engine = active
+        active = null
+        engine?.stop()
+        engine?.shutdown()
+    }
 
     override suspend fun speak(text: String): TtsOutcome = withContext(Dispatchers.Main) {
         suspendCancellableCoroutine { cont ->
             var tts: TextToSpeech? = null
             fun finish(engine: TextToSpeech, outcome: TtsOutcome) {
+                if (active === engine) active = null
                 engine.shutdown()
                 if (cont.isActive) cont.resume(outcome)
             }
@@ -32,6 +42,7 @@ class AndroidSystemTtsEngine(
                     engine?.shutdown()
                     return@TextToSpeech
                 }
+                active = engine
                 if (status != TextToSpeech.SUCCESS) {
                     finish(engine, TtsOutcome.FAILED)
                     return@TextToSpeech
@@ -68,7 +79,7 @@ class AndroidSystemTtsEngine(
                     finish(engine, TtsOutcome.FAILED)
                 }
             }
-            cont.invokeOnCancellation { tts?.shutdown() }
+            cont.invokeOnCancellation { stop() }
         }
     }
 

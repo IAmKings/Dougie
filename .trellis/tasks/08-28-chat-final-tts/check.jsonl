@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "TTS_REPLY_UNAVAILABLE vs TTS_TOO_LONG/FAILED; COMPLETED not FAILED"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Reply text and PCM must not appear in logs"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Chat mapping tests; checkChannelLeak; no Compose screenshot CI"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "speakingReply is app UI state, not a second TaskStatus"}
+{"file": ".trellis/tasks/08-28-chat-final-tts/prd.md", "reason": "AC: voice-only autoplay, stop, no system TTS for replies"}
+{"file": ".trellis/tasks/08-28-chat-final-tts/design.md", "reason": "Host speakFinal vs SpeechOutputTool fallback"}

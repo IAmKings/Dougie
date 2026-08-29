@@ -3,6 +3,8 @@ package com.dougie.core.tool
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.ToolContext
 import com.dougie.core.model.UserFacingErrors
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -11,6 +13,7 @@ import org.junit.Test
 import java.io.File
 import java.nio.file.Files
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SpeechOutputToolTest {
     @Test
     fun prefersOfflineWhenReady() = runTest {
@@ -115,5 +118,55 @@ class SpeechOutputToolTest {
         } finally {
             dir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun speakFinalNeverUsesSystemFallback() = runTest {
+        val offline = FakeTtsEngine(ready = false)
+        val fallback = FakeTtsEngine(ready = true)
+        val result = PreferOfflineTtsPort(offline, fallback).speakFinal("这是一段正式回复")
+        assertEquals(UserFacingErrors.TTS_REPLY_UNAVAILABLE, result.error)
+        assertTrue(offline.spoken.isEmpty())
+        assertTrue(fallback.spoken.isEmpty())
+        assertFalse(result.ok)
+    }
+
+    @Test
+    fun speakFinalUsesOfflineOnly() = runTest {
+        val offline = FakeTtsEngine(ready = true)
+        val fallback = FakeTtsEngine(ready = true)
+        val result = PreferOfflineTtsPort(offline, fallback).speakFinal("你好")
+        assertTrue(result.ok)
+        assertEquals("offline", result.backend)
+        assertEquals(listOf("你好"), offline.spoken)
+        assertTrue(fallback.spoken.isEmpty())
+    }
+
+    @Test
+    fun speakFinalExpandsAsciiDigitsForOfflineLexicon() = runTest {
+        val offline = FakeTtsEngine(ready = true)
+        val fallback = FakeTtsEngine(ready = true)
+        PreferOfflineTtsPort(offline, fallback).speakFinal("现在是2026年8月29日15点03分")
+        assertEquals(listOf("现在是二零二六年八月二十九日十五点零三分"), offline.spoken)
+        assertTrue(fallback.spoken.isEmpty())
+    }
+
+    @Test
+    fun stopInterruptsSpeakFinalWithoutChangingSuccessJsonContract() = runTest {
+        val offline = FakeTtsEngine(ready = true, hangMs = 10_000)
+        val fallback = FakeTtsEngine(ready = true)
+        val port = PreferOfflineTtsPort(offline, fallback)
+        val job = launch { port.speakFinal("长回复") }
+        testScheduler.runCurrent()
+        port.stop()
+        job.join()
+        assertTrue(offline.stopped)
+        assertTrue(fallback.spoken.isEmpty())
+        val tool = SpeechOutputTool(PreferOfflineTtsPort(FakeTtsEngine(ready = true), FakeTtsEngine()))
+        val json = tool.execute("""{"text":"你好"}""", ToolContext("t", "c")).json
+        assertTrue(json.contains("\"ok\":true"))
+        assertTrue(json.contains("\"backend\":\"offline\""))
+        assertFalse(json.contains("pcm"))
+        assertFalse(json.contains("error"))
     }
 }

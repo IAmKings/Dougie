@@ -31,6 +31,7 @@ import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SherpaTtsEngine
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.TtsModelLayout
+import com.dougie.core.tool.TtsVoices
 import com.dougie.core.tool.SystemTimeTool
 import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
@@ -111,21 +112,29 @@ class DougieApplication : Application() {
         val locationPort = AndroidLocationPort(this) {
             permissionUsage.mark(AndroidPermissions.ACCESS_COARSE_LOCATION)
         }
-        speechPort = AndroidSpeechPort(
-            context = this,
-            isForeground = { foregroundTracker.foreground },
-            onUsed = { permissionUsage.mark(AndroidPermissions.RECORD_AUDIO) },
-        )
-        val speechPort = this.speechPort
         val ttsDir = File(filesDir, TtsModelLayout.DIR)
         val ttsPort = PreferOfflineTtsPort(
             offline = SherpaTtsEngine(
                 modelDir = ttsDir,
                 nativeAvailable = SherpaJni::isAvailable,
-                speakNative = SherpaJni::speak,
+                speakNative = { dir, text ->
+                    SherpaJni.speak(
+                        dir,
+                        text,
+                        TtsVoices.clamp(preferenceStore.settings.value.ttsSpeakerId),
+                    )
+                },
+                stopNative = SherpaJni::stopSpeak,
             ),
             fallback = AndroidSystemTtsEngine(this),
         )
+        speechPort = AndroidSpeechPort(
+            context = this,
+            isForeground = { foregroundTracker.foreground },
+            onUsed = { permissionUsage.mark(AndroidPermissions.RECORD_AUDIO) },
+            replyTts = ttsPort,
+        )
+        val speechPort = this.speechPort
         val intentPort = AndroidIntentPort(this)
         screenFrameStore = InMemoryScreenFrameStore()
         screenCapturePort = AndroidScreenCapturePort(

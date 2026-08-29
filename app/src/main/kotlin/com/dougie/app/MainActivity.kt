@@ -43,11 +43,14 @@ import com.dougie.feature.chat.DougieColors
 import com.dougie.feature.chat.intelligenceMark
 import com.dougie.core.tool.SpeechHold
 import com.dougie.feature.chat.appendVoiceTranscript
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.dougie.core.tool.TtsSpeakResult
 import com.dougie.feature.history.HistoryRoute
 import com.dougie.feature.history.HistoryViewModel
 import com.dougie.feature.memory.MemoryRoute
@@ -66,10 +69,17 @@ class MainActivity : ComponentActivity() {
     private val previewState = mutableStateOf<ImageBitmap?>(null)
     private val holdingMicState = mutableStateOf(false)
     private val voiceTranscribingState = mutableStateOf(false)
+    private val voiceUsedThisDraftState = mutableStateOf(false)
+    private val speakingReplyState = mutableStateOf(false)
+    private val asrReadyState = mutableStateOf(false)
+    private val ttsReadyState = mutableStateOf(false)
     private var cameraOutput: File? = null
     private var holdActive = false
     private var ignoreUntilUp = false
     private var holdLimitJob: Job? = null
+    private var speakJob: Job? = null
+    private var previousReplyStatus: TaskStatus? = null
+    private var spokenReplyTaskId: String? = null
 
     private val galleryPicker = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(AttachmentLimits.MAX),
@@ -94,11 +104,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         savedInstanceState?.getString(KEY_CHAT_DRAFT)?.let { chatDraftState.value = it }
+        voiceUsedThisDraftState.value =
+            savedInstanceState?.getBoolean(KEY_VOICE_USED_THIS_DRAFT, false) == true
         if (savedInstanceState == null) {
             applyChatIntent(intent)
         }
         enableEdgeToEdge()
         val app = application as DougieApplication
+        refreshVoicePacks()
         setContent {
             ChannelHooks.Root {
                 Surface(
@@ -113,6 +126,10 @@ class MainActivity : ComponentActivity() {
                 var previewImage by previewState
                 var holdingMic by holdingMicState
                 var voiceTranscribing by voiceTranscribingState
+                var voiceUsedThisDraft by voiceUsedThisDraftState
+                var speakingReply by speakingReplyState
+                var asrReady by asrReadyState
+                var ttsReady by ttsReadyState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
                 val notifyLauncher = rememberLauncherForActivityResult(
@@ -131,6 +148,14 @@ class MainActivity : ComponentActivity() {
                     if (NotificationPermissionGate.tryMarkRequested()) {
                         notifyLauncher.launch(AndroidPermissions.POST_NOTIFICATIONS)
                     }
+                }
+                LaunchedEffect(task?.taskId, task?.status, task?.speakReply, task?.finalAnswer) {
+                    val current = task
+                    if (ReplyPlayback.shouldSpeak(current, previousReplyStatus, spokenReplyTaskId)) {
+                        spokenReplyTaskId = current!!.taskId
+                        startReplySpeak(current.finalAnswer.orEmpty().trim())
+                    }
+                    previousReplyStatus = current?.status
                 }
                 when (route) {
                     AppRoute.Chat -> {
@@ -174,6 +199,18 @@ class MainActivity : ComponentActivity() {
                             onMicUp = { onMicUp() },
                             holdingMic = holdingMic,
                             transcribingVoice = voiceTranscribing,
+                            speakReplyOnSend = voiceUsedThisDraft,
+                            speakingReply = speakingReply,
+                            asrReady = asrReady,
+                            ttsReady = ttsReady,
+                            onStopReply = { stopReplySpeak() },
+                            onSpeakReply = { startReplySpeak(it) },
+                            onSpeakReplyConsumed = {
+                                voiceUsedThisDraft = false
+                                if (attachError == UserFacingErrors.TTS_REPLY_UNAVAILABLE) {
+                                    attachError = null
+                                }
+                            },
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
@@ -287,12 +324,19 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_CHAT_DRAFT, chatDraftState.value)
+        outState.putBoolean(KEY_VOICE_USED_THIS_DRAFT, voiceUsedThisDraftState.value)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        stopReplySpeak()
     }
 
     override fun onResume() {
         super.onResume()
         val app = application as DougieApplication
         ChannelHooks.syncOverlay(this)
+        refreshVoicePacks()
         if (isTaskBusy(app.taskManager.task.value)) {
             app.republishTaskNotice()
         }
@@ -304,19 +348,56 @@ class MainActivity : ComponentActivity() {
         applyChatIntent(intent)
     }
 
+    private fun refreshVoicePacks() {
+        val app = application as DougieApplication
+        asrReadyState.value = app.speechPort.isModelPresent() && app.speechPort.isEngineReady()
+        ttsReadyState.value = app.speechPort.isReplyTtsReady()
+    }
+
+    private fun stopReplySpeak() {
+        speakJob?.cancel()
+        speakJob = null
+        (application as DougieApplication).speechPort.stopPlayback()
+        speakingReplyState.value = false
+    }
+
+    private fun startReplySpeak(text: String) {
+        val app = application as DougieApplication
+        if (!app.speechPort.isReplyTtsReady()) {
+            attachErrorState.value = UserFacingErrors.TTS_REPLY_UNAVAILABLE
+            return
+        }
+        speakJob?.cancel()
+        app.speechPort.stopPlayback()
+        if (attachErrorState.value == UserFacingErrors.TTS_REPLY_UNAVAILABLE) {
+            attachErrorState.value = null
+        }
+        speakingReplyState.value = true
+        speakJob = lifecycleScope.launch {
+            val result = try {
+                withContext(Dispatchers.Default) { app.speechPort.speakReply(text) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                TtsSpeakResult(
+                    ok = false,
+                    backend = "offline",
+                    error = UserFacingErrors.TTS_REPLY_UNAVAILABLE,
+                )
+            }
+            if (!isActive) return@launch
+            speakingReplyState.value = false
+            if (!result.ok && !result.stopped) {
+                attachErrorState.value = UserFacingErrors.TTS_REPLY_UNAVAILABLE
+            }
+        }
+    }
+
     private fun onMicDown() {
-        if (ignoreUntilUp || holdActive || attachingState.value) return
+        if (ignoreUntilUp || holdActive || attachingState.value || speakingReplyState.value) return
         val app = application as DougieApplication
         if (!app.speechPort.isAppForeground()) {
             attachErrorState.value = UserFacingErrors.SPEECH_NOT_FOREGROUND
-            return
-        }
-        val granted = ContextCompat.checkSelfPermission(
-            this,
-            AndroidPermissions.RECORD_AUDIO,
-        ) == PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            micPermission.launch(AndroidPermissions.RECORD_AUDIO)
             return
         }
         if (!app.speechPort.isModelPresent()) {
@@ -325,6 +406,14 @@ class MainActivity : ComponentActivity() {
         }
         if (!app.speechPort.isEngineReady()) {
             attachErrorState.value = UserFacingErrors.SPEECH_ENGINE_NOT_READY
+            return
+        }
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            AndroidPermissions.RECORD_AUDIO,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            micPermission.launch(AndroidPermissions.RECORD_AUDIO)
             return
         }
         if (!app.speechPort.holdRecorder.start()) return
@@ -374,6 +463,7 @@ class MainActivity : ComponentActivity() {
             result.fold(
                 onSuccess = { spoken ->
                     chatDraftState.value = appendVoiceTranscript(chatDraftState.value, spoken)
+                    voiceUsedThisDraftState.value = true
                     attachErrorState.value = null
                 },
                 onFailure = { error ->
@@ -566,6 +656,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val KEY_CHAT_DRAFT = "dougie.chat.draft"
+        private const val KEY_VOICE_USED_THIS_DRAFT = "dougie.chat.voiceUsedThisDraft"
     }
 }
 

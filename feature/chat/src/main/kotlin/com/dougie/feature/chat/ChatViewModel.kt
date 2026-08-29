@@ -21,6 +21,7 @@ class ChatViewModel(
     fun send(
         text: String,
         attachments: List<com.dougie.core.model.AttachmentMeta> = emptyList(),
+        speakReply: Boolean = false,
     ) {
         val lastScreen = attachments.lastOrNull {
             it.kind == com.dougie.core.model.AttachmentKind.SCREEN
@@ -31,6 +32,7 @@ class ChatViewModel(
             lastScreen?.width,
             lastScreen?.height,
             attachments,
+            speakReply,
         )
     }
 
@@ -43,6 +45,7 @@ class ChatViewModel(
             current.attachedWidth,
             current.attachedHeight,
             current.attachments,
+            current.speakReply,
         )
     }
 
