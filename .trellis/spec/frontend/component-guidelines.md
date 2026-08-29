@@ -30,7 +30,7 @@ Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` 
 - Material3 `Text`, `IconButton`, `OutlinedTextField`, `Switch`, `AlertDialog`, `LazyColumn` — plus raw `Modifier.background` / `border` / `clip`.
 - Colors: `DougieColors` object copied per feature. Stitch tokens: `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`feature/chat/.../DougieColors.kt`).
 - Type: hardcoded `sp` / `FontWeight` / `FontFamily` in the screen file. No `Typography` theme object.
-- Chat avatar drawables: `super_dougie.xml`, `dougie_logo.xml`, `dougie_logo_unavailable.xml`. Launcher in `app/src/main/res` stays `dougie_logo` with inset — not Super/Noob.
+- Chat avatar drawables: `super_dougie.xml`, `dougie_logo.xml`, `dougie_logo_unavailable.xml`. Launcher in `app/src/main/res` stays `dougie_logo` with inset — not Super/Noob. Top bar **灵魂** copy follows the same mark (`Super` / `本地` / `不可用`); **出境策略** is a second subtitle line (`已授权云端` / `仅本地`) so the two statuses do not wrap on one row.
 - Bottom nav labels in Chat: **对话 / 记忆 / 任务 / 设置** (product copy).
 
 ## Accessibility

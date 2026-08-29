@@ -106,3 +106,25 @@ Gradle 有时需要 `-x extractDebugAnnotations`。Windows cmd 请用 `--log-onl
 | [`.trellis/tasks/archive/2026-08/08-18-device-e2e-signoff/`](.trellis/tasks/archive/2026-08/08-18-device-e2e-signoff/) | 真机协议与签字记录 |
 
 密钥与 `local.properties` 不要提交。`*.onnx` / `*.gguf` 默认 gitignore；意图 testdata 中的小 `model.onnx` 有例外规则。
+
+## GitHub 发版
+
+推送符合 `v主.次.补丁` 的标签会跑 Release workflow：渠道泄漏检查、打 Play / 侧载 Release APK，并创建 [GitHub Release](https://github.com/IAmKings/Dougie/releases)（附件 `Dougie-<版本>-play.apk` 与 `Dougie-<版本>-sideload.apk`）。`versionName` 来自标签，`versionCode` 为 `主*10000 + 次*100 + 补丁`。
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+也可在 Actions 里手动跑 **Release**，输入已存在的标签。
+
+上传密钥（可选，建议配置，否则 APK 用 debug 签名并标为预发布）在仓库 **Settings → Secrets and variables → Actions**：
+
+| Secret | 说明 |
+|--------|------|
+| `ANDROID_KEYSTORE_BASE64` | `.jks` / `.keystore` 的 base64（`base64 -i release.jks \| pbcopy`） |
+| `ANDROID_KEYSTORE_PASSWORD` | 仓库密码 |
+| `ANDROID_KEY_ALIAS` | 密钥别名 |
+| `ANDROID_KEY_PASSWORD` | 密钥密码 |
+
+不要把 keystore 提交进 git。Play Console 上架不在此 workflow 内。

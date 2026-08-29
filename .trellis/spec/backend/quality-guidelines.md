@@ -1,12 +1,12 @@
 # Quality Guidelines
 
-> How JVM/core and Android-port code is verified in Dougie. Documented from the repo as it is — there is no ktlint, detekt, GitHub Actions, or coverage gate.
+> How JVM/core and Android-port code is verified in Dougie. Documented from the repo as it is — there is no ktlint, detekt, or coverage gate. GitHub Actions run JVM tests + `:app:checkChannelLeak` on `master` / PRs, and publish Play/Sideload **release** APKs to a GitHub Release when a `v*` tag is pushed.
 
 ## Overview
 
 - Language: Kotlin 2.0.21, JVM 17 (`compilerOptions.jvmTarget` / `kotlinOptions.jvmTarget = "17"`). Gradle commands need OpenJDK 17 (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` on this machine).
 - Tests: JUnit 4 (`org.junit.Test`) + `kotlinx-coroutines-test` (`runTest`, `StandardTestDispatcher`, `advanceUntilIdle`). HTTP: OkHttp `MockWebServer` in `:core:llm`.
-- There is **no** ktlint, detekt, Android Lint `lint {}` block, or CI workflow. Reviewers run Gradle on the touched modules plus `:app:checkChannelLeak` when Play/Sideload classpath, manifests, or model assets change.
+- There is **no** ktlint, detekt, or Android Lint `lint {}` block. GitHub Actions: `.github/workflows/ci.yml` (push/PR) and `.github/workflows/release.yml` (`v*` tags). Reviewers still run Gradle locally on touched modules plus `:app:checkChannelLeak` when Play/Sideload classpath, manifests, or model assets change.
 - User-visible failure copy is Chinese constants on `UserFacingErrors` (`core/model/.../AgentException.kt`). Tests assert those strings, not English paraphrases.
 
 ## Forbidden Patterns
@@ -37,7 +37,7 @@
 | Tool JSON, gates, model install/import | Matching `*ToolTest` / `ModelInstallerTest` / `ModelImporterTest` | `./gradlew :core:tool:test` |
 | Memory gate / FTS behavior | `MemoryGateTest`; Android SQLite stays in `:data:memory` | `./gradlew :core:memory:test` |
 | Vendor presets | `LlmVendorsTest` | `./gradlew :core:model:test` |
-| Play/Sideload leak, Tile, notice, overlay, or model assets | `checkChannelLeak` (Tile both flavors; Play has no Accessibility / TapSwipe / NotificationListener / overlay permission or `DougieOverlayService`; sideload has overlay). Shade copy: `TaskNoticeTest`. Play settings copy: `PlayShortcutCopyTest` | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
+| Play/Sideload leak, Tile, notice, overlay, or model assets | `checkChannelLeak` (Tile both flavors; Play has no Accessibility / TapSwipe / NotificationListener / overlay permission or `DougieOverlayService`; sideload has overlay). Shade copy: `TaskNoticeTest`. Play settings copy: `PlayShortcutCopyTest` | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak`. Same leak task runs on GitHub Actions CI / Release. |
 | `:cli` Agent Console | `FakeBatteryLoopTest` (3-loop fake battery + `--log-only` flag) | `./gradlew :cli:test` and `./gradlew :cli:run --args='--log-only'` |
 
 There are no Compose UI / Espresso tests and no jacoco threshold. Do not add a CI lint job as a substitute for the module tests above.

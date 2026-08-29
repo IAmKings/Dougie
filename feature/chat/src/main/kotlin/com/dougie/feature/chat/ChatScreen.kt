@@ -83,6 +83,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -332,7 +333,10 @@ private fun DougieTopBar(
                 fontWeight = FontWeight.ExtraBold,
                 lineHeight = 32.sp,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Psychology,
                     contentDescription = null,
@@ -340,12 +344,19 @@ private fun DougieTopBar(
                     modifier = Modifier.size(14.dp),
                 )
                 Text(
-                    text = " 灵魂: 默认  |  ",
+                    text = " ${soulStatusLabel(intelligenceMark)}",
                     color = DougieColors.OnSurfaceVariant,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
                     letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Lock,
                     contentDescription = null,
@@ -353,11 +364,13 @@ private fun DougieTopBar(
                     modifier = Modifier.size(14.dp),
                 )
                 Text(
-                    text = if (allowCloud) " 出境策略: 已授权云端" else " 出境策略: 仅本地",
+                    text = " ${egressPolicyLabel(allowCloud)}",
                     color = DougieColors.OnSurfaceVariant,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
                     letterSpacing = 0.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

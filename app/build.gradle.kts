@@ -31,8 +31,8 @@ android {
         applicationId = "com.dougie.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (findProperty("dougieVersionCode") as String?)?.toIntOrNull() ?: 1
+        versionName = (findProperty("dougieVersionName") as String?) ?: "0.1.0"
         // Optional HTTPS + SHA-256 in local.properties (gitignored). Blank → OfficialModelCatalog.standard() defaults.
         listOf(
             "ASR_MODEL_URL" to "dougie.model.asr.url",
@@ -71,6 +71,18 @@ android {
         }
     }
 
+    signingConfigs {
+        val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH").orEmpty()
+        if (keystorePath.isNotEmpty()) {
+            create("ciRelease") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD").orEmpty()
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS").orEmpty()
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD").orEmpty()
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -78,6 +90,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH").orEmpty()
+            signingConfig = if (keystorePath.isNotEmpty()) {
+                signingConfigs.getByName("ciRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 

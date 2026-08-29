@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK pieces
+        run: |
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018"
+      - name: Gradle tests and channel leak
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon \
+            :core:model:test \
+            :core:llm:test \
+            :core:runtime:test \
+            :core:tool:test \
+            :feature:chat:testDebugUnitTest \
+            :feature:settings:testDebugUnitTest \
+            :app:testPlayDebugUnitTest \
+            :app:checkChannelLeak

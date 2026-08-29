@@ -142,4 +142,13 @@ class IntelligenceAvailableTest {
             ),
         )
     }
+
+    @Test
+    fun topBarSoulAndPolicyLabelsMatchMarks() {
+        assertEquals("灵魂: Super", soulStatusLabel(IntelligenceMark.SUPER))
+        assertEquals("灵魂: 本地", soulStatusLabel(IntelligenceMark.LOCAL))
+        assertEquals("灵魂: 不可用", soulStatusLabel(IntelligenceMark.NOOB))
+        assertEquals("出境策略: 已授权云端", egressPolicyLabel(true))
+        assertEquals("出境策略: 仅本地", egressPolicyLabel(false))
+    }
 }

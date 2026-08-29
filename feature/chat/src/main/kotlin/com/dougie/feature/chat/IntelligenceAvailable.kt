@@ -45,3 +45,12 @@ fun intelligenceMark(
     if (localLlmReady) return IntelligenceMark.LOCAL
     return IntelligenceMark.NOOB
 }
+
+fun soulStatusLabel(mark: IntelligenceMark): String = when (mark) {
+    IntelligenceMark.SUPER -> "灵魂: Super"
+    IntelligenceMark.LOCAL -> "灵魂: 本地"
+    IntelligenceMark.NOOB -> "灵魂: 不可用"
+}
+
+fun egressPolicyLabel(allowCloud: Boolean): String =
+    if (allowCloud) "出境策略: 已授权云端" else "出境策略: 仅本地"
