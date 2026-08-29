@@ -758,3 +758,29 @@ Chat 按住麦克风离线转写追加草稿，不自动发送；按住展示波
 ### Status
 
 [OK] **Completed**
+
+
+## Session 36: Chat Final Answer 离线播报
+
+**Date**: 2026-08-30
+**Task**: Chat Final Answer 离线播报
+**Branch**: `master`
+
+### Summary
+
+语音发送完成后离线 TTS 念回复，卡片可再播，数字转中文读音；ASR/TTS 按安装状态开门并引导下载；设置可选三种音色。顺带 GitHub CI/发版与顶栏灵魂文案。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9559675` | (see git log) |
+| `c897a82` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 规划按住说话后的本地意图路由
