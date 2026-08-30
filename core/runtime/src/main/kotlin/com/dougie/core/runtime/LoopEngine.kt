@@ -15,6 +15,8 @@ import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.IntentModelLayout
+import com.dougie.core.tool.IntentPort
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,6 +38,7 @@ class LoopEngine(
     private val policyEngine: PolicyEngine = PolicyEngine(),
     private val confirmTimeoutMs: Long = 60_000L,
     private val auditLog: AuditLog = NoOpAuditLog,
+    private val intentPort: IntentPort? = null,
 ) {
     private val sanitizer: ToolCallSanitizer
         get() = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
@@ -63,6 +66,11 @@ class LoopEngine(
             emit(task)
             task = retrieveMemories(task, emit)
             stepDelay()
+
+            val shortcut = completeFromIntentIfMatched(task, emit)
+            if (shortcut != null) {
+                return@withContext shortcut
+            }
 
             while (task.loopCount < task.maxLoops) {
                 task = task.copy(status = TaskStatus.THINKING, streamingText = null)
@@ -102,138 +110,215 @@ class LoopEngine(
                 }
 
                 val toolCallId = toolEvent.id.ifBlank { "call-${task.loopCount + 1}" }
-                val registered = tools[toolEvent.name]
-                val pending = ToolTraceEntry(
-                    toolCallId = toolCallId,
-                    toolName = toolEvent.name,
-                    argsSummary = toolEvent.argsJson,
-                    status = ToolTraceStatus.PENDING,
-                    riskLevel = registered?.descriptor?.riskLevel ?: RiskLevel.L0,
-                )
-                task = task.copy(
-                    status = TaskStatus.TOOL_PENDING,
-                    streamingText = null,
-                    toolTrace = task.toolTrace + pending,
-                )
-                emit(task)
-                stepDelay()
-
-                val sanitizedArgs = try {
-                    sanitizer.sanitize(toolEvent.name, toolEvent.argsJson)
-                } catch (e: AgentException) {
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
-                    }
-                    return@withContext fail(task, e.userMessage, emit)
-                }
-
-                task = updateLastTrace(task, TaskStatus.TOOL_PENDING) {
-                    it.copy(argsSummary = sanitizedArgs)
-                }
-
-                val tool = registered
-                if (tool == null) {
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
-                    }
-                    return@withContext fail(task, UserFacingErrors.UNKNOWN_TOOL, emit)
-                }
-
-                try {
-                    tool.validateArguments(sanitizedArgs)
-                } catch (e: AgentException) {
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
-                    }
-                    return@withContext fail(task, e.userMessage, emit)
-                }
-
-                when (policyEngine.decide(tool.descriptor)) {
-                    is PolicyDecision.DeniedPermission -> {
-                        task = updateLastTrace(task, TaskStatus.FAILED) {
-                            it.copy(status = ToolTraceStatus.FAILED)
-                        }
-                        return@withContext fail(task, UserFacingErrors.PERMISSION_DENIED, emit)
-                    }
-                    PolicyDecision.NeedsConfirmation -> {
-                        val gate = CompletableDeferred<Boolean>()
-                        confirmGate = gate
-                        task = updateLastTrace(task, TaskStatus.AWAITING_CONFIRMATION) { it }
+                when (
+                    val pass = executeToolPass(
+                        task = task,
+                        toolName = toolEvent.name,
+                        argsJson = toolEvent.argsJson,
+                        toolCallId = toolCallId,
+                        emit = emit,
+                    )
+                ) {
+                    is ToolPass.Halt -> return@withContext pass.task
+                    is ToolPass.Success -> {
+                        task = pass.task.copy(loopCount = pass.task.loopCount + 1)
                         emit(task)
-                        val confirmed = try {
-                            withTimeout(confirmTimeoutMs) { gate.await() }
-                        } catch (e: TimeoutCancellationException) {
-                            false
-                        } finally {
-                            if (confirmGate === gate) confirmGate = null
-                        }
-                        if (!confirmed) {
-                            task = updateLastTrace(task, TaskStatus.FAILED) {
-                                it.copy(status = ToolTraceStatus.FAILED)
-                            }
-                            return@withContext fail(task, UserFacingErrors.CONFIRM_REJECTED, emit)
-                        }
                     }
-                    PolicyDecision.Allow -> Unit
                 }
-
-                task = updateLastTrace(task, TaskStatus.TOOL_EXECUTING) {
-                    it.copy(status = ToolTraceStatus.EXECUTING)
-                }
-                emit(task)
-                stepDelay()
-
-                val result = try {
-                    withTimeout(toolTimeoutMs) {
-                        tool.execute(
-                            argumentsJson = sanitizedArgs,
-                            context = ToolContext(taskId = task.taskId, toolCallId = toolCallId),
-                        )
-                    }
-                } catch (e: TimeoutCancellationException) {
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
-                    }
-                    recordAudit(task.taskId, tool.name, "FAILED")
-                    return@withContext fail(task, UserFacingErrors.TOOL_TIMEOUT, emit)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: AgentException) {
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
-                    }
-                    recordAudit(task.taskId, tool.name, "FAILED")
-                    return@withContext fail(task, e.userMessage, emit)
-                } catch (e: Exception) {
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
-                    }
-                    recordAudit(task.taskId, tool.name, "FAILED")
-                    return@withContext fail(task, UserFacingErrors.TOOL_FAILED, emit)
-                }
-
-                if (result.isFatal) {
-                    recordAudit(task.taskId, tool.name, "FAILED")
-                    task = updateLastTrace(task, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED, resultJson = result.json)
-                    }.copy(lastError = result.error ?: UserFacingErrors.TOOL_FAILED)
-                    emit(task)
-                    return@withContext task
-                }
-
-                recordAudit(task.taskId, tool.name, "SUCCESS")
-                task = updateLastTrace(task, TaskStatus.TOOL_RESULT) {
-                    it.copy(status = ToolTraceStatus.SUCCESS, resultJson = result.json)
-                }
-                emit(task)
-                stepDelay()
-
-                task = task.copy(loopCount = task.loopCount + 1)
-                emit(task)
             }
 
             fail(task, "MaxLoopExceeded", emit)
         }
+    }
+
+    private suspend fun completeFromIntentIfMatched(
+        start: AgentTask,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask? {
+        val port = intentPort ?: return null
+        if (start.attachments.isNotEmpty()) return null
+        if (!start.attachedCaptureId.isNullOrBlank()) return null
+        if (!port.isModelPresent() || !port.isEngineReady()) return null
+        val toolName = shortcutToolName(port, start.input) ?: return null
+        return when (
+            val pass = executeToolPass(
+                task = start,
+                toolName = toolName,
+                argsJson = "{}",
+                toolCallId = "intent-route-1",
+                emit = emit,
+            )
+        ) {
+            is ToolPass.Halt -> pass.task
+            is ToolPass.Success -> {
+                val answer = IntentRouteAnswers.formatFinalAnswer(toolName, pass.resultJson)
+                    ?: return fail(pass.task, UserFacingErrors.TOOL_FAILED, emit)
+                val done = pass.task.copy(
+                    status = TaskStatus.COMPLETED,
+                    finalAnswer = answer,
+                    streamingText = null,
+                    loopCount = pass.task.loopCount + 1,
+                )
+                ingestMemory(done)
+                emit(done)
+                done
+            }
+        }
+    }
+
+    private suspend fun shortcutToolName(port: IntentPort, input: String): String? {
+        for (text in IntentRouteAnswers.classifyTexts(input)) {
+            val hit = try {
+                port.classify(text)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                continue
+            }
+            if (hit.confidence < IntentModelLayout.MIN_CONFIDENCE) continue
+            val name = IntentRouteAnswers.toolNameFor(hit.intent)
+            if (name != null) return name
+        }
+        return null
+    }
+
+    private suspend fun executeToolPass(
+        task: AgentTask,
+        toolName: String,
+        argsJson: String,
+        toolCallId: String,
+        emit: suspend (AgentTask) -> Unit,
+    ): ToolPass {
+        val registered = tools[toolName]
+        var next = task.copy(
+            status = TaskStatus.TOOL_PENDING,
+            streamingText = null,
+            toolTrace = task.toolTrace + ToolTraceEntry(
+                toolCallId = toolCallId,
+                toolName = toolName,
+                argsSummary = argsJson,
+                status = ToolTraceStatus.PENDING,
+                riskLevel = registered?.descriptor?.riskLevel ?: RiskLevel.L0,
+            ),
+        )
+        emit(next)
+        stepDelay()
+
+        val sanitizedArgs = try {
+            sanitizer.sanitize(toolName, argsJson)
+        } catch (e: AgentException) {
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED)
+            }
+            return ToolPass.Halt(fail(next, e.userMessage, emit))
+        }
+
+        next = updateLastTrace(next, TaskStatus.TOOL_PENDING) {
+            it.copy(argsSummary = sanitizedArgs)
+        }
+
+        val tool = registered
+        if (tool == null) {
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED)
+            }
+            return ToolPass.Halt(fail(next, UserFacingErrors.UNKNOWN_TOOL, emit))
+        }
+
+        try {
+            tool.validateArguments(sanitizedArgs)
+        } catch (e: AgentException) {
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED)
+            }
+            return ToolPass.Halt(fail(next, e.userMessage, emit))
+        }
+
+        when (policyEngine.decide(tool.descriptor)) {
+            is PolicyDecision.DeniedPermission -> {
+                next = updateLastTrace(next, TaskStatus.FAILED) {
+                    it.copy(status = ToolTraceStatus.FAILED)
+                }
+                return ToolPass.Halt(fail(next, UserFacingErrors.PERMISSION_DENIED, emit))
+            }
+            PolicyDecision.NeedsConfirmation -> {
+                val gate = CompletableDeferred<Boolean>()
+                confirmGate = gate
+                next = updateLastTrace(next, TaskStatus.AWAITING_CONFIRMATION) { it }
+                emit(next)
+                val confirmed = try {
+                    withTimeout(confirmTimeoutMs) { gate.await() }
+                } catch (e: TimeoutCancellationException) {
+                    false
+                } finally {
+                    if (confirmGate === gate) confirmGate = null
+                }
+                if (!confirmed) {
+                    next = updateLastTrace(next, TaskStatus.FAILED) {
+                        it.copy(status = ToolTraceStatus.FAILED)
+                    }
+                    return ToolPass.Halt(fail(next, UserFacingErrors.CONFIRM_REJECTED, emit))
+                }
+            }
+            PolicyDecision.Allow -> Unit
+        }
+
+        next = updateLastTrace(next, TaskStatus.TOOL_EXECUTING) {
+            it.copy(status = ToolTraceStatus.EXECUTING)
+        }
+        emit(next)
+        stepDelay()
+
+        val result = try {
+            withTimeout(toolTimeoutMs) {
+                tool.execute(
+                    argumentsJson = sanitizedArgs,
+                    context = ToolContext(taskId = next.taskId, toolCallId = toolCallId),
+                )
+            }
+        } catch (e: TimeoutCancellationException) {
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED)
+            }
+            recordAudit(next.taskId, tool.name, "FAILED")
+            return ToolPass.Halt(fail(next, UserFacingErrors.TOOL_TIMEOUT, emit))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: AgentException) {
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED)
+            }
+            recordAudit(next.taskId, tool.name, "FAILED")
+            return ToolPass.Halt(fail(next, e.userMessage, emit))
+        } catch (e: Exception) {
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED)
+            }
+            recordAudit(next.taskId, tool.name, "FAILED")
+            return ToolPass.Halt(fail(next, UserFacingErrors.TOOL_FAILED, emit))
+        }
+
+        if (result.isFatal) {
+            recordAudit(next.taskId, tool.name, "FAILED")
+            next = updateLastTrace(next, TaskStatus.FAILED) {
+                it.copy(status = ToolTraceStatus.FAILED, resultJson = result.json)
+            }.copy(lastError = result.error ?: UserFacingErrors.TOOL_FAILED)
+            emit(next)
+            return ToolPass.Halt(next)
+        }
+
+        recordAudit(next.taskId, tool.name, "SUCCESS")
+        next = updateLastTrace(next, TaskStatus.TOOL_RESULT) {
+            it.copy(status = ToolTraceStatus.SUCCESS, resultJson = result.json)
+        }
+        emit(next)
+        stepDelay()
+        return ToolPass.Success(next, result.json)
+    }
+
+    private sealed class ToolPass {
+        data class Success(val task: AgentTask, val resultJson: String) : ToolPass()
+        data class Halt(val task: AgentTask) : ToolPass()
     }
 
     private suspend fun retrieveMemories(

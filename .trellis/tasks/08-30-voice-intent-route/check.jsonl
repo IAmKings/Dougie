@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "INTENT_* 与 TOOL_FAILED 用户文案；分类失败不得挡发送"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "AuditLog 仅 tool 名与 SUCCESS/FAILED"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "LoopEngineTest 契约命名；checkChannelLeak"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "COMPLETED 必须有非空 finalAnswer；speakReply 仍由发送标志决定"}
+{"file": ".trellis/tasks/08-30-voice-intent-route/prd.md", "reason": "验收：LLM 零次 stream、缺包走 Loop、Play 无意图包"}

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine 状态机、IntentPort 缺包不得静默走云、Play 不内置 ONNX"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "禁止记录分类文本、intent、slots、route"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Loop 测试落在 :core:runtime；core 无 Android"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "短路径复用 PolicyEngine/execute/Audit，禁止第二套确认卡"}
+{"file": ".trellis/tasks/08-30-voice-intent-route/design.md", "reason": "classify 分支、MVP 仅 time/battery、附件不短路径"}

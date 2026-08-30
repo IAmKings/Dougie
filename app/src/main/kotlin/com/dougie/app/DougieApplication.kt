@@ -197,6 +197,7 @@ class DougieApplication : Application() {
                         PackageManager.PERMISSION_GRANTED
                 },
                 auditLog = taskStores.auditLog,
+                intentPort = intentPort,
             ),
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,

@@ -4,7 +4,10 @@ import com.dougie.core.llm.FakeLlmProvider
 import com.dougie.core.llm.LlmProvider
 import com.dougie.core.memory.InMemoryMemoryStore
 import com.dougie.core.memory.MemoryStore
+import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
@@ -22,9 +25,12 @@ import com.dougie.core.tool.FakeAppIntentPort
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.FakeCalendarPort
 import com.dougie.core.tool.FakeClipboardPort
+import com.dougie.core.tool.FakeIntentPort
 import com.dougie.core.tool.FakeLocationPort
 import com.dougie.core.tool.FakeScreenCapturePort
 import com.dougie.core.tool.InMemoryScreenFrameStore
+import com.dougie.core.tool.IntentHit
+import com.dougie.core.tool.IntentPort
 import com.dougie.core.tool.LocationTool
 import com.dougie.core.tool.ScreenCaptureTool
 import com.dougie.core.tool.ScreenMatchTool
@@ -844,6 +850,228 @@ class LoopEngineTest {
             throw AssertionError("expected CancellationException")
         } catch (e: CancellationException) {
             assertEquals("search cancelled", e.message)
+        }
+    }
+
+    @Test
+    fun highConfidenceQueryTimeSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-time", input = "现在几点")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals(1, port.classifyCount)
+        assertEquals("time", result.toolTrace.single().toolName)
+        assertEquals(ToolTraceStatus.SUCCESS, result.toolTrace.single().status)
+        assertTrue(result.finalAnswer!!.startsWith("现在是 "))
+        assertTrue(result.finalAnswer!!.contains("时区"))
+        assertEquals(1, result.loopCount)
+    }
+
+    @Test
+    fun timeExampleWithLeAndQuestionMarkStillSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = object : IntentPort {
+            override fun isModelPresent() = true
+            override fun isEngineReady() = true
+            override suspend fun classify(text: String) = if (text == "现在几点") {
+                IntentHit(intent = "query_time", route = "time", confidence = 0.91)
+            } else {
+                IntentHit(intent = "unknown", route = "unknown", confidence = 0.99)
+            }
+        }
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-le", input = "现在几点了？")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("time", result.toolTrace.single().toolName)
+        assertTrue(result.finalAnswer!!.startsWith("现在是 "))
+    }
+
+    @Test
+    fun highConfidenceQueryBatterySkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val recorded = mutableListOf<Triple<String, String, String>>()
+        val port = FakeIntentPort(
+            hit = IntentHit(
+                intent = "query_battery",
+                route = "battery",
+                confidence = 0.9,
+            ),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("battery" to FakeBatteryTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            auditLog = AuditLog { taskId, toolName, outcome ->
+                recorded += Triple(taskId, toolName, outcome)
+            },
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-bat", input = "还有多少电")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("当前电量 63%。正在充电。", result.finalAnswer)
+        assertEquals(listOf(Triple("t-bat", "battery", "SUCCESS")), recorded)
+        assertEquals("battery", result.toolTrace.single().toolName)
+    }
+
+    @Test
+    fun missingIntentPackDoesNotClassifyAndUsesLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(modelPresent = false)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-miss", input = "现在几点")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, port.classifyCount)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertTrue(result.toolTrace.isEmpty())
+    }
+
+    @Test
+    fun engineNotReadyDoesNotClassify() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(engineReady = false)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        engine.run(AgentTask(taskId = "t-eng", input = "现在几点")) {}
+        assertEquals(0, port.classifyCount)
+        assertEquals(1, spy.streamCount)
+    }
+
+    @Test
+    fun lowConfidenceFallsThroughToLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "query_time", route = "time", confidence = 0.49),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-low", input = "嗯")) {}
+        assertEquals(1, port.classifyCount)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+    }
+
+    @Test
+    fun unknownAndCalendarIntentsUseLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        for (hit in listOf(
+            IntentHit(intent = "unknown", route = "unknown", confidence = 0.99),
+            IntentHit(intent = "query_calendar", route = "calendar", confidence = 0.99),
+        )) {
+            val spy = SpyLocalLlm()
+            val port = FakeIntentPort(hit = hit)
+            val engine = LoopEngine(
+                llm = spy,
+                tools = mapOf("time" to SystemTimeTool()),
+                dispatcher = dispatcher,
+                stepDelayMs = 0,
+                intentPort = port,
+            )
+            val result = engine.run(AgentTask(taskId = "t-other", input = "安排")) {}
+            assertEquals(1, spy.streamCount)
+            assertEquals("走了云端", result.finalAnswer)
+            assertTrue(result.toolTrace.isEmpty())
+        }
+    }
+
+    @Test
+    fun screenAttachmentSkipsShortcut() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(
+            AgentTask(
+                taskId = "t-att",
+                input = "现在几点",
+                attachments = listOf(
+                    AttachmentMeta(id = "cap", kind = AttachmentKind.SCREEN, width = 8, height = 8),
+                ),
+            ),
+        ) {}
+        assertEquals(0, port.classifyCount)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+    }
+
+    @Test
+    fun classifyThrowFallsThroughToLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = object : IntentPort {
+            override fun isModelPresent() = true
+            override fun isEngineReady() = true
+            override suspend fun classify(text: String): IntentHit {
+                throw AgentException(UserFacingErrors.INTENT_FAILED)
+            }
+        }
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-throw", input = "现在几点")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+    }
+
+    private class SpyLocalLlm : LlmProvider {
+        var streamCount = 0
+        override val isLocal: Boolean = true
+        override fun stream(context: LoopContext) = flow {
+            streamCount += 1
+            emit(LlmEvent.TextDelta("走了云端"))
+        }
+        override suspend fun generate(context: LoopContext): LlmResponse {
+            return LlmResponse.FinalAnswer("走了云端")
         }
     }
 }

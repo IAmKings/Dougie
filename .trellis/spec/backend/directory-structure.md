@@ -386,6 +386,7 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 
 ### 2. Signatures
 - `LoopEngine.run(initial: AgentTask, emit: suspend (AgentTask) -> Unit): AgentTask`
+- `LoopEngine(..., intentPort: IntentPort? = null)` — App wires `AndroidIntentPort`; CLI/tests omit
 - `TaskManager.submit(input: String)` / `TaskManager.cancel()` / `TaskManager.task: StateFlow<AgentTask?>`
 - `EgressGateway.stream(provider, context): Flow<LlmEvent>` / `complete(...): LlmResponse`
 - `ToolCallSanitizer.sanitize(name, rawArgsJson): String` before `AgentTool.execute`
@@ -400,6 +401,7 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `TextDelta` snapshots set `AgentTask.streamingText` while `THINKING`; `COMPLETED.finalAnswer` is the joined trimmed text and `streamingText` is cleared.
 - Blank / whitespace-only final (no tool_call) → `FAILED` / `UserFacingErrors.LLM_EMPTY_REPLY`, not `COMPLETED` with empty `finalAnswer`.
 - `TaskManager.cancel()` → `FAILED` + `UserFacingErrors.CANCELLED`; in-flight HTTP/SSE is cancelled.
+- Optional `intentPort`: pack+engine ready, no attachments / `attachedCaptureId`, `confidence >= 0.5`, intent `query_time` / `query_battery` → Policy + `time`/`battery` `{}` → Chinese template `finalAnswer` → `COMPLETED`; **no** `LlmProvider.stream`. Classify tries `input` then a punctuation/particle-stripped form (Chat example `现在几点了？` → `现在几点`). Trace is only that tool (not `intent_classifier`). Other labels, low confidence, classify throw, missing pack/engine → existing LLM loop; `IntentHit` never goes on `LoopContext` / Prompt / Audit. Settings probe success allows low confidence and is not a shortcut guarantee.
 
 ### 4. Validation & Error Matrix
 - Unknown tool name → `FAILED`, `lastError` set, no further LLM calls
@@ -408,6 +410,8 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - Blank final text with no tool_call → `FAILED` / `LLM_EMPTY_REPLY`
 - Empty trimmed input → `TaskManager` no-op
 - New submit while status is not COMPLETED/FAILED → ignored (no overlapping loops), including `AWAITING_CONFIRMATION`
+- Missing intent pack or engine not ready → do not call `classify`; LLM loop unchanged
+- SCREEN / gallery attachments or `attachedCaptureId` → no shortcut (may skip `classify`)
 - Missing Android permission → `FAILED` / `PERMISSION_DENIED`, no `AgentTool.execute`
 - L2 tool → `AWAITING_CONFIRMATION` then `TaskManager.confirm()` executes once; `reject()` or 60s timeout → `FAILED` / `CONFIRM_REJECTED`, no execute
 - `allowCloud=false` and `isLocal=false` → `EgressBlockedException` (even if API key is set)
@@ -437,6 +441,11 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `LoopEngineTest.unknownToolFailsWithoutExecuting`
 - `LoopEngineTest.canCallTimeThenBatteryInOneTask`
 - `LoopEngineTest.cancelStopsInFlightStreamAndFailsTask`
+- `LoopEngineTest.highConfidenceQueryTimeSkipsLlm` (LLM stream count 0; `finalAnswer` starts with `现在是`)
+- `LoopEngineTest.timeExampleWithLeAndQuestionMarkStillSkipsLlm`
+- `LoopEngineTest.highConfidenceQueryBatterySkipsLlm` (template + Audit `battery`/`SUCCESS` only)
+- `LoopEngineTest.missingIntentPackDoesNotClassifyAndUsesLlm`
+- `LoopEngineTest.screenAttachmentSkipsShortcut`
 
 ### 7. Wrong vs Correct
 #### Wrong
@@ -454,5 +463,6 @@ val engine = LoopEngine(
                 ),
     dispatcher = Dispatchers.Default,
     gateway = EgressGateway(policy = { EgressPolicy(allowCloud = prefs.allowCloud) }, apiKey = { prefs.apiKey }),
+    intentPort = intentPort,
 )
 ```
