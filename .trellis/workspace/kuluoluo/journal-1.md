@@ -784,3 +784,24 @@ Chat 按住麦克风离线转写追加草稿，不自动发送；按住展示波
 ### Next Steps
 
 - 规划按住说话后的本地意图路由
+
+
+## Session 37: Chat 语音意图路由
+
+**Date**: 2026-08-30
+**Task**: Chat 语音意图路由
+**Branch**: `master`
+
+### Summary
+
+发送后对正文做 ONNX 分类；高置信时间/电量经 Policy 跳过云端 LLM，中文模板回复。句末「了／？」与设置探测语对齐。Play 不内置意图包。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `66dd1e9` | (see git log) |
+
+### Status
+
+[OK] **Completed**

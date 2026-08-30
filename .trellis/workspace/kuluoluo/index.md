@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 36
+- **Total Sessions**: 37
 - **Last Active**: 2026-08-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~786 | Active |
+| `journal-1.md` | ~807 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 37 | 2026-08-30 | Chat 语音意图路由 | `66dd1e9` | `master` |
 | 36 | 2026-08-30 | Chat Final Answer 离线播报 | `9559675`, `c897a82` | `master` |
 | 35 | 2026-08-28 | Chat 麦克风识别进草稿 | `cd8030a` | `master` |
 | 34 | 2026-08-27 | 多源附件与悬浮球冻帧 | `59bd94f`, `bdbd4eb` | `master` |
