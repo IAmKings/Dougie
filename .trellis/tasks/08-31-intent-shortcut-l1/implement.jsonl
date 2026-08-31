@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine 意图短路径与 PolicyEngine L1"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "日程标题与剪贴板不得进 AuditLog"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "completionPath 本地意图映射不变"}
+{"file": ".trellis/tasks/archive/2026-08/08-30-voice-intent-route/prd.md", "reason": "原短路径仅时间电量，本任务扩 L1 查询"}

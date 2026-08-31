@@ -21,6 +21,7 @@ import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.AppIntentTool
 import com.dougie.core.tool.CalendarCreateTool
+import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
 import com.dougie.core.tool.FakeAppIntentPort
 import com.dougie.core.tool.FakeBatteryTool
@@ -1016,11 +1017,11 @@ class LoopEngineTest {
     }
 
     @Test
-    fun unknownAndCalendarIntentsUseLlm() = runTest {
+    fun unknownAndCreateCalendarIntentsUseLlm() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         for (hit in listOf(
             IntentHit(intent = "unknown", route = "unknown", confidence = 0.99),
-            IntentHit(intent = "query_calendar", route = "calendar", confidence = 0.99),
+            IntentHit(intent = "create_calendar", route = "calendar", confidence = 0.99),
         )) {
             val spy = SpyLocalLlm()
             val port = FakeIntentPort(hit = hit)
@@ -1036,6 +1037,92 @@ class LoopEngineTest {
             assertEquals("走了云端", result.finalAnswer)
             assertTrue(result.toolTrace.isEmpty())
         }
+    }
+
+    @Test
+    fun highConfidenceQueryCalendarSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "query_calendar", route = "calendar", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("calendar_query" to CalendarQueryTool(FakeCalendarPort())),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-cal", input = "今天有什么日程")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("最近没有日程。", result.finalAnswer)
+        assertEquals("calendar_query", result.toolTrace.single().toolName)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun calendarQueryDeniedDoesNotCallLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "query_calendar", route = "calendar", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("calendar_query" to CalendarQueryTool(FakeCalendarPort())),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            policyEngine = PolicyEngine { false },
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-cal-deny", input = "今天有什么日程")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.PERMISSION_DENIED, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun highConfidenceClipboardReadSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "clipboard_read", route = "clipboard", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("clipboard_read" to ClipboardReadTool(FakeClipboardPort(text = "hello"))),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-clip", input = "剪贴板里有啥")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("剪贴板内容：hello", result.finalAnswer)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun highConfidenceQueryLocationSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "query_location", route = "location", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("location" to LocationTool(FakeLocationPort())),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-loc", input = "我在哪")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("大约在纬度 31.23、经度 121.47（精度约 500 米）。", result.finalAnswer)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
     }
 
     @Test
