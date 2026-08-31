@@ -1,6 +1,7 @@
 package com.dougie.core.runtime
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.MemoryEntry
@@ -52,6 +53,7 @@ object TaskSnapshotCodec {
             JsonArray(task.attachments.map { encodeAttachment(it) }),
         )
         put("speakReply", task.speakReply)
+        putNullable("completionPath", task.completionPath?.name)
     }.toString()
 
     fun decode(raw: String): AgentTask {
@@ -76,6 +78,8 @@ object TaskSnapshotCodec {
                 ?.mapNotNull { decodeAttachment(it.jsonObject) }
                 .orEmpty(),
             speakReply = obj.optionalBoolean("speakReply"),
+            completionPath = obj.optionalString("completionPath")
+                ?.let { runCatching { CompletionPath.valueOf(it) }.getOrNull() },
         )
     }
 

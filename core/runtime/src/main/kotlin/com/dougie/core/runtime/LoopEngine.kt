@@ -5,6 +5,7 @@ import com.dougie.core.memory.MemoryGate
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
@@ -73,7 +74,11 @@ class LoopEngine(
             }
 
             while (task.loopCount < task.maxLoops) {
-                task = task.copy(status = TaskStatus.THINKING, streamingText = null)
+                task = task.copy(
+                    status = TaskStatus.THINKING,
+                    streamingText = null,
+                    completionPath = CompletionPath.REMOTE_LLM,
+                )
                 emit(task)
                 stepDelay()
 
@@ -140,9 +145,10 @@ class LoopEngine(
         if (!start.attachedCaptureId.isNullOrBlank()) return null
         if (!port.isModelPresent() || !port.isEngineReady()) return null
         val toolName = shortcutToolName(port, start.input) ?: return null
+        val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
         return when (
             val pass = executeToolPass(
-                task = start,
+                task = routed,
                 toolName = toolName,
                 argsJson = "{}",
                 toolCallId = "intent-route-1",

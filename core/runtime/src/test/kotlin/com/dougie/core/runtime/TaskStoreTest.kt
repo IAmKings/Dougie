@@ -5,6 +5,7 @@ import com.dougie.core.llm.LlmProvider
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
+import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.TaskStatus
@@ -164,6 +165,7 @@ class TaskStoreTest {
         assertEquals(original.lastError, restored.lastError)
         assertEquals(original.toolTrace.single().toolName, restored.toolTrace.single().toolName)
         assertEquals(original.toolTrace.single().argsSummary, restored.toolTrace.single().argsSummary)
+        assertNull(restored.completionPath)
     }
 
     @Test
@@ -216,6 +218,7 @@ class TaskStoreTest {
         assertNull(restored.attachedWidth)
         assertNull(restored.attachedHeight)
         assertEquals(false, restored.speakReply)
+        assertNull(restored.completionPath)
     }
 
     @Test
@@ -225,6 +228,19 @@ class TaskStoreTest {
         )
         assertEquals(false, restored.speakReply)
         assertEquals("好了", restored.finalAnswer)
+        assertNull(restored.completionPath)
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesCompletionPath() {
+        val original = AgentTask(
+            taskId = "path",
+            input = "现在几点",
+            status = TaskStatus.COMPLETED,
+            completionPath = CompletionPath.LOCAL_INTENT,
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals(CompletionPath.LOCAL_INTENT, restored.completionPath)
     }
 
     @Test

@@ -22,7 +22,7 @@ val uiState: StateFlow<ChatUiState> = taskManager.task
 
 When `status == COMPLETED`, the Final `AgentMessage` copies citation labels from `AgentTask.retrievedMemories`: each entry’s `source` field, skip blanks, keep order, drop exact duplicates. Never put fact `content` on the bubble (blank `source` is omitted, not replaced by `content`). Streaming and `FAILED` `AgentMessage`s stay source-less. Empty `retrievedMemories` or all-blank sources → no citation UI. Chat maps from `AgentTask` only; do not open SQLite in `:feature:chat`.
 
-Debug maps `TaskManager.task` to `DebugTaskSnapshot` (`taskId`, `status`, `loopCount`, `lastError`) plus `AuditLog.listRecent` rows — never a second `TaskStatus` store, never `resultJson` / prompt / tool args.
+Debug maps `TaskManager.task` to `DebugTaskSnapshot` (`taskId`, `status`, `loopCount`, `lastError`, `completionPath` as 本地意图 / 远程 LLM / 无) plus `AuditLog.listRecent` rows — never a second `TaskStatus` store, never `resultJson` / prompt / tool args.
 
 `inputEnabled` is false while the task is busy (not COMPLETED/FAILED/IDLE), including `AWAITING_CONFIRMATION`. `canRetry` is true only when `status == FAILED`. `canSpeakReply` is true only when `status == COMPLETED` so the last bubble **播报** is hidden while streaming and on FAILED (FAILED still uses **重试**). Chat **重试** calls `TaskManager.submit` with the same `input` (new `taskId`) and copies `speakReply`. Bottom nav **任务** opens `:feature:history`, which lists `TaskStore.listRecent`. `:feature:memory` must `refresh()` whenever `MemoryRoute` is shown (`LaunchedEffect`), not only in `ViewModel.init` — the Activity-scoped ViewModel otherwise keeps an empty list after Chat ingests a fact.
 

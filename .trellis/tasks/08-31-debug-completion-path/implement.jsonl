@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Debug 页允许字段与禁止 Prompt/tool args"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Debug 映射 TaskManager.task，勿第二套状态"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "路径枚举可展示；禁止分类文本与 Prompt"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine 意图短路径与 TaskSnapshotCodec"}

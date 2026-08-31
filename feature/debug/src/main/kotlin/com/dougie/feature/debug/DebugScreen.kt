@@ -153,6 +153,7 @@ private fun TaskCard(task: DebugTaskSnapshot) {
         MonoLine("taskId", task.taskId)
         MonoLine("status", task.status)
         MonoLine("loopCount", task.loopCount.toString())
+        MonoLine("completionPath", task.completionPath)
         val error = task.lastError
         if (error.isNullOrBlank()) {
             MonoLine("lastError", "无")

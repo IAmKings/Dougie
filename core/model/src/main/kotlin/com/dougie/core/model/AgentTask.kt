@@ -16,7 +16,13 @@ data class AgentTask(
     val attachedHeight: Int? = null,
     val attachments: List<AttachmentMeta> = emptyList(),
     val speakReply: Boolean = false,
+    val completionPath: CompletionPath? = null,
 )
+
+enum class CompletionPath {
+    LOCAL_INTENT,
+    REMOTE_LLM,
+}
 
 enum class TaskStatus {
     IDLE,

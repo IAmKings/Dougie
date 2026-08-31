@@ -1,6 +1,7 @@
 package com.dougie.feature.debug
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.runtime.AuditEntry
@@ -26,15 +27,32 @@ class DebugUiStateTest {
                 ),
             ),
             lastError = "任务失败",
+            completionPath = CompletionPath.REMOTE_LLM,
         ).toDebugTaskSnapshot()
         assertEquals("t1", snapshot.taskId)
         assertEquals("FAILED", snapshot.status)
         assertEquals(3, snapshot.loopCount)
         assertEquals("任务失败", snapshot.lastError)
+        assertEquals("远程 LLM", snapshot.completionPath)
         val dumped = snapshot.toString()
         assertFalse(dumped.contains("secret user prompt"))
         assertFalse(dumped.contains("battery_percent"))
         assertFalse(dumped.contains("hidden"))
+        assertFalse(dumped.contains("query_time"))
+    }
+
+    @Test
+    fun mapsLocalIntentPathAndNullAsNone() {
+        val local = AgentTask(
+            taskId = "t-local",
+            input = "现在几点",
+            status = TaskStatus.COMPLETED,
+            completionPath = CompletionPath.LOCAL_INTENT,
+        ).toDebugTaskSnapshot()
+        assertEquals("本地意图", local.completionPath)
+        assertFalse(local.toString().contains("现在几点"))
+        val none = AgentTask(taskId = "t0", input = "x").toDebugTaskSnapshot()
+        assertEquals("无", none.completionPath)
     }
 
     @Test

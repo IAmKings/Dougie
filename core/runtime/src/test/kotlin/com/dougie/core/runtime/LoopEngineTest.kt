@@ -8,6 +8,7 @@ import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
+import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
@@ -173,6 +174,7 @@ class LoopEngineTest {
         val result = engine.run(AgentTask(taskId = "llm-timeout", input = "电量?")) {}
         assertEquals(TaskStatus.FAILED, result.status)
         assertEquals(UserFacingErrors.LLM_TIMEOUT, result.lastError)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     @Test
@@ -874,6 +876,26 @@ class LoopEngineTest {
         assertTrue(result.finalAnswer!!.startsWith("现在是 "))
         assertTrue(result.finalAnswer!!.contains("时区"))
         assertEquals(1, result.loopCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun shortcutToolFailureStaysLocalIntentAndSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(AgentTask(taskId = "t-miss-tool", input = "现在几点")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.UNKNOWN_TOOL, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
     }
 
     @Test
@@ -931,6 +953,7 @@ class LoopEngineTest {
         assertEquals("当前电量 63%。正在充电。", result.finalAnswer)
         assertEquals(listOf(Triple("t-bat", "battery", "SUCCESS")), recorded)
         assertEquals("battery", result.toolTrace.single().toolName)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
     }
 
     @Test
@@ -951,6 +974,7 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
         assertTrue(result.toolTrace.isEmpty())
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     @Test
@@ -988,6 +1012,7 @@ class LoopEngineTest {
         assertEquals(1, port.classifyCount)
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     @Test
@@ -1061,6 +1086,7 @@ class LoopEngineTest {
         assertEquals(TaskStatus.COMPLETED, result.status)
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     private class SpyLocalLlm : LlmProvider {
