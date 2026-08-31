@@ -128,6 +128,46 @@ class OnnxIntentEngineTest {
     }
 
     @Test
+    fun bertPackUsesTokenInfer() = runTest {
+        val dir = Files.createTempDirectory("onnx-bert").toFile()
+        try {
+            File(dir, IntentModelLayout.MODEL_FILE).writeText("x")
+            File(dir, IntentModelLayout.TOKENIZER_FILE).writeText(
+                """{"algorithm":"bert_wordpiece","max_len":8}""",
+            )
+            File(dir, IntentModelLayout.VOCAB_FILE).writeText(
+                listOf("[PAD]", "[UNK]", "[CLS]", "[SEP]", "现", "在", "几", "点").joinToString("\n"),
+            )
+            File(dir, IntentModelLayout.LABELS_FILE).writeText(
+                listOf(
+                    "query_time", "query_battery", "query_calendar", "create_calendar",
+                    "query_location", "clipboard_read", "clipboard_write", "open_app",
+                    "screen_capture", "speech_input", "unknown",
+                ).joinToString("\n"),
+            )
+            var tokenCalls = 0
+            val engine = OnnxIntentEngine(
+                dir,
+                nativeAvailable = { true },
+                infer = { _, _ -> error("hashbag") },
+                inferTokens = { _, ids, mask ->
+                    tokenCalls += 1
+                    assertEquals(8, ids.size)
+                    assertEquals(8, mask.size)
+                    FloatArray(11) { if (it == 0) 4f else 0f }
+                },
+            )
+            assertTrue(engine.isReady())
+            val hit = engine.classify("现在几点")
+            assertEquals(1, tokenCalls)
+            assertEquals("query_time", hit.intent)
+            assertTrue(hit.confidence >= IntentModelLayout.MIN_CONFIDENCE)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun ggufAloneIsNotPresent() {
         val dir = Files.createTempDirectory("onnx-gguf").toFile()
         try {

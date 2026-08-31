@@ -37,6 +37,33 @@ object IntentOrtJni {
         }
     }
 
+    fun inferTokens(modelDir: File, inputIds: LongArray, attentionMask: LongArray): FloatArray {
+        if (!isAvailable()) {
+            throw AgentException(UserFacingErrors.INTENT_ENGINE_NOT_READY)
+        }
+        if (inputIds.isEmpty() || inputIds.size != attentionMask.size) {
+            throw AgentException(UserFacingErrors.INTENT_FAILED)
+        }
+        return try {
+            nativeInferTokens(
+                File(modelDir, IntentModelLayout.MODEL_FILE).absolutePath,
+                inputIds,
+                attentionMask,
+            ) ?: throw AgentException(UserFacingErrors.INTENT_FAILED)
+        } catch (e: AgentException) {
+            throw e
+        } catch (_: Throwable) {
+            throw AgentException(UserFacingErrors.INTENT_FAILED)
+        }
+    }
+
     @JvmStatic
     external fun nativeInfer(modelPath: String, features: FloatArray): FloatArray?
+
+    @JvmStatic
+    external fun nativeInferTokens(
+        modelPath: String,
+        inputIds: LongArray,
+        attentionMask: LongArray,
+    ): FloatArray?
 }

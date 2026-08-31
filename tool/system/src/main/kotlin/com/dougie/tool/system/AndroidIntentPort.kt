@@ -17,6 +17,7 @@ class AndroidIntentPort(
         modelDir = modelDir,
         nativeAvailable = { IntentOrtJni.isAvailable() },
         infer = { dir, features -> IntentOrtJni.infer(dir, features) },
+        inferTokens = { dir, ids, mask -> IntentOrtJni.inferTokens(dir, ids, mask) },
     )
 
     override fun isModelPresent(): Boolean = IntentModelLayout.isPresent(modelDir)

@@ -68,29 +68,49 @@ class OnnxIntentEngine(
     private val modelDir: File,
     private val nativeAvailable: () -> Boolean,
     private val infer: (File, FloatArray) -> FloatArray,
+    private val inferTokens: (File, LongArray, LongArray) -> FloatArray = { _, _, _ ->
+        throw AgentException(UserFacingErrors.INTENT_ENGINE_NOT_READY)
+    },
 ) : IntentEngine {
-    override fun isReady(): Boolean = IntentModelLayout.isPresent(modelDir) && nativeAvailable()
+    override fun isReady(): Boolean {
+        if (!nativeAvailable()) return false
+        return when (algorithm()) {
+            IntentModelLayout.ALG_HASHBAG -> IntentModelLayout.isHashbagFixturePresent(modelDir)
+            IntentModelLayout.ALG_BERT -> IntentModelLayout.isPresent(modelDir)
+            else -> false
+        }
+    }
 
     override suspend fun classify(text: String): IntentHit {
-        if (!IntentModelLayout.isPresent(modelDir)) {
-            throw AgentException(UserFacingErrors.INTENT_MODEL_MISSING)
-        }
         if (!nativeAvailable()) {
             throw AgentException(UserFacingErrors.INTENT_ENGINE_NOT_READY)
         }
-        val labels = loadLabels(File(modelDir, IntentModelLayout.LABELS_FILE))
-        val spec = try {
-            IntentHashBagFeaturizer.loadSpec(File(modelDir, IntentModelLayout.TOKENIZER_FILE))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: AgentException) {
-            throw e
-        } catch (_: Exception) {
-            throw AgentException(UserFacingErrors.INTENT_FAILED)
+        val algo = algorithm()
+        val layoutOk = when (algo) {
+            IntentModelLayout.ALG_HASHBAG -> IntentModelLayout.isHashbagFixturePresent(modelDir)
+            IntentModelLayout.ALG_BERT -> IntentModelLayout.isPresent(modelDir)
+            else -> false
         }
-        val features = IntentHashBagFeaturizer.featurize(text, spec)
+        if (!layoutOk) {
+            throw AgentException(UserFacingErrors.INTENT_MODEL_MISSING)
+        }
+        val labels = loadLabels(File(modelDir, IntentModelLayout.LABELS_FILE))
         val logits = try {
-            infer(modelDir, features)
+            when (algo) {
+                IntentModelLayout.ALG_HASHBAG -> {
+                    val spec = IntentHashBagFeaturizer.loadSpec(
+                        File(modelDir, IntentModelLayout.TOKENIZER_FILE),
+                    )
+                    infer(modelDir, IntentHashBagFeaturizer.featurize(text, spec))
+                }
+                IntentModelLayout.ALG_BERT -> {
+                    val spec = BertWordPiece.loadSpec(File(modelDir, IntentModelLayout.TOKENIZER_FILE))
+                    val vocab = BertWordPiece.loadVocab(File(modelDir, IntentModelLayout.VOCAB_FILE))
+                    val (ids, mask) = BertWordPiece.encode(text, spec, vocab)
+                    inferTokens(modelDir, ids, mask)
+                }
+                else -> throw AgentException(UserFacingErrors.INTENT_FAILED)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: AgentException) {
@@ -113,6 +133,17 @@ class OnnxIntentEngine(
             route = routeFor(intent),
             confidence = probs[best],
         )
+    }
+
+    private fun algorithm(): String {
+        val file = File(modelDir, IntentModelLayout.TOKENIZER_FILE)
+        if (!file.isFile) return ""
+        return try {
+            Json.parseToJsonElement(file.readText()).jsonObject["algorithm"]
+                ?.jsonPrimitive?.content.orEmpty()
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     private fun loadLabels(file: File): List<String> {

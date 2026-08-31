@@ -74,6 +74,7 @@ object AppOfflineModelProbe {
             modelDir = modelDir,
             nativeAvailable = IntentOrtJni::isAvailable,
             infer = { dir, features -> IntentOrtJni.infer(dir, features) },
+            inferTokens = { dir, ids, mask -> IntentOrtJni.inferTokens(dir, ids, mask) },
         )
         if (!engine.isReady()) {
             throw AgentException(UserFacingErrors.INTENT_ENGINE_NOT_READY)

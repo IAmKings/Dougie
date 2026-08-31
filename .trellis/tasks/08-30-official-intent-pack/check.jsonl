@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "INTENT_* 文案；旧哈希袋不得当已安装硬推理"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "checkChannelLeak 与 :core:tool:test"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "评测与探测不得把金标句打进 Logcat"}
+{"file": ".trellis/tasks/08-30-official-intent-pack/prd.md", "reason": "规则 E ≥90%、JSON 契约、Play 无正式 ONNX"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Settings 意图行仍走 catalog 下载，不把 MiniRBT 当 Chat LLM"}

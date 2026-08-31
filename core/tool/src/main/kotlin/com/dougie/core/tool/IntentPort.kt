@@ -7,10 +7,20 @@ object IntentModelLayout {
     const val MODEL_FILE = "model.onnx"
     const val TOKENIZER_FILE = "tokenizer.json"
     const val LABELS_FILE = "labels.txt"
+    const val VOCAB_FILE = "vocab.txt"
     const val ID = "intent"
     const val MIN_CONFIDENCE = 0.5
+    const val ALG_HASHBAG = "char_ngram_fnv1a32_hash_bag"
+    const val ALG_BERT = "bert_wordpiece"
 
     fun isPresent(modelDir: File): Boolean {
+        return listOf(MODEL_FILE, TOKENIZER_FILE, LABELS_FILE, VOCAB_FILE).all { name ->
+            val file = File(modelDir, name)
+            file.isFile && file.length() > 0L
+        }
+    }
+
+    fun isHashbagFixturePresent(modelDir: File): Boolean {
         return listOf(MODEL_FILE, TOKENIZER_FILE, LABELS_FILE).all { name ->
             val file = File(modelDir, name)
             file.isFile && file.length() > 0L
@@ -83,3 +93,4 @@ class FakeIntentPort(
         return hit
     }
 }
+

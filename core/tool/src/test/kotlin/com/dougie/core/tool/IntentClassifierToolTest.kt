@@ -76,6 +76,8 @@ class IntentClassifierToolTest {
             assertFalse(IntentModelLayout.isPresent(dir))
             File(dir, IntentModelLayout.TOKENIZER_FILE).writeText("{}")
             File(dir, IntentModelLayout.LABELS_FILE).writeText("query_time")
+            assertFalse(IntentModelLayout.isPresent(dir))
+            File(dir, IntentModelLayout.VOCAB_FILE).writeText("[PAD]\n")
             assertTrue(IntentModelLayout.isPresent(dir))
         } finally {
             dir.deleteRecursively()

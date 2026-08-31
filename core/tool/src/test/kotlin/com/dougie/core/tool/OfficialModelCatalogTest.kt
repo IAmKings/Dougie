@@ -1,5 +1,6 @@
 package com.dougie.core.tool
 
+import com.dougie.core.tool.SHA256
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,7 +28,7 @@ class OfficialModelCatalogTest {
         assertEquals("语音合成", offers[1].title)
         assertEquals("约 116MB", offers[1].sizeLabel)
         assertEquals("意图理解", offers[2].title)
-        assertEquals("约 10–20MB", offers[2].sizeLabel)
+        assertEquals("约 47MB", offers[2].sizeLabel)
         assertTrue(offers[0].isConfigured())
         assertTrue(offers[1].isConfigured())
         assertTrue(offers[2].isConfigured())
@@ -38,6 +39,7 @@ class OfficialModelCatalogTest {
                 IntentModelLayout.MODEL_FILE,
                 IntentModelLayout.TOKENIZER_FILE,
                 IntentModelLayout.LABELS_FILE,
+                IntentModelLayout.VOCAB_FILE,
             ),
             offers[2].pack.files.map { it.name },
         )
@@ -81,23 +83,22 @@ class OfficialModelCatalogTest {
     }
 
     @Test
-    fun intentFixtureHashesMatchCatalog() {
-        fun sha(name: String): String {
-            val stream = javaClass.getResourceAsStream("/intent-pack/$name") ?: error(name)
-            val bytes = stream.use { it.readBytes() }
-            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
-            return digest.joinToString("") { "%02x".format(it) }
-        }
-        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, sha(IntentModelLayout.MODEL_FILE))
-        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_TOKENIZER.sha256, sha(IntentModelLayout.TOKENIZER_FILE))
-        assertEquals(OfficialModelCatalog.DEFAULT_INTENT_LABELS.sha256, sha(IntentModelLayout.LABELS_FILE))
+    fun intentCatalogIsFourHttpsFilesNotTestdataGemm() {
+        val offer = OfficialModelCatalog.standard()[2]
+        assertEquals(4, offer.pack.files.size)
+        assertTrue(offer.pack.files.all { it.httpsUrl.contains("intent-minirbt-v1") })
+        assertTrue(offer.pack.files.all { SHA256.matches(it.sha256) })
+        val testdata = javaClass.getResourceAsStream("/intent-pack/model.onnx")!!.use { it.readBytes() }
+        val testdataSha = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(testdata).joinToString("") { "%02x".format(it) }
+        assertTrue(offer.pack.files[0].sha256 != testdataSha)
     }
 
     @Test
-    fun intentInstalledRequiresOnnxTokenizerAndLabels() {
+    fun intentInstalledRequiresOnnxTokenizerLabelsAndVocab() {
         val dir = Files.createTempDirectory("model-root").toFile()
         try {
-            val offer = OfficialModelCatalog.intent(https, https, https)
+            val offer = OfficialModelCatalog.intent(https, https, https, https)
             val packDir = File(dir, IntentModelLayout.DIR)
             packDir.mkdirs()
             File(packDir, "model.gguf").writeText("x")
@@ -105,6 +106,8 @@ class OfficialModelCatalogTest {
             File(packDir, IntentModelLayout.MODEL_FILE).writeText("x")
             File(packDir, IntentModelLayout.TOKENIZER_FILE).writeText("{}")
             File(packDir, IntentModelLayout.LABELS_FILE).writeText("query_time")
+            assertFalse(offer.isInstalled(dir))
+            File(packDir, IntentModelLayout.VOCAB_FILE).writeText("[PAD]\n")
             assertTrue(offer.isInstalled(dir))
         } finally {
             dir.deleteRecursively()

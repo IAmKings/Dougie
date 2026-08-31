@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "IntentPort 布局、ORT 单份、testdata 与用户包分离、Play 不内置 ONNX"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "JNI 与引擎不得记录文本、标签、特征"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "tool 单测用 Fake/夹具；不提交完整权重"}
+{"file": ".trellis/tasks/08-30-official-intent-pack/design.md", "reason": "Bert 输入、四文件布局、双 algorithm、Release 托管"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "复用现有 ModelInstaller 与 softmax/routeFor"}

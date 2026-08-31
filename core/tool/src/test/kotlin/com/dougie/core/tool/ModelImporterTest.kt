@@ -110,7 +110,9 @@ class ModelImporterTest {
             val onnx = File(dir, "intent.onnx").apply { writeBytes(hello) }
             val tokenizer = File(dir, "tok.json").apply { writeBytes(world) }
             val labels = File(dir, "labs.txt").apply { writeText("query_time") }
+            val vocab = File(dir, "vocab.txt").apply { writeText("[PAD]\n") }
             val labelsSha = SHA256.hex(labels)
+            val vocabSha = SHA256.hex(vocab)
             val pack = ModelPack(
                 id = IntentModelLayout.ID,
                 relativeDir = IntentModelLayout.DIR,
@@ -118,9 +120,10 @@ class ModelImporterTest {
                     ModelFileSpec(IntentModelLayout.MODEL_FILE, helloSha, httpsUrl = ""),
                     ModelFileSpec(IntentModelLayout.TOKENIZER_FILE, worldSha, httpsUrl = ""),
                     ModelFileSpec(IntentModelLayout.LABELS_FILE, labelsSha, httpsUrl = ""),
+                    ModelFileSpec(IntentModelLayout.VOCAB_FILE, vocabSha, httpsUrl = ""),
                 ),
             )
-            ModelImporter().importFiles(pack, dir, listOf(onnx, tokenizer, labels))
+            ModelImporter().importFiles(pack, dir, listOf(onnx, tokenizer, labels, vocab))
             val packDir = File(dir, IntentModelLayout.DIR)
             assertTrue(IntentModelLayout.isPresent(packDir))
             assertFalse(File(packDir, "model.gguf").exists())

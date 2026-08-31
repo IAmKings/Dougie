@@ -202,6 +202,7 @@ class OfflineModelDownloadsTest {
                         OfficialModelCatalog.DEFAULT_INTENT_MODEL,
                         OfficialModelCatalog.DEFAULT_INTENT_TOKENIZER,
                         OfficialModelCatalog.DEFAULT_INTENT_LABELS,
+                        OfficialModelCatalog.DEFAULT_INTENT_VOCAB,
                     ),
                 ),
             )
@@ -221,22 +222,17 @@ class OfflineModelDownloadsTest {
         val dir = Files.createTempDirectory("model-ui").toFile()
         val tree = FakeExternalModelTree(ready = true)
         tree.stored[IntentModelLayout.DIR] = mutableMapOf(
-            IntentModelLayout.MODEL_FILE to fixtureBytes(IntentModelLayout.MODEL_FILE),
-            IntentModelLayout.TOKENIZER_FILE to fixtureBytes(IntentModelLayout.TOKENIZER_FILE),
-            IntentModelLayout.LABELS_FILE to fixtureBytes(IntentModelLayout.LABELS_FILE),
+            IntentModelLayout.MODEL_FILE to hello,
+            IntentModelLayout.TOKENIZER_FILE to hello,
+            IntentModelLayout.LABELS_FILE to hello,
+            IntentModelLayout.VOCAB_FILE to hello,
         )
         try {
             val downloads = makeDownloads(
                 installer,
                 dir,
                 tree,
-                listOf(
-                    OfficialModelCatalog.intent(
-                        OfficialModelCatalog.DEFAULT_INTENT_MODEL,
-                        OfficialModelCatalog.DEFAULT_INTENT_TOKENIZER,
-                        OfficialModelCatalog.DEFAULT_INTENT_LABELS,
-                    ),
-                ),
+                listOf(OfficialModelCatalog.intent(https, https, https, https)),
             )
             downloads.scan()
             advanceUntilIdle()

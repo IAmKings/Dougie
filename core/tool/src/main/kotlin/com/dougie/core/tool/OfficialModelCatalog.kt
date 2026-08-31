@@ -29,8 +29,8 @@ fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
 }
 
 object OfficialModelCatalog {
-    private const val INTENT_PACK_BASE =
-        "https://raw.githubusercontent.com/IAmKings/Dougie/master/core/tool/src/test/resources/intent-pack/"
+    private const val INTENT_RELEASE_BASE =
+        "https://github.com/IAmKings/Dougie/releases/download/intent-minirbt-v1"
     val DEFAULT_ASR_MODEL = ModelSource(
         httpsUrl = "https://huggingface.co/csukuangfj/sherpa-onnx-paraformer-zh-2023-09-14/resolve/main/model.int8.onnx",
         sha256 = "f36a0433bcf096bd6d6f11b80a3ac8bed110bdca632fe0d731df8d1a84475945",
@@ -52,16 +52,20 @@ object OfficialModelCatalog {
         sha256 = "9af2824e49e731bf615927c768fdc36bbbe894cac57d8e0088d9c94331b07320",
     )
     val DEFAULT_INTENT_MODEL = ModelSource(
-        httpsUrl = "$INTENT_PACK_BASE${IntentModelLayout.MODEL_FILE}",
-        sha256 = "90aa53472bfb23b5b43535eb5430719c27cef8b796553e404784ab87b850afee",
+        httpsUrl = "$INTENT_RELEASE_BASE/model.onnx",
+        sha256 = "e827fc58f39cb2a54d72b962d1ad7afb07118d9fe87b6d57f2e89a36fde43b0d",
     )
     val DEFAULT_INTENT_TOKENIZER = ModelSource(
-        httpsUrl = "$INTENT_PACK_BASE${IntentModelLayout.TOKENIZER_FILE}",
-        sha256 = "647780993168a2bfc0c9f192b05f082b47bf6b55ff565a7cdade2821fc09536d",
+        httpsUrl = "$INTENT_RELEASE_BASE/tokenizer.json",
+        sha256 = "d456a5ba948b9182146d912e2ce4e61dcf6b71ac2ba1743a3572a03c3d2a32cb",
     )
     val DEFAULT_INTENT_LABELS = ModelSource(
-        httpsUrl = "$INTENT_PACK_BASE${IntentModelLayout.LABELS_FILE}",
+        httpsUrl = "$INTENT_RELEASE_BASE/labels.txt",
         sha256 = "a559c08ec65060b6298d8fc15cd2a183ed0dc9a3c7328515c2ece8dbf6648245",
+    )
+    val DEFAULT_INTENT_VOCAB = ModelSource(
+        httpsUrl = "$INTENT_RELEASE_BASE/vocab.txt",
+        sha256 = "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c",
     )
 
     fun asr(
@@ -104,10 +108,11 @@ object OfficialModelCatalog {
         model: ModelSource = ModelSource(),
         tokenizer: ModelSource = ModelSource(),
         labels: ModelSource = ModelSource(),
+        vocab: ModelSource = ModelSource(),
     ): OfflineModelOffer = OfflineModelOffer(
         id = IntentModelLayout.ID,
         title = "意图理解",
-        sizeLabel = "约 10–20MB",
+        sizeLabel = "约 47MB",
         pack = ModelPack(
             id = IntentModelLayout.ID,
             relativeDir = IntentModelLayout.DIR,
@@ -115,6 +120,7 @@ object OfficialModelCatalog {
                 ModelFileSpec(IntentModelLayout.MODEL_FILE, model.sha256, model.httpsUrl),
                 ModelFileSpec(IntentModelLayout.TOKENIZER_FILE, tokenizer.sha256, tokenizer.httpsUrl),
                 ModelFileSpec(IntentModelLayout.LABELS_FILE, labels.sha256, labels.httpsUrl),
+                ModelFileSpec(IntentModelLayout.VOCAB_FILE, vocab.sha256, vocab.httpsUrl),
             ),
         ),
     )
@@ -128,6 +134,7 @@ object OfficialModelCatalog {
         intentModel: ModelSource = ModelSource(),
         intentTokenizer: ModelSource = ModelSource(),
         intentLabels: ModelSource = ModelSource(),
+        intentVocab: ModelSource = ModelSource(),
     ): List<OfflineModelOffer> = listOf(
         asr(asrModel.ifBlank(DEFAULT_ASR_MODEL), asrTokens.ifBlank(DEFAULT_ASR_TOKENS)),
         tts(
@@ -139,6 +146,7 @@ object OfficialModelCatalog {
             intentModel.ifBlank(DEFAULT_INTENT_MODEL),
             intentTokenizer.ifBlank(DEFAULT_INTENT_TOKENIZER),
             intentLabels.ifBlank(DEFAULT_INTENT_LABELS),
+            intentVocab.ifBlank(DEFAULT_INTENT_VOCAB),
         ),
     )
 }
