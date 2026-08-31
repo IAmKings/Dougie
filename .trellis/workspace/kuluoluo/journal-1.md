@@ -805,3 +805,38 @@ Chat 按住麦克风离线转写追加草稿，不自动发送；按住展示波
 ### Status
 
 [OK] **Completed**
+
+
+## Session 38: 意图包与开发者处理路径
+
+**Date**: 2026-08-31
+**Task**: 意图包与开发者处理路径
+**Branch**: `master`
+
+### Summary
+
+MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意图与远程 LLM。
+
+### Main Changes
+
+- 官方意图包四件套 + GitHub Release SHA，Bert tokenize/JNI
+- 开发者当前任务显示 本地意图 / 远程 LLM / 无
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `92e780b` | (see git log) |
+| `c14e1ca` | (see git log) |
+
+### Testing
+
+- [OK] :core:tool:test :core:runtime:test :feature:debug:testDebugUnitTest
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 短路径扩到日历查询、剪贴板读取、定位
