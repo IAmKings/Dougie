@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "无槽位须回落 LLM，确认拒绝不得回落"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "确认卡仍只来自 AgentTask"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "不把 title/text 写入审计"}

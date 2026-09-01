@@ -23,6 +23,7 @@ import com.dougie.core.tool.AppIntentTool
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
+import com.dougie.core.tool.ClipboardWriteTool
 import com.dougie.core.tool.FakeAppIntentPort
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.FakeCalendarPort
@@ -1017,7 +1018,7 @@ class LoopEngineTest {
     }
 
     @Test
-    fun unknownAndCreateCalendarIntentsUseLlm() = runTest {
+    fun unknownAndSlotlessCreateCalendarUseLlm() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         for (hit in listOf(
             IntentHit(intent = "unknown", route = "unknown", confidence = 0.99),
@@ -1036,7 +1037,134 @@ class LoopEngineTest {
             assertEquals(1, spy.streamCount)
             assertEquals("走了云端", result.finalAnswer)
             assertTrue(result.toolTrace.isEmpty())
+            assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
         }
+    }
+
+    @Test
+    fun highConfidenceCreateCalendarWithSlotsSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val cal = FakeCalendarPort()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "create_calendar", route = "calendar", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(cal)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        var confirmArgs: String? = null
+        val result = engine.run(AgentTask(taskId = "t-cal-write", input = "明天下午三点开会")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) {
+                confirmArgs = snapshot.toolTrace.last().argsSummary
+                engine.confirm()
+            }
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("已创建日程：开会。", result.finalAnswer)
+        assertEquals(1, cal.createCalls.size)
+        assertEquals("开会", cal.createCalls.single().title)
+        assertEquals(true, confirmArgs!!.contains("\"title\""))
+        assertEquals(true, confirmArgs!!.contains("开会"))
+        assertEquals(true, confirmArgs!!.contains("\"startIso\""))
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun createCalendarRejectDoesNotCallLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val cal = FakeCalendarPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(cal)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "create_calendar", route = "calendar", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-cal-rej", input = "明天下午三点开会")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.reject()
+        }
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.CONFIRM_REJECTED, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, cal.createCalls.size)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun createCalendarDeniedDoesNotCallLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val cal = FakeCalendarPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(cal)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            policyEngine = PolicyEngine { false },
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "create_calendar", route = "calendar", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-cal-deny-w", input = "明天下午三点开会")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.PERMISSION_DENIED, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, cal.createCalls.size)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun highConfidenceClipboardWriteSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val clip = FakeClipboardPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(ClipboardWriteTool.NAME to ClipboardWriteTool(clip)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "clipboard_write", route = "clipboard", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-clip-w", input = "把『你好』写到剪贴板")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("已写入剪贴板。", result.finalAnswer)
+        assertEquals("你好", clip.text)
+        assertEquals(1, clip.writeCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun clipboardWriteWithoutQuoteUsesLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val clip = FakeClipboardPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(ClipboardWriteTool.NAME to ClipboardWriteTool(clip)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "clipboard_write", route = "clipboard", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-clip-llm", input = "帮我复制")) {}
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(0, clip.writeCount)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     @Test

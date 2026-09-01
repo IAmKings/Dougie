@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine 意图短路径与 L2 executeToolPass"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "ConfirmCard 映 AWAITING_CONFIRMATION"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "槽位与剪贴板正文不进 AuditLog"}
+{"file": ".trellis/tasks/archive/2026-08/08-30-voice-intent-route/prd.md", "reason": "原短路径排除写操作"}

@@ -145,12 +145,15 @@ class LoopEngine(
         if (!start.attachedCaptureId.isNullOrBlank()) return null
         if (!port.isModelPresent() || !port.isEngineReady()) return null
         val toolName = shortcutToolName(port, start.input) ?: return null
+        val argsJson = IntentRouteAnswers.classifyTexts(start.input)
+            .firstNotNullOfOrNull { IntentRouteAnswers.parseShortcutArgs(toolName, it) }
+            ?: return null
         val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
         return when (
             val pass = executeToolPass(
                 task = routed,
                 toolName = toolName,
-                argsJson = "{}",
+                argsJson = argsJson,
                 toolCallId = "intent-route-1",
                 emit = emit,
             )
