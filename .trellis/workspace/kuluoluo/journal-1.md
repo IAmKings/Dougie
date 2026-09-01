@@ -840,3 +840,24 @@ MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意
 ### Next Steps
 
 - 短路径扩到日历查询、剪贴板读取、定位
+
+
+## Session 39: L2 写操作短路径
+
+**Date**: 2026-09-01
+**Task**: L2 写操作短路径
+**Branch**: `master`
+
+### Summary
+
+高置信 create_calendar/clipboard_write 抽出槽位后走现有确认卡并以中文模板结束；缺槽位回落 LLM；拒绝确认与缺写日历权限不回落。已推 origin/master。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0ab2787` | (see git log) |
+
+### Status
+
+[OK] **Completed**
