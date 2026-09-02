@@ -924,3 +924,24 @@ MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意
 ### Status
 
 [OK] **Completed**
+
+
+## Session 43: 截屏预览默认彩色
+
+**Date**: 2026-09-02
+**Task**: 截屏预览默认彩色
+**Branch**: `master`
+
+### Summary
+
+捕获同帧 JPEG 预览与 gray 匹配；Chat 优先彩色预览；SCREEN 仍不上云。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fe4b1b8` | (see git log) |
+
+### Status
+
+[OK] **Completed**
