@@ -903,3 +903,24 @@ MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意
 ### Status
 
 [OK] **Completed**
+
+
+## Session 42: 侧载悬浮球截屏可发现性
+
+**Date**: 2026-09-02
+**Task**: 侧载悬浮球截屏可发现性
+**Branch**: `master`
+
+### Summary
+
+悬浮球单击展开截取屏幕/打开对话；缺投屏 Toast 并进权限中心；Chat 短路径引导。Play 不变。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0464f52` | (see git log) |
+
+### Status
+
+[OK] **Completed**
