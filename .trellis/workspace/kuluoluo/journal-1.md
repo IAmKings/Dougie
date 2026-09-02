@@ -945,3 +945,32 @@ MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意
 ### Status
 
 [OK] **Completed**
+
+
+## Session 44: 一次授权多次截屏
+
+**Date**: 2026-09-02
+**Task**: 一次授权多次截屏
+**Branch**: `master`
+
+### Summary
+
+MediaProjection 会话内复用同一 VirtualDisplay；onStop 不清 token。真机第三方 App 连续 3 次悬浮球截屏均进附件且预览正确。
+
+### Main Changes
+
+- 权限中心结束截屏授权；二次截屏用 startService
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0c3ec38` | (see git log) |
+
+### Testing
+
+- [OK] JVM checkChannelLeak；真机连截 3 次验收通过
+
+### Status
+
+[OK] **Completed**
