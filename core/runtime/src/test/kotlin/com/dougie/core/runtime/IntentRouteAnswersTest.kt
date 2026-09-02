@@ -29,7 +29,7 @@ class IntentRouteAnswersTest {
         assertEquals("calendar_create", IntentRouteAnswers.toolNameFor("create_calendar"))
         assertEquals("clipboard_write", IntentRouteAnswers.toolNameFor("clipboard_write"))
         assertEquals("app_intent", IntentRouteAnswers.toolNameFor("open_app"))
-        assertEquals(null, IntentRouteAnswers.toolNameFor("screen_capture"))
+        assertEquals("screen_capture", IntentRouteAnswers.toolNameFor("screen_capture"))
         assertEquals(null, IntentRouteAnswers.toolNameFor("speech_input"))
     }
 
@@ -72,6 +72,7 @@ class IntentRouteAnswersTest {
     fun queryToolsStillUseEmptyArgs() {
         assertEquals("{}", IntentRouteAnswers.parseShortcutArgs("time", "现在几点"))
         assertEquals("{}", IntentRouteAnswers.parseShortcutArgs("calendar_query", "今天有什么日程"))
+        assertEquals("{}", IntentRouteAnswers.parseShortcutArgs("screen_capture", "截个屏"))
     }
 
     @Test
@@ -126,6 +127,29 @@ class IntentRouteAnswersTest {
                 "app_intent",
                 """{"ok":true,"launched":"package:com.example.wechat"}""",
                 apps,
+            ),
+        )
+    }
+
+    @Test
+    fun screenCaptureNeedsMetadata() {
+        assertEquals(
+            "已截取屏幕。",
+            IntentRouteAnswers.formatFinalAnswer(
+                "screen_capture",
+                """{"capture_id":"synthetic","width":32,"height":32}""",
+            ),
+        )
+        assertNull(
+            IntentRouteAnswers.formatFinalAnswer(
+                "screen_capture",
+                """{"width":32,"height":32}""",
+            ),
+        )
+        assertNull(
+            IntentRouteAnswers.formatFinalAnswer(
+                "screen_capture",
+                """{"capture_id":"synthetic"}""",
             ),
         )
     }

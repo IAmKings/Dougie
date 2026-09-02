@@ -1025,6 +1025,7 @@ class LoopEngineTest {
         for (hit in listOf(
             IntentHit(intent = "unknown", route = "unknown", confidence = 0.99),
             IntentHit(intent = "create_calendar", route = "calendar", confidence = 0.99),
+            IntentHit(intent = "speech_input", route = "speech", confidence = 0.99),
         )) {
             val spy = SpyLocalLlm()
             val port = FakeIntentPort(hit = hit)
@@ -1359,6 +1360,107 @@ class LoopEngineTest {
         assertEquals(0, spy.streamCount)
         assertEquals("大约在纬度 31.23、经度 121.47（精度约 500 米）。", result.finalAnswer)
         assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun highConfidenceScreenCaptureSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val capture = FakeScreenCapturePort()
+        val store = InMemoryScreenFrameStore()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(ScreenCaptureTool.NAME to ScreenCaptureTool(capture, store)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "screen_capture", route = "screen", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-cap", input = "截个屏")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("已截取屏幕。", result.finalAnswer)
+        assertEquals(ScreenCaptureTool.NAME, result.toolTrace.single().toolName)
+        assertEquals(1, capture.captureCount)
+        assertEquals("synthetic", store.last()?.id)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun screenCaptureNotForegroundDoesNotCallLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val capture = FakeScreenCapturePort(foreground = false)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenCaptureTool.NAME to ScreenCaptureTool(capture, InMemoryScreenFrameStore()),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "screen_capture", route = "screen", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-cap-bg", input = "截个屏")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.SCREEN_NOT_FOREGROUND, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, capture.captureCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun screenCaptureWithoutConsentDoesNotCallLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val capture = FakeScreenCapturePort(hasConsent = false)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenCaptureTool.NAME to ScreenCaptureTool(capture, InMemoryScreenFrameStore()),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "screen_capture", route = "screen", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-cap-deny", input = "截个屏")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.PERMISSION_DENIED, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, capture.captureCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun attachedCaptureIdSkipsShortcut() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "screen_capture", route = "screen", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenCaptureTool.NAME to ScreenCaptureTool(
+                    FakeScreenCapturePort(),
+                    InMemoryScreenFrameStore(),
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+        )
+        val result = engine.run(
+            AgentTask(taskId = "t-cap-id", input = "截个屏", attachedCaptureId = "cap"),
+        ) {}
+        assertEquals(0, port.classifyCount)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     @Test

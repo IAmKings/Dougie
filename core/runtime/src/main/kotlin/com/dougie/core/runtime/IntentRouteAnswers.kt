@@ -57,6 +57,7 @@ internal object IntentRouteAnswers {
         "create_calendar" -> "calendar_create"
         "clipboard_write" -> "clipboard_write"
         "open_app" -> "app_intent"
+        "screen_capture" -> "screen_capture"
         else -> null
     }
 
@@ -65,7 +66,7 @@ internal object IntentRouteAnswers {
         input: String,
         openApps: List<OpenAppEntry> = emptyList(),
     ): String? = when (toolName) {
-        "time", "battery", "calendar_query", "clipboard_read", "location" -> "{}"
+        "time", "battery", "calendar_query", "clipboard_read", "location", "screen_capture" -> "{}"
         "clipboard_write" -> parseClipboardWrite(input)
         "calendar_create" -> parseCalendarCreate(input)
         "app_intent" -> parseOpenApp(input, openApps)
@@ -102,6 +103,7 @@ internal object IntentRouteAnswers {
                 "calendar_create" -> formatCalendarCreate(obj)
                 "clipboard_write" -> formatClipboardWrite(obj)
                 "app_intent" -> formatAppIntent(obj, openApps)
+                "screen_capture" -> formatScreenCapture(obj)
                 else -> null
             }
         } catch (_: Exception) {
@@ -151,6 +153,14 @@ internal object IntentRouteAnswers {
     private fun formatClipboardWrite(obj: JsonObject): String? {
         if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) return null
         return "已写入剪贴板。"
+    }
+
+    private fun formatScreenCapture(obj: JsonObject): String? {
+        val id = obj["capture_id"]?.jsonPrimitive?.contentOrNull?.trim().orEmpty()
+        if (id.isEmpty()) return null
+        obj["width"]?.jsonPrimitive?.intOrNull ?: return null
+        obj["height"]?.jsonPrimitive?.intOrNull ?: return null
+        return "已截取屏幕。"
     }
 
     private fun formatAppIntent(obj: JsonObject, openApps: List<OpenAppEntry>): String? {

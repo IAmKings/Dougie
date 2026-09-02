@@ -32,7 +32,7 @@ When `status == AWAITING_CONFIRMATION`, map the last `ToolTraceEntry` to `Confir
 
 If `streamingText` is not blank and status is not COMPLETED/FAILED, append `AgentMessage(streamingText)` even while `THINKING` (no citations). After complete, show `finalAnswer` only (`streamingText` is null), with `memorySources` when memories were retrieved. `COMPLETED` with blank `finalAnswer` adds no Agent bubble — LoopEngine must fail `LLM_EMPTY_REPLY` instead.
 
-Tool cards: `battery` → 电池工具, `time` → 时间工具, `calendar_query` / `calendar_create` / `clipboard_*` use Chinese labels, else the raw `toolName`. Do not hardcode “电池” for every tool.
+Tool cards: `battery` → 电池工具, `time` → 时间工具, `screen_capture` → 截取屏幕, `calendar_query` / `calendar_create` / `clipboard_*` use Chinese labels, else the raw `toolName`. Do not hardcode “电池” for every tool. Intent shortcut `screen_capture` does not add a composer chip; `TaskManager.clearPin()` after the task still applies.
 
 Egress / timeout / network / cancel failures are not a separate UI type: they are `AgentMessage` text from `lastError`.
 

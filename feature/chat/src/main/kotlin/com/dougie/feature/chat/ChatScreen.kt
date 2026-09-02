@@ -1162,6 +1162,7 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
     "clipboard_read" -> "读取剪贴板"
     "clipboard_write" -> "写入剪贴板"
     "app_intent" -> "打开应用或链接"
+    "screen_capture" -> "截取屏幕"
     else -> toolName
 }
 

@@ -234,6 +234,7 @@ class ChatUiStateTest {
     fun toolCardsUseGenericNamesInsteadOfHardcodedBattery() {
         assertEquals("电池工具", toolDisplayName("battery"))
         assertEquals("时间工具", toolDisplayName("time"))
+        assertEquals("截取屏幕", toolDisplayName("screen_capture"))
         assertEquals("calendar", toolDisplayName("calendar"))
     }
 
