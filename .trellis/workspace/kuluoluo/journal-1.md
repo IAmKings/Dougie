@@ -882,3 +882,24 @@ MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意
 ### Status
 
 [OK] **Completed**
+
+
+## Session 41: 截屏意图短路径
+
+**Date**: 2026-09-02
+**Task**: 截屏意图短路径
+**Branch**: `master`
+
+### Summary
+
+高置信 screen_capture 走 L1 工具，终答已截取屏幕，不调云端、不钉作曲家。Halt 不回落。听写与悬浮球第三方截屏未做。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2d2d1c5` | (see git log) |
+
+### Status
+
+[OK] **Completed**
