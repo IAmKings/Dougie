@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine 意图短路径：screen_capture 空参 L1、Halt 不回落"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "intent/utterance/像素不得进 AuditLog"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "completionPath 本地意图；工具卡中文名；不从 Chat 另存截屏附件"}
