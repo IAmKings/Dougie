@@ -213,6 +213,7 @@ class MainActivity : ComponentActivity() {
                                     attachError = null
                                 }
                             },
+                            overlayShortcutHint = ChannelHooks.screenShortcutHint(this@MainActivity, task),
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
@@ -319,6 +320,9 @@ class MainActivity : ComponentActivity() {
                                 app.permissionUsage::lastUsedMs,
                                 projectionGranted = {
                                     com.dougie.tool.system.ScreenCaptureConsentStore.hasToken()
+                                },
+                                extraItems = {
+                                    listOfNotNull(ChannelHooks.overlayPermissionItem(this@MainActivity))
                                 },
                             ),
                         )
@@ -643,7 +647,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyChatIntent(intent: Intent?) {
-        if (ChatLaunch.requestsChat(intent)) {
+        if (ChatLaunch.openPermissions(intent)) {
+            routeState.value = AppRoute.Permissions
+        } else if (ChatLaunch.requestsChat(intent)) {
             routeState.value = AppRoute.Chat
         }
         ChatLaunch.scheduleId(intent)?.let { applyScheduleDraft(it) }

@@ -119,7 +119,7 @@ app/src/sideload/assets/models/tts/
 System QS tile is a new Android component (`TileService`) that must not call `TaskManager.submit` or skip L2 confirm cards.
 
 ### 2. Signatures
-- `fun chatLaunchIntent(context: Context, scheduleId: String? = null, applyPinnedScreen: Boolean = false): Intent` — extras `OPEN_CHAT`, optional `SCHEDULE_ID`, optional `APPLY_PINNED_SCREEN` (boolean). Never pixels or prompts.
+- `fun chatLaunchIntent(context: Context, scheduleId: String? = null, applyPinnedScreen: Boolean = false, openPermissions: Boolean = false): Intent` — extras `OPEN_CHAT`, optional `SCHEDULE_ID`, optional `APPLY_PINNED_SCREEN` / `OPEN_PERMISSIONS` (boolean). Never pixels or prompts.
 - `object ChatLaunch` — `EXTRA_OPEN_CHAT = "com.dougie.app.extra.OPEN_CHAT"`; `EXTRA_SCHEDULE_ID` (UUID, **not** prompt); `activityFlags` = `NEW_TASK | SINGLE_TOP | CLEAR_TOP`; `requestsChat(intent): Boolean`; `scheduleId(intent): String?`
 - `class DougieChatTileService : TileService` — `onClick` → `unlockAndRun` → `startActivityAndCollapse` (API 34+ `PendingIntent` `FLAG_IMMUTABLE`)
 

@@ -23,6 +23,7 @@ enum class PermissionKind {
     RUNTIME,
     CLIPBOARD,
     SCREEN_CAPTURE,
+    OVERLAY,
 }
 
 data class PermissionItem(
@@ -41,6 +42,7 @@ class PermissionsViewModel(
     application: Application,
     private val lastUsedMs: (String) -> Long?,
     private val projectionGranted: () -> Boolean = { false },
+    private val extraItems: () -> List<PermissionItem> = { emptyList() },
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(PermissionUiState())
@@ -108,6 +110,7 @@ class PermissionsViewModel(
                 kind = PermissionKind.SCREEN_CAPTURE,
             ),
         )
+        items += extraItems()
         if (Build.VERSION.SDK_INT >= 33) {
             items += item(
                 id = "notifications",
@@ -164,10 +167,11 @@ class PermissionsViewModel(
         private val application: Application,
         private val lastUsedMs: (String) -> Long?,
         private val projectionGranted: () -> Boolean = { false },
+        private val extraItems: () -> List<PermissionItem> = { emptyList() },
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return PermissionsViewModel(application, lastUsedMs, projectionGranted) as T
+            return PermissionsViewModel(application, lastUsedMs, projectionGranted, extraItems) as T
         }
     }
 

@@ -332,6 +332,9 @@ class ChatUiStateTest {
         assertEquals(true, attachmentOffersDownload(UserFacingErrors.SPEECH_MODEL_MISSING))
         assertEquals(true, attachmentOffersDownload(UserFacingErrors.TTS_REPLY_UNAVAILABLE))
         assertEquals(false, attachmentOffersDownload(UserFacingErrors.SPEECH_EMPTY))
+        assertEquals(true, attachmentOffersPermissionCenter(UserFacingErrors.PERMISSION_DENIED))
+        assertEquals(false, attachmentOffersPermissionCenter(UserFacingErrors.TTS_REPLY_UNAVAILABLE))
+        assertEquals("去权限中心", GO_PERMISSION_CENTER)
     }
 
     private fun fact(id: String, source: String) = MemoryEntry(

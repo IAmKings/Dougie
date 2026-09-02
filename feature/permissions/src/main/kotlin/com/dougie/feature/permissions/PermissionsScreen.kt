@@ -170,6 +170,14 @@ fun PermissionsScreen(
                                 val manager = context.getSystemService(MediaProjectionManager::class.java)
                                 projectionLauncher.launch(manager.createScreenCaptureIntent())
                             }
+                            PermissionKind.OVERLAY -> {
+                                context.startActivity(
+                                    Intent(
+                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                        Uri.parse("package:${context.packageName}"),
+                                    ),
+                                )
+                            }
                             PermissionKind.RUNTIME -> {
                                 val permission = item.runtimePermission
                                 if (permission != null) {
@@ -247,6 +255,9 @@ private fun PermissionRow(
             }
             PermissionKind.SCREEN_CAPTURE -> {
                 GrantButton(if (item.granted) "重新授权屏幕截取" else "去授权屏幕截取", onGrant)
+            }
+            PermissionKind.OVERLAY -> {
+                GrantButton(if (item.granted) "在系统设置中管理" else "去系统设置授权", onGrant)
             }
             PermissionKind.CLIPBOARD -> Unit
         }

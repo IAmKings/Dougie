@@ -28,6 +28,12 @@ object ChannelHooks {
     fun syncOverlay(context: Context) {
     }
 
+    @Suppress("UNUSED_PARAMETER")
+    fun screenShortcutHint(context: Context, task: com.dougie.core.model.AgentTask?): String? = null
+
+    @Suppress("UNUSED_PARAMETER")
+    fun overlayPermissionItem(context: Context): com.dougie.feature.permissions.PermissionItem? = null
+
     @Composable
     fun Root(content: @Composable () -> Unit) {
         content()

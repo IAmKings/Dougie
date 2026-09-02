@@ -26,5 +26,9 @@ class ChatLaunchTest {
         assertFalse(ChatLaunch.EXTRA_APPLY_PINNED_SCREEN.contains("prompt", ignoreCase = true))
         assertFalse(ChatLaunch.EXTRA_APPLY_PINNED_SCREEN.contains("base64", ignoreCase = true))
         assertFalse(ChatLaunch.applyPinnedScreen(null))
+        assertEquals("com.dougie.app.extra.OPEN_PERMISSIONS", ChatLaunch.EXTRA_OPEN_PERMISSIONS)
+        assertFalse(ChatLaunch.EXTRA_OPEN_PERMISSIONS.contains("key", ignoreCase = true))
+        assertFalse(ChatLaunch.EXTRA_OPEN_PERMISSIONS.contains("prompt", ignoreCase = true))
+        assertFalse(ChatLaunch.openPermissions(null))
     }
 }

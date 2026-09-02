@@ -45,6 +45,11 @@ fun attachmentOffersDownload(error: String?): Boolean =
     error == UserFacingErrors.SPEECH_MODEL_MISSING ||
         error == UserFacingErrors.TTS_REPLY_UNAVAILABLE
 
+fun attachmentOffersPermissionCenter(error: String?): Boolean =
+    error == UserFacingErrors.PERMISSION_DENIED
+
+const val GO_PERMISSION_CENTER = "去权限中心"
+
 fun showAgentReplySpeak(
     isLastItem: Boolean,
     canSpeakReply: Boolean,

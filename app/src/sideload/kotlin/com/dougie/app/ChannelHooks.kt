@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import com.dougie.core.model.AgentTask
+import com.dougie.feature.permissions.PermissionItem
+import com.dougie.feature.permissions.PermissionKind
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -77,6 +80,23 @@ object ChannelHooks {
     fun syncOverlay(context: Context) {
         OverlayController.sync(context)
     }
+
+    fun screenShortcutHint(context: Context, task: AgentTask?): String? {
+        if (!ScreenShortcutHint.shouldShow(task)) return null
+        return context.getString(R.string.overlay_shortcut_hint)
+    }
+
+    fun overlayPermissionItem(context: Context): PermissionItem =
+        PermissionItem(
+            id = "overlay",
+            title = context.getString(R.string.overlay_permission_title),
+            subtitle = context.getString(R.string.overlay_permission_subtitle),
+            runtimePermission = null,
+            granted = Settings.canDrawOverlays(context),
+            riskLabel = "L1",
+            lastUsedLabel = "尚未使用",
+            kind = PermissionKind.OVERLAY,
+        )
 
     @Composable
     fun ShortcutLayerSettings() {

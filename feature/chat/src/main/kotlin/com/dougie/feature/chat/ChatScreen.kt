@@ -126,6 +126,7 @@ fun ChatRoute(
     onStopReply: () -> Unit = {},
     onSpeakReply: (String) -> Unit = {},
     onSpeakReplyConsumed: () -> Unit = {},
+    overlayShortcutHint: String? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     ChatScreen(
@@ -173,6 +174,7 @@ fun ChatRoute(
         ttsReady = ttsReady,
         onStopReply = onStopReply,
         onSpeakReply = onSpeakReply,
+        overlayShortcutHint = overlayShortcutHint,
     )
 }
 
@@ -210,6 +212,7 @@ fun ChatScreen(
     ttsReady: Boolean = false,
     onStopReply: () -> Unit = {},
     onSpeakReply: (String) -> Unit = {},
+    overlayShortcutHint: String? = null,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
     Column(
@@ -247,6 +250,14 @@ fun ChatScreen(
                 )
             }
         }
+        if (!overlayShortcutHint.isNullOrBlank()) {
+            Text(
+                text = overlayShortcutHint,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
         ChatInputBar(
             enabled = uiState.inputEnabled,
             text = composerText,
@@ -267,6 +278,7 @@ fun ChatScreen(
             asrReady = asrReady,
             onStopReply = onStopReply,
             onOpenSettings = onOpenSettings,
+            onOpenPermissions = onOpenPermissions,
         )
         DougieBottomBar(
             onOpenSettings = onOpenSettings,
@@ -870,12 +882,14 @@ private fun ChatInputBar(
     asrReady: Boolean = false,
     onStopReply: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onOpenPermissions: () -> Unit = {},
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val full = attachments.size >= ATTACHMENT_MAX
     val statusLine = attachmentStatusLine(speakingReply, attachedError)
     val statusError = attachmentStatusIsError(speakingReply, attachedError)
     val showDownload = !speakingReply && attachmentOffersDownload(attachedError)
+    val showPermissionCenter = !speakingReply && attachmentOffersPermissionCenter(attachedError)
     val micHoldEnabled = enabled && !attaching && !speakingReply && asrReady
     val micGuideEnabled = enabled && !attaching && !speakingReply && !asrReady
     Column(
@@ -912,6 +926,11 @@ private fun ChatInputBar(
                             if (showDownload) {
                                 TextButton(onClick = onOpenSettings) {
                                     Text(UserFacingErrors.GO_DOWNLOAD_MODELS)
+                                }
+                            }
+                            if (showPermissionCenter) {
+                                TextButton(onClick = onOpenPermissions) {
+                                    Text(GO_PERMISSION_CENTER)
                                 }
                             }
                         }
