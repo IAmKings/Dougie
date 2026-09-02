@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Play 无 overlay/上层显示；overlay 不 submit；满 4 张文案"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "像素与 prompt 不上通知/球/Intent"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "checkChannelLeak Play vs sideload overlay"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "播报读 finalAnswer；hint 不是 AgentTask 字段"}

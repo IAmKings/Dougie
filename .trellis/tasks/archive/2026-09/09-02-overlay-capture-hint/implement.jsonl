@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "侧载 overlay 单击展开；Play 禁 overlay；不 submit"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "ChannelHooks / ChatLaunch extra / 权限中心槽位"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "悬浮层无对话原文；菜单仅固定中文"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Chat 映射 AgentTask；引导不得进 finalAnswer"}
