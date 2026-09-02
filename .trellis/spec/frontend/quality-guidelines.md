@@ -49,4 +49,4 @@ Play/Sideload asset leaks are an `:app` concern: `./gradlew :app:checkChannelLea
 - [ ] Debug/History do not dump tool args or fact `content` as citations (Chat citations use `source` only)
 - [ ] Settings download/probe/tree rules still match `directory-structure.md` “Don't: Let settings download without size confirm”
 - [ ] Icons that are actions have Chinese `contentDescription`; decorative icons may be `null` (current Chat/Settings mix)
-- [ ] QS Tile and task-progress notice stay in `:app`, open Chat only, shade copy is status-only, Play bubbles skip sideload, overlay stays sideload-only, and `checkChannelLeak` still requires Tile + forbids NotificationListener / overlay on Play
+- [ ] QS Tile and task-progress notice stay in `:app`, open Chat only, shade copy is status-only, Play bubbles skip sideload, overlay stays sideload-only, and `checkChannelLeak` still requires Tile + forbids NotificationListener / overlay / `QUERY_ALL_PACKAGES` on Play

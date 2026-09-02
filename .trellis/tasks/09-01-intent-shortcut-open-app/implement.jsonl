@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine 短路径与 AppIntent 闸门"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "APP_INTENT_NOT_ALLOWED 文案"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "AppRoute 与设置子页"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "名单立即落盘，不绑保存配置"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Route/Screen 与 MainActivity 枚举导航"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "别名与包名不进 AuditLog"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Play 禁止 QUERY_ALL_PACKAGES"}

@@ -9,7 +9,7 @@ object AppIntentAllowlist {
     private val PACKAGE_NAME = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
     private val ALLOWED_SCHEMES = setOf("https", "http", "geo", "package")
 
-    fun validate(uri: String, packageName: String?): String {
+    fun validate(uri: String, packageName: String?, allowedPackages: Set<String> = emptySet()): String {
         val raw = uri.trim()
         if (raw.isEmpty() || raw.any { it.isISOControl() }) {
             throw AgentException(UserFacingErrors.APP_INTENT_DENIED)
@@ -27,6 +27,9 @@ object AppIntentAllowlist {
         val extraPackage = packageName?.trim()?.takeIf { it.isNotEmpty() }
         if (extraPackage != null && !isAndroidPackage(extraPackage)) {
             throw AgentException(UserFacingErrors.APP_INTENT_DENIED)
+        }
+        if (extraPackage != null && extraPackage !in allowedPackages) {
+            throw AgentException(UserFacingErrors.APP_INTENT_NOT_ALLOWED)
         }
         return when (scheme) {
             "https", "http" -> {
@@ -50,11 +53,14 @@ object AppIntentAllowlist {
                 if (extraPackage != null && extraPackage != pkg) {
                     throw AgentException(UserFacingErrors.APP_INTENT_DENIED)
                 }
+                if (pkg !in allowedPackages) {
+                    throw AgentException(UserFacingErrors.APP_INTENT_NOT_ALLOWED)
+                }
                 "package:$pkg"
             }
             else -> throw AgentException(UserFacingErrors.APP_INTENT_DENIED)
         }
     }
 
-    private fun isAndroidPackage(value: String): Boolean = PACKAGE_NAME.matches(value)
+    fun isAndroidPackage(value: String): Boolean = PACKAGE_NAME.matches(value)
 }

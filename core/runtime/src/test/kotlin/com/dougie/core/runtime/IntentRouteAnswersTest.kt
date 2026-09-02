@@ -28,7 +28,7 @@ class IntentRouteAnswersTest {
         assertEquals("location", IntentRouteAnswers.toolNameFor("query_location"))
         assertEquals("calendar_create", IntentRouteAnswers.toolNameFor("create_calendar"))
         assertEquals("clipboard_write", IntentRouteAnswers.toolNameFor("clipboard_write"))
-        assertEquals(null, IntentRouteAnswers.toolNameFor("open_app"))
+        assertEquals("app_intent", IntentRouteAnswers.toolNameFor("open_app"))
         assertEquals(null, IntentRouteAnswers.toolNameFor("screen_capture"))
         assertEquals(null, IntentRouteAnswers.toolNameFor("speech_input"))
     }
@@ -105,6 +105,27 @@ class IntentRouteAnswersTest {
             IntentRouteAnswers.formatFinalAnswer(
                 "calendar_create",
                 """{"ok":true,"id":"1","title":"开会"}""",
+            ),
+        )
+    }
+
+    @Test
+    fun openAppNeedsExactAlias() {
+        val apps = listOf(com.dougie.core.tool.OpenAppEntry("微信", "com.example.wechat"))
+        val json = IntentRouteAnswers.parseShortcutArgs("app_intent", "打开微信", apps)
+        assertEquals("com.example.wechat", Json.parseToJsonElement(json!!).jsonObject["uri"]!!.jsonPrimitive.content.removePrefix("package:"))
+        assertEquals(
+            json,
+            IntentRouteAnswers.parseShortcutArgs("app_intent", "打开微信。", apps),
+        )
+        assertNull(IntentRouteAnswers.parseShortcutArgs("app_intent", "打开微信看看", apps))
+        assertNull(IntentRouteAnswers.parseShortcutArgs("app_intent", "打开微信", emptyList()))
+        assertEquals(
+            "已打开微信。",
+            IntentRouteAnswers.formatFinalAnswer(
+                "app_intent",
+                """{"ok":true,"launched":"package:com.example.wechat"}""",
+                apps,
             ),
         )
     }

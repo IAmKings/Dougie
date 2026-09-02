@@ -1,5 +1,7 @@
 package com.dougie.core.runtime
 
+import com.dougie.core.tool.OpenAppEntry
+import com.dougie.core.tool.OpenAppEntries
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
@@ -54,17 +56,27 @@ internal object IntentRouteAnswers {
         "query_location" -> "location"
         "create_calendar" -> "calendar_create"
         "clipboard_write" -> "clipboard_write"
+        "open_app" -> "app_intent"
         else -> null
     }
 
-    fun parseShortcutArgs(toolName: String, input: String): String? = when (toolName) {
+    fun parseShortcutArgs(
+        toolName: String,
+        input: String,
+        openApps: List<OpenAppEntry> = emptyList(),
+    ): String? = when (toolName) {
         "time", "battery", "calendar_query", "clipboard_read", "location" -> "{}"
         "clipboard_write" -> parseClipboardWrite(input)
         "calendar_create" -> parseCalendarCreate(input)
+        "app_intent" -> parseOpenApp(input, openApps)
         else -> null
     }
 
-    fun formatFinalAnswer(toolName: String, resultJson: String): String? {
+    fun formatFinalAnswer(
+        toolName: String,
+        resultJson: String,
+        openApps: List<OpenAppEntry> = emptyList(),
+    ): String? {
         val obj = try {
             Json.parseToJsonElement(resultJson).jsonObject
         } catch (_: Exception) {
@@ -89,6 +101,7 @@ internal object IntentRouteAnswers {
                 "location" -> formatLocation(obj)
                 "calendar_create" -> formatCalendarCreate(obj)
                 "clipboard_write" -> formatClipboardWrite(obj)
+                "app_intent" -> formatAppIntent(obj, openApps)
                 else -> null
             }
         } catch (_: Exception) {
@@ -138,6 +151,22 @@ internal object IntentRouteAnswers {
     private fun formatClipboardWrite(obj: JsonObject): String? {
         if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) return null
         return "已写入剪贴板。"
+    }
+
+    private fun formatAppIntent(obj: JsonObject, openApps: List<OpenAppEntry>): String? {
+        if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) return null
+        val launched = obj["launched"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        val pkg = launched.removePrefix("package:")
+        val alias = openApps.firstOrNull { it.packageName == pkg }?.alias
+        return if (alias.isNullOrEmpty()) "已打开该应用。" else "已打开$alias。"
+    }
+
+    private fun parseOpenApp(input: String, openApps: List<OpenAppEntry>): String? {
+        if (openApps.isEmpty()) return null
+        val hit = OpenAppEntries.match(normalize(input), openApps) ?: return null
+        return buildJsonObject {
+            put("uri", "package:${hit.packageName}")
+        }.toString()
     }
 
     private fun parseClipboardWrite(input: String): String? {

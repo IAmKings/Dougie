@@ -17,19 +17,20 @@ import kotlinx.serialization.json.jsonPrimitive
 class AppIntentTool(
     private val port: AppIntentPort,
     private val idempotencyStore: IdempotencyStore = InMemoryIdempotencyStore(),
+    private val allowedPackages: () -> Set<String> = { emptySet() },
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
 
     override fun validateArguments(argumentsJson: String) {
         val parsed = parseArgs(argumentsJson)
-        AppIntentAllowlist.validate(parsed.uri, parsed.packageName)
+        AppIntentAllowlist.validate(parsed.uri, parsed.packageName, allowedPackages())
     }
 
     override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
         require(context.idempotencyKey == context.taskId + context.toolCallId)
         val parsed = parseArgs(argumentsJson)
-        val canonical = AppIntentAllowlist.validate(parsed.uri, parsed.packageName)
+        val canonical = AppIntentAllowlist.validate(parsed.uri, parsed.packageName, allowedPackages())
         if (!port.isAppForeground()) {
             return ToolResult(
                 json = failJson(UserFacingErrors.APP_INTENT_NOT_FOREGROUND),

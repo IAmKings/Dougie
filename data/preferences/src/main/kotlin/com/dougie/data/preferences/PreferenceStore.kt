@@ -13,6 +13,8 @@ class PreferenceStore(context: Context) {
     private val prefs: SharedPreferences
     private val _settings: MutableStateFlow<ProviderSettings>
     val settings: StateFlow<ProviderSettings>
+    private val _openAppsJson: MutableStateFlow<String>
+    val openAppsJson: StateFlow<String>
 
     init {
         val appContext = context.applicationContext
@@ -28,6 +30,8 @@ class PreferenceStore(context: Context) {
         )
         _settings = MutableStateFlow(read())
         settings = _settings.asStateFlow()
+        _openAppsJson = MutableStateFlow(prefs.getString(KEY_OPEN_APPS, "") ?: "")
+        openAppsJson = _openAppsJson.asStateFlow()
     }
 
     fun save(next: ProviderSettings) {
@@ -72,6 +76,11 @@ class PreferenceStore(context: Context) {
         save(settings.value.copy(ttsSpeakerId = sid))
     }
 
+    fun setOpenAppsJson(json: String) {
+        prefs.edit().putString(KEY_OPEN_APPS, json).apply()
+        _openAppsJson.value = json
+    }
+
     private fun read(): ProviderSettings {
         val consent = if (prefs.contains(KEY_CONSENT_AT)) prefs.getLong(KEY_CONSENT_AT, 0L) else null
         return ProviderSettings(
@@ -106,5 +115,6 @@ class PreferenceStore(context: Context) {
         const val KEY_MEMORY_ENABLED = "memory_enabled"
         const val KEY_MODEL_TREE_URI = "model_tree_uri"
         const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
+        const val KEY_OPEN_APPS = "open_app_allowlist"
     }
 }

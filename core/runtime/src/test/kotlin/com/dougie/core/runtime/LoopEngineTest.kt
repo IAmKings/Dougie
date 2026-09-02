@@ -24,6 +24,8 @@ import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
 import com.dougie.core.tool.ClipboardReadTool
 import com.dougie.core.tool.ClipboardWriteTool
+import com.dougie.core.tool.OpenAppEntry
+import com.dougie.core.tool.OpenAppEntries
 import com.dougie.core.tool.FakeAppIntentPort
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.FakeCalendarPort
@@ -1165,6 +1167,112 @@ class LoopEngineTest {
         assertEquals("走了云端", result.finalAnswer)
         assertEquals(0, clip.writeCount)
         assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+    }
+
+    @Test
+    fun highConfidenceOpenAppWithAliasSkipsLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val apps = listOf(OpenAppEntry("微信", "com.example.wechat"))
+        val port = FakeAppIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "open_app", route = "app", confidence = 0.91),
+            ),
+            openAppEntries = { apps },
+        )
+        val result = engine.run(AgentTask(taskId = "t-open", input = "打开微信")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("已打开微信。", result.finalAnswer)
+        assertEquals("package:com.example.wechat", port.launches.single().uri)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun openAppWithoutAliasUsesLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeAppIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(AppIntentTool.NAME to AppIntentTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "open_app", route = "app", confidence = 0.91),
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-open-llm", input = "打开微信")) {}
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(0, port.launchCount)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+    }
+
+    @Test
+    fun openAppWithExtraWordsUsesLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val apps = listOf(OpenAppEntry("微信", "com.example.wechat"))
+        val port = FakeAppIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "open_app", route = "app", confidence = 0.91),
+            ),
+            openAppEntries = { apps },
+        )
+        val result = engine.run(AgentTask(taskId = "t-open-extra", input = "打开微信看看")) {}
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(0, port.launchCount)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+    }
+
+    @Test
+    fun llmPackageNotOnListFailsBeforeLaunch() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeAppIntentPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "pkg-1",
+                    name = AppIntentTool.NAME,
+                    argsJson = """{"uri":"package:com.tencent.mm"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(AppIntentTool.NAME to AppIntentTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-pkg-deny", input = "打开微信")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.APP_INTENT_NOT_ALLOWED, result.lastError)
+        assertEquals(0, port.launchCount)
     }
 
     @Test

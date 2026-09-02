@@ -64,6 +64,7 @@ fun SettingsRoute(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenDebug: () -> Unit,
+    onOpenOpenApps: () -> Unit,
     onPickModelTree: () -> Unit,
     shortcutLayer: @Composable () -> Unit = {},
     scheduleLayer: @Composable () -> Unit = {},
@@ -93,6 +94,7 @@ fun SettingsRoute(
         onCancelModel = viewModel::cancelModel,
         onProbeModel = viewModel::probeModel,
         onOpenDebug = onOpenDebug,
+        onOpenOpenApps = onOpenOpenApps,
         shortcutLayer = shortcutLayer,
         scheduleLayer = scheduleLayer,
     )
@@ -121,6 +123,7 @@ fun SettingsScreen(
     onCancelModel: (String) -> Unit,
     onProbeModel: (String) -> Unit,
     onOpenDebug: () -> Unit,
+    onOpenOpenApps: () -> Unit,
     shortcutLayer: @Composable () -> Unit = {},
     scheduleLayer: @Composable () -> Unit = {},
 ) {
@@ -280,6 +283,28 @@ fun SettingsScreen(
             )
             shortcutLayer()
             scheduleLayer()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+                    .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+                    .clickable(onClick = onOpenOpenApps)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "可打开的应用",
+                    color = DougieColors.OnSurface,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    text = "本地短路径和模型只能用 package 打开这里添加的应用。",
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 14.sp,
+                )
+            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

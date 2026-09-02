@@ -18,6 +18,7 @@ import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.IntentPort
+import com.dougie.core.tool.OpenAppEntry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,6 +41,7 @@ class LoopEngine(
     private val confirmTimeoutMs: Long = 60_000L,
     private val auditLog: AuditLog = NoOpAuditLog,
     private val intentPort: IntentPort? = null,
+    private val openAppEntries: () -> List<OpenAppEntry> = { emptyList() },
 ) {
     private val sanitizer: ToolCallSanitizer
         get() = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
@@ -145,8 +147,9 @@ class LoopEngine(
         if (!start.attachedCaptureId.isNullOrBlank()) return null
         if (!port.isModelPresent() || !port.isEngineReady()) return null
         val toolName = shortcutToolName(port, start.input) ?: return null
+        val entries = openAppEntries()
         val argsJson = IntentRouteAnswers.classifyTexts(start.input)
-            .firstNotNullOfOrNull { IntentRouteAnswers.parseShortcutArgs(toolName, it) }
+            .firstNotNullOfOrNull { IntentRouteAnswers.parseShortcutArgs(toolName, it, entries) }
             ?: return null
         val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
         return when (
@@ -160,7 +163,7 @@ class LoopEngine(
         ) {
             is ToolPass.Halt -> pass.task
             is ToolPass.Success -> {
-                val answer = IntentRouteAnswers.formatFinalAnswer(toolName, pass.resultJson)
+                val answer = IntentRouteAnswers.formatFinalAnswer(toolName, pass.resultJson, entries)
                     ?: return fail(pass.task, UserFacingErrors.TOOL_FAILED, emit)
                 val done = pass.task.copy(
                     status = TaskStatus.COMPLETED,

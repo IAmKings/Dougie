@@ -27,6 +27,7 @@ import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SpeechInputTool
 import com.dougie.core.tool.SpeechOutputTool
 import com.dougie.core.tool.IntentClassifierTool
+import com.dougie.core.tool.OpenAppEntries
 import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SherpaTtsEngine
 import com.dougie.core.tool.ModelInstaller
@@ -159,7 +160,13 @@ class DougieApplication : Application() {
             LocationTool.NAME to LocationTool(locationPort),
             ScreenCaptureTool.NAME to ScreenCaptureTool(screenPort, screenStore),
             ScreenMatchTool.NAME to ScreenMatchTool(screenStore),
-            AppIntentTool.NAME to AppIntentTool(appIntentPort, taskStores.idempotencyStore),
+            AppIntentTool.NAME to AppIntentTool(
+                appIntentPort,
+                taskStores.idempotencyStore,
+                allowedPackages = {
+                    OpenAppEntries.packages(OpenAppEntries.parse(preferenceStore.openAppsJson.value))
+                },
+            ),
             SpeechInputTool.NAME to SpeechInputTool(speechPort),
             SpeechOutputTool.NAME to SpeechOutputTool(ttsPort),
             IntentClassifierTool.NAME to IntentClassifierTool(intentPort),
@@ -198,6 +205,7 @@ class DougieApplication : Application() {
                 },
                 auditLog = taskStores.auditLog,
                 intentPort = intentPort,
+                openAppEntries = { OpenAppEntries.parse(preferenceStore.openAppsJson.value) },
             ),
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,

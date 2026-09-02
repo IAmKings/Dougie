@@ -75,7 +75,7 @@ class AppIntentToolTest {
     @Test
     fun geoAndPackageUrisLaunch() = runTest {
         val port = FakeAppIntentPort()
-        val tool = AppIntentTool(port)
+        val tool = AppIntentTool(port, allowedPackages = { setOf("com.android.settings") })
         tool.execute("""{"uri":"geo:0,0?q=coffee"}""", ToolContext("t", "g"))
         tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "p"))
         assertEquals(2, port.launchCount)
@@ -84,9 +84,38 @@ class AppIntentToolTest {
     }
 
     @Test
-    fun httpsWithPackagePassesPackageToPort() = runTest {
+    fun packageUriDeniedWhenNotOnUserList() = runTest {
         val port = FakeAppIntentPort()
         val tool = AppIntentTool(port)
+        try {
+            tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "p"))
+            throw AssertionError("expected deny")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.APP_INTENT_NOT_ALLOWED, e.userMessage)
+        }
+        assertEquals(0, port.launchCount)
+    }
+
+    @Test
+    fun httpsWithUnknownPackageIsNotAllowed() = runTest {
+        val port = FakeAppIntentPort()
+        val tool = AppIntentTool(port)
+        try {
+            tool.execute(
+                """{"uri":"https://example.com","package":"com.android.chrome"}""",
+                ToolContext("t", "c"),
+            )
+            throw AssertionError("expected deny")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.APP_INTENT_NOT_ALLOWED, e.userMessage)
+        }
+        assertEquals(0, port.launchCount)
+    }
+
+    @Test
+    fun httpsWithPackagePassesPackageToPort() = runTest {
+        val port = FakeAppIntentPort()
+        val tool = AppIntentTool(port, allowedPackages = { setOf("com.android.chrome") })
         tool.execute(
             """{"uri":"https://example.com","package":"com.android.chrome"}""",
             ToolContext("t", "c"),

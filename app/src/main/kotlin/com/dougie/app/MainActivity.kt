@@ -55,10 +55,12 @@ import com.dougie.feature.history.HistoryRoute
 import com.dougie.feature.history.HistoryViewModel
 import com.dougie.feature.memory.MemoryRoute
 import com.dougie.feature.memory.MemoryViewModel
+import com.dougie.feature.settings.OpenAppsRoute
+import com.dougie.feature.settings.OpenAppsViewModel
 import com.dougie.feature.settings.SettingsRoute
 import com.dougie.feature.settings.SettingsViewModel
 
-private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debug }
+private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debug, OpenApps }
 
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
@@ -258,9 +260,22 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             onBack = { route = AppRoute.Chat },
                             onOpenDebug = { route = AppRoute.Debug },
+                            onOpenOpenApps = { route = AppRoute.OpenApps },
                             onPickModelTree = { treePicker.launch(null) },
                             shortcutLayer = { ChannelHooks.ShortcutLayerSettings() },
                             scheduleLayer = { ScheduleSettings() },
+                        )
+                    }
+                    AppRoute.OpenApps -> {
+                        val viewModel: OpenAppsViewModel = viewModel(
+                            factory = OpenAppsViewModel.Factory(
+                                app.preferenceStore,
+                                listLaunchers = { LauncherApps.list(app) },
+                            ),
+                        )
+                        OpenAppsRoute(
+                            viewModel = viewModel,
+                            onBack = { route = AppRoute.Settings },
                         )
                     }
                     AppRoute.Debug -> {

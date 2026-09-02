@@ -24,6 +24,8 @@ feature/settings/src/main/kotlin/com/dougie/feature/settings/
   SettingsViewModel.kt
   OfflineModelDownloads.kt
   ExternalModelTree.kt
+  OpenAppsScreen.kt
+  OpenAppsViewModel.kt
   DougieColors.kt
 feature/memory/src/main/kotlin/com/dougie/feature/memory/
   MemoryScreen.kt
@@ -58,6 +60,7 @@ app/src/main/kotlin/com/dougie/app/
   AppForegroundTracker.kt
   PermissionUsageTracker.kt
   ReplyPlayback.kt
+  LauncherApps.kt
 app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
 app/src/play/kotlin/com/dougie/app/
   ChannelHooks.kt
@@ -77,12 +80,12 @@ app/src/sideload/assets/models/tts/
 | Module | Owns |
 |--------|------|
 | `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping, Confirm Card; navigate to settings / memory / Permission Center |
-| `:feature:settings` | Provider vendor preset + URL/key/model/`max_tokens`, egress consent copy, save to `PreferenceStore`; **模型目录** (`OpenDocumentTree` URI in `modelTreeUri`) + **刷新** 扫描外部树 + 离线模型三行确认下载（ASR / TTS / 意图 ONNX，写入外部树再同步 `filesDir`）+ 已安装烟测（`OfflineModelProbe` 由 `:app` 注入，非 AgentTool）；**开发者** row calls `onOpenDebug` only |
+| `:feature:settings` | Provider vendor preset + URL/key/model/`max_tokens`, egress consent copy, save to `PreferenceStore`; **可打开的应用** list (`OpenAppsRoute`, prefs key separate from **保存配置**, launcher icons + text filter, no count cap); **模型目录** (`OpenDocumentTree` URI in `modelTreeUri`) + **刷新** 扫描外部树 + 离线模型三行确认下载（ASR / TTS / 意图 ONNX，写入外部树再同步 `filesDir`）+ 已安装烟测（`OfflineModelProbe` 由 `:app` 注入，非 AgentTool）；**开发者** row calls `onOpenDebug` only |
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
 | `:feature:permissions` | Permission Center: calendar / location / mic / screen capture; API 33+ **通知** row (`POST_NOTIFICATIONS`); clipboard note |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
 | `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError` / `completionPath` 本地意图·远程 LLM·无) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
-| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔Memory↔Permissions↔History↔Debug routes; `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat; Play attaches `BubbleMetadata` API 29+); sideload overlay via `ChannelHooks.syncOverlay` / `DougieOverlayService` (default off); Settings `shortcutLayer` slot from `ChannelHooks.ShortcutLayerSettings` (play copy = 系统气泡 only); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op); `ChatAttachmentSession` + Photo Picker / `TakePicture` / FileProvider camera JPEG (longest edge ≤ 1280); `CAMERA` in the main manifest is not an overlay leak |
+| `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔OpenApps↔Memory↔Permissions↔History↔Debug routes; `LauncherApps` injects MAIN/LAUNCHER into OpenApps (no `QUERY_ALL_PACKAGES`); `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat; Play attaches `BubbleMetadata` API 29+); sideload overlay via `ChannelHooks.syncOverlay` / `DougieOverlayService` (default off); Settings `shortcutLayer` slot from `ChannelHooks.ShortcutLayerSettings` (play copy = 系统气泡 only); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op); `ChatAttachmentSession` + Photo Picker / `TakePicture` / FileProvider camera JPEG (longest edge ≤ 1280); `CAMERA` in the main manifest is not an overlay leak |
 
 `:feature:*` must not call `BatteryManager`, `CalendarContract`, `ClipboardManager`, or open OkHttp. Color tokens may be duplicated once per feature (`DougieColors`); extract `:core:ui` only if more than colors is shared.
 

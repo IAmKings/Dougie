@@ -173,6 +173,7 @@ tasks.register("checkChannelLeak") {
             "SYSTEM_ALERT_WINDOW",
             "DougieOverlayService",
             "TYPE_APPLICATION_OVERLAY",
+            "QUERY_ALL_PACKAGES",
         ).forEach { needle ->
             check(!playManifest.contains(needle)) {
                 "play merged manifest leaked $needle in $playManifestFile"

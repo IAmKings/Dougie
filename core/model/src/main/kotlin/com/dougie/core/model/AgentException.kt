@@ -20,6 +20,7 @@ object UserFacingErrors {
     const val SCREEN_NOT_FOREGROUND = "应用不在前台，无法截取屏幕。"
     const val SCREEN_MATCH_FAILED = "未能匹配屏幕内容，已停止以免误操作。"
     const val APP_INTENT_DENIED = "该链接不被允许打开。"
+    const val APP_INTENT_NOT_ALLOWED = "该应用未加入可打开名单。"
     const val APP_INTENT_NOT_FOREGROUND = "应用不在前台，无法打开应用或链接。"
     const val APP_INTENT_LAUNCH_FAILED = "无法打开该应用或链接。"
     const val TAP_SWIPE_CONSENT = "未完成侧载知情同意，无法执行屏幕操作"

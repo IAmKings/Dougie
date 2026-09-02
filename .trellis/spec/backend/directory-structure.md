@@ -48,6 +48,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   ClipboardReadTool.kt
   ClipboardWriteTool.kt
   AppIntentAllowlist.kt
+  OpenAppEntries.kt
   AppIntentPort.kt
   AppIntentTool.kt
   SpeechPort.kt
@@ -402,7 +403,7 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `TextDelta` snapshots set `AgentTask.streamingText` while `THINKING`; `COMPLETED.finalAnswer` is the joined trimmed text and `streamingText` is cleared.
 - Blank / whitespace-only final (no tool_call) → `FAILED` / `UserFacingErrors.LLM_EMPTY_REPLY`, not `COMPLETED` with empty `finalAnswer`.
 - `TaskManager.cancel()` → `FAILED` + `UserFacingErrors.CANCELLED`; in-flight HTTP/SSE is cancelled.
-- Optional `intentPort`: pack+engine ready, no attachments / `attachedCaptureId`, `confidence >= 0.5`, intent `query_time` / `query_battery` / `query_calendar` / `clipboard_read` / `query_location` → Policy + matching tool `{}` → Chinese template `finalAnswer` → `COMPLETED`; **no** `LlmProvider.stream`. High-confidence `create_calendar` / `clipboard_write` take the same path only when `IntentRouteAnswers.parseShortcutArgs` can build sanitizer-valid JSON (clock + title; quoted clipboard text); otherwise fall through to the LLM loop like low confidence. L2 still uses ConfirmCard; reject / missing `WRITE_CALENDAR` Halt does not fall through. L1 permission deny or clipboard-not-foreground Halt does not fall through to LLM. Classify tries `input` then a punctuation/particle-stripped form (Chat example `现在几点了？` → `现在几点`). Trace is only that tool (not `intent_classifier`). Other labels, low confidence, classify throw, missing pack/engine → existing LLM loop; `IntentHit` never goes on `LoopContext` / Prompt / Audit. Settings probe success allows low confidence and is not a shortcut guarantee.
+- Optional `intentPort`: pack+engine ready, no attachments / `attachedCaptureId`, `confidence >= 0.5`, intent `query_time` / `query_battery` / `query_calendar` / `clipboard_read` / `query_location` → Policy + matching tool `{}` → Chinese template `finalAnswer` → `COMPLETED`; **no** `LlmProvider.stream`. High-confidence `create_calendar` / `clipboard_write` take the same path only when `IntentRouteAnswers.parseShortcutArgs` can build sanitizer-valid JSON (clock + title; quoted clipboard text); otherwise fall through to the LLM loop like low confidence. High-confidence `open_app` needs a user-list alias exact match after stripping 打开/帮我打开/请打开 → `app_intent` `package:`; L2 ConfirmCard; missing alias → LLM. `package:` and non-empty `package` args must be on that list for shortcut **and** LLM (empty list denies all package launches). L2 still uses ConfirmCard; reject / missing `WRITE_CALENDAR` Halt does not fall through. L1 permission deny or clipboard-not-foreground Halt does not fall through to LLM. Classify tries `input` then a punctuation/particle-stripped form (Chat example `现在几点了？` → `现在几点`). Trace is only that tool (not `intent_classifier`). Other labels, low confidence, classify throw, missing pack/engine → existing LLM loop; `IntentHit` never goes on `LoopContext` / Prompt / Audit. Settings probe success allows low confidence and is not a shortcut guarantee.
 
 ### 4. Validation & Error Matrix
 - Unknown tool name → `FAILED`, `lastError` set, no further LLM calls
@@ -453,6 +454,10 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `LoopEngineTest.createCalendarDeniedDoesNotCallLlm`
 - `LoopEngineTest.highConfidenceClipboardWriteSkipsLlm`
 - `LoopEngineTest.clipboardWriteWithoutQuoteUsesLlm`
+- `LoopEngineTest.highConfidenceOpenAppWithAliasSkipsLlm`
+- `LoopEngineTest.openAppWithoutAliasUsesLlm`
+- `LoopEngineTest.openAppWithExtraWordsUsesLlm`
+- `LoopEngineTest.llmPackageNotOnListFailsBeforeLaunch`
 
 ### 7. Wrong vs Correct
 #### Wrong

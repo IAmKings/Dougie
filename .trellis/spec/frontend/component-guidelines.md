@@ -4,7 +4,7 @@
 
 ## Overview
 
-Each feature module owns one primary screen file plus a ViewModel. `:app` `MainActivity` switches a private `AppRoute` enum (`Chat`, `Settings`, `Memory`, `Permissions`, `History`, `Debug`) — not Navigation Compose.
+Each feature module owns one primary screen file plus a ViewModel. `:app` `MainActivity` switches a private `AppRoute` enum (`Chat`, `Settings`, `OpenApps`, `Memory`, `Permissions`, `History`, `Debug`) — not Navigation Compose.
 
 ## Component Structure
 
