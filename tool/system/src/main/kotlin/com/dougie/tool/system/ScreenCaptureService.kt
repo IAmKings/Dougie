@@ -16,9 +16,12 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
+import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import androidx.core.app.NotificationCompat
+import com.dougie.core.tool.CapturedScreen
 import com.dougie.core.tool.ScreenFrame
+import java.io.ByteArrayOutputStream
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -75,7 +78,7 @@ class ScreenCaptureService : Service() {
         }
     }
 
-    private fun captureOneFrame(): ScreenFrame {
+    private fun captureOneFrame(): CapturedScreen {
         val token = ScreenCaptureConsentStore.data
             ?: error("missing projection token")
         val projectionManager = getSystemService(MediaProjectionManager::class.java)
@@ -93,7 +96,7 @@ class ScreenCaptureService : Service() {
         var reader: ImageReader? = null
         var display: VirtualDisplay? = null
         val latch = CountDownLatch(1)
-        var captured: ScreenFrame? = null
+        var captured: CapturedScreen? = null
         val callback = object : MediaProjection.Callback() {
             override fun onStop() {
                 latch.countDown()
@@ -105,7 +108,7 @@ class ScreenCaptureService : Service() {
             reader.setOnImageAvailableListener(
                 { imageReader ->
                     imageReader.acquireLatestImage()?.use { image ->
-                        captured = toGrayFrame(image)
+                        captured = toCapturedScreen(image)
                     }
                     imageReader.setOnImageAvailableListener(null, null)
                     latch.countDown()
@@ -147,7 +150,7 @@ class ScreenCaptureService : Service() {
         }
     }
 
-    private fun toGrayFrame(image: Image): ScreenFrame {
+    private fun toCapturedScreen(image: Image): CapturedScreen {
         val width = image.width
         val height = image.height
         val plane = image.planes[0]
@@ -155,6 +158,7 @@ class ScreenCaptureService : Service() {
         val pixelStride = plane.pixelStride
         val rowStride = plane.rowStride
         val gray = ByteArray(width * height)
+        val argb = IntArray(width * height)
         val row = ByteArray(rowStride)
         for (y in 0 until height) {
             buffer.position(y * rowStride)
@@ -165,14 +169,24 @@ class ScreenCaptureService : Service() {
                 val r = row[i].toInt() and 0xFF
                 val g = row[i + 1].toInt() and 0xFF
                 val b = row[i + 2].toInt() and 0xFF
-                gray[y * width + x] = ((r * 299 + g * 587 + b * 114) / 1000).toByte()
+                val index = y * width + x
+                gray[index] = ((r * 299 + g * 587 + b * 114) / 1000).toByte()
+                argb[index] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
             }
         }
-        return ScreenFrame(
-            id = UUID.randomUUID().toString(),
-            width = width,
-            height = height,
-            gray = gray,
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.setPixels(argb, 0, width, 0, 0, width, height)
+        val jpeg = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, jpeg)
+        bitmap.recycle()
+        return CapturedScreen(
+            frame = ScreenFrame(
+                id = UUID.randomUUID().toString(),
+                width = width,
+                height = height,
+                gray = gray,
+            ),
+            previewJpeg = jpeg.toByteArray(),
         )
     }
 
@@ -180,5 +194,6 @@ class ScreenCaptureService : Service() {
         private const val CHANNEL_ID = "dougie_screen_capture"
         private const val NOTIFICATION_ID = 47
         private const val MAX_CAPTURE_WIDTH = 720
+        private const val JPEG_QUALITY = 75
     }
 }

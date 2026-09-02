@@ -35,6 +35,19 @@ class ChatAttachmentSessionTest {
         assertEquals("cap1", store.get("cap1")?.id)
         session.remove("cap1")
         assertEquals(null, store.get("cap1"))
+        assertEquals(null, session.jpeg("cap1"))
         assertTrue(session.snapshot().isEmpty())
+    }
+
+    @Test
+    fun addScreenKeepsPreviewJpegUntilRemove() {
+        val store = InMemoryScreenFrameStore()
+        val session = ChatAttachmentSession(store)
+        val frame = ScreenFrame("cap1", 2, 2, ByteArray(4))
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte())
+        assertTrue(session.addScreen(frame, jpeg).isSuccess)
+        assertEquals(jpeg.toList(), session.jpeg("cap1")?.toList())
+        session.remove("cap1")
+        assertEquals(null, session.jpeg("cap1"))
     }
 }

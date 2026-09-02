@@ -632,7 +632,8 @@ class MainActivity : ComponentActivity() {
             val bitmap = withContext(Dispatchers.Default) {
                 when (meta.kind) {
                     AttachmentKind.SCREEN ->
-                        app.screenFrameStore.get(id)?.let { ChatImageCodec.grayPreview(it) }
+                        app.attachmentSession.jpeg(id)?.let { ChatImageCodec.jpegPreview(it) }
+                            ?: app.screenFrameStore.get(id)?.let { ChatImageCodec.grayPreview(it) }
                     AttachmentKind.GALLERY, AttachmentKind.CAMERA ->
                         app.attachmentSession.jpeg(id)?.let { ChatImageCodec.jpegPreview(it) }
                 }

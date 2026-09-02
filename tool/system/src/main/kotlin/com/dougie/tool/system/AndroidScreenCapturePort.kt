@@ -5,8 +5,8 @@ import android.content.Intent
 import android.os.Build
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
+import com.dougie.core.tool.CapturedScreen
 import com.dougie.core.tool.ScreenCapturePort
-import com.dougie.core.tool.ScreenFrame
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -16,7 +16,7 @@ import kotlin.coroutines.resumeWithException
 
 internal object ScreenCaptureBridge {
     @Volatile
-    var pending: CompletableFuture<ScreenFrame>? = null
+    var pending: CompletableFuture<CapturedScreen>? = null
 }
 
 class AndroidScreenCapturePort(
@@ -30,9 +30,9 @@ class AndroidScreenCapturePort(
 
     override fun hasProjectionConsent(): Boolean = ScreenCaptureConsentStore.hasToken()
 
-    override suspend fun capture(): ScreenFrame {
+    override suspend fun capture(): CapturedScreen {
         onUsed()
-        val future = CompletableFuture<ScreenFrame>()
+        val future = CompletableFuture<CapturedScreen>()
         ScreenCaptureBridge.pending = future
         val intent = Intent(appContext, ScreenCaptureService::class.java)
         if (Build.VERSION.SDK_INT >= 26) {
@@ -62,8 +62,8 @@ class AndroidScreenCapturePort(
     }
 
     private fun resumeCapture(
-        cont: CancellableContinuation<ScreenFrame>,
-        frame: ScreenFrame?,
+        cont: CancellableContinuation<CapturedScreen>,
+        captured: CapturedScreen?,
         error: Throwable?,
     ) {
         if (!cont.isActive) return
@@ -71,7 +71,7 @@ class AndroidScreenCapturePort(
             error != null -> cont.resumeWithException(
                 (error as? AgentException) ?: AgentException(UserFacingErrors.TOOL_FAILED),
             )
-            frame != null -> cont.resume(frame)
+            captured != null -> cont.resume(captured)
             else -> cont.resumeWithException(AgentException(UserFacingErrors.TOOL_FAILED))
         }
     }

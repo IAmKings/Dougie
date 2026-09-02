@@ -39,9 +39,9 @@ class ScreenCaptureTool(
                 error = UserFacingErrors.PERMISSION_DENIED,
             )
         }
-        val frame = port.capture()
-        store.put(frame)
-        return metadata(frame)
+        val captured = port.capture()
+        store.put(captured.frame)
+        return metadata(captured.frame)
     }
 
     private fun metadata(frame: ScreenFrame): ToolResult = ToolResult(

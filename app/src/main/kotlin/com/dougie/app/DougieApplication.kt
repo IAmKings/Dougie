@@ -234,8 +234,8 @@ class DougieApplication : Application() {
             return Result.failure(AgentException(UserFacingErrors.PERMISSION_DENIED))
         }
         return try {
-            val frame = port.capture()
-            attachmentSession.addScreen(frame).map { frame }
+            val captured = port.capture()
+            attachmentSession.addScreen(captured.frame, captured.previewJpeg).map { captured.frame }
         } catch (e: CancellationException) {
             throw e
         } catch (e: AgentException) {

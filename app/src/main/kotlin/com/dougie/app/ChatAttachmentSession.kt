@@ -25,7 +25,7 @@ class ChatAttachmentSession(
     fun jpeg(id: String): ByteArray? = jpegs[id]
 
     @Synchronized
-    fun addScreen(frame: ScreenFrame): Result<AttachmentMeta> {
+    fun addScreen(frame: ScreenFrame, previewJpeg: ByteArray? = null): Result<AttachmentMeta> {
         if (order.size >= AttachmentLimits.MAX) {
             return Result.failure(AgentException(UserFacingErrors.ATTACHMENTS_FULL))
         }
@@ -34,6 +34,9 @@ class ChatAttachmentSession(
             return Result.failure(AgentException(UserFacingErrors.ATTACHMENTS_FULL))
         }
         val meta = AttachmentMeta(frame.id, AttachmentKind.SCREEN, frame.width, frame.height)
+        if (previewJpeg != null && previewJpeg.isNotEmpty()) {
+            jpegs[frame.id] = previewJpeg
+        }
         order.add(meta)
         return Result.success(meta)
     }
@@ -57,9 +60,8 @@ class ChatAttachmentSession(
         order.removeAll { it.id == id }
         if (meta.kind == AttachmentKind.SCREEN) {
             screens.remove(id)
-        } else {
-            jpegs.remove(id)
         }
+        jpegs.remove(id)
     }
 
     @Synchronized

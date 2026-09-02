@@ -1,17 +1,23 @@
 package com.dougie.core.tool
 
+data class CapturedScreen(
+    val frame: ScreenFrame,
+    val previewJpeg: ByteArray? = null,
+)
+
 interface ScreenCapturePort {
     fun isAppForeground(): Boolean
 
     fun hasProjectionConsent(): Boolean
 
-    suspend fun capture(): ScreenFrame
+    suspend fun capture(): CapturedScreen
 }
 
 class FakeScreenCapturePort(
     var foreground: Boolean = true,
     var hasConsent: Boolean = true,
     var nextFrame: ScreenFrame = whiteSquareOnBlack(),
+    var nextJpeg: ByteArray? = null,
 ) : ScreenCapturePort {
     var captureCount: Int = 0
         private set
@@ -20,9 +26,9 @@ class FakeScreenCapturePort(
 
     override fun hasProjectionConsent(): Boolean = hasConsent
 
-    override suspend fun capture(): ScreenFrame {
+    override suspend fun capture(): CapturedScreen {
         captureCount += 1
-        return nextFrame
+        return CapturedScreen(nextFrame, nextJpeg)
     }
 }
 
