@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 39
-- **Last Active**: 2026-09-01
+- **Total Sessions**: 40
+- **Last Active**: 2026-09-02
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~863 | Active |
+| `journal-1.md` | ~884 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 40 | 2026-09-02 | L2 开 App 短路径 | `2aa1708` | `master` |
 | 39 | 2026-09-01 | L2 写操作短路径 | `0ab2787` | `master` |
 | 38 | 2026-08-31 | 意图包与开发者处理路径 | `92e780b`, `c14e1ca` | `master` |
 | 37 | 2026-08-30 | Chat 语音意图路由 | `66dd1e9` | `master` |

@@ -861,3 +861,24 @@ MiniRBT 四件套 Catalog/Bert JNI；开发者页 completionPath 区分本地意
 ### Status
 
 [OK] **Completed**
+
+
+## Session 40: L2 开 App 短路径
+
+**Date**: 2026-09-02
+**Task**: L2 开 App 短路径
+**Branch**: `master`
+
+### Summary
+
+设置可打开应用名单（图标、筛选、不限条数）；短路径按别名精确匹配；package 启动短路径和 LLM 都要在名单内。已推 origin/master。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2aa1708` | (see git log) |
+
+### Status
+
+[OK] **Completed**
