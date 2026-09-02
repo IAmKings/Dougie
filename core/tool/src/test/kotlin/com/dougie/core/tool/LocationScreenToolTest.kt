@@ -117,6 +117,23 @@ class ScreenCaptureToolTest {
     }
 
     @Test
+    fun endProjectionSessionClearsFakeConsent() {
+        val port = FakeScreenCapturePort()
+        assertTrue(port.hasProjectionConsent())
+        port.endProjectionSession()
+        assertFalse(port.hasProjectionConsent())
+    }
+
+    @Test
+    fun secondCaptureKeepsConsent() = runTest {
+        val port = FakeScreenCapturePort()
+        port.capture()
+        port.capture()
+        assertEquals(2, port.captureCount)
+        assertTrue(port.hasProjectionConsent())
+    }
+
+    @Test
     fun backgroundIsFatalWithoutCapturing() = runTest {
         val port = FakeScreenCapturePort(foreground = false)
         val tool = ScreenCaptureTool(port, InMemoryScreenFrameStore())

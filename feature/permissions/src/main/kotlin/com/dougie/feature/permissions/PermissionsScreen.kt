@@ -49,6 +49,7 @@ fun PermissionsRoute(
     viewModel: PermissionsViewModel,
     onBack: () -> Unit,
     onProjectionConsent: (resultCode: Int, data: Intent?) -> Unit,
+    onEndProjectionSession: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -67,6 +68,10 @@ fun PermissionsRoute(
             onProjectionConsent(resultCode, data)
             viewModel.refresh()
         },
+        onEndProjectionSession = {
+            onEndProjectionSession()
+            viewModel.refresh()
+        },
     )
 }
 
@@ -76,6 +81,7 @@ fun PermissionsScreen(
     onBack: () -> Unit,
     onGranted: () -> Unit,
     onProjectionConsent: (resultCode: Int, data: Intent?) -> Unit,
+    onEndProjectionSession: () -> Unit,
 ) {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
@@ -167,8 +173,12 @@ fun PermissionsScreen(
                     onGrant = {
                         when (item.kind) {
                             PermissionKind.SCREEN_CAPTURE -> {
-                                val manager = context.getSystemService(MediaProjectionManager::class.java)
-                                projectionLauncher.launch(manager.createScreenCaptureIntent())
+                                if (item.granted) {
+                                    onEndProjectionSession()
+                                } else {
+                                    val manager = context.getSystemService(MediaProjectionManager::class.java)
+                                    projectionLauncher.launch(manager.createScreenCaptureIntent())
+                                }
                             }
                             PermissionKind.OVERLAY -> {
                                 context.startActivity(
@@ -254,7 +264,7 @@ private fun PermissionRow(
                 }
             }
             PermissionKind.SCREEN_CAPTURE -> {
-                GrantButton(if (item.granted) "重新授权屏幕截取" else "去授权屏幕截取", onGrant)
+                GrantButton(ScreenCapturePermissionCopy.actionLabel(item.granted), onGrant)
             }
             PermissionKind.OVERLAY -> {
                 GrantButton(if (item.granted) "在系统设置中管理" else "去系统设置授权", onGrant)

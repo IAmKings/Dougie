@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "MediaProjection FGS 线程约定；现网 one-shot 将被会话替换"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "无 token 仍 PERMISSION_DENIED；前台门不变"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "权限中心与 overlay 截屏共用会话，Play 无 overlay"}

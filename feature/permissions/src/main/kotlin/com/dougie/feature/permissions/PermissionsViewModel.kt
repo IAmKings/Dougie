@@ -102,7 +102,7 @@ class PermissionsViewModel(
             item(
                 id = "screen_capture",
                 title = "屏幕截取",
-                subtitle = "系统投屏授权后，截图只留在本机内存，不会发给模型",
+                subtitle = ScreenCapturePermissionCopy.SUBTITLE,
                 permission = null,
                 usageKey = SCREEN_CAPTURE_USAGE_KEY,
                 riskLabel = "L1",

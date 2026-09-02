@@ -50,4 +50,15 @@ class ChatAttachmentSessionTest {
         session.remove("cap1")
         assertEquals(null, session.jpeg("cap1"))
     }
+
+    @Test
+    fun twoScreenshotsBothStayInComposer() {
+        val store = InMemoryScreenFrameStore()
+        val session = ChatAttachmentSession(store)
+        assertTrue(session.addScreen(ScreenFrame("a", 2, 2, ByteArray(4)), byteArrayOf(1)).isSuccess)
+        assertTrue(session.addScreen(ScreenFrame("b", 2, 2, ByteArray(4)), byteArrayOf(2)).isSuccess)
+        assertEquals(listOf("a", "b"), session.snapshot().map { it.id })
+        assertEquals(byteArrayOf(1).toList(), session.jpeg("a")?.toList())
+        assertEquals(byteArrayOf(2).toList(), session.jpeg("b")?.toList())
+    }
 }

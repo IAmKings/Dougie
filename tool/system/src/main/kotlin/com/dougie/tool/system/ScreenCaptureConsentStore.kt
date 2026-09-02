@@ -16,7 +16,7 @@ object ScreenCaptureConsentStore {
 
     fun save(resultCode: Int, data: Intent?) {
         this.resultCode = resultCode
-        this.data = data
+        this.data = data?.let { Intent(it) }
     }
 
     fun clear() {

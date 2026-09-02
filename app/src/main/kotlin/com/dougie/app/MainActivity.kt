@@ -332,6 +332,9 @@ class MainActivity : ComponentActivity() {
                             onProjectionConsent = { resultCode, data ->
                                 com.dougie.tool.system.ScreenCaptureConsentStore.save(resultCode, data)
                             },
+                            onEndProjectionSession = {
+                                app.screenCapturePort.endProjectionSession()
+                            },
                         )
                     }
                 }

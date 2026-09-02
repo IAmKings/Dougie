@@ -266,12 +266,15 @@ class DougieOverlayService : Service() {
                 ball?.visibility = View.VISIBLE
                 capturing = false
                 val denied = app.overlayAttachError == UserFacingErrors.PERMISSION_DENIED
+                val failed = app.overlayAttachError
                 if (denied) {
                     Toast.makeText(
                         this@DougieOverlayService,
                         getString(R.string.overlay_need_projection),
                         Toast.LENGTH_LONG,
                     ).show()
+                } else if (failed != null) {
+                    Toast.makeText(this@DougieOverlayService, failed, Toast.LENGTH_LONG).show()
                 }
                 launchDougie(
                     chatLaunchIntent(

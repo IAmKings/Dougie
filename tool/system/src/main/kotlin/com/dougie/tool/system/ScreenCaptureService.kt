@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.Image
@@ -16,8 +18,6 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
-import android.graphics.Bitmap
-import android.graphics.PixelFormat
 import androidx.core.app.NotificationCompat
 import com.dougie.core.tool.CapturedScreen
 import com.dougie.core.tool.ScreenFrame
@@ -27,28 +27,46 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class ScreenCaptureService : Service() {
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val sessionLock = Any()
+    private var captureThread: HandlerThread? = null
+    private var captureHandler: Handler? = null
+    private var projection: MediaProjection? = null
+    @Volatile private var fgsStarted = false
+    private var sessionReader: ImageReader? = null
+    private var sessionDisplay: VirtualDisplay? = null
+    private var grabLatch: CountDownLatch? = null
+    private var pendingShot: CapturedScreen? = null
+    private val grabLock = Any()
+
+    private val sessionCallback = object : MediaProjection.Callback() {
+        override fun onStop() {
+            dropHardware(clearToken = false)
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            dropHardware(clearToken = true)
+            return START_NOT_STICKY
+        }
         try {
             startProjectionForeground()
         } catch (e: Exception) {
-            ScreenCaptureBridge.pending?.completeExceptionally(e)
-            stopSelf()
-            return START_NOT_STICKY
+            if (!fgsStarted) {
+                ScreenCaptureBridge.pending?.completeExceptionally(e)
+                dropHardware(clearToken = false)
+                return START_NOT_STICKY
+            }
         }
         Thread({
             try {
-                val frame = captureOneFrame()
+                val frame = synchronized(grabLock) { takeFrame() }
                 ScreenCaptureBridge.pending?.complete(frame)
             } catch (e: Exception) {
                 ScreenCaptureBridge.pending?.completeExceptionally(e)
-            } finally {
-                // captureOneFrame awaits HandlerThread release; only then stop FGS on main.
-                Handler(Looper.getMainLooper()).post {
-                    stopForeground(STOP_FOREGROUND_REMOVE)
-                    stopSelf()
-                }
             }
         }, "dougie-capture-run").start()
         return START_NOT_STICKY
@@ -63,7 +81,7 @@ class ScreenCaptureService : Service() {
         }
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Dougie")
-            .setContentText("正在截取屏幕")
+            .setContentText("Dougie 可以截取屏幕")
             .setSmallIcon(android.R.drawable.ic_menu_view)
             .setOngoing(true)
             .build()
@@ -76,14 +94,16 @@ class ScreenCaptureService : Service() {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        fgsStarted = true
+        ScreenCaptureSession.foreground = true
     }
 
-    private fun captureOneFrame(): CapturedScreen {
-        val token = ScreenCaptureConsentStore.data
-            ?: error("missing projection token")
-        val projectionManager = getSystemService(MediaProjectionManager::class.java)
-        val projection = projectionManager.getMediaProjection(ScreenCaptureConsentStore.resultCode, token)
-            ?: error("media projection unavailable")
+    private fun takeFrame(): CapturedScreen {
+        val handler: Handler
+        synchronized(sessionLock) {
+            ensureProjectionLocked()
+            handler = captureHandler ?: error("no capture handler")
+        }
         val metrics = resources.displayMetrics
         val fullW = metrics.widthPixels.coerceAtLeast(1)
         val fullH = metrics.heightPixels.coerceAtLeast(1)
@@ -91,62 +111,149 @@ class ScreenCaptureService : Service() {
         val width = (fullW * scale).toInt().coerceAtLeast(1)
         val height = (fullH * scale).toInt().coerceAtLeast(1)
         val dpi = (metrics.densityDpi * scale).toInt().coerceAtLeast(1)
-        val thread = HandlerThread("dougie-screen-capture").apply { start() }
-        val handler = Handler(thread.looper)
-        var reader: ImageReader? = null
-        var display: VirtualDisplay? = null
         val latch = CountDownLatch(1)
-        var captured: CapturedScreen? = null
-        val callback = object : MediaProjection.Callback() {
-            override fun onStop() {
+        val posted = CountDownLatch(1)
+        var setupError: Exception? = null
+        val ok = handler.post {
+            try {
+                synchronized(sessionLock) {
+                    pendingShot = null
+                    grabLatch = latch
+                    ensureMirrorLocked(width, height, dpi, handler)
+                }
+            } catch (e: Exception) {
+                setupError = e
                 latch.countDown()
+            } finally {
+                posted.countDown()
             }
         }
-        try {
-            projection.registerCallback(callback, handler)
-            reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
-            reader.setOnImageAvailableListener(
-                { imageReader ->
-                    imageReader.acquireLatestImage()?.use { image ->
-                        captured = toCapturedScreen(image)
-                    }
-                    imageReader.setOnImageAvailableListener(null, null)
-                    latch.countDown()
-                },
-                handler,
-            )
-            display = projection.createVirtualDisplay(
-                "dougie-capture",
-                width,
-                height,
-                dpi,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                reader.surface,
-                null,
-                handler,
-            )
-            latch.await(5, TimeUnit.SECONDS)
-            return captured ?: error("no frame")
-        } finally {
-            val released = CountDownLatch(1)
-            val posted = handler.post {
-                try {
-                    display?.release()
-                    reader?.close()
-                    runCatching { projection.unregisterCallback(callback) }
-                    runCatching { projection.stop() }
-                    ScreenCaptureConsentStore.clear()
-                } finally {
-                    thread.quitSafely()
-                    released.countDown()
+        if (!ok) error("capture handler gone")
+        posted.await(5, TimeUnit.SECONDS)
+        setupError?.let { throw it }
+        latch.await(5, TimeUnit.SECONDS)
+        return synchronized(sessionLock) { pendingShot } ?: error("no frame")
+    }
+
+    private fun onMirrorImage(imageReader: ImageReader) {
+        val latch = synchronized(sessionLock) { grabLatch } ?: run {
+            imageReader.acquireLatestImage()?.close()
+            return
+        }
+        imageReader.acquireLatestImage()?.use { image ->
+            val captured = toCapturedScreen(image)
+            synchronized(sessionLock) {
+                if (grabLatch === latch) {
+                    pendingShot = captured
+                    grabLatch = null
                 }
             }
-            if (!posted) {
-                ScreenCaptureConsentStore.clear()
-                thread.quitSafely()
-                released.countDown()
+            latch.countDown()
+        }
+    }
+
+    private fun ensureMirrorLocked(width: Int, height: Int, dpi: Int, handler: Handler) {
+        if (sessionDisplay != null && sessionReader != null) return
+        val proj = projection ?: error("media projection unavailable")
+        val reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        reader.setOnImageAvailableListener({ onMirrorImage(it) }, handler)
+        sessionReader = reader
+        sessionDisplay = proj.createVirtualDisplay(
+            "dougie-capture",
+            width,
+            height,
+            dpi,
+            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+            reader.surface,
+            null,
+            handler,
+        )
+    }
+
+    private fun ensureProjectionLocked(): MediaProjection {
+        projection?.let { return it }
+        val token = ScreenCaptureConsentStore.data
+            ?: error("missing projection token")
+        val projectionManager = getSystemService(MediaProjectionManager::class.java)
+        val created = try {
+            projectionManager.getMediaProjection(
+                ScreenCaptureConsentStore.resultCode,
+                Intent(token),
+            )
+        } catch (_: Exception) {
+            ScreenCaptureConsentStore.clear()
+            error("media projection unavailable")
+        }
+        if (created == null) {
+            ScreenCaptureConsentStore.clear()
+            error("media projection unavailable")
+        }
+        val thread = HandlerThread("dougie-screen-capture").apply { start() }
+        val handler = Handler(thread.looper)
+        captureThread = thread
+        captureHandler = handler
+        created.registerCallback(sessionCallback, handler)
+        projection = created
+        return created
+    }
+
+    private fun dropHardware(clearToken: Boolean) {
+        val handler: Handler?
+        val thread: HandlerThread?
+        val proj: MediaProjection?
+        val display: VirtualDisplay?
+        val reader: ImageReader?
+        val waiting: CountDownLatch?
+        synchronized(sessionLock) {
+            handler = captureHandler
+            thread = captureThread
+            proj = projection
+            display = sessionDisplay
+            reader = sessionReader
+            waiting = grabLatch
+            captureHandler = null
+            captureThread = null
+            projection = null
+            sessionDisplay = null
+            sessionReader = null
+            grabLatch = null
+            pendingShot = null
+        }
+        waiting?.countDown()
+        val finishOnMain = {
+            mainHandler.post {
+                if (fgsStarted) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    fgsStarted = false
+                }
+                ScreenCaptureSession.foreground = false
+                stopSelf()
             }
-            released.await(8, TimeUnit.SECONDS)
+        }
+        val teardown = {
+            try {
+                runCatching { display?.release() }
+                runCatching { reader?.close() }
+                if (proj != null) {
+                    runCatching { proj.unregisterCallback(sessionCallback) }
+                    if (clearToken) {
+                        runCatching { proj.stop() }
+                    }
+                }
+            } finally {
+                thread?.quitSafely()
+                if (clearToken) {
+                    ScreenCaptureConsentStore.clear()
+                }
+                finishOnMain()
+            }
+        }
+        val onHandler = handler != null && Looper.myLooper() == handler.looper
+        if (onHandler) {
+            teardown()
+        } else {
+            val queued = handler?.post { teardown() } ?: false
+            if (!queued) teardown()
         }
     }
 
@@ -191,6 +298,7 @@ class ScreenCaptureService : Service() {
     }
 
     companion object {
+        const val ACTION_STOP = "com.dougie.tool.system.STOP_PROJECTION"
         private const val CHANNEL_ID = "dougie_screen_capture"
         private const val NOTIFICATION_ID = 47
         private const val MAX_CAPTURE_WIDTH = 720

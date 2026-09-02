@@ -34,6 +34,7 @@ feature/memory/src/main/kotlin/com/dougie/feature/memory/
 feature/permissions/src/main/kotlin/com/dougie/feature/permissions/
   PermissionsScreen.kt
   PermissionsViewModel.kt
+  ScreenCapturePermissionCopy.kt
   DougieColors.kt
 feature/history/src/main/kotlin/com/dougie/feature/history/
   HistoryScreen.kt

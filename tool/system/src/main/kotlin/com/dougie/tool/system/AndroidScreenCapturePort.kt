@@ -19,6 +19,11 @@ internal object ScreenCaptureBridge {
     var pending: CompletableFuture<CapturedScreen>? = null
 }
 
+internal object ScreenCaptureSession {
+    @Volatile
+    var foreground: Boolean = false
+}
+
 class AndroidScreenCapturePort(
     context: Context,
     private val isForeground: () -> Boolean,
@@ -35,7 +40,9 @@ class AndroidScreenCapturePort(
         val future = CompletableFuture<CapturedScreen>()
         ScreenCaptureBridge.pending = future
         val intent = Intent(appContext, ScreenCaptureService::class.java)
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (ScreenCaptureSession.foreground) {
+            appContext.startService(intent)
+        } else if (Build.VERSION.SDK_INT >= 26) {
             appContext.startForegroundService(intent)
         } else {
             appContext.startService(intent)
@@ -45,7 +52,6 @@ class AndroidScreenCapturePort(
                 future.whenComplete { frame, error -> resumeCapture(cont, frame, error) }
                 cont.invokeOnCancellation {
                     future.cancel(true)
-                    appContext.stopService(intent)
                 }
             }
         } catch (e: CancellationException) {
@@ -74,5 +80,14 @@ class AndroidScreenCapturePort(
             captured != null -> cont.resume(captured)
             else -> cont.resumeWithException(AgentException(UserFacingErrors.TOOL_FAILED))
         }
+    }
+
+    override fun endProjectionSession() {
+        if (ScreenCaptureSession.foreground) {
+            val stop = Intent(appContext, ScreenCaptureService::class.java)
+                .setAction(ScreenCaptureService.ACTION_STOP)
+            appContext.startService(stop)
+        }
+        ScreenCaptureConsentStore.clear()
     }
 }

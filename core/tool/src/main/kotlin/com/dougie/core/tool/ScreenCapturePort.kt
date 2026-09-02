@@ -11,6 +11,8 @@ interface ScreenCapturePort {
     fun hasProjectionConsent(): Boolean
 
     suspend fun capture(): CapturedScreen
+
+    fun endProjectionSession() {}
 }
 
 class FakeScreenCapturePort(
@@ -29,6 +31,10 @@ class FakeScreenCapturePort(
     override suspend fun capture(): CapturedScreen {
         captureCount += 1
         return CapturedScreen(nextFrame, nextJpeg)
+    }
+
+    override fun endProjectionSession() {
+        hasConsent = false
     }
 }
 
