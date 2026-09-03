@@ -974,3 +974,32 @@ MediaProjection 会话内复用同一 VirtualDisplay；onStop 不清 token。真
 ### Status
 
 [OK] **Completed**
+
+
+## Session 45: 短路径截屏钉附件
+
+**Date**: 2026-09-03
+**Task**: 短路径截屏钉附件
+**Branch**: `master`
+
+### Summary
+
+Chat 短路径截屏成功后把彩色预览钉进作曲家；LLM 截屏不钉。真机通过。
+
+### Main Changes
+
+- 满 4 张 Halt ATTACHMENTS_FULL；JPEG 进 ScreenFrameStore 预览槽
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c610eab` | (see git log) |
+
+### Testing
+
+- [OK] JVM tool/runtime/app/checkChannelLeak；真机「截个屏」芯片与下一条发送
+
+### Status
+
+[OK] **Completed**
