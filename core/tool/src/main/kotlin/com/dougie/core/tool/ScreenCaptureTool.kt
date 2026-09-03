@@ -40,7 +40,14 @@ class ScreenCaptureTool(
             )
         }
         val captured = port.capture()
-        store.put(captured.frame)
+        if (!store.put(captured.frame)) {
+            return ToolResult(
+                json = failJson(UserFacingErrors.ATTACHMENTS_FULL),
+                isFatal = true,
+                error = UserFacingErrors.ATTACHMENTS_FULL,
+            )
+        }
+        captured.previewJpeg?.let { store.putJpeg(captured.frame.id, it) }
         return metadata(captured.frame)
     }
 

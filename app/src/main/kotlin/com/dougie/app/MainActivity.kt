@@ -134,6 +134,10 @@ class MainActivity : ComponentActivity() {
                 var ttsReady by ttsReadyState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
+                val composerEpoch by app.composerEpoch.collectAsStateWithLifecycle()
+                LaunchedEffect(composerEpoch) {
+                    syncChips()
+                }
                 val notifyLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission(),
                 ) { granted ->

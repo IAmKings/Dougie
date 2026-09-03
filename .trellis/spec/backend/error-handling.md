@@ -25,7 +25,7 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Clipboard read while background | `ClipboardReadTool` foreground check | `应用不在前台，无法读取剪贴板。` |
 | Screen capture while background | `ScreenCaptureTool` foreground check (before starting FGS). Overlay pin uses `pinCurrentScreen(requireForeground = false)` and does not go through this tool gate. | `应用不在前台，无法截取屏幕。` |
 | Screen capture without MediaProjection token | `ScreenCaptureTool` consent check | `未授权，已为你跳过该操作` |
-| Chat attachments already at 4 | Composer / overlay add | `最多附上 4 张` |
+| Chat attachments already at 4 | Composer / overlay add, or shortcut `screen_capture` when `AgentTask.attachments.size >= 4` | `最多附上 4 张` |
 | Screen match failed / low confidence | `ScreenMatchTool` must not guess | `未能匹配屏幕内容，已停止以免误操作。` |
 | Disallowed app intent URI | Allowlist rejects tel/sms/file/javascript/content/intent/mailto and unknown schemes | `该链接不被允许打开。` |
 | App `package:` / extra `package` not on user list | `AppIntentAllowlist` + settings 可打开的应用 | `该应用未加入可打开名单。` |

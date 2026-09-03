@@ -117,6 +117,18 @@ class ScreenCaptureToolTest {
     }
 
     @Test
+    fun captureStoresPreviewJpegOutsideJson() = runTest {
+        val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte())
+        val port = FakeScreenCapturePort(nextJpeg = jpeg)
+        val store = InMemoryScreenFrameStore()
+        val tool = ScreenCaptureTool(port, store)
+        val result = tool.execute("{}", ToolContext("t", "c"))
+        assertEquals(jpeg.toList(), store.jpeg("synthetic")?.toList())
+        assertFalse(result.json.contains("FF"))
+        assertFalse(result.json.contains("data:image"))
+    }
+
+    @Test
     fun endProjectionSessionClearsFakeConsent() {
         val port = FakeScreenCapturePort()
         assertTrue(port.hasProjectionConsent())

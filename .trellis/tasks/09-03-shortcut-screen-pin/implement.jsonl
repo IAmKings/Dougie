@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "SCREEN JPEG stays in session; TaskManager finally clearPin/releaseAfterTask"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Composer chips vs shortcut screen_capture"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "ATTACHMENTS_FULL and screen capture Halt"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Overlay pin vs LLM foreground; max 4"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Store vs ChatAttachmentSession vs LoopEngine"}

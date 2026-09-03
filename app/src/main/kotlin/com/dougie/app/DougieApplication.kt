@@ -53,6 +53,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.ScreenFrame
@@ -83,6 +86,8 @@ class DougieApplication : Application() {
         private set
     @Volatile
     var overlayAttachError: String? = null
+    private val composerEpochState = MutableStateFlow(0)
+    val composerEpoch: StateFlow<Int> = composerEpochState.asStateFlow()
     private lateinit var taskProgressNotifier: TaskProgressNotifier
 
     private val foregroundTracker = AppForegroundTracker()
@@ -210,7 +215,7 @@ class DougieApplication : Application() {
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,
             screenFrames = screenStore,
-            onTaskFinished = { attachmentSession.releaseAfterTask() },
+            onTaskFinished = { finishComposerAfterTask() },
         )
         runBlocking {
             recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
@@ -243,6 +248,18 @@ class DougieApplication : Application() {
         } catch (_: Exception) {
             Result.failure(AgentException(UserFacingErrors.TOOL_FAILED))
         }
+    }
+
+    private fun finishComposerAfterTask() {
+        val kept = ShortcutScreenPin.adoptIntoComposer(
+            taskManager.task.value,
+            attachmentSession,
+            screenFrameStore,
+        )
+        if (!kept) {
+            attachmentSession.releaseAfterTask()
+        }
+        composerEpochState.value += 1
     }
 
     fun refreshChannelTools() {

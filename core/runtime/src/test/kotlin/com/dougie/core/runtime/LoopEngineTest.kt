@@ -7,6 +7,7 @@ import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.LlmEvent
@@ -1384,6 +1385,33 @@ class LoopEngineTest {
         assertEquals(ScreenCaptureTool.NAME, result.toolTrace.single().toolName)
         assertEquals(1, capture.captureCount)
         assertEquals("synthetic", store.last()?.id)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun fourAttachmentsScreenShortcutHaltsWithoutLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val capture = FakeScreenCapturePort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(ScreenCaptureTool.NAME to ScreenCaptureTool(capture, InMemoryScreenFrameStore())),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(
+                hit = IntentHit(intent = "screen_capture", route = "screen", confidence = 0.91),
+            ),
+        )
+        val full = List(AttachmentLimits.MAX) { i ->
+            AttachmentMeta("g$i", AttachmentKind.GALLERY, 8, 8)
+        }
+        val result = engine.run(
+            AgentTask(taskId = "t-full", input = "截个屏", attachments = full),
+        ) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.ATTACHMENTS_FULL, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, capture.captureCount)
         assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
     }
 

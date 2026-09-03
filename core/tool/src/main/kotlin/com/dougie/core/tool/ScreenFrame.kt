@@ -27,10 +27,13 @@ interface ScreenFrameStore {
     fun pinned(): ScreenFrame?
     fun clearPin()
     fun clearAll()
+    fun putJpeg(id: String, jpeg: ByteArray)
+    fun jpeg(id: String): ByteArray?
 }
 
 class InMemoryScreenFrameStore : ScreenFrameStore {
     private val frames = LinkedHashMap<String, ScreenFrame>()
+    private val jpegs = LinkedHashMap<String, ByteArray>()
     @Volatile
     private var pinnedId: String? = null
 
@@ -53,6 +56,7 @@ class InMemoryScreenFrameStore : ScreenFrameStore {
     override fun remove(id: String) {
         if (pinnedId == id) return
         frames.remove(id)
+        jpegs.remove(id)
     }
 
     @Synchronized
@@ -85,5 +89,15 @@ class InMemoryScreenFrameStore : ScreenFrameStore {
     override fun clearAll() {
         pinnedId = null
         frames.clear()
+        jpegs.clear()
     }
+
+    @Synchronized
+    override fun putJpeg(id: String, jpeg: ByteArray) {
+        if (jpeg.isEmpty()) return
+        jpegs[id] = jpeg
+    }
+
+    @Synchronized
+    override fun jpeg(id: String): ByteArray? = jpegs[id]
 }

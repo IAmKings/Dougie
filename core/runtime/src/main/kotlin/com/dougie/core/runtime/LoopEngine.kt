@@ -5,6 +5,7 @@ import com.dougie.core.memory.MemoryGate
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LoopContext
@@ -19,6 +20,7 @@ import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.IntentPort
 import com.dougie.core.tool.OpenAppEntry
+import com.dougie.core.tool.ScreenCaptureTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -143,9 +145,17 @@ class LoopEngine(
         emit: suspend (AgentTask) -> Unit,
     ): AgentTask? {
         val port = intentPort ?: return null
-        if (start.attachments.isNotEmpty()) return null
         if (!start.attachedCaptureId.isNullOrBlank()) return null
         if (!port.isModelPresent() || !port.isEngineReady()) return null
+        if (start.attachments.size >= AttachmentLimits.MAX) {
+            val blocked = shortcutToolName(port, start.input)
+            if (blocked == ScreenCaptureTool.NAME) {
+                val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
+                return fail(routed, UserFacingErrors.ATTACHMENTS_FULL, emit)
+            }
+            return null
+        }
+        if (start.attachments.isNotEmpty()) return null
         val toolName = shortcutToolName(port, start.input) ?: return null
         val entries = openAppEntries()
         val argsJson = IntentRouteAnswers.classifyTexts(start.input)

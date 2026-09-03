@@ -32,7 +32,7 @@ When `status == AWAITING_CONFIRMATION`, map the last `ToolTraceEntry` to `Confir
 
 If `streamingText` is not blank and status is not COMPLETED/FAILED, append `AgentMessage(streamingText)` even while `THINKING` (no citations). After complete, show `finalAnswer` only (`streamingText` is null), with `memorySources` when memories were retrieved. `COMPLETED` with blank `finalAnswer` adds no Agent bubble — LoopEngine must fail `LLM_EMPTY_REPLY` instead.
 
-Tool cards: `battery` → 电池工具, `time` → 时间工具, `screen_capture` → 截取屏幕, `calendar_query` / `calendar_create` / `clipboard_*` use Chinese labels, else the raw `toolName`. Do not hardcode “电池” for every tool. Intent shortcut `screen_capture` does not add a composer chip; `TaskManager.clearPin()` after the task still applies. Sideload may show a separate overlay-capture hint under Chat; it is not `finalAnswer` and is not a `ChatItem`.
+Tool cards: `battery` → 电池工具, `time` → 时间工具, `screen_capture` → 截取屏幕, `calendar_query` / `calendar_create` / `clipboard_*` use Chinese labels, else the raw `toolName`. Do not hardcode “电池” for every tool. Intent shortcut `screen_capture` success pins that frame into the Chat composer (JPEG preview, same as overlay `addScreen`) after the task finishes; `TaskManager.clearPin()` still runs, but `:app` must not `releaseAfterTask`/`clearAll` for that `LOCAL_INTENT` success. LLM-loop `screen_capture` (`REMOTE_LLM`) does not add a chip and still `releaseAfterTask`. Sideload may show a separate overlay-capture hint under Chat; it is not `finalAnswer` and is not a `ChatItem`.
 
 Egress / timeout / network / cancel failures are not a separate UI type: they are `AgentMessage` text from `lastError`.
 

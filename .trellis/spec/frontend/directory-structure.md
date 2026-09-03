@@ -51,6 +51,7 @@ app/src/main/kotlin/com/dougie/app/
   MainActivity.kt
   ChatLaunch.kt
   ChatAttachmentSession.kt
+  ShortcutScreenPin.kt
   ChatImageCodec.kt
   DougieChatTileService.kt
   TaskNotice.kt
