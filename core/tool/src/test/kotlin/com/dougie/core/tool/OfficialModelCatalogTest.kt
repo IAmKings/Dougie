@@ -28,7 +28,7 @@ class OfficialModelCatalogTest {
         assertEquals("语音合成", offers[1].title)
         assertEquals("约 116MB", offers[1].sizeLabel)
         assertEquals("意图理解", offers[2].title)
-        assertEquals("约 47MB", offers[2].sizeLabel)
+        assertEquals("约 12MB", offers[2].sizeLabel)
         assertTrue(offers[0].isConfigured())
         assertTrue(offers[1].isConfigured())
         assertTrue(offers[2].isConfigured())
@@ -86,7 +86,7 @@ class OfficialModelCatalogTest {
     fun intentCatalogIsFourHttpsFilesNotTestdataGemm() {
         val offer = OfficialModelCatalog.standard()[2]
         assertEquals(4, offer.pack.files.size)
-        assertTrue(offer.pack.files.all { it.httpsUrl.contains("intent-minirbt-v1") })
+        assertTrue(offer.pack.files.all { it.httpsUrl.contains("intent-minirbt-v2") })
         assertTrue(offer.pack.files.all { SHA256.matches(it.sha256) })
         val testdata = javaClass.getResourceAsStream("/intent-pack/model.onnx")!!.use { it.readBytes() }
         val testdataSha = java.security.MessageDigest.getInstance("SHA-256")

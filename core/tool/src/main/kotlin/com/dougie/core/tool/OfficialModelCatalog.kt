@@ -30,7 +30,7 @@ fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
 
 object OfficialModelCatalog {
     private const val INTENT_RELEASE_BASE =
-        "https://github.com/IAmKings/Dougie/releases/download/intent-minirbt-v1"
+        "https://github.com/IAmKings/Dougie/releases/download/intent-minirbt-v2"
     val DEFAULT_ASR_MODEL = ModelSource(
         httpsUrl = "https://huggingface.co/csukuangfj/sherpa-onnx-paraformer-zh-2023-09-14/resolve/main/model.int8.onnx",
         sha256 = "f36a0433bcf096bd6d6f11b80a3ac8bed110bdca632fe0d731df8d1a84475945",
@@ -53,7 +53,7 @@ object OfficialModelCatalog {
     )
     val DEFAULT_INTENT_MODEL = ModelSource(
         httpsUrl = "$INTENT_RELEASE_BASE/model.onnx",
-        sha256 = "e827fc58f39cb2a54d72b962d1ad7afb07118d9fe87b6d57f2e89a36fde43b0d",
+        sha256 = "f5188c95ca75074a8fa83e4fc1472bbac8504669dd976cdeb74b6966f7c93e77",
     )
     val DEFAULT_INTENT_TOKENIZER = ModelSource(
         httpsUrl = "$INTENT_RELEASE_BASE/tokenizer.json",
@@ -112,7 +112,7 @@ object OfficialModelCatalog {
     ): OfflineModelOffer = OfflineModelOffer(
         id = IntentModelLayout.ID,
         title = "意图理解",
-        sizeLabel = "约 47MB",
+        sizeLabel = "约 12MB",
         pack = ModelPack(
             id = IntentModelLayout.ID,
             relativeDir = IntentModelLayout.DIR,

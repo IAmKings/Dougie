@@ -202,17 +202,28 @@ def main() -> int:
     if "token_type_ids" in dummy:
         names.append("token_type_ids")
         args_in = args_in + (dummy["token_type_ids"],)
+    onnx_fp32 = args.out / "model.fp32.onnx"
     onnx_path = args.out / "model.onnx"
     torch.onnx.export(
         LogitsOnly(model).eval(),
         args_in,
-        str(onnx_path),
+        str(onnx_fp32),
         input_names=names,
         output_names=["logits"],
         opset_version=14,
         dynamic_axes=None,
         dynamo=False,
     )
+    quantize_onnx(onnx_fp32, onnx_path)
+    onnx_fp32.unlink(missing_ok=True)
+    pack_bytes = onnx_path.stat().st_size
+    print(f"quantized model.onnx bytes={pack_bytes}")
+    if pack_bytes > 20 * 1024 * 1024:
+        raise SystemExit(f"quantized model exceeds 20MB: {pack_bytes}")
+    q_acc, q_ok = onnx_heldout_accuracy(onnx_path, tokenizer, held_rows, args.max_len)
+    print(f"quantized heldout accuracy={q_acc:.3f} {q_ok}/{len(held_rows)}")
+    if q_acc < 0.9:
+        raise SystemExit("quantized held-out accuracy below 0.90")
     (args.out / "tokenizer.json").write_text(
         json.dumps(
             {
@@ -233,6 +244,51 @@ def main() -> int:
     shutil.copyfile(vocab_src, args.out / "vocab.txt")
     print(f"wrote {args.out}")
     return 0
+
+
+def quantize_onnx(src: Path, dest: Path) -> None:
+    from onnxruntime.quantization import QuantType, quantize_dynamic
+
+    quantize_dynamic(
+        model_input=str(src),
+        model_output=str(dest),
+        weight_type=QuantType.QInt8,
+        per_channel=True,
+        extra_options={"WeightSymmetric": True},
+    )
+
+
+def onnx_heldout_accuracy(
+    onnx_path: Path,
+    tokenizer,
+    held_rows: list[dict],
+    max_len: int,
+) -> tuple[float, int]:
+    import numpy as np
+    import onnxruntime as ort
+
+    session = ort.InferenceSession(str(onnx_path), providers=["CPUExecutionProvider"])
+    input_names = {i.name for i in session.get_inputs()}
+    n_ok = 0
+    for row in held_rows:
+        enc = tokenizer(
+            row["text"],
+            max_length=max_len,
+            padding="max_length",
+            truncation=True,
+            return_tensors="np",
+        )
+        feeds = {}
+        for name in input_names:
+            if name not in enc:
+                continue
+            arr = enc[name]
+            feeds[name] = arr.astype(np.int64)
+        logits = session.run(None, feeds)[0]
+        pred = int(np.argmax(logits, axis=-1).reshape(-1)[0])
+        if LABELS[pred] == row["intent"]:
+            n_ok += 1
+    return n_ok / len(held_rows), n_ok
 
 
 if __name__ == "__main__":

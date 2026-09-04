@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "MiniRBT catalog GitHub Release; no Play ONNX"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Settings intent sizeLabel ~47MB fp32"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No classifier text in logs"}
+{"file": ".trellis/tasks/archive/2026-08/08-30-official-intent-pack/prd.md", "reason": "Original int8 10-20MB target"}
