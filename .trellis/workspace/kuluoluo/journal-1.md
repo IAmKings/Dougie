@@ -1003,3 +1003,32 @@ Chat 短路径截屏成功后把彩色预览钉进作曲家；LLM 截屏不钉�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 46: 意图包 int8
+
+**Date**: 2026-09-04
+**Task**: 意图包 int8
+**Branch**: `master`
+
+### Summary
+
+MiniRBT 意图 ONNX 动态量化约 12MB，Release intent-minirbt-v2。held-out 81/88。真机意图分类测试通过。
+
+### Main Changes
+
+- train_export 量化；catalog sizeLabel 约 12MB；v1 保留回滚
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `277e13e` | (see git log) |
+
+### Testing
+
+- [OK] JVM catalog+checkChannelLeak；真机下载 v2 后分类测试通过
+
+### Status
+
+[OK] **Completed**
