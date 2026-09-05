@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Must not set localLlmReady from intent ONNX"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play APK no GGUF"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Probe must not log prompt text"}

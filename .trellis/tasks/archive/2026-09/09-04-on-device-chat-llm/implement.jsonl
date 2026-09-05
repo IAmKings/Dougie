@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/archive/2026-08/08-19-local-model-import/research/android-intent-runtime.md", "reason": "LiteRT-LM Android API; avoid llama Vulkan/GGUF"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "localLlmReady must stay false until chat model exists"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompts or completions in Logcat"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Do not commit GGUF; checkChannelLeak"}
