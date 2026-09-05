@@ -1032,3 +1032,24 @@ MiniRBT 意图 ONNX 动态量化约 12MB，Release intent-minirbt-v2。held-out 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 47: LiteRT-LM 真机选型
+
+**Date**: 2026-09-06
+**Task**: LiteRT-LM 真机选型
+**Branch**: `master`
+
+### Summary
+
+侧载 LiteRT-LM 0.16.1 探针；PJZ110 CPU/OpenCL GPU 均成功出中文。采用 LiteRT-LM，不接 Loop。下一刀：设置下载 + 本地 LlmProvider。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f661dce` | (see git log) |
+
+### Status
+
+[OK] **Completed**
