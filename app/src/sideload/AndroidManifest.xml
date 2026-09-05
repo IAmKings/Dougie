@@ -1,6 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <application>
+        <uses-native-library
+            android:name="libvndksupport.so"
+            android:required="false" />
+        <uses-native-library
+            android:name="libOpenCL.so"
+            android:required="false" />
+        <activity
+            android:name="com.dougie.tool.chatllm.ChatLlmSpikeActivity"
+            android:exported="true"
+            android:label="LiteRT-LM 探针" />
         <service
             android:name=".DougieOverlayService"
             android:exported="false" />

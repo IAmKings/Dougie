@@ -4,7 +4,7 @@
 
 ## Overview
 
-- Language: Kotlin 2.0.21, JVM 17 (`compilerOptions.jvmTarget` / `kotlinOptions.jvmTarget = "17"`). Gradle commands need OpenJDK 17 (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` on this machine).
+- Language: Kotlin 2.0.21, JVM 17 (`compilerOptions.jvmTarget` / `kotlinOptions.jvmTarget = "17"`). Gradle commands need OpenJDK 17 (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` on this machine). Sideload `:tool:chatllm` compiles against Java 17 stubs because LiteRT-LM 0.16.1 ships class file 65; the real AAR is `runtimeOnly`.
 - Tests: JUnit 4 (`org.junit.Test`) + `kotlinx-coroutines-test` (`runTest`, `StandardTestDispatcher`, `advanceUntilIdle`). HTTP: OkHttp `MockWebServer` in `:core:llm`.
 - There is **no** ktlint, detekt, or Android Lint `lint {}` block. GitHub Actions: `.github/workflows/ci.yml` (push/PR) and `.github/workflows/release.yml` (`v*` tags). Reviewers still run Gradle locally on touched modules plus `:app:checkChannelLeak` when Play/Sideload classpath, manifests, or model assets change.
 - User-visible failure copy is Chinese constants on `UserFacingErrors` (`core/model/.../AgentException.kt`). Tests assert those strings, not English paraphrases.
@@ -14,10 +14,10 @@
 - `android.*` inside `:core:*` (breaks JVM tests and `:cli` reuse). Put `BatteryManager` / `CalendarContract` / `ClipboardManager` / MediaProjection / JNI loaders in `:tool:system` or `:tool:accessibility`.
 - Silent `FakeLlmProvider` on the app chat path. Fake is for JVM tests (`LoopEngineTest`) and `:cli` only.
 - Mapping `CancellationException` / OkHttp `call.cancel()` to `LLM_FAILED` or `MODEL_DOWNLOAD_FAILED`. Rethrow cancel; `TaskManager.cancel()` is `UserFacingErrors.CANCELLED`.
-- Committing weights or native blobs: `*.onnx` (except the tiny testdata allowlisted in `.gitignore`), `*.gguf`, `**/jniLibs/`, `third_party/llama.cpp/`, `/eval/` wav dumps.
+- Committing weights or native blobs: `*.onnx` (except the tiny testdata allowlisted in `.gitignore`), `*.gguf`, `*.litertlm`, `**/jniLibs/`, `third_party/llama.cpp/`, `/eval/` wav dumps.
 - Logging prompts, keys, HTTP bodies, PCM, transcripts, fact `content`, or `snapshot_json` — see `logging-guidelines.md`.
 - Registering `ModelInstaller` / `ModelImporter` as `AgentTool`. The LLM must not pick download URLs.
-- Putting `TapSwipeTool` or `DougieAccessibilityService` on the Play classpath. `checkChannelLeak` fails if play merged manifest contains `AccessibilityService` / `TapSwipeTool` / `NotificationListenerService` / `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `TYPE_APPLICATION_OVERLAY`, or the play APK contains `models/asr`, `models/tts`, `*.onnx`, `models/intent`, or `*.gguf`. It also fails if play or sideload merged manifest is missing `DougieChatTileService` or `android.service.quicksettings.action.QS_TILE`, or if sideload is missing `SYSTEM_ALERT_WINDOW` / `DougieOverlayService`. Manifest `POST_NOTIFICATIONS` is **not** a leak.
+- Putting `TapSwipeTool` or `DougieAccessibilityService` on the Play classpath. `checkChannelLeak` fails if play merged manifest contains `AccessibilityService` / `TapSwipeTool` / `NotificationListenerService` / `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `TYPE_APPLICATION_OVERLAY` / `ChatLlmSpikeActivity`, or the play APK contains `models/asr`, `models/tts`, `*.onnx`, `models/intent`, `*.gguf`, or `litertlm` in zip entry names. Play and sideload APKs must not contain `models/chat` or `*.litertlm`. Play runtime classpath must not include `litertlm` or `:tool:chatllm`. It also fails if play or sideload merged manifest is missing `DougieChatTileService` or `android.service.quicksettings.action.QS_TILE`, or if sideload is missing `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `ChatLlmSpikeActivity`. Manifest `POST_NOTIFICATIONS` is **not** a leak.
 - `com.android.library` on `:core:*`. Same for `:cli`: no Android plugin, not in the APK, mosaic **0.14.0** only (0.18.0 is Kotlin 2.2 metadata vs repo 2.0.21).
 
 ## Required Patterns
@@ -50,6 +50,6 @@ Full-eval ASR (`eval/asr/*.wav`, CER ≤ 5%) is gitignored. `FullEvalSet.isPrese
 - [ ] `lastError` is a `UserFacingErrors` Chinese string, not a stack trace or HTTP body
 - [ ] No new Logcat of prompts, keys, tool secret args, audio, or facts
 - [ ] Cancel / timeout paths do not become `LLM_FAILED`
-- [ ] Play APK cannot see Accessibility, NotificationListener, overlay (`SYSTEM_ALERT_WINDOW` / `DougieOverlayService`), or ONNX/GGUF; both flavors still declare the QS Tile; sideload declares overlay; `POST_NOTIFICATIONS` is allowed (run `checkChannelLeak` if flavors, manifests, assets, or JNI changed)
+- [ ] Play APK cannot see Accessibility, NotificationListener, overlay (`SYSTEM_ALERT_WINDOW` / `DougieOverlayService`), ONNX/GGUF, LiteRT-LM (`litertlm` / `:tool:chatllm` classpath), `ChatLlmSpikeActivity`, or chat weights (`models/chat` / `*.litertlm`); both flavors still declare the QS Tile; sideload declares overlay and `ChatLlmSpikeActivity` (`exported=true`); `POST_NOTIFICATIONS` is allowed (run `checkChannelLeak` if flavors, manifests, assets, or JNI changed)
 - [ ] Tests use Fake ports / Fake LLM / MockWebServer, not live cloud
 - [ ] New user-facing strings added to `UserFacingErrors` and asserted in a test

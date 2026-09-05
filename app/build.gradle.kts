@@ -126,6 +126,7 @@ dependencies {
     implementation(project(":data:tasks"))
     implementation(project(":tool:system"))
     add("sideloadImplementation", project(":tool:accessibility"))
+    add("sideloadRuntimeOnly", project(":tool:chatllm"))
     implementation(project(":core:runtime"))
     implementation(project(":core:llm"))
     implementation(project(":core:tool"))
@@ -174,6 +175,7 @@ tasks.register("checkChannelLeak") {
             "DougieOverlayService",
             "TYPE_APPLICATION_OVERLAY",
             "QUERY_ALL_PACKAGES",
+            "ChatLlmSpikeActivity",
         ).forEach { needle ->
             check(!playManifest.contains(needle)) {
                 "play merged manifest leaked $needle in $playManifestFile"
@@ -204,6 +206,12 @@ tasks.register("checkChannelLeak") {
         check(sideloadManifest.contains("DougieOverlayService")) {
             "sideload merged manifest missing DougieOverlayService"
         }
+        check(sideloadManifest.contains("ChatLlmSpikeActivity")) {
+            "sideload merged manifest missing ChatLlmSpikeActivity"
+        }
+        check(activityExported(sideloadManifest, "ChatLlmSpikeActivity", exported = true)) {
+            "sideload ChatLlmSpikeActivity must be exported=true so adb can start it"
+        }
         check(Regex("""android:name="[^"]*DougieAccessibilityService"[^>]*android:exported="false"""").containsMatchIn(sideloadManifest.replace("\n", " "))) {
             "sideload DougieAccessibilityService must be exported=false"
         }
@@ -212,6 +220,14 @@ tasks.register("checkChannelLeak") {
             component.id.displayName.contains("tool:accessibility")
         }
         check(!leaked) { "playDebugRuntimeClasspath includes :tool:accessibility" }
+        val chatllmOnPlay = playClasspath.incoming.resolutionResult.allComponents.any { component ->
+            component.id.displayName.contains("tool:chatllm")
+        }
+        check(!chatllmOnPlay) { "playDebugRuntimeClasspath includes :tool:chatllm" }
+        val litertlmOnPlay = playClasspath.incoming.resolutionResult.allComponents.any { component ->
+            component.id.displayName.contains("litertlm")
+        }
+        check(!litertlmOnPlay) { "playDebugRuntimeClasspath includes litertlm" }
 
         val playApk = flavorDebugApk("play")
         apkEntryNames(playApk).forEach { name ->
@@ -224,10 +240,15 @@ tasks.register("checkChannelLeak") {
             check(!name.endsWith(".onnx")) {
                 "play APK leaked .onnx: $name in $playApk"
             }
+            checkNoChatLlmWeight(name, playApk)
             checkNoIntentModel(name, playApk)
+            check(!name.contains("litertlm", ignoreCase = true)) {
+                "play APK leaked litertlm: $name in $playApk"
+            }
         }
         val sideloadApk = flavorDebugApk("sideload")
         apkEntryNames(sideloadApk).forEach { name ->
+            checkNoChatLlmWeight(name, sideloadApk)
             checkNoIntentModel(name, sideloadApk)
         }
     }
@@ -253,4 +274,19 @@ fun checkNoIntentModel(name: String, apk: File) {
     check(!name.endsWith(".gguf")) {
         "APK leaked .gguf: $name in $apk"
     }
+}
+
+fun checkNoChatLlmWeight(name: String, apk: File) {
+    check(!name.contains("models/chat")) {
+        "APK leaked models/chat: $name in $apk"
+    }
+    check(!name.endsWith(".litertlm")) {
+        "APK leaked .litertlm: $name in $apk"
+    }
+}
+
+/** Attribute order in merged manifests is not stable; match the whole activity tag. */
+fun activityExported(manifest: String, classSimpleName: String, exported: Boolean): Boolean {
+    val tag = Regex("""<activity\b[^>]*$classSimpleName[^>]*>""").find(manifest.replace("\n", " "))?.value
+    return tag != null && tag.contains("""android:exported="$exported"""")
 }

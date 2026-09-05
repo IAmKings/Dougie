@@ -16,6 +16,8 @@ documentfile = "1.0.1"
 # 0.18.0 is Kotlin 2.2 metadata; this repo is Kotlin 2.0.21. 0.14.0 is the newest Mosaic compiled with Kotlin 2.0.x.
 mosaic = "0.14.0"
 kotlinxCli = "0.3.6"
+# Latest stable on Google Maven as of 2026-08-18 (0.17.0-alpha1 is pre-release).
+litertlm = "0.16.1"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -44,6 +46,7 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

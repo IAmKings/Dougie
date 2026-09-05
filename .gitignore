@@ -21,6 +21,7 @@ local.properties
 !core/tool/src/test/resources/intent-pack/model.onnx
 !feature/settings/src/test/resources/intent-pack/model.onnx
 *.gguf
+*.litertlm
 **/.cxx/
 # Sideload may drop weights in app/src/sideload/assets/models/{asr,tts}/ (layout READMEs stay).
 **/jniLibs/
