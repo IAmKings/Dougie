@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Back must match onBack callbacks; no Nav Compose"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "app unit tests for pop helper"}
