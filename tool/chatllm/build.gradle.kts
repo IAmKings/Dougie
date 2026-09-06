@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -13,6 +14,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 }
 
@@ -35,9 +40,20 @@ val litertlmStubJar =
     }
 
 dependencies {
+    implementation(project(":core:llm"))
+    implementation(project(":core:tool"))
+    implementation(libs.kotlinx.coroutines.core)
     // AAR is class file 65; stubs are Java 17 so CI javac 17 can compile. Runtime is the real AAR.
     compileOnly(files(litertlmStubJar.map { it.archiveFile }))
     runtimeOnly(libs.litertlm.android) {
         exclude(group = "org.jetbrains.kotlin")
     }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    dependsOn(litertlmStubJar)
+}
+
+tasks.matching { it is JavaCompile && it.name != "compileLitertlmStubs" }.configureEach {
+    dependsOn(litertlmStubJar)
 }

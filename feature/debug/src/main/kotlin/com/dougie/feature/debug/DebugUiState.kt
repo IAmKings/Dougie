@@ -31,6 +31,7 @@ fun AgentTask.toDebugTaskSnapshot(): DebugTaskSnapshot = DebugTaskSnapshot(
     lastError = lastError,
     completionPath = when (completionPath) {
         CompletionPath.LOCAL_INTENT -> "本地意图"
+        CompletionPath.LOCAL_LLM -> "本地 LLM"
         CompletionPath.REMOTE_LLM -> "远程 LLM"
         null -> "无"
     },

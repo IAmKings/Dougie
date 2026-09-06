@@ -10,6 +10,7 @@ import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.EgressPolicy
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
@@ -89,6 +90,7 @@ class LoopEngineTest {
             assertEquals(keys.distinct(), keys)
             assertNotNull(task.finalAnswer)
             assertTrue(task.finalAnswer!!.contains("63"))
+            assertEquals(CompletionPath.LOCAL_LLM, task.completionPath)
         }
     }
 
@@ -156,7 +158,33 @@ class LoopEngineTest {
         val result = engine.run(AgentTask(taskId = "blocked", input = "电量?")) {}
         assertEquals(TaskStatus.FAILED, result.status)
         assertEquals(UserFacingErrors.EGRESS_BLOCKED, result.lastError)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
         assertEquals(false, provider.called)
+    }
+
+    @Test
+    fun remoteProviderSetsRemoteLlmCompletionPath() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = false
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.FinalAnswer("云端回复")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            gateway = EgressGateway(
+                policy = { EgressPolicy(allowCloud = true) },
+                apiKey = { "sk-test" },
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "remote-ok", input = "你好")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("云端回复", result.finalAnswer)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
     }
 
     @Test
@@ -179,7 +207,7 @@ class LoopEngineTest {
         val result = engine.run(AgentTask(taskId = "llm-timeout", input = "电量?")) {}
         assertEquals(TaskStatus.FAILED, result.status)
         assertEquals(UserFacingErrors.LLM_TIMEOUT, result.lastError)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -979,7 +1007,7 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
         assertTrue(result.toolTrace.isEmpty())
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1017,7 +1045,7 @@ class LoopEngineTest {
         assertEquals(1, port.classifyCount)
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1041,7 +1069,7 @@ class LoopEngineTest {
             assertEquals(1, spy.streamCount)
             assertEquals("走了云端", result.finalAnswer)
             assertTrue(result.toolTrace.isEmpty())
-            assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+            assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
         }
     }
 
@@ -1168,7 +1196,7 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
         assertEquals(0, clip.writeCount)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1220,7 +1248,7 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
         assertEquals(0, port.launchCount)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1248,7 +1276,7 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
         assertEquals(0, port.launchCount)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1340,6 +1368,30 @@ class LoopEngineTest {
         assertEquals(0, spy.streamCount)
         assertEquals("剪贴板内容：hello", result.finalAnswer)
         assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun localChatProviderSkipsIntentEvenIfClipboardClassified() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "clipboard_read", route = "clipboard", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("clipboard_read" to ClipboardReadTool(FakeClipboardPort(text = "hello"))),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-local-chat", input = "你是本地模型吗？")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(1, spy.streamCount)
+        assertEquals(0, port.classifyCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
+        assertTrue(result.toolTrace.none { it.toolName == "clipboard_read" })
     }
 
     @Test
@@ -1488,7 +1540,7 @@ class LoopEngineTest {
         assertEquals(0, port.classifyCount)
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1539,7 +1591,7 @@ class LoopEngineTest {
         assertEquals(TaskStatus.COMPLETED, result.status)
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
-        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     private class SpyLocalLlm : LlmProvider {

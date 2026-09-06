@@ -2,6 +2,7 @@ package com.dougie.feature.settings
 
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.ModelImporter
 import com.dougie.core.tool.ModelInstaller
@@ -347,7 +348,7 @@ class OfflineModelDownloads(
             if (status.needsReselect) TREE_RESELECT else TREE_MISSING
 
         private fun probeTimeoutMs(id: String): Long =
-            if (id == IntentModelLayout.ID) {
+            if (id == IntentModelLayout.ID || id == ChatModelLayout.ID) {
                 180_000L
             } else {
                 90_000L

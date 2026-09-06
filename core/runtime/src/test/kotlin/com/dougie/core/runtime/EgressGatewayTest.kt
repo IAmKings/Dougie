@@ -2,6 +2,7 @@ package com.dougie.core.runtime
 
 import com.dougie.core.llm.LlmProvider
 import com.dougie.core.llm.OpenAICompatibleProvider
+import com.dougie.core.llm.SelectingLlmProvider
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressBlockedException
@@ -17,6 +18,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EgressGatewayTest {
@@ -110,6 +112,31 @@ class EgressGatewayTest {
         } finally {
             server.shutdown()
         }
+    }
+
+    @Test
+    fun selectingLocalBypassesCloudChecks() = runTest {
+        val local = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.FinalAnswer("local-ok")
+            }
+        }
+        val cloud = CountingProvider()
+        val provider = SelectingLlmProvider(
+            cloud = cloud,
+            local = local,
+            cloudConfigured = { false },
+            localReady = { true },
+        )
+        val gateway = EgressGateway(
+            policy = { EgressPolicy(allowCloud = false) },
+            apiKey = { null },
+        )
+        val result = gateway.complete(provider, LoopContext(AgentTask("t", "hi")))
+        assertEquals(LlmResponse.FinalAnswer("local-ok"), result)
+        assertFalse(cloud.called)
+        assertTrue(provider.isLocal)
     }
 
     private class CountingProvider : LlmProvider {

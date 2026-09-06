@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import com.dougie.core.llm.LlmProvider
 import com.dougie.core.model.AgentTask
+import com.dougie.tool.chatllm.ChatLlmProvider
 import com.dougie.feature.permissions.PermissionItem
 import com.dougie.feature.permissions.PermissionKind
 import androidx.compose.foundation.border
@@ -41,7 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dougie.core.tool.BundledModelSeed
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.feature.chat.DougieColors
+import java.io.File
 import java.io.IOException
 
 object ChannelHooks {
@@ -57,6 +61,11 @@ object ChannelHooks {
             }
         }
     }
+
+    fun localChatProvider(context: Context): LlmProvider? = ChatLlmProvider.get(context)
+
+    fun localChatReady(filesDir: File): Boolean =
+        ChatModelLayout.isPresent(File(filesDir, ChatModelLayout.DIR))
 
     @Composable
     fun Root(content: @Composable () -> Unit) {

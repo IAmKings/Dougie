@@ -51,5 +51,8 @@ class ShortcutScreenPinTest {
         val llm = localScreenTask().copy(completionPath = CompletionPath.REMOTE_LLM)
         assertFalse(ShortcutScreenPin.adoptIntoComposer(llm, session, store))
         assertTrue(session.snapshot().isEmpty())
+        val localLlm = localScreenTask().copy(completionPath = CompletionPath.LOCAL_LLM)
+        assertFalse(ShortcutScreenPin.adoptIntoComposer(localLlm, session, store))
+        assertTrue(session.snapshot().isEmpty())
     }
 }

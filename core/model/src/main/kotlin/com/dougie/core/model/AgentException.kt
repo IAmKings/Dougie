@@ -46,9 +46,12 @@ object UserFacingErrors {
     const val MODEL_TREE_MISSING = "请选择模型目录"
     const val MODEL_TREE_RESELECT = "请再次选择模型目录"
     const val MODEL_TREE_WRITE_FAILED = "无法写入模型目录，请重新选择有写入权限的文件夹。"
+    const val CHAT_MODEL_MISSING = "离线对话模型尚未就绪，无法闲聊。"
+    const val CHAT_ENGINE_NOT_READY = "离线对话引擎尚未接入，无法闲聊。"
     const val MODEL_PROBE_ASR_OK = "语音识别测试通过。"
     const val MODEL_PROBE_TTS_OK = "语音合成测试通过。"
     const val MODEL_PROBE_INTENT_OK = "意图分类测试通过。"
+    const val MODEL_PROBE_CHAT_OK = "对话模型测试通过。"
     const val MODEL_PROBE_TIMEOUT = "离线模型测试超时，请稍后重试。"
     const val ATTACHMENTS_FULL = "最多附上 4 张"
 }

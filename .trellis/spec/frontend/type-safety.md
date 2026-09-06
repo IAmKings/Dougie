@@ -48,5 +48,5 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 - `Any` / untyped `Map<String, Any>` as Chat item payloads. Use `ChatItem` / `ToolTraceEntry`.
 - Decoding LLM HTTP or `snapshot_json` inside `:feature:*`.
 - Treating `lastError` as free-form English and branching on `contains("timeout")`. Use `UserFacingErrors`.
-- Passing intent-classifier readiness as `localLlmReady = true`. Comment in `MainActivity`: intent GGUF/ONNX is not a chat LLM.
+- Passing intent-classifier readiness as `localLlmReady = true`. Chat soul mark uses `ChannelHooks.localChatReady` each compose (`ChatModelLayout.isPresent` on sideload only; Play is always false). Intent GGUF/ONNX is not a chat LLM.
 - Adding `@Serializable` to UI state just to log it (Debug must not grow `input` / `resultJson` / `args` fields — `DebugUiStateTest` forbids those names).

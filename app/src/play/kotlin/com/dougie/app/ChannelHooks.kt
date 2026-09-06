@@ -1,6 +1,7 @@
 package com.dougie.app
 
 import android.content.Context
+import com.dougie.core.llm.LlmProvider
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dougie.feature.chat.DougieColors
+import java.io.File
 
 object ChannelHooks {
     @Suppress("UNUSED_PARAMETER")
@@ -23,6 +25,12 @@ object ChannelHooks {
     @Suppress("UNUSED_PARAMETER")
     fun seedBundledModels(context: Context) {
     }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun localChatProvider(context: Context): LlmProvider? = null
+
+    @Suppress("UNUSED_PARAMETER")
+    fun localChatReady(filesDir: File): Boolean = false
 
     @Suppress("UNUSED_PARAMETER")
     fun syncOverlay(context: Context) {

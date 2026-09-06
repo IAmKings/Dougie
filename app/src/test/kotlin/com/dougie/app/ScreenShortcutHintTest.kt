@@ -28,6 +28,7 @@ class ScreenShortcutHintTest {
         )
         assertTrue(ScreenShortcutHint.shouldShow(ok))
         assertFalse(ScreenShortcutHint.shouldShow(ok.copy(completionPath = CompletionPath.REMOTE_LLM)))
+        assertFalse(ScreenShortcutHint.shouldShow(ok.copy(completionPath = CompletionPath.LOCAL_LLM)))
         assertFalse(ScreenShortcutHint.shouldShow(ok.copy(status = TaskStatus.FAILED)))
         assertFalse(
             ScreenShortcutHint.shouldShow(

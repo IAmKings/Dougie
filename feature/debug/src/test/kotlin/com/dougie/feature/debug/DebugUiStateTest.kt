@@ -56,6 +56,18 @@ class DebugUiStateTest {
     }
 
     @Test
+    fun mapsLocalLlmPath() {
+        val snapshot = AgentTask(
+            taskId = "t-local-llm",
+            input = "你是谁",
+            status = TaskStatus.COMPLETED,
+            completionPath = CompletionPath.LOCAL_LLM,
+        ).toDebugTaskSnapshot()
+        assertEquals("本地 LLM", snapshot.completionPath)
+        assertFalse(snapshot.toString().contains("你是谁"))
+    }
+
+    @Test
     fun mapsAuditEntryWithoutArgs() {
         val row = AuditEntry(
             taskId = "t2",

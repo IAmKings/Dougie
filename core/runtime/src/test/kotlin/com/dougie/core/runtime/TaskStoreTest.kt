@@ -241,6 +241,16 @@ class TaskStoreTest {
         )
         val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
         assertEquals(CompletionPath.LOCAL_INTENT, restored.completionPath)
+        val localLlm = original.copy(completionPath = CompletionPath.LOCAL_LLM)
+        assertEquals(
+            CompletionPath.LOCAL_LLM,
+            TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(localLlm)).completionPath,
+        )
+        val remote = original.copy(completionPath = CompletionPath.REMOTE_LLM)
+        assertEquals(
+            CompletionPath.REMOTE_LLM,
+            TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(remote)).completionPath,
+        )
     }
 
     @Test

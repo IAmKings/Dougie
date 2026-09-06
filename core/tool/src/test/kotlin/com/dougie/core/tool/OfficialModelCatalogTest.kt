@@ -1,5 +1,7 @@
 package com.dougie.core.tool
 
+import com.dougie.core.model.UserFacingErrors
+
 import com.dougie.core.tool.SHA256
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -19,10 +21,10 @@ class OfficialModelCatalogTest {
     }
 
     @Test
-    fun standardCatalogHasAsrTtsAndIntent() {
+    fun standardCatalogHasAsrTtsIntentAndChat() {
         val offers = OfficialModelCatalog.standard()
-        assertEquals(3, offers.size)
-        assertEquals(listOf("asr", "tts", "intent"), offers.map { it.id })
+        assertEquals(4, offers.size)
+        assertEquals(listOf("asr", "tts", "intent", "chat"), offers.map { it.id })
         assertEquals("语音识别", offers[0].title)
         assertEquals("约 230MB", offers[0].sizeLabel)
         assertEquals("语音合成", offers[1].title)
@@ -46,6 +48,16 @@ class OfficialModelCatalogTest {
         assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, offers[2].pack.files[0].sha256)
         assertTrue(offers[2].pack.files[0].httpsUrl.startsWith("https://"))
         assertTrue(offers[2].pack.files.all { it.httpsUrl.startsWith("https://") })
+        assertEquals("对话模型", offers[3].title)
+        assertEquals("约 328MB", offers[3].sizeLabel)
+        assertTrue(offers[3].isConfigured())
+        assertEquals(ChatModelLayout.DIR, offers[3].pack.relativeDir)
+        assertEquals(listOf(ChatModelLayout.MODEL_FILE), offers[3].pack.files.map { it.name })
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.httpsUrl, offers[3].pack.files[0].httpsUrl)
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.sha256, offers[3].pack.files[0].sha256)
+        assertEquals(UserFacingErrors.MODEL_PROBE_CHAT_OK, "对话模型测试通过。")
+        assertEquals(UserFacingErrors.CHAT_MODEL_MISSING, "离线对话模型尚未就绪，无法闲聊。")
+        assertEquals(UserFacingErrors.CHAT_ENGINE_NOT_READY, "离线对话引擎尚未接入，无法闲聊。")
     }
 
     @Test
@@ -108,6 +120,22 @@ class OfficialModelCatalogTest {
             File(packDir, IntentModelLayout.LABELS_FILE).writeText("query_time")
             assertFalse(offer.isInstalled(dir))
             File(packDir, IntentModelLayout.VOCAB_FILE).writeText("[PAD]\n")
+            assertTrue(offer.isInstalled(dir))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+    @Test
+    fun isInstalledUsesChatLayout() {
+        val dir = Files.createTempDirectory("model-root").toFile()
+        try {
+            val offer = OfficialModelCatalog.chat(https)
+            assertFalse(offer.isInstalled(dir))
+            val packDir = File(dir, ChatModelLayout.DIR)
+            packDir.mkdirs()
+            File(packDir, "other.litertlm").writeText("x")
+            assertFalse(offer.isInstalled(dir))
+            File(packDir, ChatModelLayout.MODEL_FILE).writeText("x")
             assertTrue(offer.isInstalled(dir))
         } finally {
             dir.deleteRecursively()

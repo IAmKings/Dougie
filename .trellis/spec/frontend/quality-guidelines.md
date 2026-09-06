@@ -13,7 +13,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 - Running `LoopEngine` / OkHttp / `BatteryManager` / `CalendarContract` / `ClipboardManager` from a feature composable. Chat collects `TaskManager.task`; tools stay in `:core:tool` + `:tool:system`.
 - A second `mutableStateOf(TaskStatus)` in a ViewModel. Map from `AgentTask` (see `state-management.md`).
 - Showing prompts, API keys, `resultJson`, tool args, transcripts, or `snapshot_json` on Debug. `DebugUiStateTest` asserts those field names are absent.
-- Auto-scanning the SAF model tree when Settings opens; auto-download without confirm; treating intent ONNX as a chat LLM (`localLlmReady` must stay false until a local **chat** model exists).
+- Auto-scanning the SAF model tree when Settings opens; auto-download without confirm; treating intent ONNX as a chat LLM (`localLlmReady` must stay false until a local **chat** model exists on sideload; Play `ChannelHooks.localChatReady` is always false).
 - Using `Noob-Dougie` as the launcher or as the default Chat avatar when a provider is usable. Mapping is `intelligenceMark(...)` in `:feature:chat`.
 - English-only user chrome, “KISS”, or a lone “正在思考” without a loop number (`PRD` §11.1).
 - A TileService or `TaskProgressNotifier` in `:feature:chat`, a Tile/notice that calls `TaskManager.submit`, or a `NotificationListenerService`.
@@ -24,7 +24,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 - `*Route` collects `StateFlow` with `collectAsStateWithLifecycle` and forwards lambdas into a stateless `*Screen`.
 - Activity-scoped ViewModels that list persisted data (`MemoryViewModel`, `HistoryViewModel`) must `refresh()` in `LaunchedEffect(Unit)` when the route is shown — `init` alone is stale after Chat writes a fact.
 - Settings form is local until **保存配置**; `memoryEnabled` and `modelTreeUri` must be copied on save so they are not reset. Tree URI is also persisted immediately on folder pick.
-- Offline model **测试** / download: disable other rows while probing; **取消** while in-flight; ASR/TTS timeout 90s, intent 180s; probe on `Dispatchers.Default`.
+- Offline model **测试** / download: disable other rows while probing; **取消** while in-flight; ASR/TTS timeout 90s, intent / chat 180s; probe on `Dispatchers.Default`.
 - Color tokens: duplicate `DougieColors` per feature until more than colors is shared (no `:core:ui` yet).
 
 ## Testing Requirements

@@ -21,6 +21,7 @@ data class AgentTask(
 
 enum class CompletionPath {
     LOCAL_INTENT,
+    LOCAL_LLM,
     REMOTE_LLM,
 }
 

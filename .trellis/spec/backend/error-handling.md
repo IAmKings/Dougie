@@ -54,8 +54,10 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Model directory missing | Download or tree write with no SAF tree | `请选择模型目录` |
 | Model directory grant lost | Prefs still have URI after reinstall / revoked persistable permission | `请再次选择模型目录` |
 | Model directory write failed | DocumentFile create/copy failed | `无法写入模型目录，请重新选择有写入权限的文件夹。` |
-| Model smoke probe | Settings 测试: ASR short silence `transcribe` no throw; TTS `generatePcm` non-empty, no play; intent `classify("现在几点")` no throw (low confidence OK). Missing layout/JNI uses existing 尚未就绪 / TTS_FAILED / INTENT_* copy | Success: `语音识别测试通过。` / `语音合成测试通过。` / `意图分类测试通过。` |
-| Model smoke probe timeout | Probe exceeds 90s (ASR/TTS) or 180s (intent); UI must leave 测试中 | `离线模型测试超时，请稍后重试。` |
+| Model smoke probe | Settings 测试: ASR short silence `transcribe` no throw; TTS `generatePcm` non-empty, no play; intent `classify("现在几点")` no throw (low confidence OK); chat `generate("你好")` no throw and no Logcat of prompt/completion. Missing layout/JNI uses existing 尚未就绪 / TTS_FAILED / INTENT_* / `CHAT_MODEL_MISSING` / `CHAT_ENGINE_NOT_READY` copy | Success: `语音识别测试通过。` / `语音合成测试通过。` / `意图分类测试通过。` / `对话模型测试通过。` |
+| Chat pack missing | `filesDir/models/chat/` missing the catalog `.litertlm` | `离线对话模型尚未就绪，无法闲聊。` |
+| Chat engine not wired | Play `localChatProvider` is null, or LiteRT init failed | `离线对话引擎尚未接入，无法闲聊。` |
+| Model smoke probe timeout | Probe exceeds 90s (ASR/TTS) or 180s (intent / chat); UI must leave 测试中 | `离线模型测试超时，请稍后重试。` |
 
 `AgentException.userMessage` is what LoopEngine copies into `lastError`. Gateway throws before `LlmProvider.stream` is collected, so blocked egress never becomes a network error. Do not map OkHttp `call.cancel()` to `LLM_FAILED`.
 

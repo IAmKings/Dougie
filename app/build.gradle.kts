@@ -51,6 +51,8 @@ android {
             "INTENT_TOKENIZER_SHA256" to "dougie.model.intent.tokenizer.sha256",
             "INTENT_LABELS_URL" to "dougie.model.intent.labels.url",
             "INTENT_LABELS_SHA256" to "dougie.model.intent.labels.sha256",
+            "CHAT_MODEL_URL" to "dougie.model.chat.url",
+            "CHAT_MODEL_SHA256" to "dougie.model.chat.sha256",
         ).forEach { (field, prop) ->
             buildConfigField("String", field, quotedBuildConfig(prop))
         }
@@ -126,7 +128,7 @@ dependencies {
     implementation(project(":data:tasks"))
     implementation(project(":tool:system"))
     add("sideloadImplementation", project(":tool:accessibility"))
-    add("sideloadRuntimeOnly", project(":tool:chatllm"))
+    add("sideloadImplementation", project(":tool:chatllm"))
     implementation(project(":core:runtime"))
     implementation(project(":core:llm"))
     implementation(project(":core:tool"))

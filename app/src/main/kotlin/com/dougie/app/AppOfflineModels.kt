@@ -1,5 +1,6 @@
 package com.dougie.app
 
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.ModelSource
 import com.dougie.core.tool.OfficialModelCatalog
 
@@ -13,5 +14,8 @@ object AppOfflineModels {
         intentModel = ModelSource(BuildConfig.INTENT_MODEL_URL, BuildConfig.INTENT_MODEL_SHA256),
         intentTokenizer = ModelSource(BuildConfig.INTENT_TOKENIZER_URL, BuildConfig.INTENT_TOKENIZER_SHA256),
         intentLabels = ModelSource(BuildConfig.INTENT_LABELS_URL, BuildConfig.INTENT_LABELS_SHA256),
-    )
+        chatModel = ModelSource(BuildConfig.CHAT_MODEL_URL, BuildConfig.CHAT_MODEL_SHA256),
+    ).let { all ->
+        if (BuildConfig.IS_SIDELOAD) all else all.filter { it.id != ChatModelLayout.ID }
+    }
 }

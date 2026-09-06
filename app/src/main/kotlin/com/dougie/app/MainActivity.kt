@@ -138,6 +138,9 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(composerEpoch) {
                     syncChips()
                 }
+                LaunchedEffect(route) {
+                    refreshVoicePacks()
+                }
                 val notifyLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission(),
                 ) { granted ->
@@ -174,8 +177,8 @@ class MainActivity : ComponentActivity() {
                             intelligenceMark = intelligenceMark(
                                 allowCloud = prefs.allowCloud,
                                 apiKeyConfigured = prefs.apiKey.isNotBlank(),
-                                // Intent GGUF is not a chat LLM; keep false until a local chat model exists.
-                                localLlmReady = false,
+                                // Sideload chat .litertlm only; intent ONNX and Play must not light LOCAL.
+                                localLlmReady = ChannelHooks.localChatReady(app.filesDir),
                                 failedLastError = task
                                     ?.takeIf { it.status == TaskStatus.FAILED }
                                     ?.lastError,

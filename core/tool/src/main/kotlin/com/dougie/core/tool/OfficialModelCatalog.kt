@@ -24,6 +24,7 @@ fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
         "asr" -> AsrModelLayout.isPresent(dir)
         "tts" -> TtsModelLayout.isPresent(dir)
         IntentModelLayout.ID -> IntentModelLayout.isPresent(dir)
+        ChatModelLayout.ID -> ChatModelLayout.isPresent(dir)
         else -> false
     }
 }
@@ -66,6 +67,10 @@ object OfficialModelCatalog {
     val DEFAULT_INTENT_VOCAB = ModelSource(
         httpsUrl = "$INTENT_RELEASE_BASE/vocab.txt",
         sha256 = "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c",
+    )
+    val DEFAULT_CHAT_MODEL = ModelSource(
+        httpsUrl = "https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B_dynamic_wi4b32_afp32.litertlm",
+        sha256 = "e3e290109da4388d65a17510a0c66af91c8039f52d2c465868dbc43c09a776cf",
     )
 
     fun asr(
@@ -125,6 +130,21 @@ object OfficialModelCatalog {
         ),
     )
 
+    fun chat(
+        model: ModelSource = ModelSource(),
+    ): OfflineModelOffer = OfflineModelOffer(
+        id = ChatModelLayout.ID,
+        title = "对话模型",
+        sizeLabel = "约 328MB",
+        pack = ModelPack(
+            id = ChatModelLayout.ID,
+            relativeDir = ChatModelLayout.DIR,
+            files = listOf(
+                ModelFileSpec(ChatModelLayout.MODEL_FILE, model.sha256, model.httpsUrl),
+            ),
+        ),
+    )
+
     fun standard(
         asrModel: ModelSource = ModelSource(),
         asrTokens: ModelSource = ModelSource(),
@@ -135,6 +155,7 @@ object OfficialModelCatalog {
         intentTokenizer: ModelSource = ModelSource(),
         intentLabels: ModelSource = ModelSource(),
         intentVocab: ModelSource = ModelSource(),
+        chatModel: ModelSource = ModelSource(),
     ): List<OfflineModelOffer> = listOf(
         asr(asrModel.ifBlank(DEFAULT_ASR_MODEL), asrTokens.ifBlank(DEFAULT_ASR_TOKENS)),
         tts(
@@ -148,6 +169,7 @@ object OfficialModelCatalog {
             intentLabels.ifBlank(DEFAULT_INTENT_LABELS),
             intentVocab.ifBlank(DEFAULT_INTENT_VOCAB),
         ),
+        chat(chatModel.ifBlank(DEFAULT_CHAT_MODEL)),
     )
 }
 

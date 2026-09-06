@@ -3,7 +3,10 @@ package com.dougie.app
 import android.content.Context
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
+import com.dougie.core.model.AgentTask
+import com.dougie.core.model.LoopContext
 import com.dougie.core.tool.AsrModelLayout
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.OnnxIntentEngine
 import com.dougie.core.tool.SherpaSpeechEngine
@@ -24,6 +27,7 @@ object AppOfflineModelProbe {
                 "asr" -> probeAsr(context)
                 "tts" -> probeTts(context)
                 IntentModelLayout.ID -> probeIntent(context)
+                ChatModelLayout.ID -> probeChat(context)
                 else -> ProbeResult(ok = false, message = UserFacingErrors.TOOL_FAILED)
             }
         }
@@ -81,5 +85,16 @@ object AppOfflineModelProbe {
         }
         engine.classify("现在几点")
         return ProbeResult(ok = true, message = UserFacingErrors.MODEL_PROBE_INTENT_OK)
+    }
+
+    private suspend fun probeChat(context: Context): ProbeResult {
+        val modelDir = File(context.filesDir, ChatModelLayout.DIR)
+        if (!ChatModelLayout.isPresent(modelDir)) {
+            throw AgentException(UserFacingErrors.CHAT_MODEL_MISSING)
+        }
+        val local = ChannelHooks.localChatProvider(context)
+            ?: return ProbeResult(ok = false, message = UserFacingErrors.CHAT_ENGINE_NOT_READY)
+        local.generate(LoopContext(AgentTask(taskId = "probe-chat", input = "你好")))
+        return ProbeResult(ok = true, message = UserFacingErrors.MODEL_PROBE_CHAT_OK)
     }
 }

@@ -5,6 +5,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ProcessLifecycleOwner
 import android.app.Application
 import com.dougie.core.llm.OpenAICompatibleProvider
+import com.dougie.core.llm.SelectingLlmProvider
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
@@ -30,6 +31,7 @@ import com.dougie.core.tool.IntentClassifierTool
 import com.dougie.core.tool.OpenAppEntries
 import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SherpaTtsEngine
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.TtsModelLayout
 import com.dougie.core.tool.TtsVoices
@@ -177,7 +179,7 @@ class DougieApplication : Application() {
             IntentClassifierTool.NAME to IntentClassifierTool(intentPort),
         )
         ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
-        val provider = OpenAICompatibleProvider(
+        val cloud = OpenAICompatibleProvider(
             client = http,
             config = {
                 val prefs = preferenceStore.settings.value
@@ -191,6 +193,15 @@ class DougieApplication : Application() {
             toolDescriptors = { tools.values.map { it.descriptor } },
             allowCloud = { preferenceStore.settings.value.allowCloud },
             attachmentJpeg = { attachmentSession.jpeg(it) },
+        )
+        val provider = SelectingLlmProvider(
+            cloud = cloud,
+            local = ChannelHooks.localChatProvider(this),
+            cloudConfigured = {
+                val prefs = preferenceStore.settings.value
+                prefs.allowCloud && prefs.apiKey.isNotBlank()
+            },
+            localReady = { ChatModelLayout.isPresent(File(filesDir, ChatModelLayout.DIR)) },
         )
         val gateway = EgressGateway(
             policy = { EgressPolicy(allowCloud = preferenceStore.settings.value.allowCloud) },
@@ -211,6 +222,7 @@ class DougieApplication : Application() {
                 auditLog = taskStores.auditLog,
                 intentPort = intentPort,
                 openAppEntries = { OpenAppEntries.parse(preferenceStore.openAppsJson.value) },
+                skipIntentShortcut = { provider.isLocal },
             ),
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,

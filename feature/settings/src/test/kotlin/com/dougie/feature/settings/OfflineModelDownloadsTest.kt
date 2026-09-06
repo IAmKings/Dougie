@@ -549,6 +549,44 @@ class OfflineModelDownloadsTest {
         }
     }
 
+    @Test
+    fun chatProbeWaitsLongerThanAsrTimeout() = runTest {
+        val installer = ModelInstaller { _, dest, progress ->
+            dest.writeBytes(hello)
+            progress(hello.size.toLong(), hello.size.toLong())
+        }
+        val dir = Files.createTempDirectory("model-ui").toFile()
+        val tree = FakeExternalModelTree(ready = true)
+        try {
+            val downloads = OfflineModelDownloads(
+                installer = installer,
+                destRoot = dir,
+                cacheRoot = File(dir, "cache"),
+                offers = listOf(OfficialModelCatalog.chat(https)),
+                scope = this,
+                probe = OfflineModelProbe {
+                    kotlinx.coroutines.delay(200_000)
+                    ProbeResult(ok = true, message = UserFacingErrors.MODEL_PROBE_CHAT_OK)
+                },
+                tree = tree,
+            )
+            downloads.request("chat")
+            downloads.confirm()
+            advanceUntilIdle()
+            downloads.probe("chat")
+            testScheduler.advanceTimeBy(90_000)
+            runCurrent()
+            assertTrue(downloads.ui.value.rows.single().probing)
+            advanceUntilIdle()
+            val row = downloads.ui.value.rows.single()
+            assertFalse(row.probing)
+            assertEquals(false, row.probeOk)
+            assertEquals(UserFacingErrors.MODEL_PROBE_TIMEOUT, row.probeMessage)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
     private fun fixtureBytes(name: String): ByteArray {
         val stream = javaClass.getResourceAsStream("/intent-pack/$name")
             ?: error("missing fixture $name")

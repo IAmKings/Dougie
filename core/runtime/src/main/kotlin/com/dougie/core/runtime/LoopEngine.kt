@@ -44,6 +44,7 @@ class LoopEngine(
     private val auditLog: AuditLog = NoOpAuditLog,
     private val intentPort: IntentPort? = null,
     private val openAppEntries: () -> List<OpenAppEntry> = { emptyList() },
+    private val skipIntentShortcut: () -> Boolean = { false },
 ) {
     private val sanitizer: ToolCallSanitizer
         get() = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
@@ -81,7 +82,11 @@ class LoopEngine(
                 task = task.copy(
                     status = TaskStatus.THINKING,
                     streamingText = null,
-                    completionPath = CompletionPath.REMOTE_LLM,
+                    completionPath = if (llm.isLocal) {
+                        CompletionPath.LOCAL_LLM
+                    } else {
+                        CompletionPath.REMOTE_LLM
+                    },
                 )
                 emit(task)
                 stepDelay()
@@ -144,6 +149,7 @@ class LoopEngine(
         start: AgentTask,
         emit: suspend (AgentTask) -> Unit,
     ): AgentTask? {
+        if (skipIntentShortcut()) return null
         val port = intentPort ?: return null
         if (!start.attachedCaptureId.isNullOrBlank()) return null
         if (!port.isModelPresent() || !port.isEngineReady()) return null
