@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import com.dougie.core.llm.LlmProvider
+import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.AgentTask
 import com.dougie.tool.chatllm.ChatLlmProvider
 import com.dougie.feature.permissions.PermissionItem
@@ -62,7 +63,10 @@ object ChannelHooks {
         }
     }
 
-    fun localChatProvider(context: Context): LlmProvider? = ChatLlmProvider.get(context)
+    fun localChatProvider(
+        context: Context,
+        toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
+    ): LlmProvider? = ChatLlmProvider.get(context, toolDescriptors)
 
     fun localChatReady(filesDir: File): Boolean =
         ChatModelLayout.isPresent(File(filesDir, ChatModelLayout.DIR))

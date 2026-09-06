@@ -4,6 +4,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.MemoryEntry
+import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import org.junit.Assert.assertEquals
@@ -125,6 +126,74 @@ class ChatPromptAssemblerTest {
         assertTrue(prompt.contains("你是什么模型"))
         assertTrue(!prompt.contains(CLIPBOARD_SECRET))
         assertTrue(!prompt.contains("data:image"))
+    }
+
+    @Test
+    fun toolsInventoryIsAfterIdentityAndIdentityOmitsClipboardRead() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("clipboard_read", description = "Read clipboard text."),
+        )
+        val prefix = ChatPromptAssembler.systemPrefix(
+            AgentTask(taskId = "t-tools", input = "现在几点了"),
+            descriptors,
+        )
+        assertTrue(prefix.startsWith(ChatPromptAssembler.IDENTITY))
+        assertTrue(prefix.contains("可用工具"))
+        assertTrue(prefix.contains("time"))
+        assertTrue(prefix.contains("clipboard_read"))
+        assertTrue(!prefix.contains("一行 JSON"))
+        assertTrue(!ChatPromptAssembler.IDENTITY.contains("clipboard_read"))
+        IDENTITY_TOOL_NAMES.forEach { name ->
+            assertTrue(!ChatPromptAssembler.IDENTITY.contains(name))
+        }
+        val prompt = ChatPromptAssembler.localPrompt(
+            AgentTask(taskId = "t-tools", input = "现在几点了"),
+            descriptors,
+        )
+        assertTrue(prompt.startsWith(prefix))
+        assertTrue(prompt.contains("一行 JSON"))
+        assertTrue(prompt.contains("现在几点了"))
+    }
+
+    @Test
+    fun localPromptAfterToolResultDropsJsonProtocol() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+        )
+        val task = AgentTask(
+            taskId = "t-after-time",
+            input = "现在几点了",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"iso":"2026-09-06T12:00:00","zone":"Asia/Shanghai"}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val prompt = ChatPromptAssembler.localPrompt(task, descriptors)
+        assertTrue(prompt.contains("time:"))
+        assertTrue(prompt.contains("不要再输出"))
+        assertTrue(prompt.contains("不要复述"))
+        assertTrue(!prompt.contains("现在几点了"))
+        assertTrue(!prompt.contains("一行 JSON"))
+        assertTrue(!prompt.contains("{\"name\":\"time\""))
+    }
+
+    @Test
+    fun stripLeadingQuestionRemovesEchoedUserTurn() {
+        assertEquals(
+            "现在是中午12点。",
+            ChatPromptAssembler.stripLeadingQuestion("现在几点了？现在是中午12点。", "现在几点了"),
+        )
+        assertEquals(
+            "现在是中午12点。",
+            ChatPromptAssembler.stripLeadingQuestion("现在几点了现在是中午12点。", "现在几点了？"),
+        )
+        assertEquals("你好", ChatPromptAssembler.stripLeadingQuestion("你好", "现在几点了"))
     }
 
     companion object {

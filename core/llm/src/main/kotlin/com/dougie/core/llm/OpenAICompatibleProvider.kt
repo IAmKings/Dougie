@@ -168,7 +168,7 @@ class OpenAICompatibleProvider(
             add(
                 buildJsonObject {
                     put("role", "system")
-                    put("content", ChatPromptAssembler.systemPrefix(task))
+                    put("content", ChatPromptAssembler.systemPrefix(task, toolDescriptors()))
                 },
             )
             add(

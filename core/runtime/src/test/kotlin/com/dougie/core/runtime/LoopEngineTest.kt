@@ -1425,6 +1425,51 @@ class LoopEngineTest {
     }
 
     @Test
+    fun localLlmTimeToolCallIsLocalLlmNotIntent() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = object : LlmProvider {
+            override val isLocal: Boolean = true
+            var streamCount = 0
+            override fun stream(context: LoopContext) = flow {
+                streamCount += 1
+                if (context.task.toolTrace.isEmpty()) {
+                    emit(LlmEvent.ToolCall(id = "time-1", name = "time", argsJson = "{}"))
+                } else {
+                    emit(LlmEvent.TextDelta("现在是中午。"))
+                }
+            }
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "time-1", name = "time", argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer("现在是中午。")
+                }
+            }
+        }
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "query_time", route = "time", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = port,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-local-time", input = "现在几点了")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(1, result.toolTrace.size)
+        assertEquals("time", result.toolTrace.single().toolName)
+        assertEquals(ToolTraceStatus.SUCCESS, result.toolTrace.single().status)
+        assertEquals(0, port.classifyCount)
+        assertEquals("现在是中午。", result.finalAnswer)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
+        assertTrue(result.completionPath != CompletionPath.LOCAL_INTENT)
+        assertEquals(2, spy.streamCount)
+    }
+
+    @Test
     fun highConfidenceQueryLocationSkipsLlm() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val spy = SpyLocalLlm()

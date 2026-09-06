@@ -2,14 +2,21 @@ package com.dougie.core.llm
 
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.ToolDescriptor
 
 /** Shared Chat identity + task context. Do not log the assembled string. */
 object ChatPromptAssembler {
     const val IDENTITY =
         "你是 Dougie，运行在用户手机上的本地优先助手。用中文回答。"
 
-    fun systemPrefix(task: AgentTask): String {
+    fun systemPrefix(
+        task: AgentTask,
+        descriptors: List<ToolDescriptor> = emptyList(),
+    ): String {
         val parts = mutableListOf(IDENTITY)
+        if (descriptors.isNotEmpty()) {
+            parts += toolsInventory(descriptors)
+        }
         val lines = task.attachments.map { meta ->
             val kind = meta.kind.name.lowercase()
             val extra = if (meta.kind == AttachmentKind.SCREEN) {
@@ -37,16 +44,57 @@ object ChatPromptAssembler {
         return parts.joinToString("\n\n")
     }
 
-    fun localPrompt(task: AgentTask): String {
+    fun localPrompt(
+        task: AgentTask,
+        descriptors: List<ToolDescriptor> = emptyList(),
+    ): String {
         val traces = task.toolTrace.mapNotNull { trace ->
             val result = trace.resultJson ?: return@mapNotNull null
             "${trace.toolName}: $result"
         }
-        val userBlock = if (traces.isEmpty()) {
-            task.input
-        } else {
-            task.input + "\n" + traces.joinToString("\n")
+        val userBlock = when {
+            traces.isEmpty() -> task.input
+            descriptors.isNotEmpty() -> traces.joinToString("\n")
+            else -> task.input + "\n" + traces.joinToString("\n")
         }
-        return systemPrefix(task) + "\n\n" + userBlock
+        val prefix = systemPrefix(task, descriptors)
+        val followUp = when {
+            descriptors.isEmpty() -> prefix
+            traces.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS
+            else -> prefix + "\n\n" + LOCAL_TOOL_PROTOCOL
+        }
+        return followUp + "\n\n" + userBlock
     }
+
+    fun stripLeadingQuestion(reply: String, question: String): String {
+        val raw = reply.trim()
+        val q = question.trim()
+        if (raw.isEmpty() || q.isEmpty()) return raw
+        val variants = linkedSetOf(
+            q,
+            q.trimEnd('？', '?', '。', '！', '!'),
+            "$q？",
+            "$q?",
+        ).filter { it.isNotEmpty() }.sortedByDescending { it.length }
+        for (prefix in variants) {
+            if (!raw.startsWith(prefix)) continue
+            val rest = raw.removePrefix(prefix).trimStart('？', '?', ' ', '\n', '\r', '，', ',', '。', ':', '：')
+            if (rest.isNotEmpty()) return rest
+        }
+        return raw
+    }
+
+    private fun toolsInventory(descriptors: List<ToolDescriptor>): String {
+        val lines = descriptors.joinToString("\n") { descriptor ->
+            val description = descriptor.description.ifBlank { descriptor.name }
+            "- ${descriptor.name}: $description"
+        }
+        return "可用工具:\n$lines"
+    }
+
+    private const val LOCAL_TOOL_PROTOCOL =
+        "若需要工具，整段回复必须是一行 JSON，例如 {\"name\":\"time\",\"args\":{}}。同一工具不要连续调用。得到结果后必须用中文回答用户。"
+
+    private const val LOCAL_AFTER_TOOL_RESULTS =
+        "下面已有工具结果。用一两句中文直接回答，不要复述用户的问题，不要再输出工具 JSON。"
 }

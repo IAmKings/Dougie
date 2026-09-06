@@ -2,6 +2,7 @@ package com.dougie.app
 
 import android.content.Context
 import com.dougie.core.llm.LlmProvider
+import com.dougie.core.model.ToolDescriptor
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,10 @@ object ChannelHooks {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun localChatProvider(context: Context): LlmProvider? = null
+    fun localChatProvider(
+        context: Context,
+        toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
+    ): LlmProvider? = null
 
     @Suppress("UNUSED_PARAMETER")
     fun localChatReady(filesDir: File): Boolean = false

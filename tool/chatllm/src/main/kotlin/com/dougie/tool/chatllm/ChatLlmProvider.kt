@@ -3,12 +3,14 @@ package com.dougie.tool.chatllm
 import android.content.Context
 import com.dougie.core.llm.ChatPromptAssembler
 import com.dougie.core.llm.LlmProvider
+import com.dougie.core.llm.LocalToolCallParser
 import com.dougie.core.llm.toLlmResponse
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
+import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.ChatModelLayout
 import com.google.ai.edge.litertlm.Conversation
@@ -16,8 +18,11 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import com.google.ai.edge.litertlm.ThinkingConfig
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import java.io.File
 import java.util.Collections
@@ -27,6 +32,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class ChatLlmProvider private constructor(
     private val filesDir: File,
     private val cacheDir: File,
+    private val toolDescriptors: () -> List<ToolDescriptor>,
 ) : LlmProvider {
     override val isLocal: Boolean = true
 
@@ -49,15 +55,31 @@ class ChatLlmProvider private constructor(
             return@callbackFlow
         }
         conversation.sendMessageAsync(
-            promptFor(context.task),
+            promptFor(context.task, toolDescriptors()),
             object : MessageCallback {
+                private val buffer = StringBuilder()
+
                 override fun onMessage(message: Message) {
                     val piece = message.toString()
                     if (piece.isEmpty()) return
-                    trySend(LlmEvent.TextDelta(piece))
+                    buffer.append(piece)
                 }
 
                 override fun onDone() {
+                    val text = buffer.toString()
+                    val tool = LocalToolCallParser.parse(text)
+                    when {
+                        tool != null &&
+                            LocalToolCallParser.isRepeatOfSuccessfulCall(context.task, tool) -> {
+                            trySendBlocking(LlmEvent.TextDelta("已获得工具结果。"))
+                        }
+                        tool != null -> trySendBlocking(tool)
+                        text.isNotEmpty() -> trySendBlocking(
+                            LlmEvent.TextDelta(
+                                ChatPromptAssembler.stripLeadingQuestion(text, context.task.input),
+                            ),
+                        )
+                    }
                     close()
                 }
 
@@ -82,7 +104,7 @@ class ChatLlmProvider private constructor(
             } catch (_: Exception) {
             }
         }
-    }
+    }.buffer(Channel.BUFFERED)
 
     override suspend fun generate(context: LoopContext): LlmResponse = stream(context).toLlmResponse()
 
@@ -110,16 +132,23 @@ class ChatLlmProvider private constructor(
         @Volatile
         private var instance: ChatLlmProvider? = null
 
-        fun get(context: Context): ChatLlmProvider {
+        fun get(
+            context: Context,
+            toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
+        ): ChatLlmProvider {
             instance?.let { return it }
             return synchronized(this) {
                 instance ?: ChatLlmProvider(
                     filesDir = context.applicationContext.filesDir,
                     cacheDir = context.applicationContext.cacheDir,
+                    toolDescriptors = toolDescriptors,
                 ).also { instance = it }
             }
         }
     }
 }
 
-internal fun promptFor(task: AgentTask): String = ChatPromptAssembler.localPrompt(task)
+internal fun promptFor(
+    task: AgentTask,
+    descriptors: List<ToolDescriptor> = emptyList(),
+): String = ChatPromptAssembler.localPrompt(task, descriptors)

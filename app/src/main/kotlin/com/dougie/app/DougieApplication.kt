@@ -179,6 +179,7 @@ class DougieApplication : Application() {
             IntentClassifierTool.NAME to IntentClassifierTool(intentPort),
         )
         ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
+        val toolDescriptors = { tools.values.map { it.descriptor } }
         val cloud = OpenAICompatibleProvider(
             client = http,
             config = {
@@ -190,13 +191,13 @@ class DougieApplication : Application() {
                     maxTokens = prefs.maxTokens,
                 )
             },
-            toolDescriptors = { tools.values.map { it.descriptor } },
+            toolDescriptors = toolDescriptors,
             allowCloud = { preferenceStore.settings.value.allowCloud },
             attachmentJpeg = { attachmentSession.jpeg(it) },
         )
         val provider = SelectingLlmProvider(
             cloud = cloud,
-            local = ChannelHooks.localChatProvider(this),
+            local = ChannelHooks.localChatProvider(this, toolDescriptors),
             cloudConfigured = {
                 val prefs = preferenceStore.settings.value
                 prefs.allowCloud && prefs.apiKey.isNotBlank()
