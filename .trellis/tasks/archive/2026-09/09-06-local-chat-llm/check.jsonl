@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play leak and JVM test commands"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "localLlmReady must not follow intent ONNX"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Probe/provider must not log prompt text"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Egress blocked vs local isLocal"}

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "checkChannelLeak: no Play litertlm; localLlmReady not from intent"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt/completion/path in Logcat"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "intelligenceMark LOCAL only for chat pack"}
+{"file": ".trellis/tasks/archive/2026-09/09-04-on-device-chat-llm/research/pjz110-chat-llm.md", "reason": "LiteRT pin, GPU vs CPU, no NPU this slice"}
