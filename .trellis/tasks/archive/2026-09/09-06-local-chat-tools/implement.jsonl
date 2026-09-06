@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "ChatLlmProvider sideload; LoopEngine ToolCall; ChatPromptAssembler; Play no chatllm"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Tool JSON sanitizer; :core:llm tests; checkChannelLeak"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Never log assembled prompt or completions"}
