@@ -1053,3 +1053,34 @@ MiniRBT 意图 ONNX 动态量化约 12MB，Release intent-minirbt-v2。held-out 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 48: 侧载对话接入 Chat
+
+**Date**: 2026-09-06
+**Task**: 侧载对话接入 Chat
+**Branch**: `master`
+
+### Summary
+
+侧载 LiteRT 接入 Loop：关出境走本地闲聊，头像「本地」，开发者页「本地 LLM」；MiniRBT 在本地路径跳过以免误抢剪贴板。Play 无聊天包。
+
+### Main Changes
+
+- SelectingLlmProvider：云端配置则云，否则本地包就绪则 LiteRT
+- skipIntentShortcut 绑 isLocal；completionPath 增加 LOCAL_LLM
+- 设置对话模型行仅 sideload；Play localChatReady 恒 false
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ab958b2` | (see git log) |
+
+### Testing
+
+- [OK] JVM 相关模块 + checkChannelLeak；真机关出境闲聊开发者页为本地 LLM
+
+### Status
+
+[OK] **Completed**
