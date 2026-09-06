@@ -1084,3 +1084,33 @@ MiniRBT 意图 ONNX 动态量化约 12MB，Release intent-minirbt-v2。held-out 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 49: 有对话 LLM 跳过 MiniRBT
+
+**Date**: 2026-09-06
+**Task**: 有对话 LLM 跳过 MiniRBT
+**Branch**: `master`
+
+### Summary
+
+远程或本地对话就绪时不再先走意图短路径，闲聊不会被收成读剪贴板。无对话模型时短路径仍在。LiteRT 工具调用未做。
+
+### Main Changes
+
+- hasConversationalLlm：云端配置或本地对话包就绪
+- skipIntentShortcut 绑该谓词，LoopEngine 仍不读 llm.isLocal
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0f90ad4` | (see git log) |
+
+### Testing
+
+- [OK] JVM :core:llm :core:runtime checkChannelLeak；真机开云端问你是什么模型不再读剪贴板
+
+### Status
+
+[OK] **Completed**
