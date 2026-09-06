@@ -1114,3 +1114,33 @@ MiniRBT 意图 ONNX 动态量化约 12MB，Release intent-minirbt-v2。held-out 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 50: 共用中文 Dougie 人设
+
+**Date**: 2026-09-07
+**Task**: 共用中文 Dougie 人设
+**Branch**: `master`
+
+### Summary
+
+远程 system 与本地前缀共用 ChatPromptAssembler：中文人设、无工具名；记忆与附件说明不变。LiteRT 工具仍待下一刀。
+
+### Main Changes
+
+- ChatPromptAssembler.systemPrefix / localPrompt
+- OpenAICompatibleProvider 去掉英文带工具清单的 SYSTEM_PROMPT
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0ef2c5f` | (see git log) |
+
+### Testing
+
+- [OK] JVM :core:llm:test checkChannelLeak；真机关出境问你是什么模型对上 Dougie
+
+### Status
+
+[OK] **Completed**

@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 49
-- **Last Active**: 2026-09-06
+- **Total Sessions**: 50
+- **Last Active**: 2026-09-07
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1116 | Active |
+| `journal-1.md` | ~1146 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 50 | 2026-09-07 | 共用中文 Dougie 人设 | `0ef2c5f` | `master` |
 | 49 | 2026-09-06 | 有对话 LLM 跳过 MiniRBT | `0f90ad4` | `master` |
 | 48 | 2026-09-06 | 侧载对话接入 Chat | `ab958b2` | `master` |
 | 47 | 2026-09-06 | LiteRT-LM 真机选型 | `f661dce` | `master` |
