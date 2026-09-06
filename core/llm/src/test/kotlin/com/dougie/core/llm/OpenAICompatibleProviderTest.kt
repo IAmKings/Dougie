@@ -26,6 +26,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.IOException
 
 class OpenAICompatibleProviderTest {
@@ -91,6 +95,9 @@ class OpenAICompatibleProviderTest {
         assertTrue(recorded.path!!.endsWith("/chat/completions"))
         assertEquals("Bearer sk-test", recorded.getHeader("Authorization"))
         val body = recorded.body.readUtf8()
+        val system = systemMessageContent(body)
+        assertTrue(system.contains(ChatPromptAssembler.IDENTITY))
+        assertTrue(!system.contains("clipboard_read"))
         assertTrue(body.contains("\"stream\":true"))
         assertTrue(body.contains("\"max_tokens\":2048"))
         assertTrue(body.contains("\"name\":\"time\""))
@@ -167,8 +174,11 @@ class OpenAICompatibleProviderTest {
             ),
         )
         val body = server.takeRequest().body.readUtf8()
-        assertTrue(body.contains("capture_id=cap1"))
-        assertTrue(body.contains("720x1584"))
+        val system = systemMessageContent(body)
+        assertTrue(system.contains(ChatPromptAssembler.IDENTITY))
+        assertTrue(system.contains("capture_id=cap1"))
+        assertTrue(system.contains("720x1584"))
+        assertTrue(!system.contains("clipboard_read"))
         assertTrue(body.contains("匹配一下"))
         assertTrue(!body.contains("data:image"))
         assertTrue(!body.contains("base64,"))
@@ -191,7 +201,11 @@ class OpenAICompatibleProviderTest {
             ),
         )
         val body = server.takeRequest().body.readUtf8()
-        assertTrue(body.contains("kind=screen"))
+        val system = systemMessageContent(body)
+        assertTrue(system.contains(ChatPromptAssembler.IDENTITY))
+        assertTrue(system.contains("kind=screen"))
+        assertTrue(system.contains("cap1"))
+        assertTrue(!system.contains("data:image"))
         assertTrue(body.contains("cap1"))
         assertTrue(!body.contains("data:image"))
         assertTrue(!body.contains("image_url"))
@@ -278,8 +292,11 @@ class OpenAICompatibleProviderTest {
             ),
         )
         val body = server.takeRequest().body.readUtf8()
-        assertTrue(body.contains("Known facts"))
-        assertTrue(body.contains("我叫小明，住在上海"))
+        val system = systemMessageContent(body)
+        assertTrue(system.contains(ChatPromptAssembler.IDENTITY))
+        assertTrue(system.contains("Known facts"))
+        assertTrue(system.contains("我叫小明，住在上海"))
+        assertTrue(!system.contains("clipboard_read"))
         assertTrue(body.contains("我叫什么"))
     }
 
@@ -440,6 +457,11 @@ class OpenAICompatibleProviderTest {
             allowCloud = { allowCloud },
             attachmentJpeg = jpeg,
         )
+    }
+
+    private fun systemMessageContent(body: String): String {
+        val messages = Json.parseToJsonElement(body).jsonObject["messages"]!!.jsonArray
+        return messages.first().jsonObject["content"]!!.jsonPrimitive.content
     }
 
     companion object {

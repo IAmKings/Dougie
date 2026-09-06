@@ -1,6 +1,7 @@
 package com.dougie.tool.chatllm
 
 import android.content.Context
+import com.dougie.core.llm.ChatPromptAssembler
 import com.dougie.core.llm.LlmProvider
 import com.dougie.core.llm.toLlmResponse
 import com.dougie.core.model.AgentException
@@ -121,11 +122,4 @@ class ChatLlmProvider private constructor(
     }
 }
 
-internal fun promptFor(task: AgentTask): String {
-    val traces = task.toolTrace.mapNotNull { trace ->
-        val result = trace.resultJson ?: return@mapNotNull null
-        "${trace.toolName}: $result"
-    }
-    if (traces.isEmpty()) return task.input
-    return task.input + "\n" + traces.joinToString("\n")
-}
+internal fun promptFor(task: AgentTask): String = ChatPromptAssembler.localPrompt(task)
