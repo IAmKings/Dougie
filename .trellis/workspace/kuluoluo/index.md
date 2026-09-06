@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 51
+- **Total Sessions**: 52
 - **Last Active**: 2026-09-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1176 | Active |
+| `journal-1.md` | ~1197 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 52 | 2026-09-07 | 系统返回与顶栏对齐 | `8cc3189` | `master` |
 | 51 | 2026-09-07 | 本地对话接入 Loop 工具 | `64fd605` | `master` |
 | 50 | 2026-09-07 | 共用中文 Dougie 人设 | `0ef2c5f` | `master` |
 | 49 | 2026-09-06 | 有对话 LLM 跳过 MiniRBT | `0f90ad4` | `master` |

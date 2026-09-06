@@ -1174,3 +1174,24 @@ LiteRT 经 JSON ToolCall 走 Loop；有结果后中文作答、不复述问句�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 52: 系统返回与顶栏对齐
+
+**Date**: 2026-09-07
+**Task**: 系统返回与顶栏对齐
+**Branch**: `master`
+
+### Summary
+
+BackHandler + consumeBack：Chat 预览先关，二级页按顶栏退回，Chat 再退才离开。JVM AppBackNavTest 覆盖；真机已确认设置/开发者返回。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8cc3189` | (see git log) |
+
+### Status
+
+[OK] **Completed**
