@@ -1144,3 +1144,33 @@ MiniRBT 意图 ONNX 动态量化约 12MB，Release intent-minirbt-v2。held-out 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 51: 本地对话接入 Loop 工具
+
+**Date**: 2026-09-07
+**Task**: 本地对话接入 Loop 工具
+**Branch**: `master`
+
+### Summary
+
+LiteRT 经 JSON ToolCall 走 Loop；有结果后中文作答、不复述问句、禁止连调同一 time 直到 MaxLoopExceeded。
+
+### Main Changes
+
+- LocalToolCallParser + ChatPromptAssembler 工具清单/跟轮提示
+- ChatLlmProvider 与远程同一 toolDescriptors；跟轮去掉原问句并裁复述
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `64fd605` | (see git log) |
+
+### Testing
+
+- [OK] JVM :core:llm :core:runtime checkChannelLeak；真机关出境现在几点了为本地 LLM 且一次 time
+
+### Status
+
+[OK] **Completed**
