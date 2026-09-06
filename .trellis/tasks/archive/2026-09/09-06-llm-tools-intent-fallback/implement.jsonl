@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "LoopEngine skipIntentShortcut vs MiniRBT; do not skip via llm.isLocal; screen pin stays LOCAL_INTENT"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JUnit LoopEngine contracts; JVM 17"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "LOCAL_INTENT pin vs LLM-loop screen_capture"}
