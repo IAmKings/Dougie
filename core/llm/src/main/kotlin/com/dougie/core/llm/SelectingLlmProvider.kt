@@ -18,6 +18,10 @@ class SelectingLlmProvider(
     override val isLocal: Boolean
         get() = !cloudConfigured() && local != null && localReady()
 
+    /** Cloud configured or a ready local chat pack — MiniRBT shortcut should not run. */
+    val hasConversationalLlm: Boolean
+        get() = cloudConfigured() || (local != null && localReady())
+
     override fun stream(context: LoopContext): Flow<LlmEvent> = active().stream(context)
 
     override suspend fun generate(context: LoopContext): LlmResponse = active().generate(context)

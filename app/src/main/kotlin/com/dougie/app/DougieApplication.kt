@@ -222,7 +222,7 @@ class DougieApplication : Application() {
                 auditLog = taskStores.auditLog,
                 intentPort = intentPort,
                 openAppEntries = { OpenAppEntries.parse(preferenceStore.openAppsJson.value) },
-                skipIntentShortcut = { provider.isLocal },
+                skipIntentShortcut = { provider.hasConversationalLlm },
             ),
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,

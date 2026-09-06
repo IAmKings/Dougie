@@ -1371,7 +1371,37 @@ class LoopEngineTest {
     }
 
     @Test
+    fun conversationalCloudSkipsIntentEvenIfClipboardClassified() = runTest {
+        // AC1: skipIntentShortcut true (app: hasConversationalLlm when cloud configured)
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm(isLocal = false)
+        val port = FakeIntentPort(
+            hit = IntentHit(intent = "clipboard_read", route = "clipboard", confidence = 0.91),
+        )
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("clipboard_read" to ClipboardReadTool(FakeClipboardPort(text = "hello"))),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            gateway = EgressGateway(
+                policy = { EgressPolicy(allowCloud = true) },
+                apiKey = { "sk-test" },
+            ),
+            intentPort = port,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-cloud-chat", input = "你是什么模型")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(1, spy.streamCount)
+        assertEquals(0, port.classifyCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(CompletionPath.REMOTE_LLM, result.completionPath)
+        assertTrue(result.toolTrace.none { it.toolName == "clipboard_read" })
+    }
+
+    @Test
     fun localChatProviderSkipsIntentEvenIfClipboardClassified() = runTest {
+        // AC2: skipIntentShortcut true (app: hasConversationalLlm when local pack ready)
         val dispatcher = StandardTestDispatcher(testScheduler)
         val spy = SpyLocalLlm()
         val port = FakeIntentPort(
@@ -1594,9 +1624,10 @@ class LoopEngineTest {
         assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
-    private class SpyLocalLlm : LlmProvider {
+    private class SpyLocalLlm(
+        override val isLocal: Boolean = true,
+    ) : LlmProvider {
         var streamCount = 0
-        override val isLocal: Boolean = true
         override fun stream(context: LoopContext) = flow {
             streamCount += 1
             emit(LlmEvent.TextDelta("走了云端"))

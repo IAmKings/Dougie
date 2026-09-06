@@ -27,12 +27,25 @@ class SelectingLlmProviderTest {
             localReady = { true },
         )
         assertFalse(provider.isLocal)
+        assertTrue(provider.hasConversationalLlm)
         assertEquals("cloud", (provider.generate(context) as LlmResponse.FinalAnswer).text)
         assertEquals(1, cloud.calls)
         assertEquals(0, local.calls)
         assertEquals(listOf(LlmEvent.TextDelta("cloud")), provider.stream(context).toList())
         assertEquals(2, cloud.calls)
         assertEquals(0, local.calls)
+    }
+
+    @Test
+    fun cloudConfiguredHasConversationalLlmEvenIfLocalNotReady() {
+        val provider = SelectingLlmProvider(
+            cloud = RecordingProvider("cloud"),
+            local = RecordingProvider("local"),
+            cloudConfigured = { true },
+            localReady = { false },
+        )
+        assertFalse(provider.isLocal)
+        assertTrue(provider.hasConversationalLlm)
     }
 
     @Test
@@ -46,6 +59,7 @@ class SelectingLlmProviderTest {
             localReady = { true },
         )
         assertTrue(provider.isLocal)
+        assertTrue(provider.hasConversationalLlm)
         assertEquals("local", (provider.generate(context) as LlmResponse.FinalAnswer).text)
         assertEquals(0, cloud.calls)
         assertEquals(1, local.calls)
@@ -71,7 +85,9 @@ class SelectingLlmProviderTest {
             localReady = { false },
         )
         assertFalse(missingLocal.isLocal)
+        assertFalse(missingLocal.hasConversationalLlm)
         assertFalse(notReady.isLocal)
+        assertFalse(notReady.hasConversationalLlm)
         assertEquals("cloud", (missingLocal.generate(context) as LlmResponse.FinalAnswer).text)
         assertEquals("cloud", (notReady.generate(context) as LlmResponse.FinalAnswer).text)
         assertEquals(2, cloud.calls)
@@ -97,6 +113,7 @@ class SelectingLlmProviderTest {
         assertEquals(1, cloud.calls)
         assertEquals(0, local.calls)
         assertFalse(provider.isLocal)
+        assertTrue(provider.hasConversationalLlm)
     }
 
     private class RecordingProvider(
