@@ -4,7 +4,7 @@
 
 ## Overview
 
-Each feature module owns one primary screen file plus a ViewModel. `:app` `MainActivity` switches a private `AppRoute` enum (`Chat`, `Settings`, `OpenApps`, `Memory`, `Permissions`, `History`, `Debug`) — not Navigation Compose.
+Each feature module owns one primary screen file plus a ViewModel. `:app` `MainActivity` switches an internal `AppRoute` enum (`Chat`, `Settings`, `OpenApps`, `Memory`, `Permissions`, `History`, `Debug`) — not Navigation Compose. System / gesture back uses Compose `BackHandler` plus `consumeBack` in `AppBackNav.kt` so it matches toolbar `onBack`: Chat preview closes first; OpenApps/Debug → Settings; Settings/Permissions/Memory/History → Chat; Chat with no preview returns null and the Activity finishes as before. Do not add Predictive Back custom animations.
 
 ## Component Structure
 
@@ -20,7 +20,7 @@ Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` 
 
 ## Props Conventions
 
-- Navigation is `() -> Unit` callbacks (`onOpenSettings`, `onBack`, `onOpenDebug`), injected from `MainActivity`.
+- Navigation is `() -> Unit` callbacks (`onOpenSettings`, `onBack`, `onOpenDebug`), injected from `MainActivity`. Keep those lambdas as the product path; `consumeBack` must encode the same graph so hardware/gesture back does not `finish` while a nested route is showing.
 - Domain events are method references (`onSend = viewModel::send`, `onConfirm = viewModel::confirm`).
 - Pass `ChatUiState` / `SettingsFormState` / `MemoryUiState` as one data class, not dozens of scalars.
 - Defaults on Route/Screen parameters (`allowCloud: Boolean = false`) exist so previews *could* be added; they are not a second source of truth for prefs. Live `allowCloud` comes from `PreferenceStore` in `MainActivity`.
@@ -50,3 +50,4 @@ Do not add a Compose semantics test suite unless the task asks for it — none e
 - Hardcoding tool label “电池” for every `ToolCard`. Chat maps known ids to Chinese (`battery` → 电池工具, `time` → 时间工具) and otherwise shows raw `toolName`.
 - Using the sketch SVG as the default avatar regardless of `IntelligenceMark`.
 - Forgetting IME/nav padding (`imePadding`, `navigationBarsPadding`, `statusBarsPadding`) on new full-screen columns — Chat and Settings already do this.
+- Treating leftover `previewImage` as a back intercept on Settings/Debug. Preview is a Chat overlay only: `consumeBack` closes it when `route == Chat`; other routes still pop even if the bitmap is still in Activity state.

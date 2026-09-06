@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -59,8 +60,6 @@ import com.dougie.feature.settings.OpenAppsRoute
 import com.dougie.feature.settings.OpenAppsViewModel
 import com.dougie.feature.settings.SettingsRoute
 import com.dougie.feature.settings.SettingsViewModel
-
-private enum class AppRoute { Chat, Settings, Memory, Permissions, History, Debug, OpenApps }
 
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
@@ -157,6 +156,12 @@ class MainActivity : ComponentActivity() {
                     if (NotificationPermissionGate.tryMarkRequested()) {
                         notifyLauncher.launch(AndroidPermissions.POST_NOTIFICATIONS)
                     }
+                }
+                val backTarget = consumeBack(AppNavState(route, previewImage != null))
+                BackHandler(enabled = backTarget != null) {
+                    val next = consumeBack(AppNavState(route, previewImage != null)) ?: return@BackHandler
+                    route = next.route
+                    if (!next.previewOpen) previewImage = null
                 }
                 LaunchedEffect(task?.taskId, task?.status, task?.speakReply, task?.finalAnswer) {
                     val current = task

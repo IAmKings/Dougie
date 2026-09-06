@@ -35,7 +35,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
 | `:feature:history` | `HistoryItemTest` | `./gradlew :feature:history:testDebugUnitTest` |
 | `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak) | `./gradlew :feature:debug:testDebugUnitTest` |
-| `:app` Tile / notice / leak | `ChatLaunchTest`, `TaskNoticeTest`, `PlayShortcutCopyTest`, `ChatAttachmentSessionTest`, `ShortcutScreenPinTest`; no Compose UI test for Tile, shade, overlay, or bubbles | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
+| `:app` Tile / notice / leak | `ChatLaunchTest`, `TaskNoticeTest`, `PlayShortcutCopyTest`, `ChatAttachmentSessionTest`, `ShortcutScreenPinTest`, `AppBackNavTest`; no Compose UI test for Tile, shade, overlay, or bubbles | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
 
 `:feature:memory` and `:feature:permissions` currently have **no** unit tests. Do not invent Compose UI tests as a bootstrap requirement. If a mapping function is added there, follow the chat/history style (JUnit on the mapper).
 

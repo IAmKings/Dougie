@@ -49,6 +49,7 @@ feature/debug/src/main/kotlin/com/dougie/feature/debug/
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
+  AppBackNav.kt
   ChatLaunch.kt
   ChatAttachmentSession.kt
   ShortcutScreenPin.kt
