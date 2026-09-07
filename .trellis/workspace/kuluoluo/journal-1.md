@@ -1279,3 +1279,25 @@ localTeachable 七件：原四件加 calendar_query/screen_capture/speech_input�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 57: 权限 L3 与匹配念出来
+
+**Date**: 2026-09-07
+**Task**: 权限 L3 与匹配念出来
+**Branch**: `master`
+
+### Summary
+
+提交权限中心无障碍 L3，以及 screen_match 教学与把X念出来短路径。下一步：匹配成功后用坐标走 tap_swipe（L3 确认，不教 0.6B）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c3ed1df` | (see git log) |
+| `b28e31c` | (see git log) |
+
+### Status
+
+[OK] **Completed**
