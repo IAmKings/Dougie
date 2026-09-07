@@ -33,6 +33,11 @@ class LocalToolCallParserTest {
         assertEquals("{}", clip.argsJson)
         val loc = LocalToolCallParser.parse("""{"name":"location","args":{}}""") as LlmEvent.ToolCall
         assertEquals("location", loc.name)
+        listOf("calendar_query", "screen_capture", "speech_input").forEach { name ->
+            val call = LocalToolCallParser.parse("""{"name":"$name","args":{}}""") as LlmEvent.ToolCall
+            assertEquals(name, call.name)
+            assertEquals("{}", call.argsJson)
+        }
     }
 
     @Test
