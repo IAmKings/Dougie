@@ -44,10 +44,16 @@ object ChatPromptAssembler {
         return parts.joinToString("\n\n")
     }
 
+    fun localTeachable(descriptors: List<ToolDescriptor>): List<ToolDescriptor> {
+        val byName = descriptors.associateBy { it.name }
+        return LOCAL_TEACH_NAMES.mapNotNull { byName[it] }
+    }
+
     fun localPrompt(
         task: AgentTask,
         descriptors: List<ToolDescriptor> = emptyList(),
     ): String {
+        val taught = localTeachable(descriptors)
         val traces = task.toolTrace.mapNotNull { trace ->
             val result = trace.resultJson ?: return@mapNotNull null
             "${trace.toolName}: $result"
@@ -57,11 +63,11 @@ object ChatPromptAssembler {
             descriptors.isNotEmpty() -> traces.joinToString("\n")
             else -> task.input + "\n" + traces.joinToString("\n")
         }
-        val prefix = systemPrefix(task, descriptors)
+        val prefix = systemPrefix(task, taught)
         val followUp = when {
-            descriptors.isEmpty() -> prefix
+            taught.isEmpty() -> prefix
             traces.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS
-            else -> prefix + "\n\n" + LOCAL_TOOL_PROTOCOL
+            else -> prefix + "\n\n" + localToolProtocol(taught)
         }
         return followUp + "\n\n" + userBlock
     }
@@ -92,8 +98,22 @@ object ChatPromptAssembler {
         return "可用工具:\n$lines"
     }
 
-    private const val LOCAL_TOOL_PROTOCOL =
-        "若需要工具，整段回复必须是一行 JSON，例如 {\"name\":\"time\",\"args\":{}}。同一工具不要连续调用。得到结果后必须用中文回答用户。"
+    private fun localToolProtocol(taught: List<ToolDescriptor>): String {
+        val examples = taught.joinToString("。") { descriptor ->
+            val label = when (descriptor.name) {
+                "time" -> "时间"
+                "battery" -> "电量"
+                "clipboard_read" -> "剪贴板"
+                else -> descriptor.name
+            }
+            "$label {\"name\":\"${descriptor.name}\",\"args\":{}}"
+        }
+        return "若需要工具，整段回复必须是一行 JSON。" +
+            examples +
+            "。同一工具不要连续调用。得到结果后必须用中文回答用户。"
+    }
+
+    private val LOCAL_TEACH_NAMES = listOf("time", "battery", "clipboard_read")
 
     private const val LOCAL_AFTER_TOOL_RESULTS =
         "下面已有工具结果。用一两句中文直接回答，不要复述用户的问题，不要再输出工具 JSON。"

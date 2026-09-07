@@ -25,6 +25,27 @@ class LocalToolCallParserTest {
     }
 
     @Test
+    fun batteryAndClipboardJsonParse() {
+        val battery = LocalToolCallParser.parse("""{"name":"battery","args":{}}""") as LlmEvent.ToolCall
+        assertEquals("battery", battery.name)
+        val clip = LocalToolCallParser.parse("""{"name":"clipboard_read","args":{}}""") as LlmEvent.ToolCall
+        assertEquals("clipboard_read", clip.name)
+        assertEquals("{}", clip.argsJson)
+    }
+
+    @Test
+    fun markdownFenceJsonParses() {
+        val event = LocalToolCallParser.parse(
+            """
+            ```json
+            {"name":"battery","args":{}}
+            ```
+            """.trimIndent(),
+        ) as LlmEvent.ToolCall
+        assertEquals("battery", event.name)
+    }
+
+    @Test
     fun mixedChineseIsText() {
         assertNull(LocalToolCallParser.parse("""现在几点了 {"name":"time","args":{}}"""))
     }

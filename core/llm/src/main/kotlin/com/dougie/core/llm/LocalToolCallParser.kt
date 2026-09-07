@@ -12,12 +12,13 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 
 /**
- * Whole-reply JSON → [LlmEvent.ToolCall]. Unknown names still parse; Loop sanitizer rejects them.
+ * Whole-reply JSON → [LlmEvent.ToolCall], including one markdown fence.
+ * Mixed Chinese plus JSON stays text. Unknown names still parse; Loop sanitizer rejects them.
  * Do not log the reply.
  */
 object LocalToolCallParser {
     fun parse(reply: String): LlmEvent.ToolCall? {
-        val text = reply.trim()
+        val text = unwrapMarkdownFence(reply.trim())
         if (text.isEmpty() || !text.startsWith("{") || !text.endsWith("}")) {
             return null
         }
@@ -44,6 +45,20 @@ object LocalToolCallParser {
                 trace.toolName == call.name &&
                 trace.argsSummary.trim() == args
         }
+    }
+
+    private fun unwrapMarkdownFence(text: String): String {
+        if (!text.startsWith("```")) return text
+        val withoutOpen = text.removePrefix("```").let { body ->
+            val stripped = if (body.startsWith("json", ignoreCase = true)) {
+                body.substring(4)
+            } else {
+                body
+            }
+            stripped.trimStart('\n', '\r', ' ')
+        }
+        if (!withoutOpen.endsWith("```")) return text
+        return withoutOpen.removeSuffix("```").trim()
     }
 
     private fun argsJson(element: JsonElement?): String {
