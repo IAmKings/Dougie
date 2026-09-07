@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "local teachable three tools vs remote full inventory"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": ":core:llm tests and checkChannelLeak"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "no prompt/completion logcat"}
