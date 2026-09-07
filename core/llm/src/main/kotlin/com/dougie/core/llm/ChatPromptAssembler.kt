@@ -104,6 +104,7 @@ object ChatPromptAssembler {
                 "time" -> "时间"
                 "battery" -> "电量"
                 "clipboard_read" -> "剪贴板"
+                "location" -> "定位"
                 else -> descriptor.name
             }
             "$label {\"name\":\"${descriptor.name}\",\"args\":{}}"
@@ -113,7 +114,7 @@ object ChatPromptAssembler {
             "。同一工具不要连续调用。得到结果后必须用中文回答用户。"
     }
 
-    private val LOCAL_TEACH_NAMES = listOf("time", "battery", "clipboard_read")
+    private val LOCAL_TEACH_NAMES = listOf("time", "battery", "clipboard_read", "location")
 
     private const val LOCAL_AFTER_TOOL_RESULTS =
         "下面已有工具结果。用一两句中文直接回答，不要复述用户的问题，不要再输出工具 JSON。"

@@ -31,6 +31,8 @@ class LocalToolCallParserTest {
         val clip = LocalToolCallParser.parse("""{"name":"clipboard_read","args":{}}""") as LlmEvent.ToolCall
         assertEquals("clipboard_read", clip.name)
         assertEquals("{}", clip.argsJson)
+        val loc = LocalToolCallParser.parse("""{"name":"location","args":{}}""") as LlmEvent.ToolCall
+        assertEquals("location", loc.name)
     }
 
     @Test

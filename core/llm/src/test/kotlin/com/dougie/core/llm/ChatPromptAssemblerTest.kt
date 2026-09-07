@@ -160,15 +160,16 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
-    fun localPromptTeachesOnlyTimeBatteryClipboard() {
+    fun localPromptTeachesTimeBatteryClipboardAndLocation() {
         val descriptors = listOf(
             ToolDescriptor("calendar_query", description = "List events."),
             ToolDescriptor("time", description = "Read the current local date and time."),
             ToolDescriptor("battery", description = "Read battery percent."),
             ToolDescriptor("clipboard_read", description = "Read clipboard text."),
+            ToolDescriptor("location", description = "Read coarse location."),
             ToolDescriptor("screen_capture", description = "Capture the screen."),
         )
-        val task = AgentTask(taskId = "t-teach", input = "电量多少")
+        val task = AgentTask(taskId = "t-teach", input = "我在哪")
         val remote = ChatPromptAssembler.systemPrefix(task, descriptors)
         val local = ChatPromptAssembler.localPrompt(task, descriptors)
         assertTrue(remote.contains("calendar_query"))
@@ -176,7 +177,11 @@ class ChatPromptAssemblerTest {
         assertTrue(local.contains("- time:"))
         assertTrue(local.contains("- battery:"))
         assertTrue(local.contains("- clipboard_read:"))
+        assertTrue(local.contains("- location:"))
+        assertTrue(local.contains("{\"name\":\"time\""))
         assertTrue(local.contains("{\"name\":\"battery\""))
+        assertTrue(local.contains("{\"name\":\"clipboard_read\""))
+        assertTrue(local.contains("{\"name\":\"location\""))
         assertTrue(!local.contains("calendar_query"))
         assertTrue(!local.contains("screen_capture"))
         assertTrue(local.contains("一行 JSON"))
