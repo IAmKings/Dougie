@@ -5,6 +5,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.PorterDuff
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.IBinder
 import android.provider.Settings
@@ -12,9 +14,11 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import com.dougie.feature.chat.R as ChatR
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import kotlin.math.abs
@@ -47,22 +51,23 @@ class DougieOverlayService : Service() {
         val wm = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager = wm
         val density = resources.displayMetrics.density
-        val view = TextView(this).apply {
-            text = getString(R.string.app_name)
-            textSize = 14f
-            setPadding(
-                (16 * density).toInt(),
-                (10 * density).toInt(),
-                (16 * density).toInt(),
-                (10 * density).toInt(),
-            )
-            setBackgroundColor(0xFF3D5198.toInt())
-            setTextColor(0xFFFFFFFF.toInt())
+        val size = (48 * density).toInt()
+        val inset = (8 * density).toInt()
+        val disc = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(0xFF3D5198.toInt())
+        }
+        val view = ImageView(this).apply {
+            setBackground(disc)
+            setPadding(inset, inset, inset, inset)
+            setImageResource(ChatR.drawable.dougie_logo)
+            setColorFilter(0xFFFFFFFF.toInt(), PorterDuff.Mode.SRC_IN)
+            scaleType = ImageView.ScaleType.FIT_CENTER
             contentDescription = getString(R.string.app_name)
         }
         val layout = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            size,
+            size,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT,
@@ -158,7 +163,7 @@ class DougieOverlayService : Service() {
             PixelFormat.TRANSLUCENT,
         )
         menuLp.gravity = Gravity.TOP or Gravity.START
-        val ballHeight = ball?.height ?: (40 * density).toInt()
+        val ballHeight = ball?.height ?: (48 * density).toInt()
         menuLp.x = ballLayout.x
         menuLp.y = ballLayout.y + ballHeight + (8 * density).toInt()
         val scrimOk = runCatching { wm.addView(scrimView, scrimLp) }.isSuccess

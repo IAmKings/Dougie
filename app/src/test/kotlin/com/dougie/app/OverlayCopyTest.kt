@@ -22,4 +22,17 @@ class OverlayCopyTest {
             ),
         )
     }
+
+    @Test
+    fun sideloadOverlayCollapsedBallUsesLogoNotAppNameText() {
+        val file = File("src/sideload/kotlin/com/dougie/app/DougieOverlayService.kt")
+        assertTrue(file.isFile)
+        val src = file.readText()
+        assertTrue(src.contains("ChatR.drawable.dougie_logo"))
+        assertTrue(src.contains("GradientDrawable.OVAL"))
+        assertTrue(src.contains("contentDescription = getString(R.string.app_name)"))
+        assertFalse(src.contains("text = getString(R.string.app_name)"))
+        assertFalse(src.contains("super_dougie"))
+        assertFalse(src.contains("dougie_logo_unavailable"))
+    }
 }
