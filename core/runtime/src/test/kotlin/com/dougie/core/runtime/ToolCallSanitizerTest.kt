@@ -104,4 +104,17 @@ class ToolCallSanitizerTest {
         val obj = Json.parseToJsonElement(json).jsonObject
         assertEquals(0, obj.getValue("battery_percent").jsonPrimitive.int)
     }
+
+    @Test
+    fun jsEvalDataArrayIsKeptAsJson() {
+        val sanitizer = ToolCallSanitizer(
+            mapOf("js_eval" to com.dougie.core.tool.JsEvalTool.DESCRIPTOR),
+        )
+        val json = sanitizer.sanitize(
+            "js_eval",
+            """{"script":"return data.reduce((a,b)=>a+b,0)","data":[1,2]}""",
+        )
+        val obj = Json.parseToJsonElement(json).jsonObject
+        assertEquals("[1,2]", obj.getValue("data").toString())
+    }
 }

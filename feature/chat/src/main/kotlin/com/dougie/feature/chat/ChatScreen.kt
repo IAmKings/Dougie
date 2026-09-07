@@ -807,7 +807,7 @@ private fun ConfirmToolCard(
             )
         }
         Text(
-            text = "该操作会写入设备数据。确认后才会执行；拒绝则跳过。",
+            text = confirmToolBody(item.toolName),
             color = DougieColors.OnSurfaceVariant,
             fontSize = 13.sp,
         )
@@ -1183,7 +1183,13 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
     "app_intent" -> "打开应用或链接"
     "screen_capture" -> "截取屏幕"
     "speech_output" -> "念出来"
+    "js_eval" -> "运行脚本"
     else -> toolName
+}
+
+internal fun confirmToolBody(toolName: String): String = when (toolName) {
+    "js_eval" -> "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
+    else -> "该操作会写入设备数据。确认后才会执行；拒绝则跳过。"
 }
 
 internal fun toolResultSummary(toolName: String, resultJson: String): String {

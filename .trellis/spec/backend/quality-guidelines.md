@@ -17,7 +17,7 @@
 - Committing weights or native blobs: `*.onnx` (except the tiny testdata allowlisted in `.gitignore`), `*.gguf`, `*.litertlm`, `**/jniLibs/`, `third_party/llama.cpp/`, `/eval/` wav dumps.
 - Logging prompts, keys, HTTP bodies, PCM, transcripts, fact `content`, or `snapshot_json` — see `logging-guidelines.md`.
 - Registering `ModelInstaller` / `ModelImporter` as `AgentTool`. The LLM must not pick download URLs.
-- Putting `TapSwipeTool` or `DougieAccessibilityService` on the Play classpath. `checkChannelLeak` fails if play merged manifest contains `AccessibilityService` / `TapSwipeTool` / `NotificationListenerService` / `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `TYPE_APPLICATION_OVERLAY` / `ChatLlmSpikeActivity`, or the play APK contains `models/asr`, `models/tts`, `*.onnx`, `models/intent`, `*.gguf`, or `litertlm` in zip entry names. Play and sideload APKs must not contain `models/chat` or `*.litertlm`. Play runtime classpath must not include `litertlm` or `:tool:chatllm`. It also fails if play or sideload merged manifest is missing `DougieChatTileService` or `android.service.quicksettings.action.QS_TILE`, or if sideload is missing `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `ChatLlmSpikeActivity`. Manifest `POST_NOTIFICATIONS` is **not** a leak.
+- Putting `TapSwipeTool` or `DougieAccessibilityService` on the Play classpath. `checkChannelLeak` fails if play merged manifest contains `AccessibilityService` / `TapSwipeTool` / `NotificationListenerService` / `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `TYPE_APPLICATION_OVERLAY` / `ChatLlmSpikeActivity`, or the play APK contains `models/asr`, `models/tts`, `*.onnx`, `models/intent`, `*.gguf`, or `litertlm` in zip entry names. Play and sideload APKs must not contain `models/chat` or `*.litertlm`. Play runtime classpath must not include `litertlm`, `:tool:chatllm`, `:tool:js`, or `quickjs`. Play APK zip must not contain `quickjs` / `AndroidJsEvalPort`. It also fails if play or sideload merged manifest is missing `DougieChatTileService` or `android.service.quicksettings.action.QS_TILE`, or if sideload is missing `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `ChatLlmSpikeActivity`. Manifest `POST_NOTIFICATIONS` is **not** a leak.
 - `com.android.library` on `:core:*`. Same for `:cli`: no Android plugin, not in the APK, mosaic **0.14.0** only (0.18.0 is Kotlin 2.2 metadata vs repo 2.0.21).
 
 ## Required Patterns
@@ -26,7 +26,7 @@
 - Test method names describe the contract (`fakeTaskCompletesAfterExactlyThreeToolLoops`, `cloudProviderBlockedWhenAllowCloudFalse`).
 - Inject `Dispatchers.Default` (or a test dispatcher) into `LoopEngine` / `TaskManager`. Never run the loop on Main.
 - Tool JSON is the contract: success payloads stay small (`battery_percent`, `ok`+`backend`, `capture_id` without pixels). Unknown tools and uncoercible args fail via `ToolCallSanitizer` before `execute`.
-- Play vs sideload: `sideloadImplementation(project(":tool:accessibility"))` only. Play `ChannelHooks.seedBundledModels` is a no-op.
+- Play vs sideload: `sideloadImplementation(project(":tool:accessibility"))` and `sideloadImplementation(project(":tool:js"))` only. Play `ChannelHooks.seedBundledModels` is a no-op.
 
 ## Testing Requirements
 
@@ -50,6 +50,6 @@ Full-eval ASR (`eval/asr/*.wav`, CER ≤ 5%) is gitignored. `FullEvalSet.isPrese
 - [ ] `lastError` is a `UserFacingErrors` Chinese string, not a stack trace or HTTP body
 - [ ] No new Logcat of prompts, keys, tool secret args, audio, or facts
 - [ ] Cancel / timeout paths do not become `LLM_FAILED`
-- [ ] Play APK cannot see Accessibility, NotificationListener, overlay (`SYSTEM_ALERT_WINDOW` / `DougieOverlayService`), ONNX/GGUF, LiteRT-LM (`litertlm` / `:tool:chatllm` classpath), `ChatLlmSpikeActivity`, or chat weights (`models/chat` / `*.litertlm`); both flavors still declare the QS Tile; sideload declares overlay and `ChatLlmSpikeActivity` (`exported=true`); `POST_NOTIFICATIONS` is allowed (run `checkChannelLeak` if flavors, manifests, assets, or JNI changed)
+- [ ] Play APK cannot see Accessibility, NotificationListener, overlay (`SYSTEM_ALERT_WINDOW` / `DougieOverlayService`), ONNX/GGUF, LiteRT-LM (`litertlm` / `:tool:chatllm` classpath), QuickJS (`:tool:js` / `quickjs`), `ChatLlmSpikeActivity`, or chat weights (`models/chat` / `*.litertlm`); both flavors still declare the QS Tile; sideload declares overlay and `ChatLlmSpikeActivity` (`exported=true`); `POST_NOTIFICATIONS` is allowed (run `checkChannelLeak` if flavors, manifests, assets, or JNI changed)
 - [ ] Tests use Fake ports / Fake LLM / MockWebServer, not live cloud
 - [ ] New user-facing strings added to `UserFacingErrors` and asserted in a test

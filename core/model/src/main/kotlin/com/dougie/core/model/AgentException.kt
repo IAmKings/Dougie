@@ -57,6 +57,11 @@ object UserFacingErrors {
     const val MODEL_PROBE_CHAT_OK = "对话模型测试通过。"
     const val MODEL_PROBE_TIMEOUT = "离线模型测试超时，请稍后重试。"
     const val ATTACHMENTS_FULL = "最多附上 4 张"
+    const val JS_EVAL_TIMEOUT = "隔离脚本运行超时，已停止。"
+    const val JS_EVAL_FAILED = "隔离脚本运行失败。"
+    const val JS_ENGINE_NOT_READY = "隔离脚本引擎尚未接入。"
+    const val JS_EVAL_HOST = "隔离脚本不能访问网络或系统接口。"
+    const val JS_EVAL_TOO_LARGE = "脚本或数据过长，已拒绝执行。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

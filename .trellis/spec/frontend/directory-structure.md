@@ -135,6 +135,7 @@ System QS tile is a new Android component (`TileService`) that must not call `Ta
 - Missing extra / extra false → `requestsChat` false
 - Play merged manifest missing `DougieChatTileService` or `QS_TILE` → `checkChannelLeak` fails
 - Play merged manifest contains `NotificationListenerService` / `AccessibilityService` / `TapSwipeTool` / `SYSTEM_ALERT_WINDOW` / `DougieOverlayService` / `TYPE_APPLICATION_OVERLAY` → `checkChannelLeak` fails
+- Play runtime classpath contains `:tool:js` / `quickjs`, or play APK zip contains `quickjs` / `AndroidJsEvalPort` → `checkChannelLeak` fails
 
 ### 5. Good/Base/Bad Cases
 - Good: Tile click opens Chat; `taskId` unchanged until the user sends

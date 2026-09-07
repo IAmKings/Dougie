@@ -71,6 +71,20 @@ class PolicyEngineTest {
     }
 
     @Test
+    fun l4AlwaysNeedsConfirmation() {
+        val engine = PolicyEngine { true }
+        assertEquals(
+            PolicyDecision.NeedsConfirmation,
+            engine.decide(
+                ToolDescriptor(
+                    name = "privileged_js",
+                    riskLevel = RiskLevel.L4,
+                ),
+            ),
+        )
+    }
+
+    @Test
     fun missingLocationPermissionDeniesL1() {
         val engine = PolicyEngine { false }
         val decision = engine.decide(

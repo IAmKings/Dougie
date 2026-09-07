@@ -42,6 +42,7 @@ enum class RiskLevel {
     L1,
     L2,
     L3,
+    L4,
 }
 
 data class ToolTraceEntry(

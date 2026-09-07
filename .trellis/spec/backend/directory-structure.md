@@ -84,6 +84,10 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   TemplateLibrary.kt
   GrayscaleNccMatcher.kt
   ScreenFrameDownscale.kt
+  JsEvalPort.kt
+  IsolatedJsGuard.kt
+  JsEvalTool.kt
+  FakeJsEvalPort.kt
 core/tool/src/test/resources/eval/
   asr-gold.json
   intent-gold.json
@@ -113,6 +117,8 @@ tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   AndroidGesturePort.kt
   HighRiskForeground.kt
   TapSwipeTool.kt
+tool/js/src/main/kotlin/com/dougie/tool/js/
+  AndroidJsEvalPort.kt
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
   PreferenceStore.kt
   ProviderSettings.kt
@@ -136,6 +142,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
+| `:tool:js` (Android, **sideload flavor only**) | `AndroidJsEvalPort` (Cash App QuickJS). Isolated `js_eval` is `JsEvalTool` in `:core:tool` (L2, Fake for JVM). `data` is JSON (`OBJECT`): arrays like `[1,2]` pass through; string `1,2` is canonicalized to `[1,2]` before `JSON.parse`. Settings L4 switch (`ScriptPrivilegePrefs`) is unused by this tool. | Play APK, host file/net APIs, `tap_swipe` from JS |
 | `:tool:chatllm` (Android, **sideload runtime only**) | LiteRT-LM `ChatLlmProvider` (`isLocal=true`, process-lifetime Engine, GPU then CPU) plus Debug spike `ChatLlmSpikeActivity` / `ChatLlmProbe` (Java 17 stubs at compile; AAR is Kotlin 2.3 + class file 65, `runtimeOnly`). Injects the same `toolDescriptors` as remote. `promptFor` is `ChatPromptAssembler.localPrompt` (full descriptor list in, **taught inventory seven no-slot plus clipboard_write/calendar_create/app_intent/screen_match/speech_output**; no `image_url`). After stream text, `LocalToolCallParser` may emit `LlmEvent.ToolCall` instead of `TextDelta`. Sideload `ChannelHooks.localChatProvider` injects it into `SelectingLlmProvider`. | Play APK, Play classpath `litertlm`, GGUF / llama.cpp |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -180,7 +187,7 @@ New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provide
 
 **Context**: Cloud Chat used an English `SYSTEM_PROMPT` that listed tool ids. Sideload LiteRT `promptFor` was almost only `task.input`. Both loops retrieve memories.
 
-**Decision**: `:core:llm` `ChatPromptAssembler` is the only identity + attachment metadata + `Known facts:` + tools inventory string. Remote `system` calls `systemPrefix(task, descriptors)` with the **full** injected table. `localPrompt` still receives that table (Loop can execute any emitted JSON) but **teaches** only `localTeachable`: `time`, `battery`, `clipboard_read`, `location`, `calendar_query`, `screen_capture`, `speech_input`, `clipboard_write`, `calendar_create`, `app_intent`, `screen_match`, `speech_output` — inventory lines and JSON examples for those names that are actually present (`screen_match` uses `template_id=solid`; `speech_output` uses `text=要念的原文`, not clipboard's `示例文字` and not `你好` — 0.6B otherwise echoes 你好 as chat; `app_intent` uses `uri=package:com.example.app`, not `https://example.com` — 0.6B otherwise copies a webpage or puts the Chinese app name in uri (`APP_INTENT_DENIED`); L2 examples include required args, not `{}`). Do not teach `tap_swipe` or `intent_classifier`. The local JSON protocol label for `speech_output` is **念出来**. Calendar `startIso` rewrite is a mid-protocol clause (only when the user gave a date/clock); the **last** protocol sentence must map 念出来/读出来/播报 to `speech_output` and say **不要建日历**. Typed 「把X念出来」 does not wait on 0.6B JSON: `LoopEngine.completeFromSpeakPhraseIfMatched` runs `speech_output` even when `skipIntentShortcut` (no MiniRBT). Greeting 「你好」 still goes to the LLM. Identity is Chinese (`你是 Dougie…本地优先…用中文回答。`) and must not name tools. The one-line JSON tool protocol is appended only in `localPrompt` when there is **no** successful tool result yet — not in remote `system`. After a tool result, `localPrompt` drops that protocol and tells the model to answer in Chinese and not emit tool JSON (0.6B otherwise recalls `time` until `MaxLoopExceeded`). SCREEN notes stay metadata (pixels never in the string); `screen_match` untrusted-instruction English stays on the SCREEN attachment line, not in identity. `localPrompt` after a successful tool result omits the user question (so 0.6B does not echo 「现在几点了」) and tells the model not to repeat it; `ChatLlmProvider` also `stripLeadingQuestion` on `TextDelta`. Sideload `ChatLlmProvider` buffers LiteRT text, then `LocalToolCallParser`: a whole-reply object `{"name":"time","args":{}}` or the same object inside one markdown fence becomes `LlmEvent.ToolCall` (unknown names still parse; `ToolCallSanitizer` rejects them). Mixed Chinese plus JSON on the same reply stays text. A ToolCall that repeats a successful `name`+`args` is not executed again (`TextDelta` fallback). Otherwise the text is `TextDelta`. `FakeLlmProvider` / `:cli` stay on the fake script. Do not Logcat the assembled string or the model completion.
+**Decision**: `:core:llm` `ChatPromptAssembler` is the only identity + attachment metadata + `Known facts:` + tools inventory string. Remote `system` calls `systemPrefix(task, descriptors)` with the **full** injected table. `localPrompt` still receives that table (Loop can execute any emitted JSON) but **teaches** only `localTeachable`: `time`, `battery`, `clipboard_read`, `location`, `calendar_query`, `screen_capture`, `speech_input`, `clipboard_write`, `calendar_create`, `app_intent`, `screen_match`, `speech_output` — inventory lines and JSON examples for those names that are actually present (`screen_match` uses `template_id=solid`; `speech_output` uses `text=要念的原文`, not clipboard's `示例文字` and not `你好` — 0.6B otherwise echoes 你好 as chat; `app_intent` uses `uri=package:com.example.app`, not `https://example.com` — 0.6B otherwise copies a webpage or puts the Chinese app name in uri (`APP_INTENT_DENIED`); L2 examples include required args, not `{}`). Do not teach `tap_swipe`, `intent_classifier`, or `js_eval`. The local JSON protocol label for `speech_output` is **念出来**. Calendar `startIso` rewrite is a mid-protocol clause (only when the user gave a date/clock); the **last** protocol sentence must map 念出来/读出来/播报 to `speech_output` and say **不要建日历**. Typed 「把X念出来」 does not wait on 0.6B JSON: `LoopEngine.completeFromSpeakPhraseIfMatched` runs `speech_output` even when `skipIntentShortcut` (no MiniRBT). Greeting 「你好」 still goes to the LLM. Identity is Chinese (`你是 Dougie…本地优先…用中文回答。`) and must not name tools. The one-line JSON tool protocol is appended only in `localPrompt` when there is **no** successful tool result yet — not in remote `system`. After a tool result, `localPrompt` drops that protocol and tells the model to answer in Chinese and not emit tool JSON (0.6B otherwise recalls `time` until `MaxLoopExceeded`). SCREEN notes stay metadata (pixels never in the string); `screen_match` untrusted-instruction English stays on the SCREEN attachment line, not in identity. `localPrompt` after a successful tool result omits the user question (so 0.6B does not echo 「现在几点了」) and tells the model not to repeat it; `ChatLlmProvider` also `stripLeadingQuestion` on `TextDelta`. Sideload `ChatLlmProvider` buffers LiteRT text, then `LocalToolCallParser`: a whole-reply object `{"name":"time","args":{}}` or the same object inside one markdown fence becomes `LlmEvent.ToolCall` (unknown names still parse; `ToolCallSanitizer` rejects them). Mixed Chinese plus JSON on the same reply stays text. A ToolCall that repeats a successful `name`+`args` is not executed again (`TextDelta` fallback). Otherwise the text is `TextDelta`. `FakeLlmProvider` / `:cli` stay on the fake script. Do not Logcat the assembled string or the model completion.
 
 ## Don't: Android plugin on `:core:*`
 
@@ -230,13 +237,13 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Problem**: `:core:tool` is on the Play classpath. A TapSwipe class there would ship in the Play APK even if unregistered.
 
-**Instead**: Keep `TapSwipeTool` and `AccessibilityService` in `:tool:accessibility`, wired only with `sideloadImplementation`. Play `ChannelTools` must not import those types. `PolicyEngine` treats `RiskLevel.L3` as always `NeedsConfirmation`. Sideload `TapSwipeTool` dispatches via `GesturePort` (`dispatchGesture`); refuse bank/payment/password-manager foreground packages in `HighRiskForeground` before any gesture. Overlay is the same split: `DougieOverlayService` / `SYSTEM_ALERT_WINDOW` live only under `app/src/sideload/` (not `:feature:settings`, not play). Play uses `NotificationCompat.BubbleMetadata` on the existing task notice when `!BuildConfig.IS_SIDELOAD` and API ≥ 29.
+**Instead**: Keep `TapSwipeTool` and `AccessibilityService` in `:tool:accessibility`, wired only with `sideloadImplementation`. Play `ChannelTools` must not import those types. `PolicyEngine` treats `RiskLevel.L2`, `L3`, and `L4` as `NeedsConfirmation`. Sideload `TapSwipeTool` dispatches via `GesturePort` (`dispatchGesture`); refuse bank/payment/password-manager foreground packages in `HighRiskForeground` before any gesture. Overlay is the same split: `DougieOverlayService` / `SYSTEM_ALERT_WINDOW` live only under `app/src/sideload/` (not `:feature:settings`, not play). Play uses `NotificationCompat.BubbleMetadata` on the existing task notice when `!BuildConfig.IS_SIDELOAD` and API ≥ 29. Isolated JS (`js_eval`, `:tool:js`) is also `sideloadImplementation` only. Play `ChannelTools` must not import `JsEvalTool` / QuickJS. JS must not call `tap_swipe`.
 
 ## Don't: Tap a third-party app from Chat confirm
 
 **Problem**: `dispatchGesture` hits whatever is on screen. Chat L3 ConfirmCard runs in Dougie, so after the user confirms, Dougie is the foreground — not the app they captured. Bundled `solid` / `logo` NCC is not a product locator for arbitrary third-party UI.
 
-**Instead**: Chat `completeFromMatchThenTapIfMatched` is a sideload gate/path for confirm + denylist + coordinates from `screen_match`; it does **not** claim third-party automation. Real taps on another app wait for a later **foreground script / goal runner**: the target app stays visible, steps (match/tap) execute there, and L3 confirm must not steal the Activity (not Chat). Do not add overlay `TaskManager.submit` in the current overlay menu (`截取屏幕` / `打开对话` only). Do not teach `tap_swipe` to 0.6B.
+**Instead**: Chat `completeFromMatchThenTapIfMatched` is a sideload gate/path for confirm + denylist + coordinates from `screen_match`; it does **not** claim third-party automation. Real taps on another app wait for a later **foreground script / goal runner**: the target app stays visible, steps (match/tap) execute there, and L3 confirm must not steal the Activity (not Chat). Do not add overlay `TaskManager.submit` in the current overlay menu (`截取屏幕` / `打开对话` only). Do not teach `tap_swipe` or `js_eval` to 0.6B. Isolated `js_eval` must not drive gestures.
 
 ## Don't: Cloud STT or commit 230MB ASR models
 
@@ -267,7 +274,59 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
 
-**Instead**: `ModelInstaller` is app-owned HTTPS download into a cache dir. `ModelImporter` copies hashed sources into `filesDir` (JNI cache). Neither talks to SAF / `DocumentFile`. Both require SHA-256 to match `OfficialModelCatalog` specs (`SHA256.matches` + file hash), safe names / `relativeDir` / canonical, write `.part` then rename, delete `.part` on failure. Importer matches sources to specs by lowercase content hash (one source may fill multiple specs that share a hash; extra unmatched hashes or missing specs fail). `:app` `ExternalModelTreeImpl` streams tree files to temps for scan, and streams cache layout files onto a **reused** `{tree}/models/{asr,tts,intent,chat}` after a confirmed download (`ModelTreeNames` treats SAF uniquified `models (1)` / `models(2)` as the same folder; never `createDirectory` when a match exists; `listFiles` not `findFile`). No tree / lost persistable permission → UI must not fetch. Not registered on `LoopEngine`. Intent pack is `model.onnx` + `tokenizer.json` + `labels.txt` (historical `model.gguf` must not mark installed). Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / GitHub raw `IAmKings/Dougie` `master` testdata `core/tool/src/test/resources/intent-pack/` for intent `model.onnx` + `tokenizer.json` + `labels.txt`). A selected tree with matching hashes may still sync without HTTP. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.url` / `tokenizer.url` / `labels.url` plus matching sha256 keys). Invalid override URL/SHA → offer not configured; UI must not fetch.
+**Instead**: `ModelInstaller` is app-owned HTTPS download into a cache dir. `ModelImporter` copies hashed sources into `filesDir` (JNI cache). Neither talks to SAF / `DocumentFile`. Both require SHA-256 to match `OfficialModelCatalog` specs (`SHA256.matches` + file hash), safe names / `relativeDir` / canonical, write `.part` then rename, delete `.part` on failure. Importer matches sources to specs by lowercase content hash (one source may fill multiple specs that share a hash; extra unmatched hashes or missing specs fail). `:app` `ExternalModelTreeImpl` streams tree files to temps for scan, and streams cache layout files onto a **reused** `{tree}/models/{asr,tts,intent,chat}` after a confirmed download (`ModelTreeNames` treats SAF uniquified `models (1)` / `models(2)` as the same folder; never `createDirectory` when a match exists; `listFiles` not `findFile`). No tree / lost persistable permission → UI must not fetch. Not registered on `LoopEngine`. Intent pack is `model.onnx` + `tokenizer.json` + `labels.txt` (historical `model.gguf` must not mark installed). Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / GitHub raw `IAmKings/Dougie` `master` testdata `core/tool/src/test/resources/intent-pack/` for intent `model.onnx` + `tokenizer.json` + `labels.txt`). A selected tree with matching hashes may still sync without HTTP. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.url` / `tokenizer.url` / `labels.url` plus matching sha256 keys). Invalid override URL/SHA → offer not configured; UI must not fetch. Isolated `js_eval` has no `fetch`/files; later privileged HTTPS must be allowlisted host APIs + L4, never an LLM-picked URL written into `filesDir`.
+
+## Scenario: isolated `js_eval`
+
+### 1. Scope / Trigger
+Sideload remote LLM may emit `js_eval`. Isolate is JSON in → QuickJS → JSON out. Play must not ship the engine. `data.reduce` needs an array; models often pass `1,2` as a string.
+
+### 2. Signatures
+- `JsEvalPort.evaluate(script: String, dataJson: String): String` — `dataJson` is a complete JSON document
+- `IsolatedJsGuard.canonicalizeData(raw: String): String` — `1,2` → `[1,2]`; `[1,2]` stays; incomplete `{` → `INVALID_TOOL_ARGS`
+- `IsolatedJsGuard.wrapProgram(script, dataJson)` — `JSON.stringify((function(data){ script })(JSON.parse(quoted)))`
+- `JsEvalTool` name `js_eval`, `RiskLevel.L2`, `script` STRING, `data` OBJECT
+- `AndroidJsEvalPort` — Cash App QuickJS create/eval/close on **one** worker thread; `future.get(2s)`
+- Sideload `ChannelTools.register` installs `js_eval` **before** a11y consent; Play `ChannelTools` is empty
+
+### 3. Contracts
+- Confirm every run. Chat `confirmToolBody("js_eval")` is isolation copy, not 写入设备数据. `toolDisplayName` is 运行脚本. Card still shows `argsJson`.
+- Result `{ok:true,value}` or fatal Chinese `JS_EVAL_*`. Rethrow `CancellationException`; timeout → `JS_EVAL_TIMEOUT`.
+- `ScriptPrivilegePrefs` default false; this tool must not read it.
+- Do not teach `js_eval` to 0.6B. Do not Logcat `script` / `data`. JS must not call `tap_swipe`.
+- Play classpath no `:tool:js` / `quickjs`. Play zip no `quickjs` / `AndroidJsEvalPort` (do **not** scan `JsEval` — `:core:tool` `JsEvalTool` is on Play but unregistered).
+
+### 4. Validation & Error Matrix
+- Host tokens (`fetch(`, `java.`, …) → `JS_EVAL_HOST` before port
+- Size > 8KiB script / 32KiB data → `JS_EVAL_TOO_LARGE`
+- Engine missing → `JS_ENGINE_NOT_READY`
+- QuickJS throw / non-JSON result → `JS_EVAL_FAILED`
+
+### 5. Good/Base/Bad Cases
+- Good: `return data.reduce((a,b)=>a+b,0)` + `data` `1,2` or `[1,2]` → `value` 3
+- Base: `return data` + `{"n":1}` echoes
+- Bad: `fetch(...)` ; Play registering QuickJS; mapping cancel to `JS_EVAL_FAILED`
+
+### 6. Tests Required
+- `IsolatedJsGuardTest` canonicalize `1,2`
+- `JsEvalToolTest` reduce + array/`1,2`; host/size/timeout/not-ready
+- `ToolCallSanitizerTest.jsEvalDataArrayIsKeptAsJson`
+- `ChatPromptAssemblerTest` remote may list `js_eval`, local omits
+- `ChatUiStateTest` 运行脚本 + isolation confirm copy
+- `PlayShortcutCopyTest` Play hooks/tools no QuickJS
+- `./gradlew :core:tool:test :core:runtime:test :core:llm:test :feature:chat:testDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak`
+
+### 7. Wrong vs Correct
+#### Wrong
+```kotlin
+JSON.parse("1,2")  // SyntaxError → JS_EVAL_FAILED
+check(!apkEntry.contains("JsEval"))  // false-positive on core JsEvalTool.class
+```
+#### Correct
+```kotlin
+IsolatedJsGuard.canonicalizeData("1,2") // "[1,2]"
+check(!apkEntry.contains("AndroidJsEvalPort"))
+```
 
 ## Scenario: `:cli` fake battery console
 
@@ -485,7 +544,7 @@ Cross-layer: JVM loop emits `AgentTask` snapshots; Chat maps them to bubbles.
 - `LoopEngineTest.matchThenTapTimeQuestionDoesNotTakePath`
 - `LoopEngineTest.matchThenTapFoundFalseDoesNotTap`
 - `LoopEngineTest.matchThenTapWithoutTapToolHaltsConsent`
-- `ChatPromptAssemblerTest` local inventory still omits `tap_swipe`
+- `ChatPromptAssemblerTest` local inventory still omits `tap_swipe` and `js_eval`
 
 ### 7. Wrong vs Correct
 #### Wrong

@@ -176,6 +176,7 @@ class ChatPromptAssemblerTest {
             ToolDescriptor("speech_output", description = "Speak text offline."),
             ToolDescriptor("app_intent", description = "Open a link."),
             ToolDescriptor("tap_swipe", description = "Tap or swipe."),
+            ToolDescriptor("js_eval", description = "Run isolated JavaScript."),
         )
         val taught = listOf(
             "time", "battery", "clipboard_read", "location",
@@ -187,6 +188,7 @@ class ChatPromptAssemblerTest {
         val remote = ChatPromptAssembler.systemPrefix(task, descriptors)
         val local = ChatPromptAssembler.localPrompt(task, descriptors)
         assertTrue(remote.contains("tap_swipe"))
+        assertTrue(remote.contains("js_eval"))
         assertTrue(remote.contains("intent_classifier"))
         taught.forEach { name ->
             assertTrue(local.contains("- $name:"))
@@ -204,6 +206,7 @@ class ChatPromptAssemblerTest {
         assertTrue(local.contains("不要把应用中文名"))
         assertTrue(!local.contains("https://example.com"))
         assertTrue(!local.contains("tap_swipe"))
+        assertTrue(!local.contains("js_eval"))
         assertTrue(!local.contains("intent_classifier"))
         assertTrue(local.contains("一行 JSON"))
         IDENTITY_TOOL_NAMES.forEach { name ->
@@ -295,6 +298,7 @@ class ChatPromptAssemblerTest {
             "screen_match",
             "speech_output",
             "app_intent",
+            "js_eval",
         )
     }
 }

@@ -128,6 +128,7 @@ dependencies {
     implementation(project(":data:tasks"))
     implementation(project(":tool:system"))
     add("sideloadImplementation", project(":tool:accessibility"))
+    add("sideloadImplementation", project(":tool:js"))
     add("sideloadImplementation", project(":tool:chatllm"))
     implementation(project(":core:runtime"))
     implementation(project(":core:llm"))
@@ -222,6 +223,11 @@ tasks.register("checkChannelLeak") {
             component.id.displayName.contains("tool:accessibility")
         }
         check(!leaked) { "playDebugRuntimeClasspath includes :tool:accessibility" }
+        val jsOnPlay = playClasspath.incoming.resolutionResult.allComponents.any { component ->
+            component.id.displayName.contains("tool:js") ||
+                component.id.displayName.contains("quickjs", ignoreCase = true)
+        }
+        check(!jsOnPlay) { "playDebugRuntimeClasspath includes :tool:js or quickjs" }
         val chatllmOnPlay = playClasspath.incoming.resolutionResult.allComponents.any { component ->
             component.id.displayName.contains("tool:chatllm")
         }
@@ -246,6 +252,12 @@ tasks.register("checkChannelLeak") {
             checkNoIntentModel(name, playApk)
             check(!name.contains("litertlm", ignoreCase = true)) {
                 "play APK leaked litertlm: $name in $playApk"
+            }
+            check(!name.contains("quickjs", ignoreCase = true)) {
+                "play APK leaked quickjs: $name in $playApk"
+            }
+            check(!name.contains("AndroidJsEvalPort")) {
+                "play APK leaked AndroidJsEvalPort: $name in $playApk"
             }
         }
         val sideloadApk = flavorDebugApk("sideload")

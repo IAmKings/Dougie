@@ -236,7 +236,16 @@ class ChatUiStateTest {
         assertEquals("时间工具", toolDisplayName("time"))
         assertEquals("截取屏幕", toolDisplayName("screen_capture"))
         assertEquals("念出来", toolDisplayName("speech_output"))
+        assertEquals("运行脚本", toolDisplayName("js_eval"))
         assertEquals("calendar", toolDisplayName("calendar"))
+        assertEquals(
+            "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。",
+            confirmToolBody("js_eval"),
+        )
+        assertEquals(
+            "该操作会写入设备数据。确认后才会执行；拒绝则跳过。",
+            confirmToolBody("calendar_create"),
+        )
     }
 
     @Test

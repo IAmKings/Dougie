@@ -30,6 +30,7 @@ include(
     ":core:memory",
     ":tool:system",
     ":tool:accessibility",
+    ":tool:js",
     ":tool:chatllm",
     ":data:preferences",
     ":data:memory",

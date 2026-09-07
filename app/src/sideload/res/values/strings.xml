@@ -18,4 +18,7 @@
     <string name="overlay_permission_subtitle">截其他应用前需允许显示在其他应用上层，并在权限中心授予投屏</string>
     <string name="accessibility_permission_title">无障碍</string>
     <string name="accessibility_permission_subtitle">用于经确认的屏幕点击与滑动。需在系统设置中开启 Dougie 无障碍服务；银行、支付、密码管理器界面不可操作</string>
+    <string name="script_privilege_title">脚本特权</string>
+    <string name="script_privilege_body">打开后仍不增加文件或网络接口。当前隔离脚本每次都要确认。默认关闭。</string>
+    <string name="script_privilege_toggle">允许脚本特权（L4）</string>
 </resources>

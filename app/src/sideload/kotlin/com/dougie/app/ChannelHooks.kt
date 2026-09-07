@@ -176,6 +176,43 @@ object ChannelHooks {
                 )
             }
         }
+        var scriptPrivilege by remember { mutableStateOf(ScriptPrivilegePrefs.isEnabled(context)) }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.script_privilege_title),
+                color = DougieColors.OnSurface,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = stringResource(R.string.script_privilege_body),
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 14.sp,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.script_privilege_toggle),
+                    color = DougieColors.OnSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = scriptPrivilege,
+                    onCheckedChange = { on ->
+                        ScriptPrivilegePrefs.setEnabled(context, on)
+                        scriptPrivilege = on
+                    },
+                )
+            }
+        }
     }
 }
 
