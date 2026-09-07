@@ -1322,3 +1322,24 @@ localTeachable 七件：原四件加 calendar_query/screen_capture/speech_input�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 59: 侧载悬浮球品牌圆标
+
+**Date**: 2026-09-07
+**Task**: 侧载悬浮球品牌圆标
+**Branch**: `master`
+
+### Summary
+
+收起改为 48dp 蓝底白色 dougie_logo 圆球，TalkBack 仍为 Dougie；菜单与截屏/开对话不变。真机验收后提交。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cd3da69` | (see git log) |
+
+### Status
+
+[OK] **Completed**
