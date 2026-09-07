@@ -235,6 +235,7 @@ class ChatUiStateTest {
         assertEquals("电池工具", toolDisplayName("battery"))
         assertEquals("时间工具", toolDisplayName("time"))
         assertEquals("截取屏幕", toolDisplayName("screen_capture"))
+        assertEquals("念出来", toolDisplayName("speech_output"))
         assertEquals("calendar", toolDisplayName("calendar"))
     }
 

@@ -153,4 +153,30 @@ class IntentRouteAnswersTest {
             ),
         )
     }
+
+    @Test
+    fun speechOutputPhraseExtractsTextAndFormats() {
+        val json = IntentRouteAnswers.parseShortcutArgs("speech_output", "把你好念出来")!!
+        assertEquals("你好", Json.parseToJsonElement(json).jsonObject["text"]!!.jsonPrimitive.content)
+        assertEquals(
+            "你好",
+            Json.parseToJsonElement(
+                IntentRouteAnswers.parseShortcutArgs("speech_output", "把你好念出来。")!!,
+            ).jsonObject["text"]!!.jsonPrimitive.content,
+        )
+        assertEquals(
+            "你好",
+            Json.parseToJsonElement(
+                IntentRouteAnswers.parseShortcutArgs("speech_output", "请念一下你好")!!,
+            ).jsonObject["text"]!!.jsonPrimitive.content,
+        )
+        assertNull(IntentRouteAnswers.parseShortcutArgs("speech_output", "你好"))
+        assertNull(IntentRouteAnswers.parseShortcutArgs("speech_output", "把你好写到剪贴板"))
+        assertNull(IntentRouteAnswers.parseShortcutArgs("speech_output", "读一下日历"))
+        assertNull(IntentRouteAnswers.parseShortcutArgs("speech_output", "读一下剪贴板"))
+        assertEquals(
+            "已念出来。",
+            IntentRouteAnswers.formatFinalAnswer("speech_output", """{"ok":true,"backend":"offline"}"""),
+        )
+    }
 }

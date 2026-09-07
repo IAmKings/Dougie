@@ -160,7 +160,7 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
-    fun localPromptTeachesSevenNoSlotAndThreeL2Tools() {
+    fun localPromptTeachesNoSlotL2MatchAndSpeechOutput() {
         val descriptors = listOf(
             ToolDescriptor("intent_classifier", description = "Classify intent."),
             ToolDescriptor("calendar_create", description = "Create an event."),
@@ -171,7 +171,9 @@ class ChatPromptAssemblerTest {
             ToolDescriptor("clipboard_write", description = "Write clipboard."),
             ToolDescriptor("location", description = "Read coarse location."),
             ToolDescriptor("screen_capture", description = "Capture the screen."),
+            ToolDescriptor("screen_match", description = "Match a template on the last frame."),
             ToolDescriptor("speech_input", description = "Capture one utterance."),
+            ToolDescriptor("speech_output", description = "Speak text offline."),
             ToolDescriptor("app_intent", description = "Open a link."),
             ToolDescriptor("tap_swipe", description = "Tap or swipe."),
         )
@@ -179,6 +181,7 @@ class ChatPromptAssemblerTest {
             "time", "battery", "clipboard_read", "location",
             "calendar_query", "screen_capture", "speech_input",
             "clipboard_write", "calendar_create", "app_intent",
+            "screen_match", "speech_output",
         )
         val task = AgentTask(taskId = "t-teach", input = "把你好写到剪贴板")
         val remote = ChatPromptAssembler.systemPrefix(task, descriptors)
@@ -190,6 +193,12 @@ class ChatPromptAssemblerTest {
             assertTrue(local.contains("{\"name\":\"$name\""))
         }
         assertTrue(local.contains("{\"text\":\"示例文字\"}"))
+        assertTrue(local.contains("{\"text\":\"要念的原文\"}"))
+        assertTrue(local.contains("{\"template_id\":\"solid\"}"))
+        assertTrue(!local.contains("{\"template_id\":\"logo\"}"))
+        assertTrue(local.contains("模板匹配"))
+        assertTrue(local.contains("念出来"))
+        assertTrue(local.contains("不要建日历"))
         assertTrue(local.contains("\"startIso\""))
         assertTrue(local.contains("https://example.com"))
         assertTrue(!local.contains("tap_swipe"))
@@ -204,6 +213,9 @@ class ChatPromptAssemblerTest {
     fun localPromptAfterToolResultDropsJsonProtocol() {
         val descriptors = listOf(
             ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("screen_match", description = "Match a template on the last frame."),
+            ToolDescriptor("speech_output", description = "Speak text offline."),
+            ToolDescriptor("tap_swipe", description = "Tap or swipe."),
         )
         val task = AgentTask(
             taskId = "t-after-time",
@@ -225,6 +237,33 @@ class ChatPromptAssemblerTest {
         assertTrue(!prompt.contains("现在几点了"))
         assertTrue(!prompt.contains("一行 JSON"))
         assertTrue(!prompt.contains("{\"name\":\"time\""))
+        assertTrue(!prompt.contains("{\"template_id\":\"solid\"}"))
+        assertTrue(!prompt.contains("{\"name\":\"screen_match\""))
+        assertTrue(!prompt.contains("{\"name\":\"speech_output\""))
+    }
+
+    @Test
+    fun localPromptSpeakUtteranceDisambiguatesCalendarCreate() {
+        val descriptors = listOf(
+            ToolDescriptor("calendar_create", description = "Create an event."),
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
+            ToolDescriptor("speech_output", description = "Speak text offline."),
+        )
+        val input = "把你好念出来"
+        val local = ChatPromptAssembler.localPrompt(
+            AgentTask(taskId = "t-speak", input = input),
+            descriptors,
+        )
+        val protocol = local.substringBefore(input)
+        assertTrue(protocol.contains("{\"name\":\"speech_output\""))
+        assertTrue(protocol.contains("{\"text\":\"要念的原文\"}"))
+        assertTrue(protocol.contains("念出来"))
+        assertTrue(protocol.contains("读出来"))
+        assertTrue(protocol.contains("播报"))
+        assertTrue(protocol.contains("建日历仅当用户给了日期或钟点"))
+        assertTrue(protocol.lastIndexOf("不要建日历") > protocol.lastIndexOf("calendar_create"))
+        assertTrue(protocol.lastIndexOf("不要建日历") > protocol.lastIndexOf("startIso"))
+        assertTrue(protocol.trimEnd().endsWith("用户说念出来、读出来或播报时只用念出来 JSON，不要建日历。"))
     }
 
     @Test
@@ -252,6 +291,7 @@ class ChatPromptAssemblerTest {
             "location",
             "screen_capture",
             "screen_match",
+            "speech_output",
             "app_intent",
         )
     }

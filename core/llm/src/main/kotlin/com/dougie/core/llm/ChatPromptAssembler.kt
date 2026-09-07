@@ -111,6 +111,8 @@ object ChatPromptAssembler {
                 "clipboard_write" -> "写剪贴板"
                 "calendar_create" -> "建日历"
                 "app_intent" -> "打开应用"
+                "screen_match" -> "模板匹配"
+                "speech_output" -> "念出来"
                 else -> descriptor.name
             }
             "$label {\"name\":\"${descriptor.name}\",\"args\":${exampleArgs(descriptor.name)}}"
@@ -118,13 +120,16 @@ object ChatPromptAssembler {
         return "若需要工具，整段回复必须是一行 JSON。" +
             examples +
             "。同一工具不要连续调用。得到结果后必须用中文回答用户。" +
-            "建日历的 startIso 必须按用户说的日期改写成带时区的 ISO，不要照抄示例里的日期。"
+            "建日历仅当用户给了日期或钟点；startIso 按用户说的时间改写，不要照抄示例。" +
+            "用户说念出来、读出来或播报时只用念出来 JSON，不要建日历。"
     }
 
     private fun exampleArgs(name: String): String = when (name) {
         "clipboard_write" -> "{\"text\":\"示例文字\"}"
         "calendar_create" -> "{\"title\":\"开会\",\"startIso\":\"2026-09-08T15:00:00+08:00\"}"
         "app_intent" -> "{\"uri\":\"https://example.com\"}"
+        "screen_match" -> "{\"template_id\":\"solid\"}"
+        "speech_output" -> "{\"text\":\"要念的原文\"}"
         else -> "{}"
     }
 
@@ -139,6 +144,8 @@ object ChatPromptAssembler {
         "clipboard_write",
         "calendar_create",
         "app_intent",
+        "screen_match",
+        "speech_output",
     )
 
     private const val LOCAL_AFTER_TOOL_RESULTS =

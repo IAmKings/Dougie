@@ -33,7 +33,7 @@
 | Change | Minimum tests | Command (`JAVA_HOME` OpenJDK 17) |
 |--------|---------------|------------------|
 | Loop / gateway / policy / sanitizer | Named cases in `LoopEngineTest`, `EgressGatewayTest`, `PolicyEngineTest`, `ToolCallSanitizerTest` | `./gradlew :core:runtime:test` |
-| OpenAI SSE / vendor body / shared Chat prompt | `OpenAICompatibleProviderTest`, `ChatPromptAssemblerTest` (Chinese identity, no tool names in identity, SCREEN metadata only, remote inventory full table, **local inventory seven no-slot plus L2 write/create/open**), `LocalToolCallParserTest` | `./gradlew :core:llm:test` |
+| OpenAI SSE / vendor body / shared Chat prompt | `OpenAICompatibleProviderTest`, `ChatPromptAssemblerTest` (Chinese identity, no tool names in identity, SCREEN metadata only, remote inventory full table, **local inventory seven no-slot plus L2 write/create/open plus screen_match/speech_output**), `LocalToolCallParserTest` | `./gradlew :core:llm:test` |
 | Tool JSON, gates, model install/import | Matching `*ToolTest` / `ModelInstallerTest` / `ModelImporterTest` | `./gradlew :core:tool:test` |
 | Memory gate / FTS behavior | `MemoryGateTest`; Android SQLite stays in `:data:memory` | `./gradlew :core:memory:test` |
 | Vendor presets | `LlmVendorsTest` | `./gradlew :core:model:test` |

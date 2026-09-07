@@ -22,6 +22,7 @@ import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.IntentPort
 import com.dougie.core.tool.OpenAppEntry
 import com.dougie.core.tool.ScreenCaptureTool
+import com.dougie.core.tool.SpeechOutputTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -74,6 +75,10 @@ class LoopEngine(
             task = retrieveMemories(task, emit)
             stepDelay()
 
+            val spoken = completeFromSpeakPhraseIfMatched(task, emit)
+            if (spoken != null) {
+                return@withContext spoken
+            }
             val shortcut = completeFromIntentIfMatched(task, emit)
             if (shortcut != null) {
                 return@withContext shortcut
@@ -146,6 +151,17 @@ class LoopEngine(
         }
     }
 
+    private suspend fun completeFromSpeakPhraseIfMatched(
+        start: AgentTask,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask? {
+        if (!tools.containsKey(SpeechOutputTool.NAME)) return null
+        val argsJson = IntentRouteAnswers.classifyTexts(start.input)
+            .firstNotNullOfOrNull { IntentRouteAnswers.parseShortcutArgs(SpeechOutputTool.NAME, it) }
+            ?: return null
+        return completeFromNamedShortcut(start, SpeechOutputTool.NAME, argsJson, emit)
+    }
+
     private suspend fun completeFromIntentIfMatched(
         start: AgentTask,
         emit: suspend (AgentTask) -> Unit,
@@ -168,6 +184,16 @@ class LoopEngine(
         val argsJson = IntentRouteAnswers.classifyTexts(start.input)
             .firstNotNullOfOrNull { IntentRouteAnswers.parseShortcutArgs(toolName, it, entries) }
             ?: return null
+        return completeFromNamedShortcut(start, toolName, argsJson, emit)
+    }
+
+    private suspend fun completeFromNamedShortcut(
+        start: AgentTask,
+        toolName: String,
+        argsJson: String,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask {
+        val entries = openAppEntries()
         val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
         return when (
             val pass = executeToolPass(

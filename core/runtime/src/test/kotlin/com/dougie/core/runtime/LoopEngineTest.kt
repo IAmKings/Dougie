@@ -41,6 +41,9 @@ import com.dougie.core.tool.IntentPort
 import com.dougie.core.tool.LocationTool
 import com.dougie.core.tool.ScreenCaptureTool
 import com.dougie.core.tool.ScreenMatchTool
+import com.dougie.core.tool.SpeechOutputTool
+import com.dougie.core.tool.FakeTtsEngine
+import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SystemTimeTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -1422,6 +1425,36 @@ class LoopEngineTest {
         assertEquals("走了云端", result.finalAnswer)
         assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
         assertTrue(result.toolTrace.none { it.toolName == "clipboard_read" })
+    }
+
+    @Test
+    fun speakPhraseRunsSpeechOutputEvenWhenIntentShortcutSkipped() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val offline = FakeTtsEngine(ready = true)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                SpeechOutputTool.NAME to SpeechOutputTool(
+                    PreferOfflineTtsPort(offline, FakeTtsEngine()),
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val spoken = engine.run(AgentTask(taskId = "t-speak", input = "把你好念出来")) {}
+        assertEquals(TaskStatus.COMPLETED, spoken.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals(listOf("你好"), offline.spoken)
+        assertEquals("已念出来。", spoken.finalAnswer)
+        assertEquals(SpeechOutputTool.NAME, spoken.toolTrace.single().toolName)
+        assertEquals(CompletionPath.LOCAL_INTENT, spoken.completionPath)
+
+        val chat = engine.run(AgentTask(taskId = "t-hi", input = "你好")) {}
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", chat.finalAnswer)
+        assertEquals(listOf("你好"), offline.spoken)
     }
 
     @Test

@@ -70,6 +70,7 @@ internal object IntentRouteAnswers {
         "clipboard_write" -> parseClipboardWrite(input)
         "calendar_create" -> parseCalendarCreate(input)
         "app_intent" -> parseOpenApp(input, openApps)
+        "speech_output" -> parseSpeechOutput(input)
         else -> null
     }
 
@@ -104,6 +105,7 @@ internal object IntentRouteAnswers {
                 "clipboard_write" -> formatClipboardWrite(obj)
                 "app_intent" -> formatAppIntent(obj, openApps)
                 "screen_capture" -> formatScreenCapture(obj)
+                "speech_output" -> formatSpeechOutput(obj)
                 else -> null
             }
         } catch (_: Exception) {
@@ -177,6 +179,21 @@ internal object IntentRouteAnswers {
         return buildJsonObject {
             put("uri", "package:${hit.packageName}")
         }.toString()
+    }
+
+    private fun formatSpeechOutput(obj: JsonObject): String? {
+        if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) return null
+        return "已念出来。"
+    }
+
+    private fun parseSpeechOutput(input: String): String? {
+        val s = normalize(input)
+        val captured = SPEAK_PATTERNS.firstNotNullOfOrNull { pattern ->
+            pattern.matchEntire(s)?.groupValues?.get(1)
+        } ?: return null
+        val text = captured.trim().trim('「', '」', '『', '』', '"', '\'', '“', '”')
+        if (text.isEmpty()) return null
+        return buildJsonObject { put("text", text) }.toString()
     }
 
     private fun parseClipboardWrite(input: String): String? {
@@ -316,6 +333,10 @@ internal object IntentRouteAnswers {
     private val COLON_CLOCK = Regex("""(\d{1,2})[:：](\d{2})""")
     private val POINT_CLOCK = Regex(
         """(\d{1,2}|[零一二三四五六七八九十两]{1,3})点(半|(?:(\d{1,2}|[零一二三四五六七八九十]{1,3})分))?""",
+    )
+    private val SPEAK_PATTERNS = listOf(
+        Regex("""^(?:请)?把(.+?)(?:念出来|读出来|播报出来)$"""),
+        Regex("""^(?:请)?念一下(.+)$"""),
     )
     private val PERIODS = listOf("今早", "今晚", "傍晚", "晚上", "下午", "上午", "早上", "中午")
     private val TITLE_NOISE = listOf(
