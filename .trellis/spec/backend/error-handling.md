@@ -36,6 +36,7 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Tap/swipe without sideload consent | `TapSwipeTool` consent gate | `未完成侧载知情同意，无法执行屏幕操作` |
 | Tap/swipe without Accessibility | Service instance null | `未开启无障碍服务，无法执行屏幕操作` |
 | Tap/swipe on bank/pay/password app | `HighRiskForeground` | `该应用不允许自动点击或滑动。` |
+| Tap/swipe with unknown foreground | Accessibility `rootInActiveWindow` and last `TYPE_WINDOW_STATE_CHANGED` package both empty (config must `canRetrieveWindowContent`; do not map this to the bank message) | `无法确认当前应用，已停止点击以免误操作。` |
 | Speech while background | `SpeechInputTool` foreground check | `应用不在前台，无法使用语音输入。` |
 | Speech model file missing | `filesDir/models/asr/` layout absent. Chat mic stays visible, does not record; attachment line + **去下载** opens Settings. Permission dialog is not shown first. | `离线语音模型尚未就绪，无法识别。` |
 | Chat TTS pack missing | Host `speakFinal` / **播报** hidden unless `isReplyTtsReady`. Autoplay fail still uses attachment line + **去下载**. Voice picker disabled until TTS row 已安装. | `语音回复暂不可用` |

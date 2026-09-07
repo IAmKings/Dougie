@@ -35,6 +35,17 @@ class TapSwipeToolTest {
         val tool = TapSwipeTool(consentGranted = { true }, port = port)
         val result = tool.execute(TAP_JSON, ctx())
         assertEquals(TapSwipeTool.BLOCKED_APP, result.error)
+        assertEquals(true, result.isFatal)
+        assertEquals(0, port.taps)
+    }
+
+    @Test
+    fun executeUnknownForegroundDoesNotClaimBlockedApp() = runBlocking {
+        val port = FakeGesturePort(foreground = null)
+        val tool = TapSwipeTool(consentGranted = { true }, port = port)
+        val result = tool.execute(TAP_JSON, ctx())
+        assertEquals(TapSwipeTool.FOREGROUND_UNKNOWN, result.error)
+        assertEquals(true, result.isFatal)
         assertEquals(0, port.taps)
     }
 

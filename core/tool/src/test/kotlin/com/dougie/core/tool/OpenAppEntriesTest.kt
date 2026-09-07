@@ -2,6 +2,7 @@ package com.dougie.core.tool
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class OpenAppEntriesTest {
@@ -12,6 +13,15 @@ class OpenAppEntriesTest {
         assertEquals(entries.single(), OpenAppEntries.match("帮我打开微信", entries))
         assertNull(OpenAppEntries.match("打开微信看看", entries))
         assertNull(OpenAppEntries.match("打开", entries))
+        assertEquals(
+            OpenAppEntry("24点大作战", "com.example.twentyfour"),
+            OpenAppEntries.match(
+                "打开24点大作战",
+                listOf(OpenAppEntry("24点大作战", "com.example.twentyfour")),
+            ),
+        )
+        assertTrue(OpenAppEntries.startsWithOpenPrefix("打开24点大作战"))
+        assertTrue(!OpenAppEntries.startsWithOpenPrefix("24点大作战"))
     }
 
     @Test

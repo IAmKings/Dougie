@@ -71,6 +71,11 @@ object OpenAppEntries {
         return entries.firstOrNull { it.alias == key }
     }
 
+    fun startsWithOpenPrefix(input: String): Boolean {
+        val s = input.trim()
+        return OPEN_PREFIXES.any { s.startsWith(it) && s.length > it.length }
+    }
+
     fun stripOpenPrefix(input: String): String {
         val s = input.trim()
         for (prefix in OPEN_PREFIXES) {

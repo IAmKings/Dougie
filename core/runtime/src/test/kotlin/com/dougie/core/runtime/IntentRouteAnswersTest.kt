@@ -121,6 +121,14 @@ class IntentRouteAnswersTest {
         )
         assertNull(IntentRouteAnswers.parseShortcutArgs("app_intent", "打开微信看看", apps))
         assertNull(IntentRouteAnswers.parseShortcutArgs("app_intent", "打开微信", emptyList()))
+        val twentyFour = listOf(
+            com.dougie.core.tool.OpenAppEntry("24点大作战", "com.example.twentyfour"),
+        )
+        val twentyJson = IntentRouteAnswers.parseShortcutArgs("app_intent", "打开24点大作战", twentyFour)
+        assertEquals(
+            "package:com.example.twentyfour",
+            Json.parseToJsonElement(twentyJson!!).jsonObject["uri"]!!.jsonPrimitive.content,
+        )
         assertEquals(
             "已打开微信。",
             IntentRouteAnswers.formatFinalAnswer(
@@ -177,6 +185,41 @@ class IntentRouteAnswersTest {
         assertEquals(
             "已念出来。",
             IntentRouteAnswers.formatFinalAnswer("speech_output", """{"ok":true,"backend":"offline"}"""),
+        )
+    }
+
+    @Test
+    fun matchThenTapPhraseHitsClickNotTimeOrMatchOnly() {
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("点一下"))
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("帮我点一下"))
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("点击"))
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("按一下。"))
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("点"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("现在几点了"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("现在几点了？"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("匹配一下"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("明天三点开会"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("地点"))
+    }
+
+    @Test
+    fun tapArgsFromFoundMatchJson() {
+        val json = IntentRouteAnswers.tapArgsFromMatchJson(
+            """{"template_id":"solid","found":true,"x":120,"y":240,"confidence":0.9}""",
+        )!!
+        val obj = Json.parseToJsonElement(json).jsonObject
+        assertEquals("tap", obj["action"]!!.jsonPrimitive.content)
+        assertEquals("120", obj["x"]!!.jsonPrimitive.content)
+        assertEquals("240", obj["y"]!!.jsonPrimitive.content)
+        assertEquals(
+            null,
+            IntentRouteAnswers.tapArgsFromMatchJson(
+                """{"template_id":"solid","found":false,"x":null,"y":null,"confidence":0.1}""",
+            ),
+        )
+        assertEquals(
+            "已点击。",
+            IntentRouteAnswers.formatFinalAnswer("tap_swipe", """{"ok":true,"action":"tap","x":1,"y":2}"""),
         )
     }
 }

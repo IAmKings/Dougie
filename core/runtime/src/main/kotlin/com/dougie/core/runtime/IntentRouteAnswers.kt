@@ -22,6 +22,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 internal object IntentRouteAnswers {
+    const val TAP_SWIPE = "tap_swipe"
     private const val TRAILING_PUNCT = "？?！!。．.…、，, "
     private const val TRAILING_PARTICLE = "了呢啊呀吗吧嘛的"
     private const val CLIPBOARD_MAX = 200
@@ -59,6 +60,25 @@ internal object IntentRouteAnswers {
         "open_app" -> "app_intent"
         "screen_capture" -> "screen_capture"
         else -> null
+    }
+
+    fun isMatchThenTapPhrase(input: String): Boolean =
+        classifyTexts(input).any { looksLikeMatchThenTap(normalize(it).ifEmpty { it }) }
+
+    fun tapArgsFromMatchJson(resultJson: String): String? {
+        val obj = try {
+            Json.parseToJsonElement(resultJson).jsonObject
+        } catch (_: Exception) {
+            return null
+        }
+        if (obj["found"]?.jsonPrimitive?.booleanOrNull != true) return null
+        val x = obj["x"]?.jsonPrimitive?.intOrNull ?: return null
+        val y = obj["y"]?.jsonPrimitive?.intOrNull ?: return null
+        return buildJsonObject {
+            put("action", "tap")
+            put("x", x)
+            put("y", y)
+        }.toString()
     }
 
     fun parseShortcutArgs(
@@ -106,6 +126,7 @@ internal object IntentRouteAnswers {
                 "app_intent" -> formatAppIntent(obj, openApps)
                 "screen_capture" -> formatScreenCapture(obj)
                 "speech_output" -> formatSpeechOutput(obj)
+                TAP_SWIPE -> formatTapSwipe(obj)
                 else -> null
             }
         } catch (_: Exception) {
@@ -181,9 +202,23 @@ internal object IntentRouteAnswers {
         }.toString()
     }
 
+    private fun looksLikeMatchThenTap(normalized: String): Boolean {
+        if (normalized.contains("几点")) return false
+        if (normalized.contains("点击") || normalized.contains("按一下") || normalized.contains("点一下")) {
+            return true
+        }
+        val core = normalized.removePrefix("请").removePrefix("帮我").trim()
+        return core == "点"
+    }
+
     private fun formatSpeechOutput(obj: JsonObject): String? {
         if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) return null
         return "已念出来。"
+    }
+
+    private fun formatTapSwipe(obj: JsonObject): String? {
+        if (obj["ok"]?.jsonPrimitive?.booleanOrNull != true) return null
+        return "已点击。"
     }
 
     private fun parseSpeechOutput(input: String): String? {

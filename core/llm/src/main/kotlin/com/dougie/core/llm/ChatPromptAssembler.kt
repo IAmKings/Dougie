@@ -121,13 +121,14 @@ object ChatPromptAssembler {
             examples +
             "。同一工具不要连续调用。得到结果后必须用中文回答用户。" +
             "建日历仅当用户给了日期或钟点；startIso 按用户说的时间改写，不要照抄示例。" +
+            "打开应用只用 package:包名，不要把应用中文名或 intent 当 uri。" +
             "用户说念出来、读出来或播报时只用念出来 JSON，不要建日历。"
     }
 
     private fun exampleArgs(name: String): String = when (name) {
         "clipboard_write" -> "{\"text\":\"示例文字\"}"
         "calendar_create" -> "{\"title\":\"开会\",\"startIso\":\"2026-09-08T15:00:00+08:00\"}"
-        "app_intent" -> "{\"uri\":\"https://example.com\"}"
+        "app_intent" -> "{\"uri\":\"package:com.example.app\"}"
         "screen_match" -> "{\"template_id\":\"solid\"}"
         "speech_output" -> "{\"text\":\"要念的原文\"}"
         else -> "{}"

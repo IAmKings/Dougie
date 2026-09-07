@@ -15,9 +15,13 @@ import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
+import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.ToolContext
+import com.dougie.core.model.ToolDescriptor
+import com.dougie.core.model.ToolParamSpec
+import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
@@ -53,6 +57,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -1283,6 +1291,61 @@ class LoopEngineTest {
     }
 
     @Test
+    fun openAppAliasRunsEvenWhenIntentShortcutSkipped() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val apps = listOf(OpenAppEntry("24点大作战", "com.example.twentyfour"))
+        val port = FakeAppIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            openAppEntries = { apps },
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-open-skip", input = "打开24点大作战")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals("已打开24点大作战。", result.finalAnswer)
+        assertEquals("package:com.example.twentyfour", port.launches.single().uri)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun openAppBareAliasUsesLlmWhenIntentShortcutSkipped() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val apps = listOf(OpenAppEntry("24点大作战", "com.example.twentyfour"))
+        val port = FakeAppIntentPort()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            openAppEntries = { apps },
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-open-bare", input = "24点大作战")) {}
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(0, port.launchCount)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
+    }
+
+    @Test
     fun llmPackageNotOnListFailsBeforeLaunch() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val port = FakeAppIntentPort()
@@ -1455,6 +1518,161 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", chat.finalAnswer)
         assertEquals(listOf("你好"), offline.spoken)
+    }
+
+    @Test
+    fun matchThenTapConfirmsWithMatchCoordinates() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val match = FakeMatchTool(foundX = 88, foundY = 144)
+        val tap = FakeTapTool()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenMatchTool.NAME to match,
+                IntentRouteAnswers.TAP_SWIPE to tap,
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-mtt", input = "点一下")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals(1, match.executeCount)
+        assertTrue(match.lastArgs.orEmpty().contains("solid"))
+        assertEquals(1, tap.executedArgs.size)
+        val args = Json.parseToJsonElement(tap.executedArgs.single()).jsonObject
+        assertEquals("tap", args["action"]!!.jsonPrimitive.content)
+        assertEquals(88, args["x"]!!.jsonPrimitive.intOrNull)
+        assertEquals(144, args["y"]!!.jsonPrimitive.intOrNull)
+        assertEquals("已点击。", result.finalAnswer)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+        assertEquals(2, result.loopCount)
+        assertEquals(listOf(ScreenMatchTool.NAME, IntentRouteAnswers.TAP_SWIPE), result.toolTrace.map { it.toolName })
+        assertTrue(result.toolTrace.all { it.status == ToolTraceStatus.SUCCESS })
+    }
+
+    @Test
+    fun matchThenTapTimeQuestionDoesNotTakePath() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val match = FakeMatchTool(foundX = 1, foundY = 1)
+        val tap = FakeTapTool()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenMatchTool.NAME to match,
+                IntentRouteAnswers.TAP_SWIPE to tap,
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-mtt-time", input = "现在几点了")) {}
+        assertEquals(0, match.executeCount)
+        assertEquals(0, tap.executedArgs.size)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
+    }
+
+    @Test
+    fun matchThenTapMatchOnlyPhraseDoesNotTap() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val match = FakeMatchTool(foundX = 1, foundY = 1)
+        val tap = FakeTapTool()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenMatchTool.NAME to match,
+                IntentRouteAnswers.TAP_SWIPE to tap,
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-mtt-match", input = "匹配一下")) {}
+        assertEquals(0, match.executeCount)
+        assertEquals(0, tap.executedArgs.size)
+        assertEquals(1, spy.streamCount)
+        assertEquals("走了云端", result.finalAnswer)
+    }
+
+    @Test
+    fun matchThenTapFoundFalseDoesNotTap() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val match = FakeMatchTool(found = false, fatal = true)
+        val tap = FakeTapTool()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenMatchTool.NAME to match,
+                IntentRouteAnswers.TAP_SWIPE to tap,
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-mtt-miss", input = "点击")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.SCREEN_MATCH_FAILED, result.lastError)
+        assertEquals(1, match.executeCount)
+        assertEquals(0, tap.executedArgs.size)
+        assertEquals(0, spy.streamCount)
+        assertTrue(result.toolTrace.none { it.toolName == IntentRouteAnswers.TAP_SWIPE })
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun matchThenTapWithoutTapToolHaltsConsent() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val match = FakeMatchTool(foundX = 10, foundY = 20)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(ScreenMatchTool.NAME to match),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-mtt-play", input = "按一下")) {}
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.TAP_SWIPE_CONSENT, result.lastError)
+        assertEquals(1, match.executeCount)
+        assertEquals(0, spy.streamCount)
+        assertTrue(result.toolTrace.none { it.toolName == IntentRouteAnswers.TAP_SWIPE })
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun matchThenTapRejectDoesNotExecuteTap() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val match = FakeMatchTool(foundX = 3, foundY = 4)
+        val tap = FakeTapTool()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                ScreenMatchTool.NAME to match,
+                IntentRouteAnswers.TAP_SWIPE to tap,
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+        )
+        val result = engine.run(AgentTask(taskId = "t-mtt-rej", input = "点一下")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.reject()
+        }
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.CONFIRM_REJECTED, result.lastError)
+        assertEquals(1, match.executeCount)
+        assertEquals(0, tap.executedArgs.size)
+        assertEquals(0, spy.streamCount)
     }
 
     @Test
@@ -1712,6 +1930,57 @@ class LoopEngineTest {
         }
         override suspend fun generate(context: LoopContext): LlmResponse {
             return LlmResponse.FinalAnswer("走了云端")
+        }
+    }
+
+    private class FakeMatchTool(
+        private val found: Boolean = true,
+        private val foundX: Int = 0,
+        private val foundY: Int = 0,
+        private val fatal: Boolean = false,
+    ) : AgentTool {
+        var executeCount = 0
+        var lastArgs: String? = null
+        override val name: String = ScreenMatchTool.NAME
+        override val descriptor: ToolDescriptor = ToolDescriptor(
+            name = name,
+            properties = mapOf("template_id" to ToolParamSpec(ToolParamType.STRING)),
+        )
+        override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
+            executeCount += 1
+            lastArgs = argumentsJson
+            return if (found) {
+                ToolResult(
+                    json = """{"template_id":"solid","found":true,"x":$foundX,"y":$foundY,"confidence":0.9}""",
+                )
+            } else {
+                ToolResult(
+                    json = """{"template_id":"solid","found":false,"x":null,"y":null,"confidence":0.1}""",
+                    isFatal = fatal,
+                    error = if (fatal) UserFacingErrors.SCREEN_MATCH_FAILED else null,
+                )
+            }
+        }
+    }
+
+    private class FakeTapTool : AgentTool {
+        val executedArgs = mutableListOf<String>()
+        override val name: String = IntentRouteAnswers.TAP_SWIPE
+        override val descriptor: ToolDescriptor = ToolDescriptor(
+            name = name,
+            properties = mapOf(
+                "action" to ToolParamSpec(ToolParamType.STRING),
+                "x" to ToolParamSpec(ToolParamType.INTEGER),
+                "y" to ToolParamSpec(ToolParamType.INTEGER),
+                "x2" to ToolParamSpec(ToolParamType.INTEGER, defaultJson = "0"),
+                "y2" to ToolParamSpec(ToolParamType.INTEGER, defaultJson = "0"),
+                "durationMs" to ToolParamSpec(ToolParamType.INTEGER, defaultJson = "300"),
+            ),
+            riskLevel = RiskLevel.L3,
+        )
+        override suspend fun execute(argumentsJson: String, context: ToolContext): ToolResult {
+            executedArgs += argumentsJson
+            return ToolResult(json = """{"ok":true,"action":"tap"}""")
         }
     }
 }

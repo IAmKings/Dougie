@@ -17,11 +17,14 @@ import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.AppIntentTool
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.IntentPort
+import com.dougie.core.tool.OpenAppEntries
 import com.dougie.core.tool.OpenAppEntry
 import com.dougie.core.tool.ScreenCaptureTool
+import com.dougie.core.tool.ScreenMatchTool
 import com.dougie.core.tool.SpeechOutputTool
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -78,6 +81,14 @@ class LoopEngine(
             val spoken = completeFromSpeakPhraseIfMatched(task, emit)
             if (spoken != null) {
                 return@withContext spoken
+            }
+            val matchThenTap = completeFromMatchThenTapIfMatched(task, emit)
+            if (matchThenTap != null) {
+                return@withContext matchThenTap
+            }
+            val openApp = completeFromOpenAppIfMatched(task, emit)
+            if (openApp != null) {
+                return@withContext openApp
             }
             val shortcut = completeFromIntentIfMatched(task, emit)
             if (shortcut != null) {
@@ -160,6 +171,77 @@ class LoopEngine(
             .firstNotNullOfOrNull { IntentRouteAnswers.parseShortcutArgs(SpeechOutputTool.NAME, it) }
             ?: return null
         return completeFromNamedShortcut(start, SpeechOutputTool.NAME, argsJson, emit)
+    }
+
+    private suspend fun completeFromMatchThenTapIfMatched(
+        start: AgentTask,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask? {
+        if (!tools.containsKey(ScreenMatchTool.NAME)) return null
+        if (!IntentRouteAnswers.isMatchThenTapPhrase(start.input)) return null
+        val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
+        val afterMatch = when (
+            val matchPass = executeToolPass(
+                task = routed,
+                toolName = ScreenMatchTool.NAME,
+                argsJson = """{"template_id":"solid"}""",
+                toolCallId = "match-then-tap-1",
+                emit = emit,
+            )
+        ) {
+            is ToolPass.Halt -> return matchPass.task
+            is ToolPass.Success -> matchPass
+        }
+        val tapArgs = IntentRouteAnswers.tapArgsFromMatchJson(afterMatch.resultJson)
+        if (tapArgs == null) {
+            return fail(afterMatch.task, UserFacingErrors.SCREEN_MATCH_FAILED, emit)
+        }
+        if (!tools.containsKey(IntentRouteAnswers.TAP_SWIPE)) {
+            return fail(afterMatch.task, UserFacingErrors.TAP_SWIPE_CONSENT, emit)
+        }
+        val matched = afterMatch.task.copy(loopCount = afterMatch.task.loopCount + 1)
+        return when (
+            val tapPass = executeToolPass(
+                task = matched,
+                toolName = IntentRouteAnswers.TAP_SWIPE,
+                argsJson = tapArgs,
+                toolCallId = "match-then-tap-2",
+                emit = emit,
+            )
+        ) {
+            is ToolPass.Halt -> tapPass.task
+            is ToolPass.Success -> {
+                val answer = IntentRouteAnswers.formatFinalAnswer(
+                    IntentRouteAnswers.TAP_SWIPE,
+                    tapPass.resultJson,
+                ) ?: return fail(tapPass.task, UserFacingErrors.TOOL_FAILED, emit)
+                val done = tapPass.task.copy(
+                    status = TaskStatus.COMPLETED,
+                    finalAnswer = answer,
+                    streamingText = null,
+                    loopCount = tapPass.task.loopCount + 1,
+                )
+                ingestMemory(done)
+                emit(done)
+                done
+            }
+        }
+    }
+
+    private suspend fun completeFromOpenAppIfMatched(
+        start: AgentTask,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask? {
+        if (!tools.containsKey(AppIntentTool.NAME)) return null
+        val entries = openAppEntries()
+        if (entries.isEmpty()) return null
+        val argsJson = IntentRouteAnswers.classifyTexts(start.input)
+            .firstNotNullOfOrNull { text ->
+                val normalized = IntentRouteAnswers.normalize(text).ifEmpty { text }
+                if (!OpenAppEntries.startsWithOpenPrefix(normalized)) return@firstNotNullOfOrNull null
+                IntentRouteAnswers.parseShortcutArgs(AppIntentTool.NAME, normalized, entries)
+            } ?: return null
+        return completeFromNamedShortcut(start, AppIntentTool.NAME, argsJson, emit)
     }
 
     private suspend fun completeFromIntentIfMatched(

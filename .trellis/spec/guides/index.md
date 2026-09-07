@@ -35,7 +35,7 @@ These guides help you **ask the right questions before coding**.
 - [ ] Multiple consumers need the same data
 - [ ] You're not sure where to put some logic
 - [ ] You are adding an event kind, JSONL record, RPC payload, or config field
-- [ ] UI / command code starts casting raw payload fields directly
+- [ ] Feature uses Accessibility `dispatchGesture` or overlay while Chat shows ConfirmCard → the Activity in front will receive the tap; third-party automation needs the target still visible
 
 → Read [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md)
 

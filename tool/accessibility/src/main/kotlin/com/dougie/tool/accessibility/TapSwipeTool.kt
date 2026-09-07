@@ -38,7 +38,11 @@ class TapSwipeTool(
         if (!port.isConnected()) {
             return fail(SERVICE_REQUIRED)
         }
-        if (HighRiskForeground.isBlocked(port.foregroundPackage())) {
+        val foreground = port.foregroundPackage()?.trim().orEmpty()
+        if (foreground.isEmpty()) {
+            return fail(FOREGROUND_UNKNOWN)
+        }
+        if (HighRiskForeground.isBlocked(foreground)) {
             return fail(BLOCKED_APP)
         }
         idempotencyStore.get(context.idempotencyKey)?.let { return ToolResult(json = it) }
@@ -91,7 +95,7 @@ class TapSwipeTool(
     }
 
     private fun fail(message: String): ToolResult =
-        ToolResult(json = """{"ok":false,"error":"$message"}""", error = message)
+        ToolResult(json = """{"ok":false,"error":"$message"}""", isFatal = true, error = message)
 
     private fun successJson(parsed: Parsed): String = when (parsed.action) {
         Action.TAP ->
@@ -116,6 +120,7 @@ class TapSwipeTool(
         const val CONSENT_REQUIRED = UserFacingErrors.TAP_SWIPE_CONSENT
         const val SERVICE_REQUIRED = UserFacingErrors.TAP_SWIPE_SERVICE
         const val BLOCKED_APP = UserFacingErrors.TAP_SWIPE_BLOCKED
+        const val FOREGROUND_UNKNOWN = UserFacingErrors.TAP_SWIPE_FOREGROUND_UNKNOWN
         private const val TAP_MS = 50
         private const val DEFAULT_SWIPE_MS = 300
         private const val MIN_DURATION_MS = 50

@@ -12,7 +12,9 @@ class AndroidGesturePort : GesturePort {
 
     override fun foregroundPackage(): String? {
         val service = DougieAccessibilityService.instance ?: return null
-        return service.rootInActiveWindow?.packageName?.toString()
+        val fromRoot = service.rootInActiveWindow?.packageName?.toString()?.trim()
+        if (!fromRoot.isNullOrEmpty()) return fromRoot
+        return DougieAccessibilityService.lastForegroundPackage
     }
 
     override suspend fun tap(x: Int, y: Int): Boolean {
