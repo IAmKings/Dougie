@@ -1195,3 +1195,24 @@ BackHandler + consumeBack：Chat 预览先关，二级页按顶栏退回，Chat 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 53: 本地小模型稳调用常用工具
+
+**Date**: 2026-09-07
+**Task**: 本地小模型稳调用常用工具
+**Branch**: `master`
+
+### Summary
+
+localPrompt 只教 time/battery/clipboard_read；远程仍全表。真机三句均 LOCAL_LLM 且工具成功。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eebb8ac` | (see git log) |
+
+### Status
+
+[OK] **Completed**
