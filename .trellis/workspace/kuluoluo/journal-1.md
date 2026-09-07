@@ -1301,3 +1301,24 @@ localTeachable 七件：原四件加 calendar_query/screen_capture/speech_input�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 58: 匹配点击与打开应用短路径
+
+**Date**: 2026-09-07
+**Task**: 匹配点击与打开应用短路径
+**Branch**: `master`
+
+### Summary
+
+侧载「点一下」走 screen_match 再 L3 tap，明确不做 Chat 第三方点击；无障碍补窗口内容与前台包名。有本地 LLM 时「打开+名单别名」发 package:，避免 0.6B 把应用名当非法链接。真机验收打开 24 点大作战。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2f2d427` | (see git log) |
+
+### Status
+
+[OK] **Completed**

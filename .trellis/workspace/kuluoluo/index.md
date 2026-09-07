@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 57
+- **Total Sessions**: 58
 - **Last Active**: 2026-09-07
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1303 | Active |
+| `journal-1.md` | ~1324 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 58 | 2026-09-07 | 匹配点击与打开应用短路径 | `2f2d427` | `master` |
 | 57 | 2026-09-07 | 权限 L3 与匹配念出来 | `c3ed1df`, `b28e31c` | `master` |
 | 56 | 2026-09-07 | 本地对齐 L2 工具 | `1ad5d55` | `master` |
 | 55 | 2026-09-07 | 本地对齐无槽位工具 | `133f194` | `master` |
