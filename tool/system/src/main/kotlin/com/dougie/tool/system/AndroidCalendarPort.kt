@@ -5,8 +5,7 @@ import android.content.Context
 import android.provider.CalendarContract
 import com.dougie.core.model.AndroidPermissions
 import com.dougie.core.tool.CalendarPort
-import java.time.Instant
-import java.time.OffsetDateTime
+import com.dougie.core.tool.CalendarStartIso
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 
@@ -53,8 +52,8 @@ class AndroidCalendarPort(
 
     override suspend fun createEvent(title: String, startIso: String, idempotencyKey: String): String {
         onUsed(AndroidPermissions.WRITE_CALENDAR)
-        val startMs = parseStartMs(startIso) ?: return """{"ok":false,"error":"invalid_start"}"""
-        val calendarId = visibleCalendarId() ?: return """{"ok":false,"error":"no_calendar"}"""
+        val startMs = CalendarStartIso.parseToEpochMs(startIso) ?: return """{"ok":false,"error":"invalid_start"}"""
+        val calendarId = writableCalendarId() ?: return """{"ok":false,"error":"no_calendar"}"""
         val values = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, calendarId)
             put(CalendarContract.Events.TITLE, title)
@@ -67,30 +66,36 @@ class AndroidCalendarPort(
         return """{"ok":true,"id":"$id"}"""
     }
 
-    private fun visibleCalendarId(): Long? {
+    private fun writableCalendarId(): Long? {
+        val projection = arrayOf(CalendarContract.Calendars._ID)
+        val contributor = resolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL}>=?",
+            arrayOf(CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR.toString()),
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) cursor.getLong(0) else null
+        }
+        if (contributor != null) return contributor
         resolver.query(
             CalendarContract.Calendars.CONTENT_URI,
-            arrayOf(CalendarContract.Calendars._ID),
+            projection,
             "${CalendarContract.Calendars.VISIBLE}=1",
             null,
             null,
         )?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                return cursor.getLong(0)
-            }
+            if (cursor.moveToFirst()) return cursor.getLong(0)
+        }
+        resolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) return cursor.getLong(0)
         }
         return null
-    }
-
-    private fun parseStartMs(startIso: String): Long? {
-        return try {
-            OffsetDateTime.parse(startIso).toInstant().toEpochMilli()
-        } catch (_: Exception) {
-            try {
-                Instant.parse(startIso).toEpochMilli()
-            } catch (_: Exception) {
-                null
-            }
-        }
     }
 }

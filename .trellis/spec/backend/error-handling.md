@@ -19,6 +19,8 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | LLM empty final | Loop 2+ `stop` with blank `content` after tools (SSE no `TextDelta`) | `模型没有给出回复，请重试。` 任务 `FAILED`，保留已成功 Tool 卡，可重试。禁止 `COMPLETED` + 空 `finalAnswer`（Chat 不会画 Agent 气泡）。 |
 | Unknown tool | Sanitizer / unregistered name | `模型调用了未知工具，已拒绝执行。` |
 | Unrepairable tool args | Sanitizer cannot coerce a typed field, or a required property is missing | `工具参数无效，已拒绝执行。` |
+| Calendar start not ISO-like | `calendar_create` `startIso` / `start_iso` cannot parse | `日程时间无法识别，请再说一次具体钟点。` |
+| No writable calendar account | Android `CalendarContract` insert has no calendar id | `没有可用的日历账本，请先在系统日历里添加账户。` |
 | `TaskManager.cancel()` | User/runtime cancels the loop job | `任务已取消。` |
 | Missing Android permission | `PolicyEngine` denies before execute | `未授权，已为你跳过该操作` |
 | L2 confirm reject / timeout | User rejects Confirm Card, or 60s gate timeout | `该操作需你确认后才执行` |

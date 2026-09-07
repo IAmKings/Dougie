@@ -160,33 +160,40 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
-    fun localPromptTeachesSevenNoSlotTools() {
+    fun localPromptTeachesSevenNoSlotAndThreeL2Tools() {
         val descriptors = listOf(
+            ToolDescriptor("intent_classifier", description = "Classify intent."),
             ToolDescriptor("calendar_create", description = "Create an event."),
             ToolDescriptor("calendar_query", description = "List events."),
             ToolDescriptor("time", description = "Read the current local date and time."),
             ToolDescriptor("battery", description = "Read battery percent."),
             ToolDescriptor("clipboard_read", description = "Read clipboard text."),
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
             ToolDescriptor("location", description = "Read coarse location."),
             ToolDescriptor("screen_capture", description = "Capture the screen."),
             ToolDescriptor("speech_input", description = "Capture one utterance."),
+            ToolDescriptor("app_intent", description = "Open a link."),
             ToolDescriptor("tap_swipe", description = "Tap or swipe."),
         )
         val taught = listOf(
             "time", "battery", "clipboard_read", "location",
             "calendar_query", "screen_capture", "speech_input",
+            "clipboard_write", "calendar_create", "app_intent",
         )
-        val task = AgentTask(taskId = "t-teach", input = "最近有什么日程")
+        val task = AgentTask(taskId = "t-teach", input = "把你好写到剪贴板")
         val remote = ChatPromptAssembler.systemPrefix(task, descriptors)
         val local = ChatPromptAssembler.localPrompt(task, descriptors)
-        assertTrue(remote.contains("calendar_create"))
         assertTrue(remote.contains("tap_swipe"))
+        assertTrue(remote.contains("intent_classifier"))
         taught.forEach { name ->
             assertTrue(local.contains("- $name:"))
             assertTrue(local.contains("{\"name\":\"$name\""))
         }
-        assertTrue(!local.contains("calendar_create"))
+        assertTrue(local.contains("{\"text\":\"示例文字\"}"))
+        assertTrue(local.contains("\"startIso\""))
+        assertTrue(local.contains("https://example.com"))
         assertTrue(!local.contains("tap_swipe"))
+        assertTrue(!local.contains("intent_classifier"))
         assertTrue(local.contains("一行 JSON"))
         IDENTITY_TOOL_NAMES.forEach { name ->
             assertTrue(!ChatPromptAssembler.IDENTITY.contains(name))

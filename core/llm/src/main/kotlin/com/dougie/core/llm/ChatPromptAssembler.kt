@@ -108,13 +108,24 @@ object ChatPromptAssembler {
                 "calendar_query" -> "日历查询"
                 "screen_capture" -> "截屏"
                 "speech_input" -> "语音输入"
+                "clipboard_write" -> "写剪贴板"
+                "calendar_create" -> "建日历"
+                "app_intent" -> "打开应用"
                 else -> descriptor.name
             }
-            "$label {\"name\":\"${descriptor.name}\",\"args\":{}}"
+            "$label {\"name\":\"${descriptor.name}\",\"args\":${exampleArgs(descriptor.name)}}"
         }
         return "若需要工具，整段回复必须是一行 JSON。" +
             examples +
-            "。同一工具不要连续调用。得到结果后必须用中文回答用户。"
+            "。同一工具不要连续调用。得到结果后必须用中文回答用户。" +
+            "建日历的 startIso 必须按用户说的日期改写成带时区的 ISO，不要照抄示例里的日期。"
+    }
+
+    private fun exampleArgs(name: String): String = when (name) {
+        "clipboard_write" -> "{\"text\":\"示例文字\"}"
+        "calendar_create" -> "{\"title\":\"开会\",\"startIso\":\"2026-09-08T15:00:00+08:00\"}"
+        "app_intent" -> "{\"uri\":\"https://example.com\"}"
+        else -> "{}"
     }
 
     private val LOCAL_TEACH_NAMES = listOf(
@@ -125,6 +136,9 @@ object ChatPromptAssembler {
         "calendar_query",
         "screen_capture",
         "speech_input",
+        "clipboard_write",
+        "calendar_create",
+        "app_intent",
     )
 
     private const val LOCAL_AFTER_TOOL_RESULTS =

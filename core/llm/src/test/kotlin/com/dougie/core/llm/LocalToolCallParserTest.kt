@@ -38,6 +38,21 @@ class LocalToolCallParserTest {
             assertEquals(name, call.name)
             assertEquals("{}", call.argsJson)
         }
+        val write = LocalToolCallParser.parse(
+            """{"name":"clipboard_write","args":{"text":"你好"}}""",
+        ) as LlmEvent.ToolCall
+        assertEquals("clipboard_write", write.name)
+        assertTrue(write.argsJson.contains("你好"))
+        val create = LocalToolCallParser.parse(
+            """{"name":"calendar_create","args":{"title":"开会","startIso":"2026-09-08T15:00:00+08:00"}}""",
+        ) as LlmEvent.ToolCall
+        assertEquals("calendar_create", create.name)
+        assertTrue(create.argsJson.contains("startIso"))
+        val open = LocalToolCallParser.parse(
+            """{"name":"app_intent","args":{"uri":"https://example.com"}}""",
+        ) as LlmEvent.ToolCall
+        assertEquals("app_intent", open.name)
+        assertTrue(open.argsJson.contains("example.com"))
     }
 
     @Test

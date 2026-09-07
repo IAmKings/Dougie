@@ -17,6 +17,7 @@ import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.IntentPort
 import com.dougie.core.tool.OpenAppEntry
@@ -233,7 +234,12 @@ class LoopEngine(
         stepDelay()
 
         val sanitizedArgs = try {
-            sanitizer.sanitize(toolName, argsJson)
+            val rawArgs = if (toolName == CalendarCreateTool.NAME) {
+                CalendarCreateTool.canonicalizeArgs(argsJson)
+            } else {
+                argsJson
+            }
+            sanitizer.sanitize(toolName, rawArgs)
         } catch (e: AgentException) {
             next = updateLastTrace(next, TaskStatus.FAILED) {
                 it.copy(status = ToolTraceStatus.FAILED)

@@ -12,6 +12,8 @@ object UserFacingErrors {
     const val TOOL_FAILED = "工具执行失败，请稍后重试。"
     const val UNKNOWN_TOOL = "模型调用了未知工具，已拒绝执行。"
     const val INVALID_TOOL_ARGS = "工具参数无效，已拒绝执行。"
+    const val CALENDAR_INVALID_START = "日程时间无法识别，请再说一次具体钟点。"
+    const val CALENDAR_NONE = "没有可用的日历账本，请先在系统日历里添加账户。"
     const val CANCELLED = "任务已取消。"
     const val INTERRUPTED = "任务已中断，请重新提交。"
     const val PERMISSION_DENIED = "未授权，已为你跳过该操作"

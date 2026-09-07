@@ -34,6 +34,34 @@ class CalendarCreateToolTest {
         assertEquals(one.json, two.json)
         assertEquals(1, port.createCalls.size)
     }
+
+    @Test
+    fun snakeCaseStartIsoExecutes() = runTest {
+        val port = FakeCalendarPort()
+        val tool = CalendarCreateTool(port)
+        val context = ToolContext(taskId = "task-1", toolCallId = "call-2")
+        val result = tool.execute(
+            """{"title":"开会","start_iso":"2026-09-08T15:00:00"}""",
+            context,
+        )
+        assertEquals(true, result.json.contains("\"ok\":true"))
+        assertEquals(1, port.createCalls.size)
+    }
+
+    @Test
+    fun unparsableStartIsFatal() = runTest {
+        val port = FakeCalendarPort()
+        val tool = CalendarCreateTool(port)
+        try {
+            tool.execute(
+                """{"title":"开会","startIso":"明天下午三点"}""",
+                ToolContext("t", "c"),
+            )
+            org.junit.Assert.fail("expected AgentException")
+        } catch (e: com.dougie.core.model.AgentException) {
+            assertEquals(com.dougie.core.model.UserFacingErrors.CALENDAR_INVALID_START, e.userMessage)
+        }
+    }
 }
 
 class ClipboardReadToolTest {
