@@ -46,6 +46,9 @@ object ChannelHooks {
     @Suppress("UNUSED_PARAMETER")
     fun overlayPermissionItem(context: Context): com.dougie.feature.permissions.PermissionItem? = null
 
+    @Suppress("UNUSED_PARAMETER")
+    fun accessibilityPermissionItem(context: Context): com.dougie.feature.permissions.PermissionItem? = null
+
     @Composable
     fun Root(content: @Composable () -> Unit) {
         content()

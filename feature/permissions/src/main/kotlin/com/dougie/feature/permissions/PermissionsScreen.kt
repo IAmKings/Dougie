@@ -188,6 +188,9 @@ fun PermissionsScreen(
                                     ),
                                 )
                             }
+                            PermissionKind.ACCESSIBILITY -> {
+                                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                            }
                             PermissionKind.RUNTIME -> {
                                 val permission = item.runtimePermission
                                 if (permission != null) {
@@ -266,7 +269,7 @@ private fun PermissionRow(
             PermissionKind.SCREEN_CAPTURE -> {
                 GrantButton(ScreenCapturePermissionCopy.actionLabel(item.granted), onGrant)
             }
-            PermissionKind.OVERLAY -> {
+            PermissionKind.OVERLAY, PermissionKind.ACCESSIBILITY -> {
                 GrantButton(if (item.granted) "在系统设置中管理" else "去系统设置授权", onGrant)
             }
             PermissionKind.CLIPBOARD -> Unit

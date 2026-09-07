@@ -334,7 +334,10 @@ class MainActivity : ComponentActivity() {
                                     com.dougie.tool.system.ScreenCaptureConsentStore.hasToken()
                                 },
                                 extraItems = {
-                                    listOfNotNull(ChannelHooks.overlayPermissionItem(this@MainActivity))
+                                    listOfNotNull(
+                                        ChannelHooks.overlayPermissionItem(this@MainActivity),
+                                        ChannelHooks.accessibilityPermissionItem(this@MainActivity),
+                                    )
                                 },
                             ),
                         )

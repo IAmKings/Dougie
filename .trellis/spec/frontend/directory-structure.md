@@ -85,7 +85,7 @@ app/src/sideload/assets/models/tts/
 | `:feature:chat` | Chat Compose UI, `ChatViewModel`, bubble mapping, Confirm Card; navigate to settings / memory / Permission Center |
 | `:feature:settings` | Provider vendor preset + URL/key/model/`max_tokens`, egress consent copy, save to `PreferenceStore`; **可打开的应用** list (`OpenAppsRoute`, prefs key separate from **保存配置**, launcher icons + text filter, no count cap); **模型目录** (`OpenDocumentTree` URI in `modelTreeUri`) + **刷新** 扫描外部树 + 离线模型确认下载（Play: ASR / TTS / 意图 ONNX；sideload adds 对话 `.litertlm`；写入外部树再同步 `filesDir`）+ 已安装烟测（`OfflineModelProbe` 由 `:app` 注入，非 AgentTool）；**开发者** row calls `onOpenDebug` only |
 | `:feature:memory` | Local facts list/edit/delete/clear + `memoryEnabled` toggle; product copy **Dougie** |
-| `:feature:permissions` | Permission Center: calendar / location / mic / screen capture; API 33+ **通知** row (`POST_NOTIFICATIONS`); clipboard note |
+| `:feature:permissions` | Permission Center: calendar / location / mic / screen capture; API 33+ **通知** row (`POST_NOTIFICATIONS`); clipboard note; sideload `extraItems` **上层显示** L1 + **无障碍** L3 (`PermissionKind.ACCESSIBILITY` → `ACTION_ACCESSIBILITY_SETTINGS`, granted = `GesturePort.isConnected()`); Play `ChannelHooks` returns null for both |
 | `:feature:history` | Task History list from `TaskStore.listRecent`; bottom nav **任务** |
 | `:feature:debug` | Developer page: current `AgentTask` snapshot (`taskId` / `status` / `loopCount` / `lastError` / `completionPath` 本地意图 / 本地 LLM / 远程 LLM / 无) + `AuditLog.listRecent`; no `resultJson`, prompts, or tool args |
 | `:app` | `DougieApplication` builds `TaskManager` + `OpenAICompatibleProvider` + `EgressGateway` + tools + `PolicyEngine` + `RoomMemoryStore` + `DougieTaskStores` on `Dispatchers.Default`; `recoverInterrupted` + `seed`; Chat↔Settings↔OpenApps↔Memory↔Permissions↔History↔Debug routes; `LauncherApps` injects MAIN/LAUNCHER into OpenApps (no `QUERY_ALL_PACKAGES`); `DougieChatTileService` + `ChatLaunch` (Quick Settings opens Chat, no `submit`); `TaskProgressNotifier` + `formatTaskNotice` (status-only shade, tap Chat; Play attaches `BubbleMetadata` API 29+); sideload overlay via `ChannelHooks.syncOverlay` / `DougieOverlayService` (default off); Settings `shortcutLayer` slot from `ChannelHooks.ShortcutLayerSettings` (play copy = 系统气泡 only); SAF `OpenDocumentTree` + persistable permission + `ExternalModelTreeImpl` (DocumentFile, no `:core:tool`); `AppOfflineModelProbe` (ASR/TTS/intent JNI, TTS generate only); `ChannelHooks.seedBundledModels` (sideload copies ASR/TTS assets to `filesDir` only; play no-op); `ChatAttachmentSession` + Photo Picker / `TakePicture` / FileProvider camera JPEG (longest edge ≤ 1280); `CAMERA` in the main manifest is not an overlay leak |
@@ -194,7 +194,7 @@ System shade shows current Agent task without a second Loop or L2 confirm in the
 
 ### 6. Tests Required
 - `TaskNoticeTest` — null/IDLE cancel; FAILED omits error/prompt; tool line has name not args; bubble PI flags are mutable on API 31
-- `PlayShortcutCopyTest` — play `strings.xml` has 气泡, no `sideload` / `上层显示`
+- `PlayShortcutCopyTest` — play `strings.xml` has 气泡, no `sideload` / `上层显示` / `无障碍`; play `ChannelHooks.kt` has no `AndroidGesturePort` / `DougieAccessibilityService` / `TapSwipeTool`
 - `./gradlew :app:testPlayDebugUnitTest :app:checkChannelLeak`
 
 ### 7. Wrong vs Correct

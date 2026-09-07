@@ -16,4 +16,6 @@
     <string name="overlay_shortcut_hint">截其他应用请打开设置里的悬浮球，切到目标应用后点「截取屏幕」。需要「显示在其他应用上层」和投屏授权。</string>
     <string name="overlay_permission_title">上层显示</string>
     <string name="overlay_permission_subtitle">截其他应用前需允许显示在其他应用上层，并在权限中心授予投屏</string>
+    <string name="accessibility_permission_title">无障碍</string>
+    <string name="accessibility_permission_subtitle">用于经确认的屏幕点击与滑动。需在系统设置中开启 Dougie 无障碍服务；银行、支付、密码管理器界面不可操作</string>
 </resources>

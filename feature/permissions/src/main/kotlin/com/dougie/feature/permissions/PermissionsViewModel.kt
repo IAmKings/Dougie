@@ -24,6 +24,7 @@ enum class PermissionKind {
     CLIPBOARD,
     SCREEN_CAPTURE,
     OVERLAY,
+    ACCESSIBILITY,
 }
 
 data class PermissionItem(

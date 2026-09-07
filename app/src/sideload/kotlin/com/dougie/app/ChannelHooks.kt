@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.dougie.core.tool.BundledModelSeed
 import com.dougie.core.tool.ChatModelLayout
 import com.dougie.feature.chat.DougieColors
+import com.dougie.tool.accessibility.AndroidGesturePort
 import java.io.File
 import java.io.IOException
 
@@ -109,6 +110,19 @@ object ChannelHooks {
             riskLabel = "L1",
             lastUsedLabel = "尚未使用",
             kind = PermissionKind.OVERLAY,
+        )
+
+    fun accessibilityPermissionItem(context: Context): PermissionItem =
+        PermissionItem(
+            id = "accessibility",
+            title = context.getString(R.string.accessibility_permission_title),
+            subtitle = context.getString(R.string.accessibility_permission_subtitle),
+            runtimePermission = null,
+            granted = AndroidGesturePort().isConnected(),
+            riskLabel = "L3",
+            lastUsedLabel = "尚未使用",
+            highRisk = true,
+            kind = PermissionKind.ACCESSIBILITY,
         )
 
     @Composable
