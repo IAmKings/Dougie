@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Fake port tests; checkChannelLeak no Play QuickJS"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log script or data"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest confirm copy; Play leak"}
