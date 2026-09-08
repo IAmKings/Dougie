@@ -178,7 +178,12 @@ class DougieApplication : Application() {
             SpeechOutputTool.NAME to SpeechOutputTool(ttsPort),
             IntentClassifierTool.NAME to IntentClassifierTool(intentPort),
         )
-        ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
+        ChannelTools.register(
+            tools,
+            { ChannelHooks.hasChannelConsent(this) },
+            taskStores.idempotencyStore,
+            { ChannelHooks.scriptPrivileged(this) },
+        )
         val toolDescriptors = { tools.values.map { it.descriptor } }
         val cloud = OpenAICompatibleProvider(
             client = http,
@@ -276,7 +281,12 @@ class DougieApplication : Application() {
     }
 
     fun refreshChannelTools() {
-        ChannelTools.register(tools, { ChannelHooks.hasChannelConsent(this) }, taskStores.idempotencyStore)
+        ChannelTools.register(
+            tools,
+            { ChannelHooks.hasChannelConsent(this) },
+            taskStores.idempotencyStore,
+            { ChannelHooks.scriptPrivileged(this) },
+        )
     }
 
     companion object {

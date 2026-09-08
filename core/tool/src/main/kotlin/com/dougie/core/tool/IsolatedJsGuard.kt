@@ -21,6 +21,7 @@ object IsolatedJsGuard {
         "javax.",
         "kotlin.",
     )
+    private val FUNCTION_BODY = Regex("""^\s*return\b""")
 
     fun assertSize(script: String, dataJson: String) {
         if (script.length > SCRIPT_MAX || dataJson.length > DATA_MAX) {
@@ -53,6 +54,20 @@ object IsolatedJsGuard {
 
     fun wrapProgram(script: String, dataJson: String): String =
         "JSON.stringify((function(data){\n$script\n})(JSON.parse(${quoteJs(dataJson)})))"
+
+    /**
+     * Direct `eval` so `var data` in this function is in scope.
+     * `(0,eval)` is global and cannot see `data` → `data.reduce` throws.
+     */
+    fun wrapAsProgram(script: String, dataJson: String): String =
+        "(function(){var data=JSON.parse(${quoteJs(dataJson)});return JSON.stringify(eval(${quoteJs(script)}));})()"
+
+    fun wrapForExecute(script: String, dataJson: String, asProgram: Boolean): String {
+        if (!asProgram || FUNCTION_BODY.containsMatchIn(script)) {
+            return wrapProgram(script, dataJson)
+        }
+        return wrapAsProgram(script, dataJson)
+    }
 
     fun quoteJs(raw: String): String {
         val out = StringBuilder(raw.length + 2)

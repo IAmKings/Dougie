@@ -60,7 +60,8 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Model smoke probe | Settings 测试: ASR short silence `transcribe` no throw; TTS `generatePcm` non-empty, no play; intent `classify("现在几点")` no throw (low confidence OK); chat `generate("你好")` no throw and no Logcat of prompt/completion. Missing layout/JNI uses existing 尚未就绪 / TTS_FAILED / INTENT_* / `CHAT_MODEL_MISSING` / `CHAT_ENGINE_NOT_READY` copy | Success: `语音识别测试通过。` / `语音合成测试通过。` / `意图分类测试通过。` / `对话模型测试通过。` |
 | Chat pack missing | `filesDir/models/chat/` missing the catalog `.litertlm` | `离线对话模型尚未就绪，无法闲聊。` |
 | Isolated JS timeout | `js_eval` host eval exceeded ~2s | `隔离脚本运行超时，已停止。` |
-| Isolated JS failed | QuickJS threw or result was not JSON | `隔离脚本运行失败。` `data.reduce` needs a JSON array (`[1,2]`). A bare `1,2` string is canonicalized to `[1,2]` before eval. |
+| Isolated JS failed | QuickJS threw or result was not JSON | `隔离脚本运行失败。` `data.reduce` needs a JSON array (`[1,2]`). A bare `1,2` string is canonicalized to `[1,2]` before eval. L2 still requires `return`; L4 uses the last expression. |
+| Isolated JS no value | L4 program last expression `undefined` / not JSON | `隔离脚本没有可序列化的结果。` |
 | Isolated JS engine missing | Port `isReady() == false` or native create failed | `隔离脚本引擎尚未接入。` |
 | Isolated JS host tokens | Script contains `fetch` / XHR / `Java.` / `android.` | `隔离脚本不能访问网络或系统接口。` |
 | Isolated JS too large | Script > 8KiB or data > 32KiB | `脚本或数据过长，已拒绝执行。` |

@@ -2,7 +2,7 @@ package com.dougie.app
 
 import android.content.Context
 
-/** Placeholder L4 switch. Isolated `js_eval` must not read this. */
+/** L4 switch: when on, `js_eval` runs script as a program (last expression). */
 object ScriptPrivilegePrefs {
     private const val PREF = "dougie_script_privilege"
     private const val KEY_ENABLED = "enabled"

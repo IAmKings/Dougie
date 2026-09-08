@@ -24,6 +24,9 @@ object ChannelHooks {
     fun hasChannelConsent(context: Context): Boolean = true
 
     @Suppress("UNUSED_PARAMETER")
+    fun scriptPrivileged(context: Context): Boolean = false
+
+    @Suppress("UNUSED_PARAMETER")
     fun seedBundledModels(context: Context) {
     }
 

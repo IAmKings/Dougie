@@ -53,6 +53,8 @@ import java.io.IOException
 object ChannelHooks {
     fun hasChannelConsent(context: Context): Boolean = SideloadConsentStore.isGranted(context)
 
+    fun scriptPrivileged(context: Context): Boolean = ScriptPrivilegePrefs.isEnabled(context)
+
     fun seedBundledModels(context: Context) {
         val app = context.applicationContext
         BundledModelSeed.seed(app.filesDir) { relative ->

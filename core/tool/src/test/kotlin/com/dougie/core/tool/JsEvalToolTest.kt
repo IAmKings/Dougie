@@ -93,7 +93,7 @@ class JsEvalToolTest {
     fun jobCancelIsNotMappedToEvalFailed() = runTest {
         val port = object : JsEvalPort {
             override fun isReady(): Boolean = true
-            override fun evaluate(script: String, dataJson: String): String {
+            override fun evaluate(script: String, dataJson: String, asProgram: Boolean): String {
                 throw CancellationException("job")
             }
         }
@@ -118,6 +118,7 @@ class JsEvalToolTest {
             ToolContext("t", "c4"),
         )
         assertFalse(result.isFatal)
+        assertFalse(port.lastAsProgram)
         assertEquals("[1,2]", port.lastData)
         val obj = Json.parseToJsonElement(result.json).jsonObject
         assertEquals(3, obj["value"]!!.jsonPrimitive.content.toInt())
@@ -134,5 +135,42 @@ class JsEvalToolTest {
         assertFalse(result.isFatal)
         val obj = Json.parseToJsonElement(result.json).jsonObject
         assertEquals(3, obj["value"]!!.jsonPrimitive.content.toInt())
+    }
+
+    @Test
+    fun l2ReduceWithoutReturnFails() = runTest {
+        val tool = JsEvalTool(FakeJsEvalPort(), privileged = { false })
+        val result = tool.execute(
+            """{"script":"data.reduce((a,b)=>a+b,0)","data":"1,2"}""",
+            ToolContext("t", "c6"),
+        )
+        assertTrue(result.isFatal)
+        assertEquals(UserFacingErrors.JS_EVAL_FAILED, result.error)
+    }
+
+    @Test
+    fun l4ProgramReduceWithoutReturnSumsToThree() = runTest {
+        val port = FakeJsEvalPort()
+        val tool = JsEvalTool(port, privileged = { true })
+        assertEquals(com.dougie.core.model.RiskLevel.L4, tool.descriptor.riskLevel)
+        val result = tool.execute(
+            """{"script":"data.reduce((a,b)=>a+b,0)","data":"1,2"}""",
+            ToolContext("t", "c7"),
+        )
+        assertFalse(result.isFatal)
+        assertTrue(port.lastAsProgram)
+        val obj = Json.parseToJsonElement(result.json).jsonObject
+        assertEquals(3, obj["value"]!!.jsonPrimitive.content.toInt())
+    }
+
+    @Test
+    fun l4UndefinedLastValueIsFatal() = runTest {
+        val tool = JsEvalTool(FakeJsEvalPort(), privileged = { true })
+        val result = tool.execute(
+            """{"script":"undefined","data":"{}"}""",
+            ToolContext("t", "c8"),
+        )
+        assertTrue(result.isFatal)
+        assertEquals(UserFacingErrors.JS_EVAL_NO_VALUE, result.error)
     }
 }

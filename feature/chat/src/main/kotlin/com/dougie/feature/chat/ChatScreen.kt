@@ -57,6 +57,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.zIndex
 import com.dougie.core.model.AttachmentMeta
+import com.dougie.core.model.RiskLevel
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
@@ -807,7 +808,7 @@ private fun ConfirmToolCard(
             )
         }
         Text(
-            text = confirmToolBody(item.toolName),
+            text = confirmToolBody(item.toolName, item.riskLevel),
             color = DougieColors.OnSurfaceVariant,
             fontSize = 13.sp,
         )
@@ -1187,8 +1188,11 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
     else -> toolName
 }
 
-internal fun confirmToolBody(toolName: String): String = when (toolName) {
-    "js_eval" -> "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
+internal fun confirmToolBody(toolName: String, riskLevel: RiskLevel = RiskLevel.L2): String = when {
+    toolName == "js_eval" && riskLevel == RiskLevel.L4 ->
+        "按完整脚本运行，结果取最后一次表达式。不读写文件、不上网。确认后才会执行；拒绝则跳过。"
+    toolName == "js_eval" ->
+        "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
     else -> "该操作会写入设备数据。确认后才会执行；拒绝则跳过。"
 }
 

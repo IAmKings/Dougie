@@ -15,9 +15,9 @@ import java.util.concurrent.TimeoutException
 class AndroidJsEvalPort : JsEvalPort {
     override fun isReady(): Boolean = true
 
-    override fun evaluate(script: String, dataJson: String): String {
+    override fun evaluate(script: String, dataJson: String, asProgram: Boolean): String {
         Json.parseToJsonElement(dataJson)
-        val program = IsolatedJsGuard.wrapProgram(script, dataJson)
+        val program = IsolatedJsGuard.wrapForExecute(script, dataJson, asProgram)
         val exec = Executors.newSingleThreadExecutor()
         try {
             val future = exec.submit<String> {
@@ -28,7 +28,10 @@ class AndroidJsEvalPort : JsEvalPort {
                 }
                 try {
                     val raw = quickJs.evaluate(program)
-                        ?: throw AgentException(UserFacingErrors.JS_EVAL_FAILED)
+                        ?: throw AgentException(
+                            if (asProgram) UserFacingErrors.JS_EVAL_NO_VALUE
+                            else UserFacingErrors.JS_EVAL_FAILED,
+                        )
                     raw.toString()
                 } finally {
                     try {

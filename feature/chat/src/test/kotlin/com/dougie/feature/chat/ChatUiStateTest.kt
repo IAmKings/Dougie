@@ -243,6 +243,10 @@ class ChatUiStateTest {
             confirmToolBody("js_eval"),
         )
         assertEquals(
+            "按完整脚本运行，结果取最后一次表达式。不读写文件、不上网。确认后才会执行；拒绝则跳过。",
+            confirmToolBody("js_eval", com.dougie.core.model.RiskLevel.L4),
+        )
+        assertEquals(
             "该操作会写入设备数据。确认后才会执行；拒绝则跳过。",
             confirmToolBody("calendar_create"),
         )

@@ -23,9 +23,11 @@ import kotlinx.serialization.json.put
 
 class JsEvalTool(
     private val port: JsEvalPort,
+    private val privileged: () -> Boolean = { false },
 ) : AgentTool {
     override val name: String = NAME
-    override val descriptor: ToolDescriptor = DESCRIPTOR
+    override val descriptor: ToolDescriptor
+        get() = if (privileged()) DESCRIPTOR_L4 else DESCRIPTOR_L2
 
     override fun validateArguments(argumentsJson: String) {
         parse(argumentsJson)
@@ -39,7 +41,7 @@ class JsEvalTool(
         }
         val valueJson = try {
             withTimeout(TIMEOUT_MS) {
-                port.evaluate(parsed.script, parsed.dataJson)
+                port.evaluate(parsed.script, parsed.dataJson, asProgram = privileged())
             }
         } catch (_: TimeoutCancellationException) {
             return fail(UserFacingErrors.JS_EVAL_TIMEOUT)
@@ -104,7 +106,8 @@ class JsEvalTool(
     companion object {
         const val NAME = "js_eval"
         const val TIMEOUT_MS = 2_000L
-        val DESCRIPTOR = ToolDescriptor(
+        val DESCRIPTOR: ToolDescriptor get() = DESCRIPTOR_L2
+        val DESCRIPTOR_L2 = ToolDescriptor(
             name = NAME,
             description = "Run an isolated JavaScript function body on JSON data (array, object, or JSON text). No network or files. Requires confirmation.",
             properties = mapOf(
@@ -112,6 +115,10 @@ class JsEvalTool(
                 "data" to ToolParamSpec(ToolParamType.OBJECT),
             ),
             riskLevel = RiskLevel.L2,
+        )
+        val DESCRIPTOR_L4 = DESCRIPTOR_L2.copy(
+            description = "Run an isolated JavaScript program. Last expression is JSON-serialized. No network or files. Requires confirmation.",
+            riskLevel = RiskLevel.L4,
         )
     }
 }

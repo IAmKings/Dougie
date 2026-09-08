@@ -36,7 +36,7 @@ These guides help you **ask the right questions before coding**.
 - [ ] You're not sure where to put some logic
 - [ ] You are adding an event kind, JSONL record, RPC payload, or config field
 - [ ] Feature uses Accessibility `dispatchGesture` or overlay while Chat shows ConfirmCard → the Activity in front will receive the tap; third-party automation needs the target still visible
-- [ ] Isolated JS (`js_eval`) must not gain file/net/Android host APIs this slice; L4 switch does not change the execute surface; do not teach 0.6B
+- [ ] Isolated JS (`js_eval`) must not gain file/net/Android host APIs this slice; L4 switch changes wrap (function body vs program / last expression) only — still no fetch/files/Android; do not teach 0.6B
 
 → Read [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md)
 

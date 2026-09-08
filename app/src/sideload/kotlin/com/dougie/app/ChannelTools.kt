@@ -12,8 +12,9 @@ object ChannelTools {
         tools: MutableMap<String, AgentTool>,
         consentGranted: () -> Boolean,
         idempotencyStore: IdempotencyStore,
+        scriptPrivileged: () -> Boolean = { false },
     ) {
-        tools[JsEvalTool.NAME] = JsEvalTool(AndroidJsEvalPort())
+        tools[JsEvalTool.NAME] = JsEvalTool(AndroidJsEvalPort(), scriptPrivileged)
         if (!consentGranted()) {
             tools.remove(TapSwipeTool.NAME)
             return

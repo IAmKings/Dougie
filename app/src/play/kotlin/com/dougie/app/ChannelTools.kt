@@ -9,6 +9,7 @@ object ChannelTools {
         tools: MutableMap<String, AgentTool>,
         consentGranted: () -> Boolean,
         idempotencyStore: IdempotencyStore,
+        scriptPrivileged: () -> Boolean = { false },
     ) {
         // Play must not register or compile accessibility types.
     }

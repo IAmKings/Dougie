@@ -142,7 +142,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
-| `:tool:js` (Android, **sideload flavor only**) | `AndroidJsEvalPort` (Cash App QuickJS). Isolated `js_eval` is `JsEvalTool` in `:core:tool` (L2, Fake for JVM). `data` is JSON (`OBJECT`): arrays like `[1,2]` pass through; string `1,2` is canonicalized to `[1,2]` before `JSON.parse`. Settings L4 switch (`ScriptPrivilegePrefs`) is unused by this tool. | Play APK, host file/net APIs, `tap_swipe` from JS |
+| `:tool:js` (Android, **sideload flavor only**) | `AndroidJsEvalPort` (Cash App QuickJS). Isolated `js_eval` is `JsEvalTool` in `:core:tool`. `data` is JSON (`OBJECT`): arrays like `[1,2]` pass through; string `1,2` is canonicalized to `[1,2]` before `JSON.parse`. `ScriptPrivilegePrefs` false → L2 function wrap; true → L4 program / last expression. | Play APK, host file/net APIs, `tap_swipe` from JS |
 | `:tool:chatllm` (Android, **sideload runtime only**) | LiteRT-LM `ChatLlmProvider` (`isLocal=true`, process-lifetime Engine, GPU then CPU) plus Debug spike `ChatLlmSpikeActivity` / `ChatLlmProbe` (Java 17 stubs at compile; AAR is Kotlin 2.3 + class file 65, `runtimeOnly`). Injects the same `toolDescriptors` as remote. `promptFor` is `ChatPromptAssembler.localPrompt` (full descriptor list in, **taught inventory seven no-slot plus clipboard_write/calendar_create/app_intent/screen_match/speech_output**; no `image_url`). After stream text, `LocalToolCallParser` may emit `LlmEvent.ToolCall` instead of `TextDelta`. Sideload `ChannelHooks.localChatProvider` injects it into `SelectingLlmProvider`. | Play APK, Play classpath `litertlm`, GGUF / llama.cpp |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -282,17 +282,19 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 Sideload remote LLM may emit `js_eval`. Isolate is JSON in → QuickJS → JSON out. Play must not ship the engine. `data.reduce` needs an array; models often pass `1,2` as a string.
 
 ### 2. Signatures
-- `JsEvalPort.evaluate(script: String, dataJson: String): String` — `dataJson` is a complete JSON document
+- `JsEvalPort.evaluate(script, dataJson, asProgram: Boolean = false): String` — `dataJson` is a complete JSON document
 - `IsolatedJsGuard.canonicalizeData(raw: String): String` — `1,2` → `[1,2]`; `[1,2]` stays; incomplete `{` → `INVALID_TOOL_ARGS`
-- `IsolatedJsGuard.wrapProgram(script, dataJson)` — `JSON.stringify((function(data){ script })(JSON.parse(quoted)))`
-- `JsEvalTool` name `js_eval`, `RiskLevel.L2`, `script` STRING, `data` OBJECT
+- `IsolatedJsGuard.wrapProgram(script, dataJson)` — L2 function body + `return`
+- `IsolatedJsGuard.wrapAsProgram(script, dataJson)` — L4: `(function(){var data=JSON.parse(...);return JSON.stringify(eval(quotedScript));})()` — **direct** `eval` so `data` is in scope
+- `IsolatedJsGuard.wrapForExecute(script, dataJson, asProgram)` — L2, or L4 with leading `return`, uses `wrapProgram`; else `wrapAsProgram`
+- `JsEvalTool(port, privileged)` — `privileged()` false → L2 wrap; true → program + `RiskLevel.L4` on `descriptor` getter
 - `AndroidJsEvalPort` — Cash App QuickJS create/eval/close on **one** worker thread; `future.get(2s)`
-- Sideload `ChannelTools.register` installs `js_eval` **before** a11y consent; Play `ChannelTools` is empty
+- Sideload `ChannelTools.register` installs `js_eval` **before** a11y consent and passes `ScriptPrivilegePrefs`; Play `ChannelTools` is empty
 
 ### 3. Contracts
-- Confirm every run. Chat `confirmToolBody("js_eval")` is isolation copy, not 写入设备数据. `toolDisplayName` is 运行脚本. Card still shows `argsJson`.
-- Result `{ok:true,value}` or fatal Chinese `JS_EVAL_*`. Rethrow `CancellationException`; timeout → `JS_EVAL_TIMEOUT`.
-- `ScriptPrivilegePrefs` default false; this tool must not read it.
+- Confirm every run. Chat `confirmToolBody("js_eval")` is isolation copy; `confirmToolBody(..., L4)` is program / last-expression copy. `toolDisplayName` is 运行脚本. Card still shows `argsJson`.
+- Result `{ok:true,value}` or fatal Chinese `JS_EVAL_*`. Rethrow `CancellationException`; timeout → `JS_EVAL_TIMEOUT`. Program mode with no JSON value → `JS_EVAL_NO_VALUE`.
+- `ScriptPrivilegePrefs` default false; `JsEvalTool` reads it via injected `privileged`.
 - Do not teach `js_eval` to 0.6B. Do not Logcat `script` / `data`. JS must not call `tap_swipe`.
 - Play classpath no `:tool:js` / `quickjs`. Play zip no `quickjs` / `AndroidJsEvalPort` (do **not** scan `JsEval` — `:core:tool` `JsEvalTool` is on Play but unregistered).
 
@@ -301,15 +303,16 @@ Sideload remote LLM may emit `js_eval`. Isolate is JSON in → QuickJS → JSON 
 - Size > 8KiB script / 32KiB data → `JS_EVAL_TOO_LARGE`
 - Engine missing → `JS_ENGINE_NOT_READY`
 - QuickJS throw / non-JSON result → `JS_EVAL_FAILED`
+- L4 last expression undefined / not JSON → `JS_EVAL_NO_VALUE`
 
 ### 5. Good/Base/Bad Cases
-- Good: `return data.reduce((a,b)=>a+b,0)` + `data` `1,2` or `[1,2]` → `value` 3
-- Base: `return data` + `{"n":1}` echoes
-- Bad: `fetch(...)` ; Play registering QuickJS; mapping cancel to `JS_EVAL_FAILED`
+- Good: L2 `return data.reduce(...)` or L4 `data.reduce(...)` + `1,2` → `value` 3
+- Base: L2 `return data` + `{"n":1}` echoes
+- Bad: L2 without `return`; L4 `(0,eval)` (global — `data` undefined); `fetch(...)` ; Play registering QuickJS; mapping cancel to `JS_EVAL_FAILED`
 
 ### 6. Tests Required
-- `IsolatedJsGuardTest` canonicalize `1,2`
-- `JsEvalToolTest` reduce + array/`1,2`; host/size/timeout/not-ready
+- `IsolatedJsGuardTest` canonicalize `1,2`; L4 wrap has `eval(` not `(0,eval)`; leading `return` stays `wrapProgram`
+- `JsEvalToolTest` L2 reduce with `return`; L4 without `return`; host/size/timeout/not-ready; cancel not `JS_EVAL_FAILED`
 - `ToolCallSanitizerTest.jsEvalDataArrayIsKeptAsJson`
 - `ChatPromptAssemblerTest` remote may list `js_eval`, local omits
 - `ChatUiStateTest` 运行脚本 + isolation confirm copy
@@ -320,11 +323,13 @@ Sideload remote LLM may emit `js_eval`. Isolate is JSON in → QuickJS → JSON 
 #### Wrong
 ```kotlin
 JSON.parse("1,2")  // SyntaxError → JS_EVAL_FAILED
+JSON.stringify((0,eval)(script))  // global eval; var data in IIFE is invisible
 check(!apkEntry.contains("JsEval"))  // false-positive on core JsEvalTool.class
 ```
 #### Correct
 ```kotlin
 IsolatedJsGuard.canonicalizeData("1,2") // "[1,2]"
+IsolatedJsGuard.wrapForExecute(script, dataJson, asProgram)
 check(!apkEntry.contains("AndroidJsEvalPort"))
 ```
 

@@ -31,6 +31,8 @@ class PlayShortcutCopyTest {
         assertFalse(text.contains("AndroidJsEvalPort"))
         assertFalse(text.contains("quickjs", ignoreCase = true))
         assertTrue(text.contains("accessibilityPermissionItem"))
+        assertTrue(text.contains("scriptPrivileged"))
+        assertTrue(text.contains("false"))
     }
 
     @Test
