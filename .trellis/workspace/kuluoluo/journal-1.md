@@ -1343,3 +1343,24 @@ localTeachable 七件：原四件加 calendar_query/screen_capture/speech_input�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 60: Sideload L4 js_eval program mode
+
+**Date**: 2026-09-08
+**Task**: Sideload L4 js_eval program mode
+**Branch**: `master`
+
+### Summary
+
+L4 ON runs js_eval as a program with last-expression JSON via direct eval so data is in scope; leading return still uses L2 wrap. L4 OFF keeps function-body return. Device accepted; Play still has no QuickJS.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3b852f2` | (see git log) |
+
+### Status
+
+[OK] **Completed**
