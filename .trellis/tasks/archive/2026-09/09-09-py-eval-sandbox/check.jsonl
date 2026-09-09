@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Sandbox path jail; no sys.modules wipe"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "HOST vs QUOTA"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "confirmToolBody py_eval copy"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No file contents in Logcat"}
