@@ -1364,3 +1364,24 @@ L4 ON runs js_eval as a program with last-expression JSON via direct eval so dat
 ### Status
 
 [OK] **Completed**
+
+
+## Session 61: Sideload isolated py_eval JSON
+
+**Date**: 2026-09-09
+**Task**: Sideload isolated py_eval JSON
+**Branch**: `master`
+
+### Summary
+
+L4-only py_eval with frozen numpy/pandas, JSON in/out. Device accepted after keeping os/importlib for Chaquopy. Play has no engine.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c5c7a98` | (see git log) |
+
+### Status
+
+[OK] **Completed**
