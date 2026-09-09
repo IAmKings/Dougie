@@ -9,6 +9,7 @@ import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.PyEvalPort
 import com.dougie.core.tool.PyEvalTool
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -31,7 +32,7 @@ class AndroidPyEvalPort(context: Context) : PyEvalPort {
             }
             try {
                 val raw = py.getModule("py_eval_runtime")
-                    .callAttr("evaluate", script, dataJson)
+                    .callAttr("evaluate", script, dataJson, sandboxRoot())
                 raw.toJava(String::class.java) as String
             } catch (e: PyException) {
                 throw mapPy(e)
@@ -50,6 +51,14 @@ class AndroidPyEvalPort(context: Context) : PyEvalPort {
         }
     }
 
+    private fun sandboxRoot(): String {
+        val dir = File(app.filesDir, "py_sandbox")
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        return dir.canonicalFile.absolutePath
+    }
+
     private fun startIfNeeded() {
         try {
             if (!Python.isStarted()) {
@@ -63,6 +72,7 @@ class AndroidPyEvalPort(context: Context) : PyEvalPort {
     private fun mapPy(error: PyException): AgentException {
         val text = error.message.orEmpty()
         return when {
+            text.contains("quota") -> AgentException(UserFacingErrors.PY_EVAL_QUOTA)
             text.contains("host") -> AgentException(UserFacingErrors.PY_EVAL_HOST)
             text.contains("no_value") -> AgentException(UserFacingErrors.PY_EVAL_NO_VALUE)
             text.contains("engine") -> AgentException(UserFacingErrors.PY_ENGINE_NOT_READY)

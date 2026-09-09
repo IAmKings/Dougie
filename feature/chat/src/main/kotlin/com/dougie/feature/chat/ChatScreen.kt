@@ -1195,7 +1195,7 @@ internal fun confirmToolBody(toolName: String, riskLevel: RiskLevel = RiskLevel.
     toolName == "js_eval" ->
         "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
     toolName == "py_eval" ->
-        "用 Python 处理数据，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
+        "可用沙箱文件处理数据，不能上网或读应用外文件。确认后才会执行；拒绝则跳过。"
     else -> "该操作会写入设备数据。确认后才会执行；拒绝则跳过。"
 }
 

@@ -106,7 +106,7 @@ class PyEvalTool(
         const val TIMEOUT_MS = 15_000L
         val DESCRIPTOR = ToolDescriptor(
             name = NAME,
-            description = "Run an isolated Python program on JSON data (numpy/pandas). Last expression is JSON-serialized. No network or files. Requires confirmation.",
+            description = "Run an isolated Python program on JSON data (numpy/pandas). Last expression is JSON-serialized. App sandbox files only; no network. Requires confirmation.",
             properties = mapOf(
                 "script" to ToolParamSpec(ToolParamType.STRING),
                 "data" to ToolParamSpec(ToolParamType.OBJECT),

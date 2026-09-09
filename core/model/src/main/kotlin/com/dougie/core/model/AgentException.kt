@@ -69,6 +69,7 @@ object UserFacingErrors {
     const val PY_EVAL_HOST = "隔离 Python 不能访问网络或系统接口。"
     const val PY_EVAL_TOO_LARGE = "脚本或数据过长，已拒绝执行。"
     const val PY_EVAL_NO_VALUE = "隔离 Python 没有可序列化的结果。"
+    const val PY_EVAL_QUOTA = "沙箱文件过多，已拒绝写入。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

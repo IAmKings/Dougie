@@ -56,29 +56,49 @@ class PyEvalToolTest {
     }
 
     @Test
-    fun openInScriptFailsBeforePort() = runTest {
+    fun openAbsolutePathFailsAtExecute() = runTest {
         val port = FakePyEvalPort()
         val tool = PyEvalTool(port)
-        try {
-            tool.validateArguments("""{"script":"open('/etc/passwd')","data":"{}"}""")
-            throw AssertionError("expected")
-        } catch (e: com.dougie.core.model.AgentException) {
-            assertEquals(UserFacingErrors.PY_EVAL_HOST, e.userMessage)
-        }
-        assertEquals("", port.lastScript)
+        tool.validateArguments("""{"script":"open('/etc/passwd')","data":"{}"}""")
+        val result = tool.execute(
+            """{"script":"open('/etc/passwd')","data":"{}"}""",
+            ToolContext("t", "cAbs"),
+        )
+        assertTrue(result.isFatal)
+        assertEquals(UserFacingErrors.PY_EVAL_HOST, result.error)
+        assertEquals("open('/etc/passwd')", port.lastScript)
     }
 
     @Test
-    fun ioOpenFailsBeforePort() = runTest {
+    fun ioOpenAbsolutePathFailsAtExecute() = runTest {
         val port = FakePyEvalPort()
         val tool = PyEvalTool(port)
+        tool.validateArguments("""{"script":"io.open('/tmp/x')","data":"{}"}""")
+        val result = tool.execute(
+            """{"script":"io.open('/tmp/x')","data":"{}"}""",
+            ToolContext("t", "cIoAbs"),
+        )
+        assertTrue(result.isFatal)
+        assertEquals(UserFacingErrors.PY_EVAL_HOST, result.error)
+        assertEquals("io.open('/tmp/x')", port.lastScript)
+    }
+
+    @Test
+    fun parentPathFailsAtExecute() = runTest {
+        val dir = java.nio.file.Files.createTempDirectory("py-sandbox").toFile()
         try {
-            tool.validateArguments("""{"script":"io.open('/tmp/x')","data":"{}"}""")
-            throw AssertionError("expected")
-        } catch (e: com.dougie.core.model.AgentException) {
-            assertEquals(UserFacingErrors.PY_EVAL_HOST, e.userMessage)
+            val port = FakePyEvalPort(sandboxDir = dir)
+            val tool = PyEvalTool(port)
+            val result = tool.execute(
+                """{"script":"open('../x')","data":"{}"}""",
+                ToolContext("t", "cParent"),
+            )
+            assertTrue(result.isFatal)
+            assertEquals(UserFacingErrors.PY_EVAL_HOST, result.error)
+            assertEquals("open('../x')", port.lastScript)
+        } finally {
+            dir.deleteRecursively()
         }
-        assertEquals("", port.lastScript)
     }
 
     @Test
@@ -95,11 +115,11 @@ class PyEvalToolTest {
     }
 
     @Test
-    fun fromOsFailsBeforePort() = runTest {
+    fun ctypesInScriptFailsBeforePort() = runTest {
         val port = FakePyEvalPort()
         val tool = PyEvalTool(port)
         try {
-            tool.validateArguments("""{"script":"from os import listdir","data":"{}"}""")
+            tool.validateArguments("""{"script":"import ctypes","data":"{}"}""")
             throw AssertionError("expected")
         } catch (e: com.dougie.core.model.AgentException) {
             assertEquals(UserFacingErrors.PY_EVAL_HOST, e.userMessage)
@@ -108,16 +128,61 @@ class PyEvalToolTest {
     }
 
     @Test
-    fun importOsFailsBeforePort() = runTest {
-        val port = FakePyEvalPort()
-        val tool = PyEvalTool(port)
+    fun importOsAllowedAtValidate() {
+        PyEvalTool(FakePyEvalPort()).validateArguments(
+            """{"script":"import os; os.listdir('.')","data":"{}"}""",
+        )
+    }
+
+    @Test
+    fun fromOsAllowedAtValidate() {
+        PyEvalTool(FakePyEvalPort()).validateArguments(
+            """{"script":"from os import listdir","data":"{}"}""",
+        )
+    }
+
+    @Test
+    fun csvWriteThenReadSumsToThreeAndPersists() = runTest {
+        val dir = java.nio.file.Files.createTempDirectory("py-sandbox").toFile()
         try {
-            tool.validateArguments("""{"script":"import os\nos.listdir('.')","data":"{}"}""")
-            throw AssertionError("expected")
-        } catch (e: com.dougie.core.model.AgentException) {
-            assertEquals(UserFacingErrors.PY_EVAL_HOST, e.userMessage)
+            val port = FakePyEvalPort(sandboxDir = dir)
+            val tool = PyEvalTool(port)
+            val write = tool.execute(
+                """{"script":"open('t.csv','w'); import pandas as pd; float(pd.read_csv('t.csv', header=None)[0].sum())","data":"{}"}""",
+                ToolContext("t", "cCsv1"),
+            )
+            assertFalse(write.isFatal)
+            val first = Json.parseToJsonElement(write.json).jsonObject
+            assertEquals(3, first["value"]!!.jsonPrimitive.content.toInt())
+            val read = tool.execute(
+                """{"script":"import pandas as pd; float(pd.read_csv('t.csv', header=None)[0].sum())","data":"{}"}""",
+                ToolContext("t", "cCsv2"),
+            )
+            assertFalse(read.isFatal)
+            val second = Json.parseToJsonElement(read.json).jsonObject
+            assertEquals(3, second["value"]!!.jsonPrimitive.content.toInt())
+            assertTrue(java.io.File(dir, "t.csv").exists())
+        } finally {
+            dir.deleteRecursively()
         }
-        assertEquals("", port.lastScript)
+    }
+
+    @Test
+    fun sandboxQuotaExceededIsFatal() = runTest {
+        val dir = java.nio.file.Files.createTempDirectory("py-sandbox").toFile()
+        try {
+            java.io.File(dir, "full.bin").writeBytes(ByteArray(FakePyEvalPort.QUOTA_BYTES.toInt()))
+            val port = FakePyEvalPort(sandboxDir = dir)
+            val tool = PyEvalTool(port)
+            val result = tool.execute(
+                """{"script":"open('t.csv','w'); import pandas as pd; float(pd.read_csv('t.csv', header=None)[0].sum())","data":"{}"}""",
+                ToolContext("t", "cQuota"),
+            )
+            assertTrue(result.isFatal)
+            assertEquals(UserFacingErrors.PY_EVAL_QUOTA, result.error)
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 
     @Test

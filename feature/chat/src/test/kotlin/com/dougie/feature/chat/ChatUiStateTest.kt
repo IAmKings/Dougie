@@ -248,11 +248,11 @@ class ChatUiStateTest {
             confirmToolBody("js_eval", com.dougie.core.model.RiskLevel.L4),
         )
         assertEquals(
-            "用 Python 处理数据，不读写文件、不上网。确认后才会执行；拒绝则跳过。",
+            "可用沙箱文件处理数据，不能上网或读应用外文件。确认后才会执行；拒绝则跳过。",
             confirmToolBody("py_eval"),
         )
         assertEquals(
-            "用 Python 处理数据，不读写文件、不上网。确认后才会执行；拒绝则跳过。",
+            "可用沙箱文件处理数据，不能上网或读应用外文件。确认后才会执行；拒绝则跳过。",
             confirmToolBody("py_eval", com.dougie.core.model.RiskLevel.L4),
         )
         assertEquals(
