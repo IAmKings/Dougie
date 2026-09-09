@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Sideload :tool:* pattern; js_eval isolate analog; Play must not import engine"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Fake port JVM tests; checkChannelLeak Play classpath/zip"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not Logcat script or data"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "UserFacingErrors Chinese PY_EVAL_*"}
