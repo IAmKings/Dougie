@@ -18,6 +18,7 @@ mosaic = "0.14.0"
 kotlinxCli = "0.3.6"
 # Latest stable on Google Maven as of 2026-08-18 (0.17.0-alpha1 is pre-release).
 litertlm = "0.16.1"
+chaquopy = "16.1.0"
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -55,3 +56,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+chaquopy = { id = "com.chaquo.python", version.ref = "chaquopy" }

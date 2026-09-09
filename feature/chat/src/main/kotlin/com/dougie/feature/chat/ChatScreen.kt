@@ -1185,6 +1185,7 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
     "screen_capture" -> "截取屏幕"
     "speech_output" -> "念出来"
     "js_eval" -> "运行脚本"
+    "py_eval" -> "运行 Python"
     else -> toolName
 }
 
@@ -1193,6 +1194,8 @@ internal fun confirmToolBody(toolName: String, riskLevel: RiskLevel = RiskLevel.
         "按完整脚本运行，结果取最后一次表达式。不读写文件、不上网。确认后才会执行；拒绝则跳过。"
     toolName == "js_eval" ->
         "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
+    toolName == "py_eval" ->
+        "用 Python 处理数据，不读写文件、不上网。确认后才会执行；拒绝则跳过。"
     else -> "该操作会写入设备数据。确认后才会执行；拒绝则跳过。"
 }
 

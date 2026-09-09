@@ -65,6 +65,12 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Isolated JS engine missing | Port `isReady() == false` or native create failed | `隔离脚本引擎尚未接入。` |
 | Isolated JS host tokens | Script contains `fetch` / XHR / `Java.` / `android.` | `隔离脚本不能访问网络或系统接口。` |
 | Isolated JS too large | Script > 8KiB or data > 32KiB | `脚本或数据过长，已拒绝执行。` |
+| Isolated Python timeout | `py_eval` host eval exceeded ~15s | `隔离 Python 运行超时，已停止。` |
+| Isolated Python failed | CPython threw or result was not JSON | `隔离 Python 运行失败。` |
+| Isolated Python no value | Last expression `None` / not JSON | `隔离 Python 没有可序列化的结果。` |
+| Isolated Python engine missing | Port `isReady() == false` or Chaquopy start failed | `隔离 Python 引擎尚未接入。` |
+| Isolated Python host tokens | Script contains `open(` / `import os` / `urllib` / `socket` / `subprocess` / `ctypes` / `java.` / `android.` | `隔离 Python 不能访问网络或系统接口。` |
+| Isolated Python too large | Script > 8KiB or data > 32KiB | `脚本或数据过长，已拒绝执行。` |
 | Chat engine not wired | Play `localChatProvider` is null, or LiteRT init failed | `离线对话引擎尚未接入，无法闲聊。` |
 | Model smoke probe timeout | Probe exceeds 90s (ASR/TTS) or 180s (intent / chat); UI must leave 测试中 | `离线模型测试超时，请稍后重试。` |
 

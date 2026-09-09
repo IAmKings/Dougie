@@ -30,6 +30,9 @@ class PlayShortcutCopyTest {
         assertFalse(text.contains("JsEvalTool"))
         assertFalse(text.contains("AndroidJsEvalPort"))
         assertFalse(text.contains("quickjs", ignoreCase = true))
+        assertFalse(text.contains("PyEvalTool"))
+        assertFalse(text.contains("AndroidPyEvalPort"))
+        assertFalse(text.contains("chaquopy", ignoreCase = true))
         assertTrue(text.contains("accessibilityPermissionItem"))
         assertTrue(text.contains("scriptPrivileged"))
         assertTrue(text.contains("false"))
@@ -43,5 +46,9 @@ class PlayShortcutCopyTest {
         assertFalse(text.contains("JsEvalTool"))
         assertFalse(text.contains("AndroidJsEvalPort"))
         assertFalse(text.contains("tool.js"))
+        assertFalse(text.contains("PyEvalTool"))
+        assertFalse(text.contains("AndroidPyEvalPort"))
+        assertFalse(text.contains("chaquopy", ignoreCase = true))
+        assertFalse(text.contains("tool.py"))
     }
 }

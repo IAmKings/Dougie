@@ -211,6 +211,7 @@ object ChannelHooks {
                     onCheckedChange = { on ->
                         ScriptPrivilegePrefs.setEnabled(context, on)
                         scriptPrivilege = on
+                        (context.applicationContext as DougieApplication).refreshChannelTools()
                     },
                 )
             }

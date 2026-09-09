@@ -183,6 +183,7 @@ class DougieApplication : Application() {
             { ChannelHooks.hasChannelConsent(this) },
             taskStores.idempotencyStore,
             { ChannelHooks.scriptPrivileged(this) },
+            this,
         )
         val toolDescriptors = { tools.values.map { it.descriptor } }
         val cloud = OpenAICompatibleProvider(
@@ -286,6 +287,7 @@ class DougieApplication : Application() {
             { ChannelHooks.hasChannelConsent(this) },
             taskStores.idempotencyStore,
             { ChannelHooks.scriptPrivileged(this) },
+            this,
         )
     }
 

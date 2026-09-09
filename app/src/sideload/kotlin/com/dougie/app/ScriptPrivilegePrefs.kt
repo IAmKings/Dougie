@@ -2,7 +2,7 @@ package com.dougie.app
 
 import android.content.Context
 
-/** L4 switch: when on, `js_eval` runs script as a program (last expression). */
+/** L4 switch: JS last-expression wrap, and sideload `py_eval` registration. */
 object ScriptPrivilegePrefs {
     private const val PREF = "dougie_script_privilege"
     private const val KEY_ENABLED = "enabled"

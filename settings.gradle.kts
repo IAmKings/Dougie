@@ -31,6 +31,7 @@ include(
     ":tool:system",
     ":tool:accessibility",
     ":tool:js",
+    ":tool:py",
     ":tool:chatllm",
     ":data:preferences",
     ":data:memory",

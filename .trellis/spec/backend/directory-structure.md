@@ -119,6 +119,15 @@ tool/accessibility/src/main/kotlin/com/dougie/tool/accessibility/
   TapSwipeTool.kt
 tool/js/src/main/kotlin/com/dougie/tool/js/
   AndroidJsEvalPort.kt
+tool/py/src/main/kotlin/com/dougie/tool/py/
+  AndroidPyEvalPort.kt
+tool/py/src/main/python/
+  py_eval_runtime.py
+core/tool/src/main/kotlin/com/dougie/core/tool/
+  PyEvalTool.kt
+  PyEvalPort.kt
+  IsolatedPyGuard.kt
+  FakePyEvalPort.kt
 data/preferences/src/main/kotlin/com/dougie/data/preferences/
   PreferenceStore.kt
   ProviderSettings.kt
@@ -143,6 +152,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:tool:js` (Android, **sideload flavor only**) | `AndroidJsEvalPort` (Cash App QuickJS). Isolated `js_eval` is `JsEvalTool` in `:core:tool`. `data` is JSON (`OBJECT`): arrays like `[1,2]` pass through; string `1,2` is canonicalized to `[1,2]` before `JSON.parse`. `ScriptPrivilegePrefs` false → L2 function wrap; true → L4 program / last expression. | Play APK, host file/net APIs, `tap_swipe` from JS |
+| `:tool:py` (Android, **sideload flavor only**) | Chaquopy CPython + frozen numpy/pandas. Isolated `py_eval` is `PyEvalTool` in `:core:tool` (`RiskLevel.L4`). Registered only when `ScriptPrivilegePrefs` is true; otherwise `tools.remove`. `data` uses the same canonicalize as JS. Timeout 15s. | Play APK, runtime pip, files/net/Intent/a11y/`tap_swipe` |
 | `:tool:chatllm` (Android, **sideload runtime only**) | LiteRT-LM `ChatLlmProvider` (`isLocal=true`, process-lifetime Engine, GPU then CPU) plus Debug spike `ChatLlmSpikeActivity` / `ChatLlmProbe` (Java 17 stubs at compile; AAR is Kotlin 2.3 + class file 65, `runtimeOnly`). Injects the same `toolDescriptors` as remote. `promptFor` is `ChatPromptAssembler.localPrompt` (full descriptor list in, **taught inventory seven no-slot plus clipboard_write/calendar_create/app_intent/screen_match/speech_output**; no `image_url`). After stream text, `LocalToolCallParser` may emit `LlmEvent.ToolCall` instead of `TextDelta`. Sideload `ChannelHooks.localChatProvider` injects it into `SelectingLlmProvider`. | Play APK, Play classpath `litertlm`, GGUF / llama.cpp |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
@@ -243,7 +253,7 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Problem**: `dispatchGesture` hits whatever is on screen. Chat L3 ConfirmCard runs in Dougie, so after the user confirms, Dougie is the foreground — not the app they captured. Bundled `solid` / `logo` NCC is not a product locator for arbitrary third-party UI.
 
-**Instead**: Chat `completeFromMatchThenTapIfMatched` is a sideload gate/path for confirm + denylist + coordinates from `screen_match`; it does **not** claim third-party automation. Real taps on another app wait for a later **foreground script / goal runner**: the target app stays visible, steps (match/tap) execute there, and L3 confirm must not steal the Activity (not Chat). Do not add overlay `TaskManager.submit` in the current overlay menu (`截取屏幕` / `打开对话` only). Do not teach `tap_swipe` or `js_eval` to 0.6B. Isolated `js_eval` must not drive gestures.
+**Instead**: Chat `completeFromMatchThenTapIfMatched` is a sideload gate/path for confirm + denylist + coordinates from `screen_match`; it does **not** claim third-party automation. Real taps on another app wait for a later **foreground script / goal runner**: the target app stays visible, steps (match/tap) execute there, and L3 confirm must not steal the Activity (not Chat). Do not add overlay `TaskManager.submit` in the current overlay menu (`截取屏幕` / `打开对话` only). Do not teach `tap_swipe` or `js_eval` to 0.6B. Isolated `js_eval` must not drive gestures. Do not teach `py_eval` to 0.6B.
 
 ## Don't: Cloud STT or commit 230MB ASR models
 
@@ -331,6 +341,55 @@ check(!apkEntry.contains("JsEval"))  // false-positive on core JsEvalTool.class
 IsolatedJsGuard.canonicalizeData("1,2") // "[1,2]"
 IsolatedJsGuard.wrapForExecute(script, dataJson, asProgram)
 check(!apkEntry.contains("AndroidJsEvalPort"))
+```
+
+## Scenario: isolated `py_eval`
+
+### 1. Scope / Trigger
+Sideload remote LLM may emit `py_eval` only when 脚本特权 (L4) is on. JSON `script` + `data` in → CPython last expression JSON out. Play must not ship Chaquopy/CPython/numpy. Do not teach 0.6B.
+
+### 2. Signatures
+- `PyEvalPort.evaluate(script, dataJson): String`
+- `IsolatedJsGuard.canonicalizeData` for `data` (`1,2` → `[1,2]`)
+- `IsolatedPyGuard` size 8KiB/32KiB; host tokens include JS ones plus `open(`, `io.open`, `import os`, `from os`, `urllib`, `subprocess`, `socket`, `ctypes`
+- `PyEvalTool` always `RiskLevel.L4` (no privileged lambda)
+- `AndroidPyEvalPort(context)` — `Python.start(AndroidPlatform)` on one worker; never from `app/src/main`. 15s is `future.get` on that worker (`withTimeout` cannot interrupt CPython). Runtime patches `io.open` / `builtins.open` and dangerous `os.*`; it must **not** delete `os` / `ctypes` / `importlib` from `sys.modules` (numpy/Chaquopy then throw generic `PY_EVAL_FAILED`).
+- `:core:tool` ships `PyEvalTool` on Play too (unregistered). Leak zip needles are `libpython` / `chaquopy` / `AndroidPyEvalPort` / `numpy` — never a bare `Python` string (false-positives on the JVM class / comments).
+- Sideload `ChannelTools.register` puts `py_eval` iff `scriptPrivileged()`; else `tools.remove`. Settings switch calls `DougieApplication.refreshChannelTools()`. Play `ChannelTools` must not import `PyEvalTool` / `AndroidPyEvalPort`
+
+### 3. Contracts
+- Confirm every run. `toolDisplayName` is 运行 Python. Confirm copy: 用 Python 处理数据，不读写文件、不上网。确认后才会执行；拒绝则跳过。
+- Result `{ok:true,value}` or fatal Chinese `PY_EVAL_*`. Rethrow `CancellationException`; timeout 15s → `PY_EVAL_TIMEOUT`.
+- Do not teach `py_eval` to 0.6B (`LOCAL_TEACH_NAMES`). Do not Logcat `script` / `data`. Python must not call `tap_swipe` / `js_eval`.
+- Play classpath no `:tool:py` / `chaquopy` / `com.chaquo`. Play zip no `libpython` / `chaquopy` / `AndroidPyEvalPort` / `numpy`. Do **not** scan bare `Python`.
+
+### 4. Validation & Error Matrix
+- Host tokens / `open` / `urllib` → `PY_EVAL_HOST` before port (runtime import hook too)
+- Size > 8KiB script / 32KiB data → `PY_EVAL_TOO_LARGE`
+- Engine missing → `PY_ENGINE_NOT_READY`
+- No last JSON value / `None` → `PY_EVAL_NO_VALUE`
+
+### 5. Good/Base/Bad Cases
+- Good: L4 on, `import numpy as np; float(np.array(data).sum())` + `1,2` → value 3; reject confirm → zero execute
+- Base: last expression `data` echoes JSON
+- Bad: privilege off (tool absent); `open(` / `import os`; Play registering Chaquopy; mapping cancel to `PY_EVAL_FAILED`
+
+### 6. Tests Required
+- `PyEvalToolTest` numpy-sum Fake; host/size/timeout/not-ready; cancel not `PY_EVAL_FAILED`
+- `ChatPromptAssemblerTest` remote may list `py_eval`, local omits
+- `ChatUiStateTest` 运行 Python + confirm copy
+- `PlayShortcutCopyTest` Play hooks/tools no PyEval/Chaquopy
+- `./gradlew :core:tool:test :core:llm:test :feature:chat:testDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak`
+
+### 7. Wrong vs Correct
+#### Wrong
+```python
+# after import numpy, delete os/importlib from sys.modules
+# Chaquopy/numpy reimport → generic PY_EVAL_FAILED
+```
+#### Correct
+```python
+# keep os/ctypes/importlib; deny os.remove/listdir and urllib/socket imports
 ```
 
 ## Scenario: `:cli` fake battery console

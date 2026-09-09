@@ -129,6 +129,7 @@ dependencies {
     implementation(project(":tool:system"))
     add("sideloadImplementation", project(":tool:accessibility"))
     add("sideloadImplementation", project(":tool:js"))
+    add("sideloadImplementation", project(":tool:py"))
     add("sideloadImplementation", project(":tool:chatllm"))
     implementation(project(":core:runtime"))
     implementation(project(":core:llm"))
@@ -228,6 +229,12 @@ tasks.register("checkChannelLeak") {
                 component.id.displayName.contains("quickjs", ignoreCase = true)
         }
         check(!jsOnPlay) { "playDebugRuntimeClasspath includes :tool:js or quickjs" }
+        val pyOnPlay = playClasspath.incoming.resolutionResult.allComponents.any { component ->
+            component.id.displayName.contains("tool:py") ||
+                component.id.displayName.contains("chaquopy", ignoreCase = true) ||
+                component.id.displayName.contains("com.chaquo")
+        }
+        check(!pyOnPlay) { "playDebugRuntimeClasspath includes :tool:py, chaquopy, or com.chaquo" }
         val chatllmOnPlay = playClasspath.incoming.resolutionResult.allComponents.any { component ->
             component.id.displayName.contains("tool:chatllm")
         }
@@ -258,6 +265,18 @@ tasks.register("checkChannelLeak") {
             }
             check(!name.contains("AndroidJsEvalPort")) {
                 "play APK leaked AndroidJsEvalPort: $name in $playApk"
+            }
+            check(!name.contains("libpython")) {
+                "play APK leaked libpython: $name in $playApk"
+            }
+            check(!name.contains("chaquopy", ignoreCase = true)) {
+                "play APK leaked chaquopy: $name in $playApk"
+            }
+            check(!name.contains("AndroidPyEvalPort")) {
+                "play APK leaked AndroidPyEvalPort: $name in $playApk"
+            }
+            check(!name.contains("numpy")) {
+                "play APK leaked numpy: $name in $playApk"
             }
         }
         val sideloadApk = flavorDebugApk("sideload")

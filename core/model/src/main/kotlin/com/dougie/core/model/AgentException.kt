@@ -63,6 +63,12 @@ object UserFacingErrors {
     const val JS_EVAL_HOST = "隔离脚本不能访问网络或系统接口。"
     const val JS_EVAL_TOO_LARGE = "脚本或数据过长，已拒绝执行。"
     const val JS_EVAL_NO_VALUE = "隔离脚本没有可序列化的结果。"
+    const val PY_EVAL_TIMEOUT = "隔离 Python 运行超时，已停止。"
+    const val PY_EVAL_FAILED = "隔离 Python 运行失败。"
+    const val PY_ENGINE_NOT_READY = "隔离 Python 引擎尚未接入。"
+    const val PY_EVAL_HOST = "隔离 Python 不能访问网络或系统接口。"
+    const val PY_EVAL_TOO_LARGE = "脚本或数据过长，已拒绝执行。"
+    const val PY_EVAL_NO_VALUE = "隔离 Python 没有可序列化的结果。"
 }
 
 open class AgentException(val userMessage: String) : Exception(userMessage)

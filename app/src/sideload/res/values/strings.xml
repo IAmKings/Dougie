@@ -19,6 +19,6 @@
     <string name="accessibility_permission_title">无障碍</string>
     <string name="accessibility_permission_subtitle">用于经确认的屏幕点击与滑动。需在系统设置中开启 Dougie 无障碍服务；银行、支付、密码管理器界面不可操作</string>
     <string name="script_privilege_title">脚本特权</string>
-    <string name="script_privilege_body">打开后按完整脚本运行，结果取最后一次表达式，仍无文件或网络。每次都要确认。默认关闭。</string>
+    <string name="script_privilege_body">打开后 JavaScript 按完整脚本取最后一次表达式；远程模型可调用 Python 做数据处理（numpy/pandas）。仍无文件或网络。每次都要确认。默认关闭。</string>
     <string name="script_privilege_toggle">允许脚本特权（L4）</string>
 </resources>
