@@ -1385,3 +1385,24 @@ L4-only py_eval with frozen numpy/pandas, JSON in/out. Device accepted after kee
 ### Status
 
 [OK] **Completed**
+
+
+## Session 62: py_eval sandbox files
+
+**Date**: 2026-09-10
+**Task**: py_eval sandbox files
+**Branch**: `master`
+
+### Summary
+
+py_eval persists relative files in filesDir/py_sandbox with path jail and 32MiB quota. Device accepted csv write then read. Quota walk no longer trips host via scandir.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `78ee9bd` | (see git log) |
+
+### Status
+
+[OK] **Completed**
