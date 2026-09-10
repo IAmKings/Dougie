@@ -175,6 +175,8 @@ class ChatPromptAssemblerTest {
             ToolDescriptor("speech_input", description = "Capture one utterance."),
             ToolDescriptor("speech_output", description = "Speak text offline."),
             ToolDescriptor("app_intent", description = "Open a link."),
+            ToolDescriptor("sms_compose", description = "Open the SMS composer."),
+            ToolDescriptor("phone_dial", description = "Open the dialer."),
             ToolDescriptor("tap_swipe", description = "Tap or swipe."),
             ToolDescriptor("js_eval", description = "Run isolated JavaScript."),
             ToolDescriptor("py_eval", description = "Run isolated Python."),
@@ -192,6 +194,8 @@ class ChatPromptAssemblerTest {
         assertTrue(remote.contains("js_eval"))
         assertTrue(remote.contains("py_eval"))
         assertTrue(remote.contains("intent_classifier"))
+        assertTrue(remote.contains("sms_compose"))
+        assertTrue(remote.contains("phone_dial"))
         taught.forEach { name ->
             assertTrue(local.contains("- $name:"))
             assertTrue(local.contains("{\"name\":\"$name\""))
@@ -211,6 +215,8 @@ class ChatPromptAssemblerTest {
         assertTrue(!local.contains("js_eval"))
         assertTrue(!local.contains("py_eval"))
         assertTrue(!local.contains("intent_classifier"))
+        assertTrue(!local.contains("sms_compose"))
+        assertTrue(!local.contains("phone_dial"))
         assertTrue(local.contains("一行 JSON"))
         IDENTITY_TOOL_NAMES.forEach { name ->
             assertTrue(!ChatPromptAssembler.IDENTITY.contains(name))
@@ -301,6 +307,8 @@ class ChatPromptAssemblerTest {
             "screen_match",
             "speech_output",
             "app_intent",
+            "sms_compose",
+            "phone_dial",
             "js_eval",
             "py_eval",
         )

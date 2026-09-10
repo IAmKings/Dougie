@@ -180,6 +180,8 @@ tasks.register("checkChannelLeak") {
             "TYPE_APPLICATION_OVERLAY",
             "QUERY_ALL_PACKAGES",
             "ChatLlmSpikeActivity",
+            "SEND_SMS",
+            "CALL_PHONE",
         ).forEach { needle ->
             check(!playManifest.contains(needle)) {
                 "play merged manifest leaked $needle in $playManifestFile"

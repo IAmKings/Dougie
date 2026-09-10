@@ -16,6 +16,8 @@ import com.dougie.core.runtime.PolicyEngine
 import com.dougie.core.runtime.TaskManager
 import com.dougie.core.runtime.recoverInterrupted
 import com.dougie.core.tool.AppIntentTool
+import com.dougie.core.tool.PhoneDialTool
+import com.dougie.core.tool.SmsComposeTool
 import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.CalendarCreateTool
 import com.dougie.core.tool.CalendarQueryTool
@@ -40,6 +42,7 @@ import com.dougie.data.memory.RoomMemoryStore
 import com.dougie.data.preferences.PreferenceStore
 import com.dougie.data.tasks.DougieTaskStores
 import com.dougie.tool.system.AndroidAppIntentPort
+import com.dougie.tool.system.AndroidTelecomPort
 import com.dougie.tool.system.AndroidCalendarPort
 import com.dougie.tool.system.AndroidClipboardPort
 import com.dougie.tool.system.AndroidIntentPort
@@ -157,6 +160,10 @@ class DougieApplication : Application() {
             context = this,
             isForeground = { foregroundTracker.foreground },
         )
+        val telecomPort = AndroidTelecomPort(
+            context = this,
+            isForeground = { foregroundTracker.foreground },
+        )
         tools = linkedMapOf(
             "battery" to DeviceBatteryTool(this),
             "time" to SystemTimeTool(),
@@ -174,6 +181,8 @@ class DougieApplication : Application() {
                     OpenAppEntries.packages(OpenAppEntries.parse(preferenceStore.openAppsJson.value))
                 },
             ),
+            SmsComposeTool.NAME to SmsComposeTool(telecomPort, taskStores.idempotencyStore),
+            PhoneDialTool.NAME to PhoneDialTool(telecomPort, taskStores.idempotencyStore),
             SpeechInputTool.NAME to SpeechInputTool(speechPort),
             SpeechOutputTool.NAME to SpeechOutputTool(ttsPort),
             IntentClassifierTool.NAME to IntentClassifierTool(intentPort),

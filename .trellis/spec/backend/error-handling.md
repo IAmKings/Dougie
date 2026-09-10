@@ -33,6 +33,9 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | App `package:` / extra `package` not on user list | `AppIntentAllowlist` + settings 可打开的应用 | `该应用未加入可打开名单。` |
 | App intent while background | `AppIntentTool` foreground check | `应用不在前台，无法打开应用或链接。` |
 | App intent resolve/start fail | No matching activity / launch exception | `无法打开该应用或链接。` |
+| SMS compose / dial while background | `SmsComposeTool` / `PhoneDialTool` foreground check | `应用不在前台，无法打开应用或链接。` |
+| SMS compose / dial no handler | `ACTION_SENDTO` / `ACTION_DIAL` resolve or start fail | `无法打开系统短信或拨号。` |
+| SMS / dial number invalid or SMS body empty / over 1000 UTF-16 chars | `PhoneNumber.canonical` / `sms_compose` body | `工具参数无效，已拒绝执行。` |
 | Tap/swipe without sideload consent | `TapSwipeTool` consent gate | `未完成侧载知情同意，无法执行屏幕操作` |
 | Tap/swipe without Accessibility | Service instance null | `未开启无障碍服务，无法执行屏幕操作` |
 | Tap/swipe on bank/pay/password app | `HighRiskForeground` | `该应用不允许自动点击或滑动。` |

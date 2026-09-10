@@ -51,4 +51,29 @@ class PlayShortcutCopyTest {
         assertFalse(text.contains("chaquopy", ignoreCase = true))
         assertFalse(text.contains("tool.py"))
     }
+
+    @Test
+    fun playManifestHasNoSendSmsOrCallPhone() {
+        val file = File("src/main/AndroidManifest.xml")
+        assertTrue(file.isFile)
+        val text = file.readText()
+        assertFalse(text.contains("SEND_SMS"))
+        assertFalse(text.contains("CALL_PHONE"))
+        assertTrue(text.contains("android.intent.action.SENDTO"))
+        assertTrue(text.contains("android.intent.action.DIAL"))
+    }
+
+    @Test
+    fun telecomPortUsesSendToAndDialNotCallOrSmsManager() {
+        val file = File("../tool/system/src/main/kotlin/com/dougie/tool/system/AndroidTelecomPort.kt")
+        assertTrue(file.isFile)
+        val text = file.readText()
+        assertTrue(text.contains("ACTION_SENDTO"))
+        assertTrue(text.contains("ACTION_DIAL"))
+        assertFalse(text.contains("ACTION_CALL"))
+        assertFalse(text.contains("SmsManager"))
+        assertFalse(text.contains("SEND_SMS"))
+        assertFalse(text.contains("CALL_PHONE"))
+        assertFalse(text.contains("Log."))
+    }
 }

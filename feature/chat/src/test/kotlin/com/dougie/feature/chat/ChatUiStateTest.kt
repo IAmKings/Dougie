@@ -238,6 +238,8 @@ class ChatUiStateTest {
         assertEquals("念出来", toolDisplayName("speech_output"))
         assertEquals("运行脚本", toolDisplayName("js_eval"))
         assertEquals("运行 Python", toolDisplayName("py_eval"))
+        assertEquals("发短信", toolDisplayName("sms_compose"))
+        assertEquals("打电话", toolDisplayName("phone_dial"))
         assertEquals("calendar", toolDisplayName("calendar"))
         assertEquals(
             "隔离运行脚本，不读写文件、不上网。确认后才会执行；拒绝则跳过。",
@@ -258,6 +260,13 @@ class ChatUiStateTest {
         assertEquals(
             "该操作会写入设备数据。确认后才会执行；拒绝则跳过。",
             confirmToolBody("calendar_create"),
+        )
+        val telecomConfirm = "将打开系统短信或拨号并填入内容，需你再按发送或呼叫。确认后才会打开；拒绝则跳过。"
+        assertEquals(telecomConfirm, confirmToolBody("sms_compose"))
+        assertEquals(telecomConfirm, confirmToolBody("phone_dial"))
+        assertEquals(
+            telecomConfirm,
+            confirmToolBody("sms_compose", com.dougie.core.model.RiskLevel.L3),
         )
     }
 

@@ -1182,6 +1182,8 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
     "clipboard_read" -> "读取剪贴板"
     "clipboard_write" -> "写入剪贴板"
     "app_intent" -> "打开应用或链接"
+    "sms_compose" -> "发短信"
+    "phone_dial" -> "打电话"
     "screen_capture" -> "截取屏幕"
     "speech_output" -> "念出来"
     "js_eval" -> "运行脚本"
@@ -1190,6 +1192,8 @@ internal fun toolDisplayName(toolName: String): String = when (toolName) {
 }
 
 internal fun confirmToolBody(toolName: String, riskLevel: RiskLevel = RiskLevel.L2): String = when {
+    toolName == "sms_compose" || toolName == "phone_dial" ->
+        "将打开系统短信或拨号并填入内容，需你再按发送或呼叫。确认后才会打开；拒绝则跳过。"
     toolName == "js_eval" && riskLevel == RiskLevel.L4 ->
         "按完整脚本运行，结果取最后一次表达式。不读写文件、不上网。确认后才会执行；拒绝则跳过。"
     toolName == "js_eval" ->
