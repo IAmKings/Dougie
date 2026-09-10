@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play leak SEND_SMS CALL_PHONE"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No SMS body"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "toolDisplayName confirm copy"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Launch fail copy"}

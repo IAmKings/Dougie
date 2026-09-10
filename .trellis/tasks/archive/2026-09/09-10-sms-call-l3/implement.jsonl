@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "AppIntent allowlist stays without tel/sms; new tools"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Chinese fatal copy; no SMS in logs"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "SMS body and phone numbers not in Logcat"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Fake port; Play no SEND_SMS"}
