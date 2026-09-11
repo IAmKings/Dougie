@@ -44,6 +44,14 @@ object ChannelHooks {
     ): Boolean = false
 
     @Suppress("UNUSED_PARAMETER")
+    fun warmLocalChatEngine(context: Context) {
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun releaseLocalChatEngineIfIdle(context: Context) {
+    }
+
+    @Suppress("UNUSED_PARAMETER")
     fun syncOverlay(context: Context) {
     }
 

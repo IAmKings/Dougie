@@ -33,3 +33,7 @@ class SelectingLlmProvider(
         return cloud
     }
 }
+
+/** Sideload LiteRT warmup: same gate as [SelectingLlmProvider.isLocal] minus a null local instance. */
+fun shouldWarmLocalEngine(cloudConfigured: Boolean, localReady: Boolean): Boolean =
+    !cloudConfigured && localReady

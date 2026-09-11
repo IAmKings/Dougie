@@ -122,7 +122,24 @@ class ChatLlmProvider private constructor(
 
     override suspend fun generate(context: LoopContext): LlmResponse = stream(context).toLlmResponse()
 
-    private fun ensureEngine(): Engine {
+    /** Off-Main GPU/CPU initialize. Does not touch [inFlight] so settings can still switch SKU. */
+    fun warmup() {
+        try {
+            ensureEngine(fromWarmup = true)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+        }
+    }
+
+    fun releaseIfIdle() {
+        synchronized(lock) {
+            if (inFlight != 0) return
+            releaseEngineLocked()
+        }
+    }
+
+    private fun ensureEngine(fromWarmup: Boolean = false): Engine {
         synchronized(lock) {
             val chatDirs = ChatModelLayout.chatDirs(filesDir, extraRoot)
             val sku = ChatModelLayout.resolveActiveSku(activeSku(), chatDirs)
@@ -132,7 +149,9 @@ class ChatLlmProvider private constructor(
             val path = model.absolutePath
             engine?.let { current ->
                 if (loadedSku == sku && loadedPath == path) return current
-                if (inFlight > 1) return current
+                // stream() increments inFlight first, so inFlight==1 is that call's own slot.
+                // warmup must not tear down an engine a live stream still holds.
+                if (inFlight > 1 || (fromWarmup && inFlight != 0)) return current
                 releaseEngineLocked()
             }
             ChatLlmEngines.quietNativeLogs()

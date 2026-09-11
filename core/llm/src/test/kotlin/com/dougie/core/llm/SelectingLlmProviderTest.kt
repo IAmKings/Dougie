@@ -17,6 +17,25 @@ class SelectingLlmProviderTest {
     private val context = LoopContext(AgentTask("t", "你好"))
 
     @Test
+    fun shouldWarmLocalEngineMatchesLocalPathWithoutCloud() {
+        assertTrue(shouldWarmLocalEngine(cloudConfigured = false, localReady = true))
+        assertFalse(shouldWarmLocalEngine(cloudConfigured = true, localReady = true))
+        assertFalse(shouldWarmLocalEngine(cloudConfigured = false, localReady = false))
+        assertFalse(shouldWarmLocalEngine(cloudConfigured = true, localReady = false))
+        for (cloud in listOf(false, true)) {
+            for (ready in listOf(false, true)) {
+                val provider = SelectingLlmProvider(
+                    cloud = RecordingProvider("cloud"),
+                    local = RecordingProvider("local"),
+                    cloudConfigured = { cloud },
+                    localReady = { ready },
+                )
+                assertEquals(provider.isLocal, shouldWarmLocalEngine(cloud, ready))
+            }
+        }
+    }
+
+    @Test
     fun cloudConfiguredUsesCloudEvenWhenLocalReady() = runTest {
         val cloud = RecordingProvider("cloud")
         val local = RecordingProvider("local")

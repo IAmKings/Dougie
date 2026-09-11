@@ -90,6 +90,16 @@ object ChannelHooks {
             ChatModelLayout.chatDirs(filesDir, extraRoot),
         ) != null
 
+    fun warmLocalChatEngine(context: Context) {
+        val provider = localChatProvider(context) as? ChatLlmProvider ?: return
+        provider.warmup()
+    }
+
+    fun releaseLocalChatEngineIfIdle(context: Context) {
+        val provider = localChatProvider(context) as? ChatLlmProvider ?: return
+        provider.releaseIfIdle()
+    }
+
     @Composable
     fun Root(content: @Composable () -> Unit) {
         val context = LocalContext.current

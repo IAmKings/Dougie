@@ -6,6 +6,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import android.app.Application
 import com.dougie.core.llm.OpenAICompatibleProvider
 import com.dougie.core.llm.SelectingLlmProvider
+import com.dougie.core.llm.shouldWarmLocalEngine
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
@@ -61,6 +62,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.ScreenFrame
@@ -266,6 +271,25 @@ class DougieApplication : Application() {
             .start(appScope, taskManager.task)
         ChannelHooks.syncOverlay(this)
         ScheduleAlarms.sync(this)
+        appScope.launch {
+            combine(preferenceStore.settings, preferenceStore.activeChatSku) { settings, sku ->
+                val cloudConfigured = settings.allowCloud && settings.apiKey.isNotBlank()
+                cloudConfigured to sku
+            }.distinctUntilChanged().collect { (cloudConfigured, sku) ->
+                withContext(Dispatchers.Default) {
+                    val localReady = ChannelHooks.localChatReady(
+                        filesDir,
+                        sku,
+                        getExternalFilesDir(null),
+                    )
+                    if (shouldWarmLocalEngine(cloudConfigured, localReady)) {
+                        ChannelHooks.warmLocalChatEngine(this@DougieApplication)
+                    } else {
+                        ChannelHooks.releaseLocalChatEngineIfIdle(this@DougieApplication)
+                    }
+                }
+            }
+        }
     }
 
     fun republishTaskNotice() {
