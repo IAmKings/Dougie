@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Shared ChatPromptAssembler local vs remote inventory, JSON protocol, ChatLlmProvider parse rules"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "ChatPromptAssemblerTest / LocalToolCallParserTest JVM bar and JAVA_HOME 17"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log ChatPromptAssembler.localPrompt or completions"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Gate stays in core:llm; do not import IntentRouteAnswers or MiniRBT"}

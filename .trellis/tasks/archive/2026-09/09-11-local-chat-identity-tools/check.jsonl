@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Check localPrompt only teaches on keyword gate; Provider must not emit ToolCall without protocol"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check ChatPromptAssemblerTest covers identity without tools and 现在几点了 with JSON"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Check no prompt/completion Logcat was added"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check gate was not copied into runtime or MiniRBT"}
