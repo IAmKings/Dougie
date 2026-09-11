@@ -1,1 +1,5 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/tasks/archive/2026-09/09-11-minicpm5-sideload-spike/research/pjz110-minicpm5.md", "reason": "PJZ110 metrics and filenames for three SKUs"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Sideload chat download row, SAF tree, SHA import"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "ModelImporter SHA bijection; ChatLlmProvider filesDir"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "HTTPS SHA bijection; localLlmReady is chat not intent"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt/path Logcat"}

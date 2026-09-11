@@ -1,7 +1,7 @@
 {
-  "id": "local-chat-multi-sku",
-  "name": "local-chat-multi-sku",
-  "title": "侧载多档对话模型共存与激活",
+  "id": "chat-sku-catalog-update",
+  "name": "chat-sku-catalog-update",
+  "title": "侧载对话模型随 App 发版引导更新",
   "description": "",
   "status": "in_progress",
   "dev_type": null,

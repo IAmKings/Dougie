@@ -121,7 +121,8 @@ fun isSafeFileName(name: String): Boolean =
         !name.contains('\\') &&
         name != "." &&
         name != ".." &&
-        !name.contains("..")
+        !name.startsWith("..") &&
+        !name.contains("/..")
 
 fun isSafeRelativeDir(path: String): Boolean {
     if (path.isEmpty() || path.startsWith("/") || path.startsWith("\\")) return false

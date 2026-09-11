@@ -1,1 +1,4 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play leak: no litertlm weights or chatllm"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "localLlmReady only when active chat file present"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt or weight path in Logcat"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Intent ONNX is not chat LLM"}

@@ -183,7 +183,11 @@ class MainActivity : ComponentActivity() {
                                 allowCloud = prefs.allowCloud,
                                 apiKeyConfigured = prefs.apiKey.isNotBlank(),
                                 // Sideload chat .litertlm only; intent ONNX and Play must not light LOCAL.
-                                localLlmReady = ChannelHooks.localChatReady(app.filesDir),
+                                localLlmReady = ChannelHooks.localChatReady(
+                                    app.filesDir,
+                                    app.preferenceStore.activeChatSku.value,
+                                    app.getExternalFilesDir(null),
+                                ),
                                 failedLastError = task
                                     ?.takeIf { it.status == TaskStatus.FAILED }
                                     ?.lastError,
@@ -245,6 +249,7 @@ class MainActivity : ComponentActivity() {
                                     app,
                                     uriProvider = { app.preferenceStore.settings.value.modelTreeUri },
                                 ),
+                                extraRoots = listOfNotNull(app.getExternalFilesDir(null)),
                             ),
                         )
                         val treePicker = rememberLauncherForActivityResult(

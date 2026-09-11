@@ -63,6 +63,43 @@ class ModelImporterTest {
     }
 
     @Test
+    fun chatPackAllowsSiblingLitertlm() {
+        val dir = Files.createTempDirectory("import-root").toFile()
+        try {
+            val qwen = File(dir, ChatModelLayout.MODEL_FILE).apply { writeBytes(hello) }
+            val extra = File(dir, ChatModelLayout.MINICPM1B_FILE).apply { writeBytes(world) }
+            val pack = OfficialModelCatalog.chat(
+                ModelSource(httpsUrl = "", sha256 = helloSha),
+            ).pack
+            ModelImporter().importFiles(pack, dir, listOf(qwen, extra))
+            assertTrue(ChatModelLayout.isPresent(File(dir, ChatModelLayout.DIR), ChatModelLayout.ID))
+            assertFalse(ChatModelLayout.isPresent(File(dir, ChatModelLayout.DIR), ChatModelLayout.MINICPM1B_ID))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun chatImportOverwritesExistingOfficialName() {
+        val dir = Files.createTempDirectory("import-overwrite").toFile()
+        try {
+            val packDir = File(dir, ChatModelLayout.DIR).apply { mkdirs() }
+            File(packDir, ChatModelLayout.MODEL_FILE).writeBytes(world)
+            val source = File(dir, "fresh.litertlm").apply { writeBytes(hello) }
+            val pack = OfficialModelCatalog.chat(
+                ModelSource(httpsUrl = "", sha256 = helloSha),
+            ).pack
+            ModelImporter().importFiles(pack, dir, listOf(source))
+            assertEquals(
+                hello.toList(),
+                File(packDir, ChatModelLayout.MODEL_FILE).readBytes().toList(),
+            )
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun missingFileListsLayoutName() {
         val dir = Files.createTempDirectory("import-root").toFile()
         try {

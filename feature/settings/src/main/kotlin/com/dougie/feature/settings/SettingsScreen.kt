@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.TtsVoices
 
 const val EGRESS_CONSENT_COPY = "本次请求可能将输入、必要上下文和 Tool Result 发送至第三方 LLM 服务。"
@@ -93,6 +94,7 @@ fun SettingsRoute(
         onDismissModelConfirm = viewModel::dismissModelConfirm,
         onCancelModel = viewModel::cancelModel,
         onProbeModel = viewModel::probeModel,
+        onActivateChatSku = viewModel::activateChatSku,
         onOpenDebug = onOpenDebug,
         onOpenOpenApps = onOpenOpenApps,
         shortcutLayer = shortcutLayer,
@@ -122,6 +124,7 @@ fun SettingsScreen(
     onDismissModelConfirm: () -> Unit,
     onCancelModel: (String) -> Unit,
     onProbeModel: (String) -> Unit,
+    onActivateChatSku: (String) -> Unit = {},
     onOpenDebug: () -> Unit,
     onOpenOpenApps: () -> Unit,
     shortcutLayer: @Composable () -> Unit = {},
@@ -275,6 +278,7 @@ fun SettingsScreen(
                 onRequestModel = onRequestModel,
                 onCancelModel = onCancelModel,
                 onProbeModel = onProbeModel,
+                onActivateChatSku = onActivateChatSku,
             )
             TtsVoiceSection(
                 speakerId = ttsSpeakerId,
@@ -350,15 +354,28 @@ fun SettingsScreen(
     if (pending != null) {
         AlertDialog(
             onDismissRequest = onDismissModelConfirm,
-            title = { Text("下载 ${pending.title}？") },
-            text = {
-                val overwrite = if (pending.willReplace) "将覆盖当前已安装的意图模型。" else ""
+            title = {
                 Text(
-                    "将下载 ${pending.sizeLabel} 到所选模型目录，并同步到本机缓存供离线引擎使用。$overwrite 确认后才开始下载。",
+                    if (pending.needsUpdate) "更新 ${pending.title}？" else "下载 ${pending.title}？",
+                )
+            },
+            text = {
+                val extra = when {
+                    pending.needsUpdate ->
+                        "将下载新官方包替换过期权重。当前档在更新完成前仍可使用，也不会自动切换当前使用的模型。"
+                    ChatModelLayout.isChatSku(pending.id) ->
+                        "三档对话合计约 2.6GB。下载不会覆盖已安装的其它对话包，也不会自动切换当前使用的模型。"
+                    pending.willReplace -> "将覆盖当前已安装的意图模型。"
+                    else -> ""
+                }
+                Text(
+                    "将下载 ${pending.sizeLabel} 到所选模型目录，并同步到本机缓存供离线引擎使用。$extra 确认后才开始下载。",
                 )
             },
             confirmButton = {
-                TextButton(onClick = onConfirmModel) { Text("确认下载") }
+                TextButton(onClick = onConfirmModel) {
+                    Text(if (pending.needsUpdate) "确认更新" else "确认下载")
+                }
             },
             dismissButton = {
                 TextButton(onClick = onDismissModelConfirm) { Text("取消") }
@@ -375,6 +392,7 @@ private fun OfflineModelsSection(
     onRequestModel: (String) -> Unit,
     onCancelModel: (String) -> Unit,
     onProbeModel: (String) -> Unit,
+    onActivateChatSku: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -434,6 +452,7 @@ private fun OfflineModelsSection(
                 onRequest = { onRequestModel(row.id) },
                 onCancel = { onCancelModel(row.id) },
                 onProbe = { onProbeModel(row.id) },
+                onActivate = { onActivateChatSku(row.id) },
             )
         }
     }
@@ -447,6 +466,7 @@ private fun OfflineModelRow(
     onRequest: () -> Unit,
     onCancel: () -> Unit,
     onProbe: () -> Unit,
+    onActivate: () -> Unit,
 ) {
     val busy = row.downloading || row.probing || anyProbing
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -477,11 +497,18 @@ private fun OfflineModelRow(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (row.installed) {
+            if (row.installed && (!ChatModelLayout.isChatSku(row.id) || row.active)) {
                 TextButton(
                     onClick = onProbe,
                     enabled = !busy && row.probeOk != true,
                 ) { Text("测试") }
+            }
+            if (row.installed && ChatModelLayout.isChatSku(row.id)) {
+                if (row.active) {
+                    Text("使用中", color = DougieColors.TertiaryContainer, fontSize = 14.sp)
+                } else {
+                    TextButton(onClick = onActivate, enabled = !busy) { Text("使用") }
+                }
             }
             when {
                 row.downloading || row.probing -> TextButton(onClick = onCancel) { Text("取消") }
@@ -490,6 +517,12 @@ private fun OfflineModelRow(
                     enabled = row.configured && treeReady && !busy,
                 ) {
                     Text("下载")
+                }
+                row.needsUpdate -> TextButton(
+                    onClick = onRequest,
+                    enabled = row.configured && treeReady && !busy,
+                ) {
+                    Text("更新")
                 }
             }
         }

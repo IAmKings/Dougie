@@ -69,10 +69,26 @@ object ChannelHooks {
     fun localChatProvider(
         context: Context,
         toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
-    ): LlmProvider? = ChatLlmProvider.get(context, toolDescriptors)
+    ): LlmProvider? {
+        val app = context.applicationContext
+        return ChatLlmProvider.get(context, toolDescriptors) {
+            val stored = (app as? DougieApplication)?.preferenceStore?.activeChatSku?.value
+            ChatModelLayout.resolveActiveSku(
+                stored,
+                ChatModelLayout.chatDirs(app.filesDir, app.getExternalFilesDir(null)),
+            )
+        }
+    }
 
-    fun localChatReady(filesDir: File): Boolean =
-        ChatModelLayout.isPresent(File(filesDir, ChatModelLayout.DIR))
+    fun localChatReady(
+        filesDir: File,
+        storedSku: String? = null,
+        extraRoot: File? = null,
+    ): Boolean =
+        ChatModelLayout.resolveActiveSku(
+            storedSku,
+            ChatModelLayout.chatDirs(filesDir, extraRoot),
+        ) != null
 
     @Composable
     fun Root(content: @Composable () -> Unit) {

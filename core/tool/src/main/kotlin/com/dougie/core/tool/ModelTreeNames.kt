@@ -24,4 +24,15 @@ object ModelTreeNames {
         existing
             .filter { matchesDirectory(it, wanted) }
             .minByOrNull { uniquifyRank(it, wanted) }
+
+    /** SAF roots may be the parent of `models/`, `models/` itself, or the pack folder. */
+    fun dirSearchPaths(relativeDir: String, includeRoot: Boolean = false): List<List<String>> {
+        val parts = relativeDir.split('/').filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return listOf(emptyList())
+        return buildList {
+            add(parts)
+            if (parts.size > 1) add(listOf(parts.last()))
+            if (includeRoot) add(emptyList())
+        }
+    }
 }

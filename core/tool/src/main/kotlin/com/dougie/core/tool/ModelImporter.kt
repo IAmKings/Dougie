@@ -14,7 +14,7 @@ class ModelImporter {
         val dirCanon = preparePackDir(pack, destRoot, requireHttps = false)
         val parts = mutableListOf<File>()
         try {
-            val matched = matchSources(pack, sources)
+            val matched = matchSources(pack, sourcesForPack(pack, sources))
             val staged = pack.files.map { spec ->
                 val source = matched.getValue(spec.sha256.lowercase())
                 val (target, part) = packTargets(dirCanon, spec.name)
@@ -56,9 +56,17 @@ class ModelImporter {
                 UserFacingErrors.MODEL_IMPORT_FAILED + "缺少：" + missing.joinToString("、"),
             )
         }
-        if (byHash.keys.any { it !in specHashes }) {
+        if (byHash.keys.any { it !in specHashes } && !ChatModelLayout.isChatSku(pack.id)) {
             throw AgentException(UserFacingErrors.MODEL_IMPORT_FAILED)
         }
-        return byHash
+        return specHashes.associateWith { hash -> byHash.getValue(hash) }
+    }
+
+    companion object {
+        internal fun sourcesForPack(pack: ModelPack, sources: List<File>): List<File> {
+            val wanted = pack.files.map { it.name }.toSet()
+            val named = sources.filter { it.name in wanted }
+            return if (named.size == pack.files.size) named else sources
+        }
     }
 }

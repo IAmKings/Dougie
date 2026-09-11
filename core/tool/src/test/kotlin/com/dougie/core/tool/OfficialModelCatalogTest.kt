@@ -23,8 +23,18 @@ class OfficialModelCatalogTest {
     @Test
     fun standardCatalogHasAsrTtsIntentAndChat() {
         val offers = OfficialModelCatalog.standard()
-        assertEquals(4, offers.size)
-        assertEquals(listOf("asr", "tts", "intent", "chat"), offers.map { it.id })
+        assertEquals(6, offers.size)
+        assertEquals(
+            listOf(
+                "asr",
+                "tts",
+                "intent",
+                ChatModelLayout.ID,
+                ChatModelLayout.MINICPM1B_ID,
+                ChatModelLayout.MINICPM2B_ID,
+            ),
+            offers.map { it.id },
+        )
         assertEquals("语音识别", offers[0].title)
         assertEquals("约 230MB", offers[0].sizeLabel)
         assertEquals("语音合成", offers[1].title)
@@ -48,13 +58,21 @@ class OfficialModelCatalogTest {
         assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, offers[2].pack.files[0].sha256)
         assertTrue(offers[2].pack.files[0].httpsUrl.startsWith("https://"))
         assertTrue(offers[2].pack.files.all { it.httpsUrl.startsWith("https://") })
-        assertEquals("对话模型", offers[3].title)
+        assertEquals("对话 · 0.6B", offers[3].title)
         assertEquals("约 328MB", offers[3].sizeLabel)
         assertTrue(offers[3].isConfigured())
         assertEquals(ChatModelLayout.DIR, offers[3].pack.relativeDir)
         assertEquals(listOf(ChatModelLayout.MODEL_FILE), offers[3].pack.files.map { it.name })
         assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.httpsUrl, offers[3].pack.files[0].httpsUrl)
         assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.sha256, offers[3].pack.files[0].sha256)
+        assertEquals("对话 · 1B", offers[4].title)
+        assertEquals("约 756MB", offers[4].sizeLabel)
+        assertEquals(listOf(ChatModelLayout.MINICPM1B_FILE), offers[4].pack.files.map { it.name })
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MINICPM1B.sha256, offers[4].pack.files[0].sha256)
+        assertEquals("对话 · 2B", offers[5].title)
+        assertEquals("约 1.5GB", offers[5].sizeLabel)
+        assertEquals(listOf(ChatModelLayout.MINICPM2B_FILE), offers[5].pack.files.map { it.name })
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MINICPM2B.sha256, offers[5].pack.files[0].sha256)
         assertEquals(UserFacingErrors.MODEL_PROBE_CHAT_OK, "对话模型测试通过。")
         assertEquals(UserFacingErrors.CHAT_MODEL_MISSING, "离线对话模型尚未就绪，无法闲聊。")
         assertEquals(UserFacingErrors.CHAT_ENGINE_NOT_READY, "离线对话引擎尚未接入，无法闲聊。")
@@ -137,6 +155,14 @@ class OfficialModelCatalogTest {
             assertFalse(offer.isInstalled(dir))
             File(packDir, ChatModelLayout.MODEL_FILE).writeText("x")
             assertTrue(offer.isInstalled(dir))
+            File(packDir, ChatModelLayout.MINICPM1B_FILE).writeText("y")
+            assertTrue(offer.isInstalled(dir))
+            val mini = OfficialModelCatalog.chat(
+                https,
+                id = ChatModelLayout.MINICPM1B_ID,
+                fileName = ChatModelLayout.MINICPM1B_FILE,
+            )
+            assertTrue(mini.isInstalled(dir))
         } finally {
             dir.deleteRecursively()
         }

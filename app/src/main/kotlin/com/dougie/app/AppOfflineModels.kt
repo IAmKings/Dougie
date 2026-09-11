@@ -16,6 +16,6 @@ object AppOfflineModels {
         intentLabels = ModelSource(BuildConfig.INTENT_LABELS_URL, BuildConfig.INTENT_LABELS_SHA256),
         chatModel = ModelSource(BuildConfig.CHAT_MODEL_URL, BuildConfig.CHAT_MODEL_SHA256),
     ).let { all ->
-        if (BuildConfig.IS_SIDELOAD) all else all.filter { it.id != ChatModelLayout.ID }
+        if (BuildConfig.IS_SIDELOAD) all else all.filter { !ChatModelLayout.isChatSku(it.id) }
     }
 }

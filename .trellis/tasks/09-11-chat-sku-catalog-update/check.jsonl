@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Settings JVM UI tests; Play leak"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Update vs download row states"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Catalog SHA, importer, checkChannelLeak"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No path/hash logs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Hash mismatch and import failures stay UserFacingErrors"}

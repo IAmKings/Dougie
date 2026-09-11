@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Settings offline rows, SAF tree scan, no Chat update chrome"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "HTTPS SHA install; localLlmReady is chat pack not intent"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "ChatModelLayout filesDir; ModelImporter per-SKU SHA"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No weight path or digest on Logcat"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JVM tests and checkChannelLeak"}

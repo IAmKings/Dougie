@@ -23,11 +23,11 @@ import java.io.File
 object AppOfflineModelProbe {
     fun create(context: Context): OfflineModelProbe = OfflineModelProbe { id ->
         withContext(Dispatchers.Default) {
-            when (id) {
-                "asr" -> probeAsr(context)
-                "tts" -> probeTts(context)
-                IntentModelLayout.ID -> probeIntent(context)
-                ChatModelLayout.ID -> probeChat(context)
+            when {
+                id == "asr" -> probeAsr(context)
+                id == "tts" -> probeTts(context)
+                id == IntentModelLayout.ID -> probeIntent(context)
+                ChatModelLayout.isChatSku(id) -> probeChat(context, id)
                 else -> ProbeResult(ok = false, message = UserFacingErrors.TOOL_FAILED)
             }
         }
@@ -87,9 +87,13 @@ object AppOfflineModelProbe {
         return ProbeResult(ok = true, message = UserFacingErrors.MODEL_PROBE_INTENT_OK)
     }
 
-    private suspend fun probeChat(context: Context): ProbeResult {
-        val modelDir = File(context.filesDir, ChatModelLayout.DIR)
-        if (!ChatModelLayout.isPresent(modelDir)) {
+    private suspend fun probeChat(context: Context, skuId: String): ProbeResult {
+        val extra = context.getExternalFilesDir(null)
+        if (ChatModelLayout.locate(
+                skuId,
+                ChatModelLayout.chatDirs(context.filesDir, extra),
+            ) == null
+        ) {
             throw AgentException(UserFacingErrors.CHAT_MODEL_MISSING)
         }
         val local = ChannelHooks.localChatProvider(context)

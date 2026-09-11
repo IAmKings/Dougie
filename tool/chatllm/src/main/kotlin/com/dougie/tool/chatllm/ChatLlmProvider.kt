@@ -31,25 +31,34 @@ import kotlin.coroutines.cancellation.CancellationException
 /** Sideload LiteRT-LM chat. Does not log prompt, completion, or weight paths. */
 class ChatLlmProvider private constructor(
     private val filesDir: File,
+    private val extraRoot: File?,
     private val cacheDir: File,
     private val toolDescriptors: () -> List<ToolDescriptor>,
+    private val activeSku: () -> String?,
 ) : LlmProvider {
     override val isLocal: Boolean = true
 
     private val lock = Any()
     private var engine: Engine? = null
+    private var loadedSku: String? = null
+    private var loadedPath: String? = null
+    private var inFlight = 0
 
     override fun stream(context: LoopContext): Flow<LlmEvent> = callbackFlow {
         val conversation: Conversation
+        synchronized(lock) { inFlight += 1 }
         try {
             conversation = ChatLlmEngines.openConversation(ensureEngine())
         } catch (e: CancellationException) {
+            synchronized(lock) { inFlight -= 1 }
             throw e
         } catch (e: AgentException) {
+            synchronized(lock) { inFlight -= 1 }
             close(e)
             awaitClose { }
             return@callbackFlow
         } catch (_: Exception) {
+            synchronized(lock) { inFlight -= 1 }
             close(AgentException(UserFacingErrors.CHAT_ENGINE_NOT_READY))
             awaitClose { }
             return@callbackFlow
@@ -103,6 +112,7 @@ class ChatLlmProvider private constructor(
                 conversation.close()
             } catch (_: Exception) {
             }
+            synchronized(lock) { inFlight -= 1 }
         }
     }.buffer(Channel.BUFFERED)
 
@@ -110,22 +120,42 @@ class ChatLlmProvider private constructor(
 
     private fun ensureEngine(): Engine {
         synchronized(lock) {
-            engine?.let { return it }
-            if (!ChatModelLayout.isPresent(File(filesDir, ChatModelLayout.DIR))) {
-                throw AgentException(UserFacingErrors.CHAT_MODEL_MISSING)
+            val chatDirs = ChatModelLayout.chatDirs(filesDir, extraRoot)
+            val sku = ChatModelLayout.resolveActiveSku(activeSku(), chatDirs)
+                ?: throw AgentException(UserFacingErrors.CHAT_MODEL_MISSING)
+            val model = ChatModelLayout.locate(sku, chatDirs)
+                ?: throw AgentException(UserFacingErrors.CHAT_MODEL_MISSING)
+            val path = model.absolutePath
+            engine?.let { current ->
+                if (loadedSku == sku && loadedPath == path) return current
+                if (inFlight > 1) return current
+                releaseEngineLocked()
             }
             ChatLlmEngines.quietNativeLogs()
-            val model = File(File(filesDir, ChatModelLayout.DIR), ChatModelLayout.MODEL_FILE)
             val gpu = ChatLlmEngines.tryCreate(model, cacheDir, true)
             if (gpu != null) {
                 engine = gpu
+                loadedSku = sku
+                loadedPath = path
                 return gpu
             }
             val cpu = ChatLlmEngines.tryCreate(model, cacheDir, false)
                 ?: throw AgentException(UserFacingErrors.CHAT_ENGINE_NOT_READY)
             engine = cpu
+            loadedSku = sku
+            loadedPath = path
             return cpu
         }
+    }
+
+    private fun releaseEngineLocked() {
+        try {
+            engine?.close()
+        } catch (_: Exception) {
+        }
+        engine = null
+        loadedSku = null
+        loadedPath = null
     }
 
     companion object {
@@ -135,13 +165,16 @@ class ChatLlmProvider private constructor(
         fun get(
             context: Context,
             toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
+            activeSku: () -> String? = { null },
         ): ChatLlmProvider {
             instance?.let { return it }
             return synchronized(this) {
                 instance ?: ChatLlmProvider(
                     filesDir = context.applicationContext.filesDir,
+                    extraRoot = context.applicationContext.getExternalFilesDir(null),
                     cacheDir = context.applicationContext.cacheDir,
                     toolDescriptors = toolDescriptors,
+                    activeSku = activeSku,
                 ).also { instance = it }
             }
         }

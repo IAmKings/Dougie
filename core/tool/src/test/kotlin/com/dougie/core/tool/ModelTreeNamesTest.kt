@@ -37,4 +37,16 @@ class ModelTreeNamesTest {
         assertTrue(ModelTreeNames.matchesDirectory("model(2)", "model"))
         assertNull(ModelTreeNames.pickReusableName(listOf("asr"), "models"))
     }
+
+    @Test
+    fun chatDirSearchTriesModelsChatThenLeafThenRoot() {
+        assertEquals(
+            listOf(listOf("models", "chat"), listOf("chat"), emptyList()),
+            ModelTreeNames.dirSearchPaths(ChatModelLayout.DIR, includeRoot = true),
+        )
+        assertEquals(
+            listOf(listOf("models", "asr"), listOf("asr")),
+            ModelTreeNames.dirSearchPaths(AsrModelLayout.DIR),
+        )
+    }
 }

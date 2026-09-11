@@ -37,7 +37,11 @@ object ChannelHooks {
     ): LlmProvider? = null
 
     @Suppress("UNUSED_PARAMETER")
-    fun localChatReady(filesDir: File): Boolean = false
+    fun localChatReady(
+        filesDir: File,
+        storedSku: String? = null,
+        extraRoot: File? = null,
+    ): Boolean = false
 
     @Suppress("UNUSED_PARAMETER")
     fun syncOverlay(context: Context) {

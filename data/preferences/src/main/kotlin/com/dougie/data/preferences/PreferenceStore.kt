@@ -15,6 +15,8 @@ class PreferenceStore(context: Context) {
     val settings: StateFlow<ProviderSettings>
     private val _openAppsJson: MutableStateFlow<String>
     val openAppsJson: StateFlow<String>
+    private val _activeChatSku: MutableStateFlow<String>
+    val activeChatSku: StateFlow<String>
 
     init {
         val appContext = context.applicationContext
@@ -32,6 +34,8 @@ class PreferenceStore(context: Context) {
         settings = _settings.asStateFlow()
         _openAppsJson = MutableStateFlow(prefs.getString(KEY_OPEN_APPS, "") ?: "")
         openAppsJson = _openAppsJson.asStateFlow()
+        _activeChatSku = MutableStateFlow(prefs.getString(KEY_ACTIVE_CHAT_SKU, "") ?: "")
+        activeChatSku = _activeChatSku.asStateFlow()
     }
 
     fun save(next: ProviderSettings) {
@@ -81,6 +85,11 @@ class PreferenceStore(context: Context) {
         _openAppsJson.value = json
     }
 
+    fun setActiveChatSku(skuId: String) {
+        prefs.edit().putString(KEY_ACTIVE_CHAT_SKU, skuId).apply()
+        _activeChatSku.value = skuId
+    }
+
     private fun read(): ProviderSettings {
         val consent = if (prefs.contains(KEY_CONSENT_AT)) prefs.getLong(KEY_CONSENT_AT, 0L) else null
         return ProviderSettings(
@@ -116,5 +125,6 @@ class PreferenceStore(context: Context) {
         const val KEY_MODEL_TREE_URI = "model_tree_uri"
         const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
         const val KEY_OPEN_APPS = "open_app_allowlist"
+        const val KEY_ACTIVE_CHAT_SKU = "active_chat_sku"
     }
 }

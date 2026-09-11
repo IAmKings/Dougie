@@ -20,11 +20,11 @@ fun OfflineModelOffer.isConfigured(): Boolean =
 
 fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
     val dir = File(destRoot, pack.relativeDir)
-    return when (id) {
-        "asr" -> AsrModelLayout.isPresent(dir)
-        "tts" -> TtsModelLayout.isPresent(dir)
-        IntentModelLayout.ID -> IntentModelLayout.isPresent(dir)
-        ChatModelLayout.ID -> ChatModelLayout.isPresent(dir)
+    return when {
+        id == "asr" -> AsrModelLayout.isPresent(dir)
+        id == "tts" -> TtsModelLayout.isPresent(dir)
+        id == IntentModelLayout.ID -> IntentModelLayout.isPresent(dir)
+        ChatModelLayout.isChatSku(id) -> ChatModelLayout.isPresent(dir, id)
         else -> false
     }
 }
@@ -71,6 +71,14 @@ object OfficialModelCatalog {
     val DEFAULT_CHAT_MODEL = ModelSource(
         httpsUrl = "https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B_dynamic_wi4b32_afp32.litertlm",
         sha256 = "e3e290109da4388d65a17510a0c66af91c8039f52d2c465868dbc43c09a776cf",
+    )
+    val DEFAULT_CHAT_MINICPM1B = ModelSource(
+        httpsUrl = "https://huggingface.co/litert-community/MiniCPM5-1B/resolve/main/minicpm_wi4b32_wi8_afp32_gpu_opt.litertlm",
+        sha256 = "4e15a7cc735ae36e9888d341d44bd53c0579153d7a3379aaf958620eea4816e3",
+    )
+    val DEFAULT_CHAT_MINICPM2B = ModelSource(
+        httpsUrl = "https://huggingface.co/litert-community/MiniCPM5-2B/resolve/main/MiniCPM5-2B_int4.litertlm",
+        sha256 = "9858563beafbc6d5e0d25fcee3827541515296a9302ed3d088b16a58d4fbe7b8",
     )
 
     fun asr(
@@ -132,15 +140,19 @@ object OfficialModelCatalog {
 
     fun chat(
         model: ModelSource = ModelSource(),
+        id: String = ChatModelLayout.ID,
+        title: String = "对话 · 0.6B",
+        sizeLabel: String = "约 328MB",
+        fileName: String = ChatModelLayout.MODEL_FILE,
     ): OfflineModelOffer = OfflineModelOffer(
-        id = ChatModelLayout.ID,
-        title = "对话模型",
-        sizeLabel = "约 328MB",
+        id = id,
+        title = title,
+        sizeLabel = sizeLabel,
         pack = ModelPack(
-            id = ChatModelLayout.ID,
+            id = id,
             relativeDir = ChatModelLayout.DIR,
             files = listOf(
-                ModelFileSpec(ChatModelLayout.MODEL_FILE, model.sha256, model.httpsUrl),
+                ModelFileSpec(fileName, model.sha256, model.httpsUrl),
             ),
         ),
     )
@@ -156,6 +168,8 @@ object OfficialModelCatalog {
         intentLabels: ModelSource = ModelSource(),
         intentVocab: ModelSource = ModelSource(),
         chatModel: ModelSource = ModelSource(),
+        chatMiniCpm1b: ModelSource = ModelSource(),
+        chatMiniCpm2b: ModelSource = ModelSource(),
     ): List<OfflineModelOffer> = listOf(
         asr(asrModel.ifBlank(DEFAULT_ASR_MODEL), asrTokens.ifBlank(DEFAULT_ASR_TOKENS)),
         tts(
@@ -170,6 +184,20 @@ object OfficialModelCatalog {
             intentVocab.ifBlank(DEFAULT_INTENT_VOCAB),
         ),
         chat(chatModel.ifBlank(DEFAULT_CHAT_MODEL)),
+        chat(
+            chatMiniCpm1b.ifBlank(DEFAULT_CHAT_MINICPM1B),
+            id = ChatModelLayout.MINICPM1B_ID,
+            title = "对话 · 1B",
+            sizeLabel = "约 756MB",
+            fileName = ChatModelLayout.MINICPM1B_FILE,
+        ),
+        chat(
+            chatMiniCpm2b.ifBlank(DEFAULT_CHAT_MINICPM2B),
+            id = ChatModelLayout.MINICPM2B_ID,
+            title = "对话 · 2B",
+            sizeLabel = "约 1.5GB",
+            fileName = ChatModelLayout.MINICPM2B_FILE,
+        ),
     )
 }
 

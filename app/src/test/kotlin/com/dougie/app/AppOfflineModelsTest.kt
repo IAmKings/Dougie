@@ -13,10 +13,22 @@ class AppOfflineModelsTest {
     fun chatDownloadRowMatchesChannel() {
         val ids = AppOfflineModels.offers.map { it.id }
         if (BuildConfig.IS_SIDELOAD) {
-            assertEquals(listOf("asr", "tts", "intent", ChatModelLayout.ID), ids)
+            assertEquals(
+                listOf(
+                    "asr",
+                    "tts",
+                    "intent",
+                    ChatModelLayout.ID,
+                    ChatModelLayout.MINICPM1B_ID,
+                    ChatModelLayout.MINICPM2B_ID,
+                ),
+                ids,
+            )
         } else {
             assertEquals(listOf("asr", "tts", "intent"), ids)
             assertFalse(ids.contains(ChatModelLayout.ID))
+            assertFalse(ids.contains(ChatModelLayout.MINICPM1B_ID))
+            assertFalse(ids.contains(ChatModelLayout.MINICPM2B_ID))
         }
     }
 
@@ -29,6 +41,9 @@ class AppOfflineModelsTest {
             File(pack, ChatModelLayout.MODEL_FILE).writeText("x")
             if (BuildConfig.IS_SIDELOAD) {
                 assertTrue(ChannelHooks.localChatReady(dir))
+                File(pack, ChatModelLayout.MINICPM1B_FILE).writeText("y")
+                assertFalse(ChannelHooks.localChatReady(dir))
+                assertTrue(ChannelHooks.localChatReady(dir, ChatModelLayout.MINICPM1B_ID))
             } else {
                 assertFalse(ChannelHooks.localChatReady(dir))
             }

@@ -103,6 +103,14 @@ class DougieApplication : Application() {
         super.onCreate()
         ChannelHooks.seedBundledModels(this)
         preferenceStore = PreferenceStore(this)
+        ChatModelLayout.resolveActiveSku(
+            File(filesDir, ChatModelLayout.DIR),
+            preferenceStore.activeChatSku.value,
+        )?.let { sku ->
+            if (sku != preferenceStore.activeChatSku.value) {
+                preferenceStore.setActiveChatSku(sku)
+            }
+        }
         memoryStore = RoomMemoryStore(this)
         taskStores = DougieTaskStores(this)
         permissionUsage = PermissionUsageTracker()
@@ -217,7 +225,13 @@ class DougieApplication : Application() {
                 val prefs = preferenceStore.settings.value
                 prefs.allowCloud && prefs.apiKey.isNotBlank()
             },
-            localReady = { ChatModelLayout.isPresent(File(filesDir, ChatModelLayout.DIR)) },
+            localReady = {
+                ChannelHooks.localChatReady(
+                    filesDir,
+                    preferenceStore.activeChatSku.value,
+                    getExternalFilesDir(null),
+                )
+            },
         )
         val gateway = EgressGateway(
             policy = { EgressPolicy(allowCloud = preferenceStore.settings.value.allowCloud) },

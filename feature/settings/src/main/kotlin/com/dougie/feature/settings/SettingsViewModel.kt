@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.ModelImporter
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.OfflineModelOffer
@@ -14,9 +15,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.File
 
 data class SettingsFormState(
@@ -40,6 +43,7 @@ class SettingsViewModel(
         ProbeResult(ok = false, message = "离线模型测试尚未接入。")
     },
     tree: ExternalModelTree = NoExternalModelTree,
+    extraRoots: List<File> = emptyList(),
 ) : ViewModel() {
     private val downloads = OfflineModelDownloads(
         installer = installer,
@@ -50,10 +54,39 @@ class SettingsViewModel(
         importer = importer,
         probe = probe,
         tree = tree,
+        extraRoots = extraRoots,
     )
+    init {
+        viewModelScope.launch {
+            downloads.ui.collect { ui ->
+                val installed = ui.rows.filter { ChatModelLayout.isChatSku(it.id) && it.installed }
+                val stored = store.activeChatSku.value
+                val want = stored.takeIf { it.isNotBlank() }?.let { ChatModelLayout.normalizeSku(it) }
+                val resolved = when {
+                    want != null && installed.any { it.id == want } -> want
+                    installed.size == 1 -> installed[0].id
+                    else -> null
+                }
+                if (resolved != null && resolved != stored) {
+                    store.setActiveChatSku(resolved)
+                }
+            }
+        }
+    }
     private val _form = MutableStateFlow(store.settings.value.toForm())
     val form: StateFlow<SettingsFormState> = _form.asStateFlow()
-    val models: StateFlow<OfflineModelsUi> = downloads.ui
+    val models: StateFlow<OfflineModelsUi> = combine(downloads.ui, store.activeChatSku) { ui, sku ->
+        val want = ChatModelLayout.normalizeSku(sku)
+        ui.copy(
+            rows = ui.rows.map { row ->
+                row.copy(active = ChatModelLayout.isChatSku(row.id) && row.id == want)
+            },
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        downloads.ui.value,
+    )
     val ttsSpeakerId: StateFlow<Int> = store.settings
         .map { TtsVoices.clamp(it.ttsSpeakerId) }
         .stateIn(
@@ -73,6 +106,12 @@ class SettingsViewModel(
     fun cancelModel(id: String) = downloads.cancel(id)
 
     fun scanModels() = downloads.scan()
+
+    fun activateChatSku(id: String) {
+        if (!ChatModelLayout.isChatSku(id)) return
+        if (downloads.ui.value.rows.none { it.id == id && it.installed }) return
+        store.setActiveChatSku(id)
+    }
 
     fun setModelTreeUri(uri: String) {
         store.setModelTreeUri(uri)
@@ -160,6 +199,7 @@ class SettingsViewModel(
         private val importer: ModelImporter = ModelImporter(),
         private val probe: OfflineModelProbe,
         private val tree: ExternalModelTree,
+        private val extraRoots: List<File> = emptyList(),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -172,6 +212,7 @@ class SettingsViewModel(
                 importer,
                 probe,
                 tree,
+                extraRoots,
             ) as T
         }
     }
