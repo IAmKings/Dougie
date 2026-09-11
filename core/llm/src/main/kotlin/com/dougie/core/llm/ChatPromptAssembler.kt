@@ -49,6 +49,21 @@ object ChatPromptAssembler {
         return LOCAL_TEACH_NAMES.mapNotNull { byName[it] }
     }
 
+    fun looksLikeLocalToolAsk(input: String): Boolean =
+        LOCAL_TOOL_ASK_NEEDLES.any { needle -> input.contains(needle) }
+
+    fun looksLikeLocalIdentityAsk(input: String): Boolean =
+        LOCAL_IDENTITY_ASK_NEEDLES.any { needle -> input.contains(needle) }
+
+    fun localToolProtocolActive(
+        task: AgentTask,
+        descriptors: List<ToolDescriptor>,
+    ): Boolean {
+        if (localTeachable(descriptors).isEmpty()) return false
+        val hasResult = task.toolTrace.any { it.resultJson != null }
+        return !hasResult && looksLikeLocalToolAsk(task.input)
+    }
+
     fun localPrompt(
         task: AgentTask,
         descriptors: List<ToolDescriptor> = emptyList(),
@@ -63,13 +78,24 @@ object ChatPromptAssembler {
             descriptors.isNotEmpty() -> traces.joinToString("\n")
             else -> task.input + "\n" + traces.joinToString("\n")
         }
-        val prefix = systemPrefix(task, taught)
+        val protocolActive = localToolProtocolActive(task, descriptors)
+        val prefix = systemPrefix(task, if (protocolActive) taught else emptyList())
         val followUp = when {
-            taught.isEmpty() -> prefix
-            traces.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS
-            else -> prefix + "\n\n" + localToolProtocol(taught)
+            protocolActive -> prefix + "\n\n" + localToolProtocol(taught)
+            traces.isNotEmpty() && taught.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS
+            traces.isNotEmpty() -> prefix
+            else -> prefix + "\n\n" + LOCAL_IDLE_SUFFIX
         }
-        return followUp + "\n\n" + userBlock
+        val body = followUp + "\n\n" + userBlock
+        return if (
+            !protocolActive &&
+            traces.isEmpty() &&
+            looksLikeLocalIdentityAsk(task.input)
+        ) {
+            body + "\n\n" + LOCAL_IDENTITY_LOCK
+        } else {
+            body
+        }
     }
 
     fun stripLeadingQuestion(reply: String, question: String): String {
@@ -149,6 +175,37 @@ object ChatPromptAssembler {
         "speech_output",
     )
 
+    private val LOCAL_TOOL_ASK_NEEDLES = listOf(
+        "几点",
+        "电量",
+        "剪贴板",
+        "打开",
+        "念出来",
+        "日历",
+        "定位",
+        "截屏",
+        "电池",
+        "读出来",
+        "播报",
+        "日程",
+        "截图",
+    )
+
+    private val LOCAL_IDENTITY_ASK_NEEDLES = listOf(
+        "你是谁",
+        "你是什么",
+        "什么模型",
+        "哪个模型",
+        "你叫什么",
+    )
+
     private const val LOCAL_AFTER_TOOL_RESULTS =
         "下面已有工具结果。用一两句中文直接回答，不要复述用户的问题，不要再输出工具 JSON。"
+
+    private const val LOCAL_IDLE_SUFFIX =
+        "直接用一两句中文回答。不要输出 JSON。不要罗列工具。不要自称其它模型或厂商。"
+
+    /** After the user turn so MiniCPM does not answer OpenBMB. Do not name vendors here. */
+    private const val LOCAL_IDENTITY_LOCK =
+        "只回答：我是 Dougie，运行在用户手机上的本地优先助手。"
 }

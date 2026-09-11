@@ -22,8 +22,166 @@ class ChatPromptAssemblerTest {
         IDENTITY_TOOL_NAMES.forEach { name ->
             assertTrue(!prefix.contains(name))
         }
+        assertTrue(!ChatPromptAssembler.IDENTITY.contains("Qwen"))
+        assertTrue(!ChatPromptAssembler.IDENTITY.contains("MiniCPM"))
+        assertTrue(!ChatPromptAssembler.IDENTITY.contains("OpenBMB"))
+        assertTrue(!ChatPromptAssembler.IDENTITY.contains("不要自称"))
         assertTrue(!prefix.contains("data:image"))
         assertTrue(!prefix.contains("base64"))
+    }
+
+    @Test
+    fun localPromptIdentityAndGreetingOmitToolProtocol() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("battery", description = "Read battery percent."),
+            ToolDescriptor("clipboard_read", description = "Read clipboard text."),
+        )
+        listOf("你是谁", "你是什么模型", "你好").forEach { input ->
+            val prompt = ChatPromptAssembler.localPrompt(
+                AgentTask(taskId = "t-idle", input = input),
+                descriptors,
+            )
+            assertTrue(prompt.contains("你是 Dougie"))
+            assertTrue(prompt.contains("本地优先"))
+            assertTrue(prompt.contains("不要输出 JSON"))
+            assertTrue(prompt.contains("不要罗列工具"))
+            assertTrue(prompt.contains("不要自称"))
+            assertTrue(!prompt.contains("可用工具"))
+            assertTrue(!prompt.contains("{\"name\":\"time\""))
+            assertTrue(!prompt.contains("{\"name\":\"battery\""))
+            assertTrue(!prompt.contains("一行 JSON"))
+            assertTrue(!prompt.contains("OpenBMB"))
+            assertTrue(!prompt.contains("MiniCPM"))
+            assertTrue(!prompt.contains("Qwen"))
+            assertTrue(
+                !ChatPromptAssembler.localToolProtocolActive(
+                    AgentTask(taskId = "t-idle", input = input),
+                    descriptors,
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun localPromptIdentityAskLocksDougieAfterUserTurn() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+        )
+        listOf("你是谁", "你是什么", "你是什么模型", "什么模型", "哪个模型", "你叫什么").forEach { input ->
+            val prompt = ChatPromptAssembler.localPrompt(
+                AgentTask(taskId = "t-who", input = input),
+                descriptors,
+            )
+            assertTrue(ChatPromptAssembler.looksLikeLocalIdentityAsk(input))
+            assertTrue(prompt.contains(input))
+            assertTrue(prompt.contains("只回答：我是 Dougie"))
+            assertTrue(prompt.lastIndexOf(input) < prompt.lastIndexOf("只回答：我是 Dougie"))
+            assertTrue(prompt.trimEnd().endsWith("只回答：我是 Dougie，运行在用户手机上的本地优先助手。"))
+            assertTrue(!prompt.contains("OpenBMB"))
+            assertTrue(!prompt.contains("MiniCPM"))
+            assertTrue(!prompt.contains("Qwen"))
+        }
+        val hello = ChatPromptAssembler.localPrompt(
+            AgentTask(taskId = "t-hi", input = "你好"),
+            descriptors,
+        )
+        assertTrue(!ChatPromptAssembler.looksLikeLocalIdentityAsk("你好"))
+        assertTrue(!hello.contains("只回答：我是 Dougie"))
+    }
+
+    @Test
+    fun localPromptStraightAskKeepsTaughtTableAndJsonProtocol() {
+        val descriptors = listOf(
+            ToolDescriptor("intent_classifier", description = "Classify intent."),
+            ToolDescriptor("calendar_create", description = "Create an event."),
+            ToolDescriptor("calendar_query", description = "List events."),
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("battery", description = "Read battery percent."),
+            ToolDescriptor("clipboard_read", description = "Read clipboard text."),
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
+            ToolDescriptor("location", description = "Read coarse location."),
+            ToolDescriptor("screen_capture", description = "Capture the screen."),
+            ToolDescriptor("screen_match", description = "Match a template on the last frame."),
+            ToolDescriptor("speech_input", description = "Capture one utterance."),
+            ToolDescriptor("speech_output", description = "Speak text offline."),
+            ToolDescriptor("app_intent", description = "Open a link."),
+            ToolDescriptor("sms_compose", description = "Open the SMS composer."),
+            ToolDescriptor("phone_dial", description = "Open the dialer."),
+            ToolDescriptor("tap_swipe", description = "Tap or swipe."),
+            ToolDescriptor("js_eval", description = "Run isolated JavaScript."),
+            ToolDescriptor("py_eval", description = "Run isolated Python."),
+        )
+        val taught = listOf(
+            "time", "battery", "clipboard_read", "location",
+            "calendar_query", "screen_capture", "speech_input",
+            "clipboard_write", "calendar_create", "app_intent",
+            "screen_match", "speech_output",
+        )
+        listOf("现在几点了", "把你好写到剪贴板").forEach { input ->
+            val task = AgentTask(taskId = "t-ask", input = input)
+            val local = ChatPromptAssembler.localPrompt(task, descriptors)
+            assertTrue(ChatPromptAssembler.localToolProtocolActive(task, descriptors))
+            assertTrue(local.contains("可用工具"))
+            assertTrue(local.contains("一行 JSON"))
+            assertTrue(!local.contains("不要罗列工具"))
+            assertTrue(!local.contains("不要自称"))
+            assertTrue(!local.contains("只回答：我是 Dougie"))
+            taught.forEach { name ->
+                assertTrue(local.contains("- $name:"))
+                assertTrue(local.contains("{\"name\":\"$name\""))
+            }
+        }
+    }
+
+    @Test
+    fun looksLikeLocalToolAskNeedlesAndFalseFriends() {
+        listOf(
+            "几点", "电量", "剪贴板", "打开", "念出来", "日历", "定位", "截屏",
+            "电池", "读出来", "播报", "日程", "截图",
+            "现在几点了", "把你好写到剪贴板",
+        ).forEach { input ->
+            assertTrue(ChatPromptAssembler.looksLikeLocalToolAsk(input))
+        }
+        listOf("你在哪", "在哪", "时间", "你是谁", "你是什么模型", "你好").forEach { input ->
+            assertTrue(!ChatPromptAssembler.looksLikeLocalToolAsk(input))
+        }
+        listOf("你是谁", "你是什么", "你是什么模型", "什么模型", "哪个模型", "你叫什么").forEach { input ->
+            assertTrue(ChatPromptAssembler.looksLikeLocalIdentityAsk(input))
+        }
+        listOf("你好", "现在几点了", "你在哪").forEach { input ->
+            assertTrue(!ChatPromptAssembler.looksLikeLocalIdentityAsk(input))
+        }
+    }
+
+    @Test
+    fun localToolProtocolActiveRequiresStraightAskTaughtAndEmptyTraces() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+        )
+        val ask = AgentTask(taskId = "t-gate", input = "现在几点了")
+        val identity = AgentTask(taskId = "t-gate", input = "你是谁")
+        val where = AgentTask(taskId = "t-gate", input = "你在哪")
+        assertTrue(ChatPromptAssembler.localToolProtocolActive(ask, descriptors))
+        assertTrue(!ChatPromptAssembler.localToolProtocolActive(identity, descriptors))
+        assertTrue(!ChatPromptAssembler.localToolProtocolActive(where, descriptors))
+        assertTrue(
+            !ChatPromptAssembler.localToolProtocolActive(
+                ask.copy(
+                    toolTrace = listOf(
+                        ToolTraceEntry(
+                            toolCallId = "c1",
+                            toolName = "time",
+                            argsSummary = "{}",
+                            resultJson = """{"iso":"2026-09-06T12:00:00"}""",
+                            status = ToolTraceStatus.SUCCESS,
+                        ),
+                    ),
+                ),
+                descriptors,
+            ),
+        )
+        assertTrue(!ChatPromptAssembler.localToolProtocolActive(ask, emptyList()))
     }
 
     @Test
@@ -249,7 +407,9 @@ class ChatPromptAssemblerTest {
         assertTrue(prompt.contains("不要再输出"))
         assertTrue(prompt.contains("不要复述"))
         assertTrue(!prompt.contains("现在几点了"))
+        assertTrue(!prompt.contains("可用工具"))
         assertTrue(!prompt.contains("一行 JSON"))
+        assertTrue(!prompt.contains("不要自称"))
         assertTrue(!prompt.contains("{\"name\":\"time\""))
         assertTrue(!prompt.contains("{\"template_id\":\"solid\"}"))
         assertTrue(!prompt.contains("{\"name\":\"screen_match\""))

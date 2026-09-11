@@ -63,8 +63,9 @@ class ChatLlmProvider private constructor(
             awaitClose { }
             return@callbackFlow
         }
+        val descriptors = toolDescriptors()
         conversation.sendMessageAsync(
-            promptFor(context.task, toolDescriptors()),
+            promptFor(context.task, descriptors),
             object : MessageCallback {
                 private val buffer = StringBuilder()
 
@@ -82,7 +83,10 @@ class ChatLlmProvider private constructor(
                             LocalToolCallParser.isRepeatOfSuccessfulCall(context.task, tool) -> {
                             trySendBlocking(LlmEvent.TextDelta("已获得工具结果。"))
                         }
-                        tool != null -> trySendBlocking(tool)
+                        tool != null &&
+                            ChatPromptAssembler.localToolProtocolActive(context.task, descriptors) -> {
+                            trySendBlocking(tool)
+                        }
                         text.isNotEmpty() -> trySendBlocking(
                             LlmEvent.TextDelta(
                                 ChatPromptAssembler.stripLeadingQuestion(text, context.task.input),
