@@ -1460,3 +1460,24 @@ PJZ110 上 MiniCPM5-2B INT4 与 1B gpu_opt 均可用；产品仍用 Qwen3-0.6B�
 ### Next Steps
 
 - 侧载多档对话 catalog 共存与激活
+
+
+## Session 65: 侧载三档对话与发版更新
+
+**Date**: 2026-09-11
+**Task**: 侧载三档对话与发版更新
+**Branch**: `master`
+
+### Summary
+
+侧载 0.6B/1B/2B 共存与显式激活；catalog 文件名或 SHA 变化时设置行可更新并仍可用旧文件，校验后只清应用私有旧名。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `411ac6b` | (see git log) |
+
+### Status
+
+[OK] **Completed**
