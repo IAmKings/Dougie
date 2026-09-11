@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Warmup off Main, same ensureEngine slot, no inFlight on warmup, Play has no LiteRT"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Warmup must not log model path or prompt"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "checkChannelLeak and core JVM-only"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Warm predicate must match SelectingLlmProvider cloud vs local"}
