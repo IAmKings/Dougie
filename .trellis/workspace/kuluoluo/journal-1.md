@@ -1512,3 +1512,34 @@ PJZ110 上 MiniCPM5-2B INT4 与 1B gpu_opt 均可用；产品仍用 Qwen3-0.6B�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 67: 侧载本地 Chat GPU 启动预热
+
+**Date**: 2026-09-11
+**Task**: 侧载本地 Chat GPU 启动预热
+**Branch**: `master`
+
+### Summary
+
+侧载未开云端时启动后台预热当前激活档 GPU 引擎；发送与预热共用 ensureEngine。云端已配置则跳过并释放空闲引擎。真机验收通过。
+
+### Main Changes
+
+- ChatLlmProvider.warmup / releaseIfIdle；warmup 不碰 inFlight
+- DougieApplication collect 云端谓词 + SKU 后 Default 上预热
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `591d4fc` | (see git log) |
+
+### Testing
+
+- [OK] :core:llm:test :app:checkChannelLeak
+- [OK] 真机侧载冷启动 2B 首句短于整段 load
+
+### Status
+
+[OK] **Completed**
