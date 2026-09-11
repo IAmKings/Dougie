@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 63
-- **Last Active**: 2026-09-10
+- **Total Sessions**: 64
+- **Last Active**: 2026-09-11
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1429 | Active |
+| `journal-1.md` | ~1462 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 64 | 2026-09-11 | MiniCPM5 LiteRT 真机 spike | - | `master` |
 | 63 | 2026-09-10 | L3 SMS compose and dial | `1020fce575699969bb65001a7e63ce231558aba0` | `master` |
 | 62 | 2026-09-10 | py_eval sandbox files | `78ee9bd` | `master` |
 | 61 | 2026-09-09 | Sideload isolated py_eval JSON | `c5c7a98` | `master` |

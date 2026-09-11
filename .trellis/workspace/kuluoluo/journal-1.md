@@ -1427,3 +1427,36 @@ Session summary was not supplied.
 ### Status
 
 [OK] **Completed**
+
+
+## Session 64: MiniCPM5 LiteRT 真机 spike
+
+**Date**: 2026-09-11
+**Task**: MiniCPM5 LiteRT 真机 spike
+**Branch**: `master`
+
+### Summary
+
+PJZ110 上 MiniCPM5-2B INT4 与 1B gpu_opt 均可用；产品仍用 Qwen3-0.6B。下一步：多档对话共存与激活。
+
+### Main Changes
+
+- 真机探针 2B INT4 CPU/GPU 成功（GPU 加载 15.3s / 33 字/秒）
+- 加测 1B gpu_opt（GPU 加载 6.9s / 47 字/秒）
+- 确认 /sdcard/Dougie 应用不可读；测试包已从 Android/data 清除
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] ChatLlmSpikeActivity CPU+GPU，ThinkingConfig(false)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 侧载多档对话 catalog 共存与激活
