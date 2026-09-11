@@ -1481,3 +1481,34 @@ PJZ110 上 MiniCPM5-2B INT4 与 1B gpu_opt 均可用；产品仍用 Qwen3-0.6B�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 66: 本地闲聊稳身份且不乱调工具
+
+**Date**: 2026-09-11
+**Task**: 本地闲聊稳身份且不乱调工具
+**Branch**: `master`
+
+### Summary
+
+侧载本地 Chat 闲聊不再教工具 JSON；直球词才开协议。身份问在用户话后锁 Dougie，prompt 不出现 OpenBMB/MiniCPM/Qwen。0.6B/2B 真机验收通过。
+
+### Main Changes
+
+- localPrompt 直球闸门 + 闲聊后缀；ChatLlmProvider 无协议不发 ToolCall
+- 身份问在用户话之后追加 Dougie 锁，避免 2B 自称 OpenBMB
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `14daa4c` | (see git log) |
+
+### Testing
+
+- [OK] :core:llm:test
+- [OK] 真机 0.6B/2B「你是谁」与「现在几点了」
+
+### Status
+
+[OK] **Completed**
