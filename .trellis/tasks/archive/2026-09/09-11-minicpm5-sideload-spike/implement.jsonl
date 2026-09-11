@@ -1,0 +1,4 @@
+{"file": ".trellis/workspace/kuluoluo/research-minicpm-2b-sideload.md", "reason": "Why 2024 MiniCPM-2B-sft is out; MiniCPM5 litertlm sizes and thinking-off"}
+{"file": ".trellis/tasks/archive/2026-09/09-04-on-device-chat-llm/research/pjz110-chat-llm.md", "reason": "Existing LiteRT-LM 0.16.1 probe metrics and adb copy path"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Spike must not Logcat prompt, completion, or weight path"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Do not commit litertlm; Play leak checks"}

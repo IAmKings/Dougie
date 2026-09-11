@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Must not flip localLlmReady; catalog chat file unchanged"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Play APK no litertlm weights or chatllm leak"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Probe must not log prompt text"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Intent ONNX is not a chat LLM; layout filename stays Qwen"}
