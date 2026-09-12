@@ -8,7 +8,7 @@
 
 A local-first Android agent. Chat, memory, and tool side effects stay on device until you enable cloud egress and save.
 
-当前 **v0.1.0** 是公开预览：GitHub Release 标为 pre-release，APK 为 debug 签名，**尚未上架任何应用商店**。
+当前 **v0.1.0** 已用仓库上传密钥签名，**尚未上架任何应用商店**。若装过更早的 debug 签名包，须先卸载再装。
 
 <p align="center">
   <img src="screens/dougie_chat.jpg" width="220" alt="对话首页">
@@ -30,7 +30,7 @@ A local-first Android agent. Chat, memory, and tool side effects stay on device 
 | `Dougie-*-play.apk` | `com.dougie.app` | 只要云端对话与设备工具，不要无障碍 / 端侧大模型 |
 | `Dougie-*-sideload.apk` | `com.dougie.app.sideload` | 要本机 LiteRT 对话、悬浮球或无障碍手势 |
 
-两包可同机安装。侧载安装需在系统设置里允许该来源。当前 debug 签名**不能**被以后的上传密钥签名覆盖，换正式签名时请先卸载再装。
+两包可同机安装。侧载安装需在系统设置里允许该来源。debug 签名包无法被上传密钥签名覆盖，换签名时请先卸载再装。
 
 ## 它做什么
 
@@ -109,7 +109,7 @@ CI 会跑 `checkChannelLeak`，避免 Play 包带上侧载能力或模型文件�
 
 推送 `v主.次.补丁` 标签会构建 Play / 侧载 Release APK，并挂到 [GitHub Releases](https://github.com/IAmKings/Dougie/releases)。`versionCode` 为 `主*10000 + 次*100 + 补丁`。
 
-未配置仓库 Actions secrets（`ANDROID_KEYSTORE_BASE64` 等）时，产物为 debug 签名并标为预发布。不要把 keystore 提交进 git。Play Console 上架不在此流程内。
+已配置仓库 Actions secrets（`ANDROID_KEYSTORE_BASE64` 等）时用上传密钥签名；缺密钥则为 debug 签名并标为预发布。不要把 keystore 提交进 git。Play Console 上架不在此流程内。
 
 ## 仓库结构
 
