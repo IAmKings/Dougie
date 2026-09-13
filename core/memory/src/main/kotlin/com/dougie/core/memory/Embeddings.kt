@@ -31,6 +31,17 @@ fun l2Normalize(values: FloatArray): FloatArray {
     return FloatArray(values.size) { i -> values[i] / norm }
 }
 
+/** CLS (first hidden) when rank-3 `[1,seq,H]`; already-pooled `[1,H]` stays as-is. Then L2. */
+fun poolClsOrVector(raw: FloatArray, hiddenSize: Int = 512): FloatArray {
+    if (raw.isEmpty() || hiddenSize <= 0) return raw
+    val pooled = when {
+        raw.size == hiddenSize -> raw
+        raw.size >= hiddenSize && raw.size % hiddenSize == 0 -> raw.copyOfRange(0, hiddenSize)
+        else -> raw
+    }
+    return l2Normalize(pooled)
+}
+
 fun floatsToLittleEndian(values: FloatArray): ByteArray {
     val buf = ByteBuffer.allocate(values.size * 4).order(ByteOrder.LITTLE_ENDIAN)
     for (v in values) buf.putFloat(v)

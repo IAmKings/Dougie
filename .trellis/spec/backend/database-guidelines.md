@@ -90,7 +90,7 @@ JVM tests use `InMemoryTaskStore` / `InMemoryIdempotencyStore` / `NoOpAuditLog`.
 - Putting Room / `android.database` in `:core:*` — keep JVM tests on in-memory stores.
 - Logging MATCH queries, fact text, embedding blobs, or `snapshot_json` (may contain tool args).
 - Awaiting `backfillMissing()` inside `search` (blocks Loop). Idle Default only.
-- Expecting char n-gram hash-bag cosine of 「我喜欢喝美式」 vs 「我平时喝什么咖啡」 to clear 0.45 — paraphrase AC uses Fake vectors; hash-bag is a stand-in until a hashed sentence pack is published.
+- Treating `embed()` empty `FloatArray` as success — that writes an empty BLOB and blocks backfill; Hybrid must fall back to keyword. Device paraphrase AC needs the BGE pack (`AndroidEmbeddingPort`); JVM synonym tests stay Fake. Hash-bag is JVM-only, not a downloadable pack.
 - Auto-continuing an interrupted task with a new LLM call.
 - Writing calendar event bodies or clipboard text into `audit_log`.
 - Silent Fake LLM on the app chat path.

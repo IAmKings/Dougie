@@ -114,6 +114,28 @@ class HybridMemoryStoreTest {
         assertEquals("a", hits.single().id)
     }
 
+    @Test
+    fun emptyEmbeddingFallsBackToKeyword() = runTest {
+        val inner = InMemoryMemoryStore()
+        val store = HybridMemoryStore(inner, EmptyEmbeddingPort())
+        inner.upsert(fact("a", "我喜欢喝美式"))
+        assertEquals("a", store.search("美式").single().id)
+        store.upsert(fact("b", "我喜欢喝美式"))
+        assertNull(inner.list().first { it.id == "b" }.embedding)
+    }
+
+    @Test
+    fun searchUsesPreparedQueryAndUpsertUsesPassage() = runTest {
+        val inner = InMemoryMemoryStore()
+        val port = RecordingEmbeddingPort()
+        val store = HybridMemoryStore(inner, port)
+        store.upsert(fact("a", "我喜欢喝美式"))
+        assertEquals(listOf("我喜欢喝美式"), port.embedded)
+        port.embedded.clear()
+        store.search("咖啡")
+        assertEquals(listOf("query:咖啡"), port.embedded)
+    }
+
     private fun fact(id: String, content: String) = MemoryEntry(
         id = id,
         content = content,
@@ -146,4 +168,23 @@ private class ThrowingEmbeddingPort : EmbeddingPort {
     override fun isReady(): Boolean = throw IllegalStateException("ready")
 
     override suspend fun embed(text: String): FloatArray? = throw IllegalStateException("embed")
+}
+
+private class EmptyEmbeddingPort : EmbeddingPort {
+    override fun isReady(): Boolean = true
+
+    override suspend fun embed(text: String): FloatArray? = floatArrayOf()
+}
+
+private class RecordingEmbeddingPort : EmbeddingPort {
+    val embedded = mutableListOf<String>()
+
+    override fun isReady(): Boolean = true
+
+    override fun prepareQuery(text: String): String = "query:$text"
+
+    override suspend fun embed(text: String): FloatArray? {
+        embedded += text
+        return floatArrayOf(1f)
+    }
 }

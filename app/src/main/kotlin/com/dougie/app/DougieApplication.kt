@@ -7,7 +7,6 @@ import android.app.Application
 import com.dougie.core.llm.OpenAICompatibleProvider
 import com.dougie.core.llm.SelectingLlmProvider
 import com.dougie.core.llm.shouldWarmLocalEngine
-import com.dougie.core.memory.HashBagEmbeddingPort
 import com.dougie.core.memory.HybridMemoryStore
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
@@ -49,6 +48,7 @@ import com.dougie.tool.system.AndroidAppIntentPort
 import com.dougie.tool.system.AndroidTelecomPort
 import com.dougie.tool.system.AndroidCalendarPort
 import com.dougie.tool.system.AndroidClipboardPort
+import com.dougie.tool.system.AndroidEmbeddingPort
 import com.dougie.tool.system.AndroidIntentPort
 import com.dougie.tool.system.AndroidLocationPort
 import com.dougie.tool.system.AndroidScreenCapturePort
@@ -121,7 +121,7 @@ class DougieApplication : Application() {
         }
         val hybridMemory = HybridMemoryStore(
             RoomMemoryStore(this),
-            HashBagEmbeddingPort(File(filesDir, EmbedModelLayout.DIR)),
+            AndroidEmbeddingPort(File(filesDir, EmbedModelLayout.DIR)),
             idleScope = CoroutineScope(appScope.coroutineContext + Dispatchers.Default),
         )
         memoryStore = hybridMemory

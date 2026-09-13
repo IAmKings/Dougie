@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "HybridMemoryStore + EmbedModelLayout + do not reuse intent ONNX; BERT WordPiece already used by intent"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "checkChannelLeak models/embed; core:memory Hybrid tests stay Fake"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "no fact text, queries, or embedding vectors"}
+{"file": "PRD.md", "reason": "§7.2 local ONNX embedding + brute cosine <1K"}

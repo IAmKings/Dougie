@@ -81,6 +81,14 @@ object OfficialModelCatalog {
         httpsUrl = "https://huggingface.co/litert-community/MiniCPM5-2B/resolve/main/MiniCPM5-2B_int4.litertlm",
         sha256 = "9858563beafbc6d5e0d25fcee3827541515296a9302ed3d088b16a58d4fbe7b8",
     )
+    val DEFAULT_EMBED_MODEL = ModelSource(
+        httpsUrl = "https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/main/onnx/model_int8.onnx",
+        sha256 = "b9837c19ce154ff0726d398ee77abbc03a7faf0476c6f93016c84e531be7ebb5",
+    )
+    val DEFAULT_EMBED_VOCAB = ModelSource(
+        httpsUrl = "https://huggingface.co/Xenova/bge-small-zh-v1.5/resolve/main/vocab.txt",
+        sha256 = "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c",
+    )
 
     fun asr(
         model: ModelSource = ModelSource(),
@@ -140,16 +148,18 @@ object OfficialModelCatalog {
     )
 
     fun embed(
-        tokenizer: ModelSource = ModelSource(),
+        model: ModelSource = ModelSource(),
+        vocab: ModelSource = ModelSource(),
     ): OfflineModelOffer = OfflineModelOffer(
         id = EmbedModelLayout.ID,
         title = "语义记忆",
-        sizeLabel = "待发布",
+        sizeLabel = "约 24MB",
         pack = ModelPack(
             id = EmbedModelLayout.ID,
             relativeDir = EmbedModelLayout.DIR,
             files = listOf(
-                ModelFileSpec(EmbedModelLayout.TOKENIZER_FILE, tokenizer.sha256, tokenizer.httpsUrl),
+                ModelFileSpec(EmbedModelLayout.MODEL_FILE, model.sha256, model.httpsUrl),
+                ModelFileSpec(EmbedModelLayout.VOCAB_FILE, vocab.sha256, vocab.httpsUrl),
             ),
         ),
     )
@@ -183,7 +193,8 @@ object OfficialModelCatalog {
         intentTokenizer: ModelSource = ModelSource(),
         intentLabels: ModelSource = ModelSource(),
         intentVocab: ModelSource = ModelSource(),
-        embedTokenizer: ModelSource = ModelSource(),
+        embedModel: ModelSource = ModelSource(),
+        embedVocab: ModelSource = ModelSource(),
         chatModel: ModelSource = ModelSource(),
         chatMiniCpm1b: ModelSource = ModelSource(),
         chatMiniCpm2b: ModelSource = ModelSource(),
@@ -200,7 +211,10 @@ object OfficialModelCatalog {
             intentLabels.ifBlank(DEFAULT_INTENT_LABELS),
             intentVocab.ifBlank(DEFAULT_INTENT_VOCAB),
         ),
-        embed(embedTokenizer),
+        embed(
+            embedModel.ifBlank(DEFAULT_EMBED_MODEL),
+            embedVocab.ifBlank(DEFAULT_EMBED_VOCAB),
+        ),
         chat(chatModel.ifBlank(DEFAULT_CHAT_MODEL)),
         chat(
             chatMiniCpm1b.ifBlank(DEFAULT_CHAT_MINICPM1B),

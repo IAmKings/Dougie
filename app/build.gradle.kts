@@ -53,8 +53,10 @@ android {
             "INTENT_LABELS_SHA256" to "dougie.model.intent.labels.sha256",
             "CHAT_MODEL_URL" to "dougie.model.chat.url",
             "CHAT_MODEL_SHA256" to "dougie.model.chat.sha256",
-            "EMBED_TOKENIZER_URL" to "dougie.model.embed.tokenizer.url",
-            "EMBED_TOKENIZER_SHA256" to "dougie.model.embed.tokenizer.sha256",
+            "EMBED_MODEL_URL" to "dougie.model.embed.url",
+            "EMBED_MODEL_SHA256" to "dougie.model.embed.sha256",
+            "EMBED_VOCAB_URL" to "dougie.model.embed.vocab.url",
+            "EMBED_VOCAB_SHA256" to "dougie.model.embed.vocab.sha256",
         ).forEach { (field, prop) ->
             buildConfigField("String", field, quotedBuildConfig(prop))
         }

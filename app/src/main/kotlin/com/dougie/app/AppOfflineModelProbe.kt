@@ -1,7 +1,6 @@
 package com.dougie.app
 
 import android.content.Context
-import com.dougie.core.memory.HashBagEmbeddingPort
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.model.AgentTask
@@ -17,6 +16,7 @@ import com.dougie.core.tool.TtsModelLayout
 import com.dougie.feature.settings.OfflineModelProbe
 import com.dougie.feature.settings.ProbeResult
 import com.dougie.tool.system.IntentOrtJni
+import com.dougie.tool.system.AndroidEmbeddingPort
 import com.dougie.tool.system.SherpaJni
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -95,7 +95,7 @@ object AppOfflineModelProbe {
         if (!EmbedModelLayout.isPresent(modelDir)) {
             throw AgentException(UserFacingErrors.EMBED_MODEL_MISSING)
         }
-        val port = HashBagEmbeddingPort(modelDir)
+        val port = AndroidEmbeddingPort(modelDir)
         if (!port.isReady()) {
             throw AgentException(UserFacingErrors.EMBED_MODEL_MISSING)
         }

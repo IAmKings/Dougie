@@ -18,7 +18,7 @@ class HybridMemoryStore(
     override suspend fun search(query: String, limit: Int): List<MemoryEntry> {
         val keyword = inner.search(query, limit)
         if (!readyOrFalse()) return keyword
-        val queryVec = embedOrNull(query) ?: return keyword
+        val queryVec = embedOrNull { embedding.prepareQuery(query) } ?: return keyword
         val entries = try {
             inner.list()
         } catch (e: CancellationException) {
@@ -79,7 +79,7 @@ class HybridMemoryStore(
 
     private suspend fun withEmbedding(entry: MemoryEntry): MemoryEntry {
         if (!readyOrFalse()) return entry
-        val vec = embedOrNull(entry.content) ?: return entry
+        val vec = embedOrNull { embedding.preparePassage(entry.content) } ?: return entry
         return entry.copy(embedding = floatsToLittleEndian(vec))
     }
 
@@ -91,8 +91,9 @@ class HybridMemoryStore(
         false
     }
 
-    private suspend fun embedOrNull(text: String): FloatArray? = try {
-        embedding.embed(text)
+    private suspend fun embedOrNull(prepare: () -> String): FloatArray? = try {
+        val vec = embedding.embed(prepare()) ?: return null
+        if (vec.isEmpty()) null else vec
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {

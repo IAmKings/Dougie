@@ -43,10 +43,19 @@ class OfficialModelCatalogTest {
         assertEquals("意图理解", offers[2].title)
         assertEquals("约 12MB", offers[2].sizeLabel)
         assertEquals("语义记忆", offers[3].title)
-        assertEquals("待发布", offers[3].sizeLabel)
-        assertFalse(offers[3].isConfigured())
+        assertEquals("约 24MB", offers[3].sizeLabel)
+        assertTrue(offers[3].isConfigured())
         assertEquals(EmbedModelLayout.DIR, offers[3].pack.relativeDir)
-        assertEquals(listOf(EmbedModelLayout.TOKENIZER_FILE), offers[3].pack.files.map { it.name })
+        assertEquals(
+            listOf(EmbedModelLayout.MODEL_FILE, EmbedModelLayout.VOCAB_FILE),
+            offers[3].pack.files.map { it.name },
+        )
+        assertEquals(OfficialModelCatalog.DEFAULT_EMBED_MODEL.httpsUrl, offers[3].pack.files[0].httpsUrl)
+        assertEquals(OfficialModelCatalog.DEFAULT_EMBED_MODEL.sha256, offers[3].pack.files[0].sha256)
+        assertEquals(OfficialModelCatalog.DEFAULT_EMBED_VOCAB.httpsUrl, offers[3].pack.files[1].httpsUrl)
+        assertEquals(OfficialModelCatalog.DEFAULT_EMBED_VOCAB.sha256, offers[3].pack.files[1].sha256)
+        assertTrue(offers[3].pack.files.all { it.httpsUrl.startsWith("https://") })
+        assertTrue(offers[3].pack.files.all { SHA256.matches(it.sha256) })
         assertTrue(offers[0].isConfigured())
         assertTrue(offers[1].isConfigured())
         assertTrue(offers[2].isConfigured())
@@ -177,16 +186,16 @@ class OfficialModelCatalogTest {
     }
 
     @Test
-    fun embedInstalledRequiresTokenizer() {
+    fun embedInstalledRequiresOnnxAndVocab() {
         val dir = Files.createTempDirectory("model-root").toFile()
         try {
-            val offer = OfficialModelCatalog.embed(https)
+            val offer = OfficialModelCatalog.embed(https, https)
             assertFalse(offer.isInstalled(dir))
             val packDir = File(dir, EmbedModelLayout.DIR)
             packDir.mkdirs()
             File(packDir, EmbedModelLayout.MODEL_FILE).writeText("x")
             assertFalse(offer.isInstalled(dir))
-            File(packDir, EmbedModelLayout.TOKENIZER_FILE).writeText("{}")
+            File(packDir, EmbedModelLayout.VOCAB_FILE).writeText("[PAD]\n")
             assertTrue(offer.isInstalled(dir))
         } finally {
             dir.deleteRecursively()

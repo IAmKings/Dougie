@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "JNI must not share intent OrtSession; catalog HTTPS+SHA; layout models/embed"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "memory tests + checkChannelLeak no models/embed or extra onnx in APK"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "no embeddings or BGE-prefixed queries in Logcat"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "EMBED_MODEL_MISSING / MODEL_PROBE_EMBED_OK"}
+{"file": "PRD.md", "reason": "§7.2 cosine + FTS fallback"}

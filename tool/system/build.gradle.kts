@@ -127,5 +127,6 @@ dependencies {
     api(project(":core:tool"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(project(":core:memory"))
     implementation(libs.okhttp)
 }
