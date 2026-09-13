@@ -1577,3 +1577,37 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Next Steps
 
 - 发布 hashed 句向量并填 OfficialModelCatalog embed URL/SHA
+
+
+## Session 69: 发布语义记忆句向量包
+
+**Date**: 2026-09-14
+**Task**: 发布语义记忆句向量包
+**Branch**: `master`
+
+### Summary
+
+设置可下载 Xenova BGE int8；PJZ110 同义召回有来源。缺包仍走 FTS。JNI 与意图分 session。
+
+### Main Changes
+
+- catalog 钉 HF model.onnx+vocab.txt；AndroidEmbeddingPort + g_embed_session
+- 问句 BGE 前缀；空向量回退关键词；APK 仍无 models/embed
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `17d2545` | (see git log) |
+
+### Testing
+
+- [OK] :core:memory:test :core:tool:test :app:checkChannelLeak；PJZ110 美式/咖啡来源
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Phase 5 余项：ASR 规则 D、Kokoro RTF、流式识别回显
