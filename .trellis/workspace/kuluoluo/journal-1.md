@@ -1543,3 +1543,37 @@ PJZ110 上 MiniCPM5-2B INT4 与 1B gpu_opt 均可用；产品仍用 Qwen3-0.6B�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 68: 向量语义记忆混合召回
+
+**Date**: 2026-09-13
+**Task**: 向量语义记忆混合召回
+**Branch**: `master`
+
+### Summary
+
+HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 ALTER embedding BLOB。设置页「语义记忆」行 URL 仍空。
+
+### Main Changes
+
+- HybridMemoryStore + HashBagEmbeddingPort；search 不 await backfill
+- dougie_memory.db v2 ALTER；catalog embed 行；checkChannelLeak 禁 models/embed
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `933fbd3` | (see git log) |
+
+### Testing
+
+- [OK] core:memory/runtime/tool test 与 app:checkChannelLeak；PJZ110 FTS 路径
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 发布 hashed 句向量并填 OfficialModelCatalog embed URL/SHA

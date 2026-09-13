@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 67
-- **Last Active**: 2026-09-11
+- **Total Sessions**: 68
+- **Last Active**: 2026-09-13
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1545 | Active |
+| `journal-1.md` | ~1579 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 68 | 2026-09-13 | 向量语义记忆混合召回 | `933fbd3` | `master` |
 | 67 | 2026-09-11 | 侧载本地 Chat GPU 启动预热 | `591d4fc` | `master` |
 | 66 | 2026-09-11 | 本地闲聊稳身份且不乱调工具 | `14daa4c` | `master` |
 | 65 | 2026-09-11 | 侧载三档对话与发版更新 | `411ac6b` | `master` |
