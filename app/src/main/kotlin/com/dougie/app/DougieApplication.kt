@@ -7,6 +7,8 @@ import android.app.Application
 import com.dougie.core.llm.OpenAICompatibleProvider
 import com.dougie.core.llm.SelectingLlmProvider
 import com.dougie.core.llm.shouldWarmLocalEngine
+import com.dougie.core.memory.HashBagEmbeddingPort
+import com.dougie.core.memory.HybridMemoryStore
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
@@ -35,6 +37,7 @@ import com.dougie.core.tool.OpenAppEntries
 import com.dougie.core.tool.PreferOfflineTtsPort
 import com.dougie.core.tool.SherpaTtsEngine
 import com.dougie.core.tool.ChatModelLayout
+import com.dougie.core.tool.EmbedModelLayout
 import com.dougie.core.tool.ModelInstaller
 import com.dougie.core.tool.TtsModelLayout
 import com.dougie.core.tool.TtsVoices
@@ -116,7 +119,15 @@ class DougieApplication : Application() {
                 preferenceStore.setActiveChatSku(sku)
             }
         }
-        memoryStore = RoomMemoryStore(this)
+        val hybridMemory = HybridMemoryStore(
+            RoomMemoryStore(this),
+            HashBagEmbeddingPort(File(filesDir, EmbedModelLayout.DIR)),
+            idleScope = CoroutineScope(appScope.coroutineContext + Dispatchers.Default),
+        )
+        memoryStore = hybridMemory
+        appScope.launch(Dispatchers.Default) {
+            hybridMemory.backfillMissing()
+        }
         taskStores = DougieTaskStores(this)
         permissionUsage = PermissionUsageTracker()
         ProcessLifecycleOwner.get().lifecycle.addObserver(foregroundTracker)

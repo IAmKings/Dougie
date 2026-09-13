@@ -14,6 +14,7 @@ object AppOfflineModels {
         intentModel = ModelSource(BuildConfig.INTENT_MODEL_URL, BuildConfig.INTENT_MODEL_SHA256),
         intentTokenizer = ModelSource(BuildConfig.INTENT_TOKENIZER_URL, BuildConfig.INTENT_TOKENIZER_SHA256),
         intentLabels = ModelSource(BuildConfig.INTENT_LABELS_URL, BuildConfig.INTENT_LABELS_SHA256),
+        embedTokenizer = ModelSource(BuildConfig.EMBED_TOKENIZER_URL, BuildConfig.EMBED_TOKENIZER_SHA256),
         chatModel = ModelSource(BuildConfig.CHAT_MODEL_URL, BuildConfig.CHAT_MODEL_SHA256),
     ).let { all ->
         if (BuildConfig.IS_SIDELOAD) all else all.filter { !ChatModelLayout.isChatSku(it.id) }

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "FTS4 schema, embedding not stored yet, onUpgrade currently drops — must become additive v2"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "MemoryStore in :core:memory, RoomMemoryStore in :data:memory, catalog/installer in :core:tool"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Must not log fact content or embeddings"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "core JVM-only, checkChannelLeak, :core:memory:test"}
+{"file": "PRD.md", "reason": "§7.2 local ONNX embedding + brute cosine under 1K facts, no sqlite-vec"}

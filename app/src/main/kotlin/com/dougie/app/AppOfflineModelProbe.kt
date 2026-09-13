@@ -1,12 +1,14 @@
 package com.dougie.app
 
 import android.content.Context
+import com.dougie.core.memory.HashBagEmbeddingPort
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.LoopContext
 import com.dougie.core.tool.AsrModelLayout
 import com.dougie.core.tool.ChatModelLayout
+import com.dougie.core.tool.EmbedModelLayout
 import com.dougie.core.tool.IntentModelLayout
 import com.dougie.core.tool.OnnxIntentEngine
 import com.dougie.core.tool.SherpaSpeechEngine
@@ -27,6 +29,7 @@ object AppOfflineModelProbe {
                 id == "asr" -> probeAsr(context)
                 id == "tts" -> probeTts(context)
                 id == IntentModelLayout.ID -> probeIntent(context)
+                id == EmbedModelLayout.ID -> probeEmbed(context)
                 ChatModelLayout.isChatSku(id) -> probeChat(context, id)
                 else -> ProbeResult(ok = false, message = UserFacingErrors.TOOL_FAILED)
             }
@@ -85,6 +88,22 @@ object AppOfflineModelProbe {
         }
         engine.classify("现在几点")
         return ProbeResult(ok = true, message = UserFacingErrors.MODEL_PROBE_INTENT_OK)
+    }
+
+    private suspend fun probeEmbed(context: Context): ProbeResult {
+        val modelDir = File(context.filesDir, EmbedModelLayout.DIR)
+        if (!EmbedModelLayout.isPresent(modelDir)) {
+            throw AgentException(UserFacingErrors.EMBED_MODEL_MISSING)
+        }
+        val port = HashBagEmbeddingPort(modelDir)
+        if (!port.isReady()) {
+            throw AgentException(UserFacingErrors.EMBED_MODEL_MISSING)
+        }
+        val vec = port.embed("测")
+        if (vec == null || vec.isEmpty()) {
+            throw AgentException(UserFacingErrors.EMBED_MODEL_MISSING)
+        }
+        return ProbeResult(ok = true, message = UserFacingErrors.MODEL_PROBE_EMBED_OK)
     }
 
     private suspend fun probeChat(context: Context, skuId: String): ProbeResult {

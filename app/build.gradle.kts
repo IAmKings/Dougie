@@ -53,6 +53,8 @@ android {
             "INTENT_LABELS_SHA256" to "dougie.model.intent.labels.sha256",
             "CHAT_MODEL_URL" to "dougie.model.chat.url",
             "CHAT_MODEL_SHA256" to "dougie.model.chat.sha256",
+            "EMBED_TOKENIZER_URL" to "dougie.model.embed.tokenizer.url",
+            "EMBED_TOKENIZER_SHA256" to "dougie.model.embed.tokenizer.sha256",
         ).forEach { (field, prop) ->
             buildConfigField("String", field, quotedBuildConfig(prop))
         }
@@ -259,6 +261,7 @@ tasks.register("checkChannelLeak") {
             }
             checkNoChatLlmWeight(name, playApk)
             checkNoIntentModel(name, playApk)
+            checkNoEmbedModel(name, playApk)
             check(!name.contains("litertlm", ignoreCase = true)) {
                 "play APK leaked litertlm: $name in $playApk"
             }
@@ -285,6 +288,7 @@ tasks.register("checkChannelLeak") {
         apkEntryNames(sideloadApk).forEach { name ->
             checkNoChatLlmWeight(name, sideloadApk)
             checkNoIntentModel(name, sideloadApk)
+            checkNoEmbedModel(name, sideloadApk)
         }
     }
 }
@@ -308,6 +312,12 @@ fun checkNoIntentModel(name: String, apk: File) {
     }
     check(!name.endsWith(".gguf")) {
         "APK leaked .gguf: $name in $apk"
+    }
+}
+
+fun checkNoEmbedModel(name: String, apk: File) {
+    check(!name.contains("models/embed")) {
+        "APK leaked models/embed: $name in $apk"
     }
 }
 

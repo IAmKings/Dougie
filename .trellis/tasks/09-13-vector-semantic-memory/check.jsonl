@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "v2 must ALTER not drop; search still has FTS fallback"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "memory tests + checkChannelLeak no models/embed in APK"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "no fact text or vectors in logs"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse OfficialModelCatalog and OfflineModelDownloads; wrap MemoryStore instead of forking LoopEngine"}
+{"file": "PRD.md", "reason": "§7.2 cosine + FTS MVP fallback"}

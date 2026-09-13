@@ -31,6 +31,10 @@ core/memory/src/main/kotlin/com/dougie/core/memory/
   MemoryStore.kt
   MemoryGate.kt
   InMemoryMemoryStore.kt
+  EmbeddingPort.kt
+  Embeddings.kt
+  HybridMemoryStore.kt
+  HashBagEmbeddingPort.kt
 core/tool/src/main/kotlin/com/dougie/core/tool/
   IdempotencyStore.kt
   CalendarCreateTool.kt
@@ -77,6 +81,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   ModelImporter.kt
   OfficialModelCatalog.kt
   ChatModelLayout.kt
+  EmbedModelLayout.kt
   BundledModelSeed.kt
   CharacterErrorRate.kt
   IntentEval.kt
@@ -153,17 +158,17 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `ChatPromptAssembler` (Chinese Dougie identity + attachment metadata + `Known facts:` + tools inventory after identity; identity itself has no tool names; **`localPrompt` inventory is seven no-slot tools plus `clipboard_write` / `calendar_create` / `app_intent` / `screen_match` / `speech_output` and is taught only when `localToolProtocolActive`**, remote `systemPrefix` stays full table), `LocalToolCallParser` (whole-reply or one markdown fence `{"name","args"}` → `LlmEvent.ToolCall`; mixed Chinese + JSON stays text), `OpenAICompatibleProvider` SSE (OkHttp), `SelectingLlmProvider` (cloud if configured else local if ready else cloud for gateway copy; `hasConversationalLlm` = cloud configured **or** local pack ready) | Tool execution, UI, policy bypass |
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) + `ModelInstaller` / `ModelImporter` (not AgentTools) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets, SAF / `ContentResolver` |
 | `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
-| `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore` | Room, Android Context |
+| `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore`, `HybridMemoryStore`, `EmbeddingPort`, `HashBagEmbeddingPort` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:tool:js` (Android, **sideload flavor only**) | `AndroidJsEvalPort` (Cash App QuickJS). Isolated `js_eval` is `JsEvalTool` in `:core:tool`. `data` is JSON (`OBJECT`): arrays like `[1,2]` pass through; string `1,2` is canonicalized to `[1,2]` before `JSON.parse`. `ScriptPrivilegePrefs` false → L2 function wrap; true → L4 program / last expression. | Play APK, host file/net APIs, `tap_swipe` from JS |
 | `:tool:py` (Android, **sideload flavor only**) | Chaquopy CPython + frozen numpy/pandas. Isolated `py_eval` is `PyEvalTool` in `:core:tool` (`RiskLevel.L4`). Registered only when `ScriptPrivilegePrefs` is true; otherwise `tools.remove`. `data` uses the same canonicalize as JS. Timeout 15s. Persistent `filesDir/py_sandbox/` (mkdir, never wipe; relative paths only). | Play APK, runtime pip, SAF/external storage/net/Intent/a11y/`tap_swipe` |
 | `:tool:chatllm` (Android, **sideload runtime only**) | LiteRT-LM `ChatLlmProvider` (`isLocal=true`, process-lifetime Engine, GPU then CPU) plus Debug spike `ChatLlmSpikeActivity` / `ChatLlmProbe` (Java 17 stubs at compile; AAR is Kotlin 2.3 + class file 65, `runtimeOnly`). Injects the same `toolDescriptors` as remote. `promptFor` is `ChatPromptAssembler.localPrompt` (full descriptor list in, **taught inventory seven no-slot plus clipboard_write/calendar_create/app_intent/screen_match/speech_output only when `localToolProtocolActive`**; no `image_url`). After stream text, `LocalToolCallParser` may emit `LlmEvent.ToolCall` **only if `localToolProtocolActive`** for the same descriptors; otherwise `TextDelta`. Sideload `ChannelHooks.localChatProvider` injects it into `SelectingLlmProvider`. When `shouldWarmLocalEngine` (`!cloudConfigured && localReady`), `DougieApplication` warms the **active** SKU on `Dispatchers.Default` via `warmup()` → `ensureEngine()` (does not touch `inFlight`; does not replace an engine while `inFlight != 0`). Cloud configured → `releaseIfIdle()` if no stream. Play ChannelHooks warmup/release are no-ops. | Play APK, Play classpath `litertlm`, GGUF / llama.cpp |
 | `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
-| `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`) | LoopEngine, Compose |
+| `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`, v2 `embedding BLOB`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
 | `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |
-| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, RoomMemoryStore, DougieTaskStores, recoverInterrupted, `Dispatchers.Default`; sideload `ChannelHooks.seedBundledModels` | Business rules that belong in core |
+| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, `HybridMemoryStore(RoomMemoryStore, HashBagEmbeddingPort)`, DougieTaskStores, recoverInterrupted, `Dispatchers.Default`; sideload `ChannelHooks.seedBundledModels` | Business rules that belong in core |
 | `:cli` (JVM application, not in APK) | `com.dougie.cli` Agent Console: kotlinx-cli `--log-only`, mosaic **0.14.0** TTY UI, `FakeLlmProvider` + `FakeBatteryTool` via `:core:runtime` | `com.android.*` plugin, Play/Sideload APK, `:tool:*` / `:data:*`, mosaic **0.18.0** |
 
 New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`. CLI snapshot / flag tests go in `:cli` `src/test`.
@@ -278,6 +283,57 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Instead**: `IntentClassifierTool` talks to `IntentPort`. Official layout is `filesDir/models/intent/{model.onnx,tokenizer.json,labels.txt,vocab.txt}` (`IntentModelLayout.isPresent`). Hashbag testdata is the old three files (`isHashbagFixturePresent`). Missing or engine not ready → `INTENT_MODEL_MISSING` / `INTENT_ENGINE_NOT_READY`. `OnnxIntentEngine` switches on `tokenizer.json` `algorithm`: `bert_wordpiece` tokenizes on JVM and JNI int64 `input_ids`/`attention_mask` (optional `token_type_ids`); `char_ngram_fnv1a32_hash_bag` keeps float features. Softmax + argmax vs `labels.txt`. Blank/failed infer is `INTENT_FAILED`. Low confidence still returns a hit (tool maps to `INTENT_LOW_CONFIDENCE`). Do not call `EgressGateway` from this tool. `*.gguf` and `third_party/llama.cpp/` stay out of git. `:tool:system` reuses that one `libonnxruntime.so` (`dougie_intent` `DT_NEEDED`, `OrtGetApiBase`; do not `dlopen` across Android linker namespaces). The static-link sherpa tarball hides ORT and must not be used. No second ORT AAR, no llama.cpp. Tiny ONNX testdata may live under `core/tool/src/test/resources/intent-pack/`. Catalog MiniRBT weights are GitHub Release `intent-minirbt-v2` (dynamic int8, ~12MB; v1 fp32 ~47MB kept for rollback), not testdata. Intent ONNX is never in the Play APK. Never log classifier text or features.
 
+## Don't: Reuse intent ONNX as sentence embeddings
+
+**Problem**: MiniRBT intent logits are not sentence vectors. Feeding `models/intent/model.onnx` into memory recall would rank facts by the wrong graph.
+
+**Instead**: `HybridMemoryStore` wraps `MemoryStore.search` with `EmbeddingPort`. Device path is `HashBagEmbeddingPort` on `filesDir/models/embed/tokenizer.json` (`EmbedModelLayout.isPresent` = non-empty tokenizer; `MODEL_FILE` reserved until a hashed ONNX pack exists). Missing/failed/throwing embedder returns the inner keyword hits unchanged. Catalog id `embed`, title **语义记忆**, empty URL → `尚未配置下载地址`. Do not ship weights in either APK (`checkChannelLeak` scans `models/embed`). Hash-bag is **not** a sentence model; JVM paraphrase tests use a Fake vector map. `search` must not await backfill (`idleScope` + app-start Default).
+
+## Scenario: hybrid semantic memory
+
+### 1. Scope / Trigger
+Cross-layer: `:core:memory` hybrid recall, `:data:memory` SQLite v2 `embedding BLOB`, `:core:tool` catalog `embed`, `:app` wrap + probe. `LoopEngine` still only calls `MemoryStore.search`; `MemoryGate` extraction is unchanged.
+
+### 2. Signatures
+- `EmbeddingPort.isReady(): Boolean` / `suspend fun embed(text: String): FloatArray?` (null = skip semantic; do not log `text`)
+- `HybridMemoryStore(inner, embedding, minCosine = 0.45f, idleScope: CoroutineScope? = null)`
+- `suspend fun HybridMemoryStore.backfillMissing()`
+- `floatsToLittleEndian` / `littleEndianToFloats` — float32 LE `ByteArray`; truncated/null blob → ignore
+- `EmbedModelLayout` — `ID=embed`, `DIR=models/embed`, `TOKENIZER_FILE=tokenizer.json`
+- `OfficialModelCatalog.embed(tokenizer: ModelSource = ModelSource())` — `standard()` inserts this row after intent, before chat
+- SQLite `dougie_memory.db` version `2`; `onUpgrade(1→2)`: `ALTER TABLE memory_facts ADD COLUMN embedding BLOB` only
+
+### 3. Contracts
+- Not ready / `embed()` null / throw (except `CancellationException`) → keyword hits only, never empty because of embedder failure
+- Ready: cosine ≥ 0.45 first, then keyword fill, dedupe by `id`, cap `limit`
+- `upsert` writes embedding when ready; otherwise NULL
+- `search` never awaits backfill; NULL rows may miss semantic until idle/start backfill completes
+- Chat citations still map `retrievedMemories.source` only (`来源：`)
+- Play and sideload APK zip must not contain `models/embed`
+
+### 4. Validation & Error Matrix
+- Missing/unreadable tokenizer → `isReady()=false`; probe `EMBED_MODEL_MISSING` = `离线语义记忆模型尚未就绪。`
+- Probe `embed("测")` non-null → `MODEL_PROBE_EMBED_OK` = `语义记忆测试通过。`
+- Empty catalog URL/SHA → Settings `尚未配置下载地址`; UI must not fetch
+- v0.1.0 DB upgrade drop would wipe facts → forbidden; ALTER only
+
+### 5. Good/Base/Bad Cases
+- Good: Fake vectors, 「我喜欢喝美式」 retrieved by 「我平时喝什么咖啡」; `source` preserved; unrelated 电量 below threshold
+- Base: no tokenizer → `search("美式")` hits FTS/`LIKE`; paraphrase query empty
+- Bad: `search` awaits `backfillMissing()`; intent `models/intent/model.onnx` used as embedder; APK ships `models/embed`
+
+### 6. Tests Required
+- `HybridMemoryStoreTest`: not-ready keyword; ready paraphrase + source; upsert blob; backfill; embed null/throw → keyword; `searchDoesNotAwaitBackfill`; idleScope `advanceUntilIdle` then paraphrase hits
+- `HashBagEmbeddingPortTest`: missing/unreadable tokenizer not ready; parsed spec self-cosine 1
+- `OfficialModelCatalogTest`: 7 offers; embed unconfigured; `isInstalled` needs tokenizer
+- `./gradlew :core:memory:test :core:runtime:test :core:tool:test :app:checkChannelLeak`
+
+### 7. Wrong vs Correct
+#### Wrong
+Await backfill on the Loop search path; drop `memory_facts` on upgrade; treat hash-bag cosine as the paraphrase AC; log query/vectors.
+
+#### Correct
+Idle Default backfill; ALTER v2; Fake vectors for synonym AC; hash-bag until a hashed sentence pack is published; empty catalog URL stays unconfigured.
 
 ## Don't: Commit full ASR eval dumps
 
@@ -289,7 +345,7 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Problem**: Letting the cloud LLM pick a URL would fetch arbitrary payloads into `filesDir`.
 
-**Instead**: `ModelInstaller` is app-owned HTTPS download into a cache dir. `ModelImporter` copies hashed sources into `filesDir` (JNI cache). Neither talks to SAF / `DocumentFile`. Both require SHA-256 to match `OfficialModelCatalog` specs (`SHA256.matches` + file hash), safe names / `relativeDir` / canonical, write `.part` then rename, delete `.part` on failure. Importer matches sources to specs by lowercase content hash (one source may fill multiple specs that share a hash; extra unmatched hashes or missing specs fail). `:app` `ExternalModelTreeImpl` streams tree files to temps for scan, and streams cache layout files onto a **reused** `{tree}/models/{asr,tts,intent,chat}` after a confirmed download (`ModelTreeNames` treats SAF uniquified `models (1)` / `models(2)` as the same folder; never `createDirectory` when a match exists; `listFiles` not `findFile`). No tree / lost persistable permission → UI must not fetch. Not registered on `LoopEngine`. Intent pack is `model.onnx` + `tokenizer.json` + `labels.txt` (historical `model.gguf` must not mark installed). Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / GitHub raw `IAmKings/Dougie` `master` testdata `core/tool/src/test/resources/intent-pack/` for intent `model.onnx` + `tokenizer.json` + `labels.txt`). A selected tree with matching hashes may still sync without HTTP. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.url` / `tokenizer.url` / `labels.url` plus matching sha256 keys). Invalid override URL/SHA → offer not configured; UI must not fetch. Isolated `js_eval` has no `fetch`/files; later privileged HTTPS must be allowlisted host APIs + L4, never an LLM-picked URL written into `filesDir`.
+**Instead**: `ModelInstaller` is app-owned HTTPS download into a cache dir. `ModelImporter` copies hashed sources into `filesDir` (JNI cache). Neither talks to SAF / `DocumentFile`. Both require SHA-256 to match `OfficialModelCatalog` specs (`SHA256.matches` + file hash), safe names / `relativeDir` / canonical, write `.part` then rename, delete `.part` on failure. Importer matches sources to specs by lowercase content hash (one source may fill multiple specs that share a hash; extra unmatched hashes or missing specs fail). `:app` `ExternalModelTreeImpl` streams tree files to temps for scan, and streams cache layout files onto a **reused** `{tree}/models/{asr,tts,intent,chat,embed}` after a confirmed download (`ModelTreeNames` treats SAF uniquified `models (1)` / `models(2)` as the same folder; never `createDirectory` when a match exists; `listFiles` not `findFile`). No tree / lost persistable permission → UI must not fetch. Not registered on `LoopEngine`. Intent pack is `model.onnx` + `tokenizer.json` + `labels.txt` (historical `model.gguf` must not mark installed). Rethrow `CancellationException` (do not map to `MODEL_DOWNLOAD_FAILED`); `OkHttpModelGet` cancels the Call and `ensureActive()` while copying; rejects non-https redirects. HTTPS/SHA-256 defaults live in `OfficialModelCatalog` (HuggingFace Paraformer / vits-fanchen-C / GitHub raw `IAmKings/Dougie` `master` testdata `core/tool/src/test/resources/intent-pack/` for intent `model.onnx` + `tokenizer.json` + `labels.txt`). A selected tree with matching hashes may still sync without HTTP. gitignored `local.properties` keys `dougie.model.*` → `BuildConfig` override those defaults when non-blank (`dougie.model.intent.url` / `tokenizer.url` / `labels.url` plus matching sha256 keys). Invalid override URL/SHA → offer not configured; UI must not fetch. Isolated `js_eval` has no `fetch`/files; later privileged HTTPS must be allowlisted host APIs + L4, never an LLM-picked URL written into `filesDir`.
 
 ## Scenario: isolated `js_eval`
 

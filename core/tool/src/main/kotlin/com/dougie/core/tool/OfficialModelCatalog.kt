@@ -24,6 +24,7 @@ fun OfflineModelOffer.isInstalled(destRoot: File): Boolean {
         id == "asr" -> AsrModelLayout.isPresent(dir)
         id == "tts" -> TtsModelLayout.isPresent(dir)
         id == IntentModelLayout.ID -> IntentModelLayout.isPresent(dir)
+        id == EmbedModelLayout.ID -> EmbedModelLayout.isPresent(dir)
         ChatModelLayout.isChatSku(id) -> ChatModelLayout.isPresent(dir, id)
         else -> false
     }
@@ -138,6 +139,21 @@ object OfficialModelCatalog {
         ),
     )
 
+    fun embed(
+        tokenizer: ModelSource = ModelSource(),
+    ): OfflineModelOffer = OfflineModelOffer(
+        id = EmbedModelLayout.ID,
+        title = "语义记忆",
+        sizeLabel = "待发布",
+        pack = ModelPack(
+            id = EmbedModelLayout.ID,
+            relativeDir = EmbedModelLayout.DIR,
+            files = listOf(
+                ModelFileSpec(EmbedModelLayout.TOKENIZER_FILE, tokenizer.sha256, tokenizer.httpsUrl),
+            ),
+        ),
+    )
+
     fun chat(
         model: ModelSource = ModelSource(),
         id: String = ChatModelLayout.ID,
@@ -167,6 +183,7 @@ object OfficialModelCatalog {
         intentTokenizer: ModelSource = ModelSource(),
         intentLabels: ModelSource = ModelSource(),
         intentVocab: ModelSource = ModelSource(),
+        embedTokenizer: ModelSource = ModelSource(),
         chatModel: ModelSource = ModelSource(),
         chatMiniCpm1b: ModelSource = ModelSource(),
         chatMiniCpm2b: ModelSource = ModelSource(),
@@ -183,6 +200,7 @@ object OfficialModelCatalog {
             intentLabels.ifBlank(DEFAULT_INTENT_LABELS),
             intentVocab.ifBlank(DEFAULT_INTENT_VOCAB),
         ),
+        embed(embedTokenizer),
         chat(chatModel.ifBlank(DEFAULT_CHAT_MODEL)),
         chat(
             chatMiniCpm1b.ifBlank(DEFAULT_CHAT_MINICPM1B),

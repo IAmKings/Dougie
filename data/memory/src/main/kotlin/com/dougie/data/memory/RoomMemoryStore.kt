@@ -23,7 +23,7 @@ class RoomMemoryStore(context: Context) : MemoryStore {
                 try {
                     db.rawQuery(
                         """
-                        SELECT f.id, f.type, f.content, f.source, f.confidence, f.created_at, f.updated_at
+                        SELECT f.id, f.type, f.content, f.source, f.confidence, f.created_at, f.updated_at, f.embedding
                         FROM memory_facts f
                         JOIN memory_facts_fts fts ON f.docid = fts.rowid
                         WHERE memory_facts_fts MATCH ?
@@ -43,7 +43,7 @@ class RoomMemoryStore(context: Context) : MemoryStore {
             }
             db.rawQuery(
                 """
-                SELECT id, type, content, source, confidence, created_at, updated_at
+                SELECT id, type, content, source, confidence, created_at, updated_at, embedding
                 FROM memory_facts
                 WHERE content LIKE '%' || ? || '%'
                 ORDER BY updated_at DESC
@@ -79,6 +79,8 @@ class RoomMemoryStore(context: Context) : MemoryStore {
                 put("confidence", entry.confidence)
                 put("created_at", entry.createdAt)
                 put("updated_at", entry.updatedAt)
+                val embedding = entry.embedding
+                if (embedding == null) putNull("embedding") else put("embedding", embedding)
             }
             val docid = if (existing != null) {
                 db.update("memory_facts", values, "id = ?", arrayOf(entry.id))
@@ -100,7 +102,7 @@ class RoomMemoryStore(context: Context) : MemoryStore {
     override suspend fun list(): List<MemoryEntry> = withContext(Dispatchers.IO) {
         helper.readableDatabase.rawQuery(
             """
-            SELECT id, type, content, source, confidence, created_at, updated_at
+            SELECT id, type, content, source, confidence, created_at, updated_at, embedding
             FROM memory_facts
             ORDER BY updated_at DESC
             """.trimIndent(),
@@ -144,6 +146,12 @@ class RoomMemoryStore(context: Context) : MemoryStore {
     }
 
     private fun android.database.Cursor.toEntry(): MemoryEntry {
+        val embeddingIdx = getColumnIndex("embedding")
+        val embedding = if (embeddingIdx >= 0 && !isNull(embeddingIdx)) {
+            getBlob(embeddingIdx)
+        } else {
+            null
+        }
         return MemoryEntry(
             id = getString(getColumnIndexOrThrow("id")),
             type = getString(getColumnIndexOrThrow("type")),
@@ -152,6 +160,7 @@ class RoomMemoryStore(context: Context) : MemoryStore {
             confidence = getFloat(getColumnIndexOrThrow("confidence")),
             createdAt = getLong(getColumnIndexOrThrow("created_at")),
             updatedAt = getLong(getColumnIndexOrThrow("updated_at")),
+            embedding = embedding,
         )
     }
 
@@ -179,7 +188,8 @@ internal class MemoryDbHelper(context: Context) : SQLiteOpenHelper(
               source TEXT NOT NULL,
               confidence REAL NOT NULL,
               created_at INTEGER NOT NULL,
-              updated_at INTEGER NOT NULL
+              updated_at INTEGER NOT NULL,
+              embedding BLOB
             )
             """.trimIndent(),
         )
@@ -194,13 +204,13 @@ internal class MemoryDbHelper(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS memory_facts_fts")
-        db.execSQL("DROP TABLE IF EXISTS memory_facts")
-        onCreate(db)
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE memory_facts ADD COLUMN embedding BLOB")
+        }
     }
 
     companion object {
         const val DB_NAME = "dougie_memory.db"
-        const val DB_VERSION = 1
+        const val DB_VERSION = 2
     }
 }

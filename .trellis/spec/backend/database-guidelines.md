@@ -10,7 +10,7 @@
   - `:data:tasks` — `DougieTaskStores` wrapping `agent_tasks`, `idempotency`, and `audit_log`.
 - Do not log fact `content`, FTS queries, task `snapshot_json`, calendar bodies, clipboard text, prompts, or API keys (`logging-guidelines.md`).
 
-## Memory schema (`dougie_memory.db`, version `1`)
+## Memory schema (`dougie_memory.db`, version `2`)
 
 ```sql
 CREATE TABLE memory_facts (
@@ -21,7 +21,8 @@ CREATE TABLE memory_facts (
   source TEXT NOT NULL,        -- taskId · user quote (truncated)
   confidence REAL NOT NULL,
   created_at INTEGER NOT NULL, -- epoch ms
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  embedding BLOB               -- little-endian float32; NULL = not embedded
 );
 
 CREATE VIRTUAL TABLE memory_facts_fts USING fts4(
@@ -30,15 +31,17 @@ CREATE VIRTUAL TABLE memory_facts_fts USING fts4(
 );
 ```
 
-`memory_facts.docid` is the FTS4 `rowid`. Writes dual-insert/update/delete both tables in one transaction. `embedding` is not stored (always null in `MemoryEntry` this phase).
+`memory_facts.docid` is the FTS4 `rowid`. Writes dual-insert/update/delete both tables in one transaction. `embedding` is optional. `HybridMemoryStore` fills it when `EmbeddingPort.isReady()`; otherwise it stays NULL and search is FTS/`LIKE` only.
 
 Provider flag `memory_enabled` is **not** in SQLite. It is `PreferenceStore` key `memory_enabled` (default `true`) on EncryptedSharedPreferences file `dougie_provider_secure`.
 
 ### Memory query patterns
 
-- `list()`: `SELECT ... FROM memory_facts ORDER BY updated_at DESC`
-- `search(query, limit)`: FTS `MATCH` on each `searchNeedles(query)` token, **plus** `content LIKE '%' || needle || '%'` fallback for CJK.
+- `list()`: `SELECT ... FROM memory_facts ORDER BY updated_at DESC` (includes `embedding`)
+- `search(query, limit)`: FTS `MATCH` on each `searchNeedles(query)` token, **plus** `content LIKE '%' || needle || '%'` fallback for CJK. `HybridMemoryStore` may prepend cosine hits (≥ 0.45) when the embedder is ready, then fill with those keyword hits, dedupe by `id`, cap at `limit`.
+- `HybridMemoryStore.search` must **not** `await backfillMissing()`. Use rows that already have embeddings; if any `embedding` is NULL and `idleScope` is set, `launch` backfill on that scope. App start also `launch(Dispatchers.Default) { backfillMissing() }`. First search after a pack becomes ready may miss old NULL rows until idle backfill finishes.
 - Token budget for LLM inject is applied in `LoopEngine` (max 5 facts / 800 chars), not in SQL.
+- Do not brute-scan `list()` for vector search beyond the PRD <1K fact budget. No sqlite-vec.
 
 ## Task recovery schema (`dougie_tasks.db`, version `1`)
 
@@ -74,7 +77,7 @@ JVM tests use `InMemoryTaskStore` / `InMemoryIdempotencyStore` / `NoOpAuditLog`.
 
 ## Migrations
 
-Version 1 is create-only for both databases. `onUpgrade` drops and recreates. Replace with additive migrations before shipping a second version.
+`dougie_memory.db` version 2 is additive: `onUpgrade(1→2)` is `ALTER TABLE memory_facts ADD COLUMN embedding BLOB` only. **Do not DROP** — v0.1.0 already shipped version 1 databases. `dougie_tasks.db` remains version 1 create-only (`onUpgrade` drops and recreates). Replace task-db drops with additive migrations before shipping a second version.
 
 ## Naming Conventions
 
@@ -85,7 +88,9 @@ Version 1 is create-only for both databases. `onUpgrade` drops and recreates. Re
 ## Common Mistakes
 
 - Putting Room / `android.database` in `:core:*` — keep JVM tests on in-memory stores.
-- Logging MATCH queries, fact text, or `snapshot_json` (may contain tool args).
+- Logging MATCH queries, fact text, embedding blobs, or `snapshot_json` (may contain tool args).
+- Awaiting `backfillMissing()` inside `search` (blocks Loop). Idle Default only.
+- Expecting char n-gram hash-bag cosine of 「我喜欢喝美式」 vs 「我平时喝什么咖啡」 to clear 0.45 — paraphrase AC uses Fake vectors; hash-bag is a stand-in until a hashed sentence pack is published.
 - Auto-continuing an interrupted task with a new LLM call.
 - Writing calendar event bodies or clipboard text into `audit_log`.
 - Silent Fake LLM on the app chat path.

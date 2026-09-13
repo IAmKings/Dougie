@@ -23,12 +23,13 @@ class OfficialModelCatalogTest {
     @Test
     fun standardCatalogHasAsrTtsIntentAndChat() {
         val offers = OfficialModelCatalog.standard()
-        assertEquals(6, offers.size)
+        assertEquals(7, offers.size)
         assertEquals(
             listOf(
                 "asr",
                 "tts",
                 "intent",
+                EmbedModelLayout.ID,
                 ChatModelLayout.ID,
                 ChatModelLayout.MINICPM1B_ID,
                 ChatModelLayout.MINICPM2B_ID,
@@ -41,6 +42,11 @@ class OfficialModelCatalogTest {
         assertEquals("约 116MB", offers[1].sizeLabel)
         assertEquals("意图理解", offers[2].title)
         assertEquals("约 12MB", offers[2].sizeLabel)
+        assertEquals("语义记忆", offers[3].title)
+        assertEquals("待发布", offers[3].sizeLabel)
+        assertFalse(offers[3].isConfigured())
+        assertEquals(EmbedModelLayout.DIR, offers[3].pack.relativeDir)
+        assertEquals(listOf(EmbedModelLayout.TOKENIZER_FILE), offers[3].pack.files.map { it.name })
         assertTrue(offers[0].isConfigured())
         assertTrue(offers[1].isConfigured())
         assertTrue(offers[2].isConfigured())
@@ -58,24 +64,26 @@ class OfficialModelCatalogTest {
         assertEquals(OfficialModelCatalog.DEFAULT_INTENT_MODEL.sha256, offers[2].pack.files[0].sha256)
         assertTrue(offers[2].pack.files[0].httpsUrl.startsWith("https://"))
         assertTrue(offers[2].pack.files.all { it.httpsUrl.startsWith("https://") })
-        assertEquals("对话 · 0.6B", offers[3].title)
-        assertEquals("约 328MB", offers[3].sizeLabel)
-        assertTrue(offers[3].isConfigured())
-        assertEquals(ChatModelLayout.DIR, offers[3].pack.relativeDir)
-        assertEquals(listOf(ChatModelLayout.MODEL_FILE), offers[3].pack.files.map { it.name })
-        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.httpsUrl, offers[3].pack.files[0].httpsUrl)
-        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.sha256, offers[3].pack.files[0].sha256)
-        assertEquals("对话 · 1B", offers[4].title)
-        assertEquals("约 756MB", offers[4].sizeLabel)
-        assertEquals(listOf(ChatModelLayout.MINICPM1B_FILE), offers[4].pack.files.map { it.name })
-        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MINICPM1B.sha256, offers[4].pack.files[0].sha256)
-        assertEquals("对话 · 2B", offers[5].title)
-        assertEquals("约 1.5GB", offers[5].sizeLabel)
-        assertEquals(listOf(ChatModelLayout.MINICPM2B_FILE), offers[5].pack.files.map { it.name })
-        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MINICPM2B.sha256, offers[5].pack.files[0].sha256)
+        assertEquals("对话 · 0.6B", offers[4].title)
+        assertEquals("约 328MB", offers[4].sizeLabel)
+        assertTrue(offers[4].isConfigured())
+        assertEquals(ChatModelLayout.DIR, offers[4].pack.relativeDir)
+        assertEquals(listOf(ChatModelLayout.MODEL_FILE), offers[4].pack.files.map { it.name })
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.httpsUrl, offers[4].pack.files[0].httpsUrl)
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MODEL.sha256, offers[4].pack.files[0].sha256)
+        assertEquals("对话 · 1B", offers[5].title)
+        assertEquals("约 756MB", offers[5].sizeLabel)
+        assertEquals(listOf(ChatModelLayout.MINICPM1B_FILE), offers[5].pack.files.map { it.name })
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MINICPM1B.sha256, offers[5].pack.files[0].sha256)
+        assertEquals("对话 · 2B", offers[6].title)
+        assertEquals("约 1.5GB", offers[6].sizeLabel)
+        assertEquals(listOf(ChatModelLayout.MINICPM2B_FILE), offers[6].pack.files.map { it.name })
+        assertEquals(OfficialModelCatalog.DEFAULT_CHAT_MINICPM2B.sha256, offers[6].pack.files[0].sha256)
         assertEquals(UserFacingErrors.MODEL_PROBE_CHAT_OK, "对话模型测试通过。")
         assertEquals(UserFacingErrors.CHAT_MODEL_MISSING, "离线对话模型尚未就绪，无法闲聊。")
         assertEquals(UserFacingErrors.CHAT_ENGINE_NOT_READY, "离线对话引擎尚未接入，无法闲聊。")
+        assertEquals(UserFacingErrors.MODEL_PROBE_EMBED_OK, "语义记忆测试通过。")
+        assertEquals(UserFacingErrors.EMBED_MODEL_MISSING, "离线语义记忆模型尚未就绪。")
     }
 
     @Test
@@ -163,6 +171,23 @@ class OfficialModelCatalogTest {
                 fileName = ChatModelLayout.MINICPM1B_FILE,
             )
             assertTrue(mini.isInstalled(dir))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun embedInstalledRequiresTokenizer() {
+        val dir = Files.createTempDirectory("model-root").toFile()
+        try {
+            val offer = OfficialModelCatalog.embed(https)
+            assertFalse(offer.isInstalled(dir))
+            val packDir = File(dir, EmbedModelLayout.DIR)
+            packDir.mkdirs()
+            File(packDir, EmbedModelLayout.MODEL_FILE).writeText("x")
+            assertFalse(offer.isInstalled(dir))
+            File(packDir, EmbedModelLayout.TOKENIZER_FILE).writeText("{}")
+            assertTrue(offer.isInstalled(dir))
         } finally {
             dir.deleteRecursively()
         }

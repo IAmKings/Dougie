@@ -1,6 +1,7 @@
 package com.dougie.app
 
 import com.dougie.core.tool.ChatModelLayout
+import com.dougie.core.tool.EmbedModelLayout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -18,6 +19,7 @@ class AppOfflineModelsTest {
                     "asr",
                     "tts",
                     "intent",
+                    EmbedModelLayout.ID,
                     ChatModelLayout.ID,
                     ChatModelLayout.MINICPM1B_ID,
                     ChatModelLayout.MINICPM2B_ID,
@@ -25,7 +27,7 @@ class AppOfflineModelsTest {
                 ids,
             )
         } else {
-            assertEquals(listOf("asr", "tts", "intent"), ids)
+            assertEquals(listOf("asr", "tts", "intent", EmbedModelLayout.ID), ids)
             assertFalse(ids.contains(ChatModelLayout.ID))
             assertFalse(ids.contains(ChatModelLayout.MINICPM1B_ID))
             assertFalse(ids.contains(ChatModelLayout.MINICPM2B_ID))
