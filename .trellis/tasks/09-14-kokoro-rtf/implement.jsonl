@@ -1,1 +1,4 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "TTS eval JSONL; JVM must not call sherpa; VITS catalog unchanged"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "CI skip missing eval/tts/kokoro-rtf.jsonl; fixture is not Rule B"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "KokoroEvalReport toString counts/rates only, never utterance"}
+{"file": "PRD.md", "reason": "Rule B single-thread RTF 1.0 and naturalness"}

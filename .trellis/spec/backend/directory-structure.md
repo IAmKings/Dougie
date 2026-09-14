@@ -86,6 +86,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   CharacterErrorRate.kt
   AsrEval.kt
   IntentEval.kt (loadItems/report parser; loadJsonl/ruleEReport/timedClassify)
+  KokoroEval.kt (loadJsonl/report/rtf; ruleBPassed; no sherpa)
   FullEvalSet.kt
   ScreenFrame.kt
   ScreenCapturePort.kt
@@ -103,6 +104,7 @@ core/tool/src/test/resources/eval/
   asr-manifest-sample.jsonl
   intent-gold.json
   intent-predictions-sample.jsonl
+  kokoro-rtf-sample.jsonl
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -278,7 +280,7 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Problem**: System voices with `isNetworkConnectionRequired` egress text. Checking in VITS (~116MB) belongs in a later slice, not this contract.
 
-**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. App default offline is `SherpaTtsEngine` on `filesDir/models/tts/{model.onnx,tokens.txt,lexicon.txt}` plus `SherpaJni.isAvailable()`. Do not class-load `OfflineTts` until the library loads (no companion `loadLibrary`). Trimmed `Tts.kt` is Apache-2.0 from sherpa-onnx v1.13.4. VITS ONNX stays out of git. Success JSON is `ok` + `backend` only.
+**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. App default offline is `SherpaTtsEngine` on `filesDir/models/tts/{model.onnx,tokens.txt,lexicon.txt}` plus `SherpaJni.isAvailable()`. Do not class-load `OfflineTts` until the library loads (no companion `loadLibrary`). Trimmed `Tts.kt` is Apache-2.0 from sherpa-onnx v1.13.4. VITS ONNX stays out of git. Success JSON is `ok` + `backend` only. Official catalog `tts` stays `vits-zh-hf-fanchen-C`; do not add a Kokoro offer, change `SherpaJni` VITS `numThreads` (2–4, not 1), or show 「Kokoro 已达标」. Rule B is `KokoroEval` JSONL, not product TTS.
 
 ## Don't: Commit GGUF or silent-cloud intent
 
@@ -345,13 +347,19 @@ Idle Default backfill; ALTER v2; Fake vectors for synonym AC; Xenova BGE int8 + 
 
 **Problem**: Rule D wants ≥500 wav clips and CER ≤ 5%. Checking in audio, ONNX, or GGUF blows git and CI.
 
-**Instead**: JVM `CharacterErrorRate` + `AsrEval` + `IntentEval` run on tiny text gold / sample JSONL under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`, `eval/asr/manifest.jsonl`, and `eval/intent/predictions.jsonl`) is gitignored; `FullEvalSet.isPresent()` is wav presence; `labeledCount` reads the ASR manifest. Missing dir/manifest/predictions skips CI. `AsrEval` does not read wav or call sherpa/ORT. `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing `vadOk` on any scored row cannot pass. Fixture `passed` / sample jsonl is not a claim that the 500-clip set is done.
+**Instead**: JVM `CharacterErrorRate` + `AsrEval` + `IntentEval` + `KokoroEval` run on tiny text gold / sample JSONL under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`, `eval/asr/manifest.jsonl`, `eval/intent/predictions.jsonl`, and `eval/tts/kokoro-rtf.jsonl`) is gitignored; `FullEvalSet.isPresent()` is wav presence; `labeledCount` reads the ASR manifest. Missing dir/manifest/predictions/kokoro-rtf skips CI. `AsrEval` does not read wav or call sherpa/ORT. `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing `vadOk` on any scored row cannot pass. Fixture `passed` / sample jsonl is not a claim that the 500-clip set is done.
 
 ## Don't: Claim Rule E from parser gold or commit MiniRBT predictions
 
 **Problem**: Rule E wants ≥88 held-out rows, ≥10 classes, accuracy ≥ 90%, and device classify P95 ≤ 500ms. Checking in ONNX or treating canned `intent-gold.json` `passed` as Rule E done hides a missing forward pass.
 
 **Instead**: `IntentEval.loadJsonl` / `ruleEReport` / `timedClassify` on JSONL. JVM must not call ORT/JNI; tests inject `FakeIntentEngine`. Missing `eval/intent/predictions.jsonl` skips CI (`:core:tool:test` still passes). `ruleEPassed` = nClasses≥10 ∧ nLabeled≥88 ∧ nScored≥88 ∧ accuracy≥0.90 ∧ latencyApplied ∧ p95Ms≤500 (nearest-rank `sorted[ceil(0.95 * n) - 1]`). Missing `predictedIntent` is unscored; any scored row without `latencyMs` → `latencyApplied=false` → cannot pass. Parser `loadItems` / `report` / `IntentEvalReport.passed` stay canned `modelJson` — fixture `passed` is not Rule E. `FullEvalSet` stays ASR-only. Testdata `intent-predictions-sample.jsonl` is a few lines.
+
+## Don't: Claim Rule B from sample JSONL, ship Kokoro catalog, or call sherpa from JVM eval
+
+**Problem**: Rule B wants target-device single-thread Kokoro RTF ≤ 1.0 plus naturalness review. Checking in ~310MB ONNX, treating the 3-line sample as done, filling `numThreads` from live VITS 2–4 threads, or calling sherpa from `:core:tool` hides a missing measurement.
+
+**Instead**: `KokoroEval.loadJsonl` / `report` / `rtf` on JSONL. JVM must not call sherpa/ORT or read PCM. Tests must not read repo-root `eval/tts/kokoro-rtf.jsonl`. Missing file skips CI (`:core:tool:test` still passes). `ruleBPassed` = nLabeled≥5 ∧ nScored≥5 ∧ p95Rtf≤1.0 ∧ threadsApplied ∧ naturalnessApplied (nearest-rank `sorted[ceil(0.95 * n) - 1]`). scored = `synthMs!=null && audioDurationMs!=null && audioDurationMs>0 && synthMs>=0`; rtf = synthMs/audioDurationMs. Missing `numThreads` or `numThreads!=1` → `threadsApplied=false`. Missing or false `naturalnessOk` → `naturalnessApplied=false`. Testdata `kokoro-rtf-sample.jsonl` is a few lines — not Rule B. `OfficialModelCatalog` stays VITS (`tts` = vits-zh-hf-fanchen-C). Do not change `SherpaJni` VITS wiring/thread count, `speech_output`, or settings 「Kokoro 已达标」. `FullEvalSet` stays ASR-only.
 
 ## Don't: AgentTool with attacker-controlled download URL
 
