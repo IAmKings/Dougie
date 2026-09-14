@@ -1611,3 +1611,37 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Next Steps
 
 - Phase 5 余项：ASR 规则 D、Kokoro RTF、流式识别回显
+
+
+## Session 70: Chat 按住说话流式回显
+
+**Date**: 2026-09-14
+**Task**: Chat 按住说话流式回显
+**Branch**: `master`
+
+### Summary
+
+按住 overlay 用现有 Paraformer 显示部分字；松手才追加草稿，不自动发送。
+
+### Main Changes
+
+- HoldSpeechRecorder.snapshot 拷贝 PCM；400ms Default 重解 OfflineRecognizer
+- voiceOverlayStatus 有字替换正在录音；终稿失败不再卡识别中
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5a8d672` | (see git log) |
+
+### Testing
+
+- [OK] :core:tool:test :feature:chat:testDebugUnitTest :app:checkChannelLeak；真机按住出字松手进草稿
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Phase 5 余项：ASR 规则 D、Kokoro RTF
