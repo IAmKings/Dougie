@@ -84,6 +84,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   EmbedModelLayout.kt
   BundledModelSeed.kt
   CharacterErrorRate.kt
+  AsrEval.kt
   IntentEval.kt
   FullEvalSet.kt
   ScreenFrame.kt
@@ -99,6 +100,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   FakeJsEvalPort.kt
 core/tool/src/test/resources/eval/
   asr-gold.json
+  asr-manifest-sample.jsonl
   intent-gold.json
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
@@ -342,7 +344,7 @@ Idle Default backfill; ALTER v2; Fake vectors for synonym AC; Xenova BGE int8 + 
 
 **Problem**: Rule D wants ≥500 wav clips and CER ≤ 5%. Checking in audio, ONNX, or GGUF blows git and CI.
 
-**Instead**: JVM `CharacterErrorRate` + `IntentEval` run on tiny text gold under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`) is gitignored; `FullEvalSet.isPresent()` skips when missing. Do not call sherpa or ORT from this path. Fixture `passed` is not a claim that the 500-clip set is done.
+**Instead**: JVM `CharacterErrorRate` + `AsrEval` + `IntentEval` run on tiny text gold / sample JSONL under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav` and `eval/asr/manifest.jsonl`) is gitignored; `FullEvalSet.isPresent()` is wav presence; `labeledCount` reads the manifest. Missing dir/manifest skips CI. `AsrEval` does not read wav or call sherpa/ORT. `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing `vadOk` on any scored row cannot pass. Fixture `passed` / sample jsonl is not a claim that the 500-clip set is done.
 
 ## Don't: AgentTool with attacker-controlled download URL
 

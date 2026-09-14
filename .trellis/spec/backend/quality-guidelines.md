@@ -42,7 +42,7 @@
 
 There are no Compose UI / Espresso tests and no jacoco threshold. Do not add a CI lint job as a substitute for the module tests above.
 
-Full-eval ASR (`eval/asr/*.wav`, CER ≤ 5%) is gitignored. `FullEvalSet.isPresent()` skips when missing; fixture `passed` is not a claim that Rule D is done.
+Full-eval ASR (`eval/asr/*.wav` + `manifest.jsonl`) is gitignored. `FullEvalSet.isPresent()` is wav presence (skip when missing); `labeledCount` is manifest rows. `AsrEval.report` `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing VAD cannot pass. Do not call sherpa/ORT from this JVM path. Fixture `passed` / `asr-manifest-sample.jsonl` is not Rule D done (`AsrEvalTest`, `FullEvalSetTest`).
 
 ## Code Review Checklist
 

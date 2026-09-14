@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "CI must skip missing eval set; no wav in git"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "CharacterErrorRate / FullEvalSet contracts"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not Logcat ASR transcripts from eval"}
