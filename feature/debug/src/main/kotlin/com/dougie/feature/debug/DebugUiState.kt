@@ -19,9 +19,13 @@ data class DebugAuditRow(
     val createdAt: Long,
 )
 
+const val RULE_E_ACTION_LABEL = "评测意图规则 E"
+
 data class DebugUiState(
     val task: DebugTaskSnapshot? = null,
     val auditRows: List<DebugAuditRow> = emptyList(),
+    val ruleEBusy: Boolean = false,
+    val ruleEMessage: String? = null,
 )
 
 fun AgentTask.toDebugTaskSnapshot(): DebugTaskSnapshot = DebugTaskSnapshot(

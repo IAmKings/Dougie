@@ -85,7 +85,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   BundledModelSeed.kt
   CharacterErrorRate.kt
   AsrEval.kt
-  IntentEval.kt (loadItems/report parser; loadJsonl/ruleEReport/timedClassify)
+  IntentEval.kt (loadItems/report parser; loadJsonl/ruleEReport/timedClassify; loadHeldout/runForward/writeJsonl)
   KokoroEval.kt (loadJsonl/report/rtf; ruleBPassed; no sherpa)
   FullEvalSet.kt
   ScreenFrame.kt
@@ -99,6 +99,8 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   IsolatedJsGuard.kt
   JsEvalTool.kt
   FakeJsEvalPort.kt
+core/tool/src/main/resources/intent-corpus/
+  heldout.jsonl
 core/tool/src/test/resources/eval/
   asr-gold.json
   asr-manifest-sample.jsonl
@@ -173,7 +175,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`, v2 `embedding BLOB`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
 | `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |
-| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, `HybridMemoryStore(RoomMemoryStore, AndroidEmbeddingPort)`, DougieTaskStores, recoverInterrupted, `Dispatchers.Default`; sideload `ChannelHooks.seedBundledModels` | Business rules that belong in core |
+| `:app` | Wires OkHttp, Gateway, tools, PolicyEngine, PreferenceStore, `HybridMemoryStore(RoomMemoryStore, AndroidEmbeddingPort)`, DougieTaskStores, recoverInterrupted, `Dispatchers.Default`; sideload `ChannelHooks.seedBundledModels`; `AppIntentRuleEEval` (OnnxIntentEngine + IntentOrtJni on Default, `filesDir/eval/intent/predictions.jsonl`) | Business rules that belong in core |
 | `:cli` (JVM application, not in APK) | `com.dougie.cli` Agent Console: kotlinx-cli `--log-only`, mosaic **0.14.0** TTY UI, `FakeLlmProvider` + `FakeBatteryTool` via `:core:runtime` | `com.android.*` plugin, Play/Sideload APK, `:tool:*` / `:data:*`, mosaic **0.18.0** |
 
 New JVM tests for the loop and gateway go in `:core:runtime` `src/test`. Provider HTTP tests go in `:core:llm` `src/test`. CLI snapshot / flag tests go in `:cli` `src/test`.
@@ -353,7 +355,7 @@ Idle Default backfill; ALTER v2; Fake vectors for synonym AC; Xenova BGE int8 + 
 
 **Problem**: Rule E wants ≥88 held-out rows, ≥10 classes, accuracy ≥ 90%, and device classify P95 ≤ 500ms. Checking in ONNX or treating canned `intent-gold.json` `passed` as Rule E done hides a missing forward pass.
 
-**Instead**: `IntentEval.loadJsonl` / `ruleEReport` / `timedClassify` on JSONL. JVM must not call ORT/JNI; tests inject `FakeIntentEngine`. Missing `eval/intent/predictions.jsonl` skips CI (`:core:tool:test` still passes). `ruleEPassed` = nClasses≥10 ∧ nLabeled≥88 ∧ nScored≥88 ∧ accuracy≥0.90 ∧ latencyApplied ∧ p95Ms≤500 (nearest-rank `sorted[ceil(0.95 * n) - 1]`). Missing `predictedIntent` is unscored; any scored row without `latencyMs` → `latencyApplied=false` → cannot pass. Parser `loadItems` / `report` / `IntentEvalReport.passed` stay canned `modelJson` — fixture `passed` is not Rule E. `FullEvalSet` stays ASR-only. Testdata `intent-predictions-sample.jsonl` is a few lines.
+**Instead**: `IntentEval.loadJsonl` / `ruleEReport` / `timedClassify` on JSONL, plus device collection `loadHeldout` / `runForward` / `writeJsonl`. Held-out lives in `:core:tool` **main** `intent-corpus/heldout.jsonl` (same 88 lines as test / `scripts/intent/`). JVM must not call ORT/JNI; tests inject a Fake/`GoldMap` engine (`runForward` 88 scored). Device path is `:app` `AppIntentRuleEEval` with the same `OnnxIntentEngine` + `IntentOrtJni` seam as `AppOfflineModelProbe`, on `Dispatchers.Default`, writing `filesDir/eval/intent/predictions.jsonl`. Missing pack/engine returns `INTENT_MODEL_MISSING` / `INTENT_ENGINE_NOT_READY` and does not write. Debug injects `suspend () -> String` and shows `IntentRuleEReport.toString()` plus that relative path — never utterance, intent labels, or 「已达标」. Missing repo-root `eval/intent/predictions.jsonl` skips CI (`:core:tool:test` still passes). `ruleEPassed` = nClasses≥10 ∧ nLabeled≥88 ∧ nScored≥88 ∧ accuracy≥0.90 ∧ latencyApplied ∧ p95Ms≤500 (nearest-rank `sorted[ceil(0.95 * n) - 1]`). Missing `predictedIntent` is unscored; any scored row without `latencyMs` → `latencyApplied=false` → cannot pass. Parser `loadItems` / `report` / `IntentEvalReport.passed` stay canned `modelJson` — fixture `passed` is not Rule E. `FullEvalSet` stays ASR-only. Testdata `intent-predictions-sample.jsonl` is a few lines. Do not commit device jsonl or ONNX.
 
 ## Don't: Claim Rule B from sample JSONL, ship Kokoro catalog, or call sherpa from JVM eval
 

@@ -16,9 +16,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ fun DebugRoute(
     DebugScreen(
         uiState = uiState,
         onBack = onBack,
+        onRunRuleE = viewModel::runRuleE,
     )
 }
 
@@ -51,6 +54,7 @@ fun DebugRoute(
 fun DebugScreen(
     uiState: DebugUiState,
     onBack: () -> Unit,
+    onRunRuleE: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -85,6 +89,32 @@ fun DebugScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(
+                        onClick = onRunRuleE,
+                        enabled = !uiState.ruleEBusy,
+                        colors = ButtonDefaults.textButtonColors(contentColor = DougieColors.Primary),
+                    ) {
+                        Text(RULE_E_ACTION_LABEL)
+                    }
+                    val message = uiState.ruleEMessage
+                    if (message != null) {
+                        Text(
+                            text = message,
+                            color = DougieColors.OnSurfaceVariant,
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+                                .background(DougieColors.SurfaceContainerLowest)
+                                .padding(16.dp),
+                        )
+                    }
+                }
+            }
             item {
                 Text(
                     text = "当前任务",

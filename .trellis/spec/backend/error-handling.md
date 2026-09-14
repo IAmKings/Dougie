@@ -49,8 +49,8 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | TTS network voice | System voice `isNetworkConnectionRequired` | `系统语音需要联网，已拒绝播报。` |
 | TTS speak failed | Engine init/speak failed | `语音播报失败，请稍后重试。` |
 | Chat final-answer autoplay unready / failed | Host `speakFinal` after `COMPLETED` (`speakReply`); offline TTS missing or speak failed. Task stays `COMPLETED`; attachment line only. Never system TTS for the official reply. | `语音回复暂不可用` |
-| Intent model missing | `filesDir/models/intent/{model.onnx,tokenizer.json,labels.txt}` absent (historical `model.gguf` is not a layout) | `离线意图模型尚未就绪，无法分类。` |
-| Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false` | `离线意图引擎尚未接入，无法分类。` |
+| Intent model missing | `filesDir/models/intent/{model.onnx,tokenizer.json,labels.txt}` absent (historical `model.gguf` is not a layout). Debug Rule E eval (`AppIntentRuleEEval`) uses the same copy and does not write `filesDir/eval/intent/predictions.jsonl`. | `离线意图模型尚未就绪，无法分类。` |
+| Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false`. Debug Rule E eval uses the same copy and does not write predictions jsonl. | `离线意图引擎尚未接入，无法分类。` |
 | Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |
 | Intent infer failed | Native logits empty or ORT session fail | `离线意图推理失败，请稍后重试。` Probe still succeeds on low confidence. |
 | Model download not confirmed / not https | `userConfirmed=false` or non-https URL | `未确认下载，已跳过获取离线模型。` |

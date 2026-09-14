@@ -309,6 +309,7 @@ class MainActivity : ComponentActivity() {
                             factory = DebugViewModel.Factory(
                                 app.taskManager,
                                 app.taskStores.auditLog,
+                                runRuleEEval = { AppIntentRuleEEval.run(app) },
                             ),
                         )
                         DebugRoute(

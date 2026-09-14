@@ -12,7 +12,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 
 - Running `LoopEngine` / OkHttp / `BatteryManager` / `CalendarContract` / `ClipboardManager` from a feature composable. Chat collects `TaskManager.task`; tools stay in `:core:tool` + `:tool:system`.
 - A second `mutableStateOf(TaskStatus)` in a ViewModel. Map from `AgentTask` (see `state-management.md`).
-- Showing prompts, API keys, `resultJson`, tool args, transcripts, or `snapshot_json` on Debug. `DebugUiStateTest` asserts those field names are absent.
+- Showing prompts, API keys, `resultJson`, tool args, transcripts, or `snapshot_json` on Debug. `DebugUiStateTest` asserts those field names are absent. Rule E chrome is **评测意图规则 E**; `ruleEMessage` is counts/rates + relative path (or `INTENT_*` copy), never utterance, intent labels, or 「已达标」.
 - Auto-scanning the SAF model tree when Settings opens; auto-download without confirm; treating intent ONNX as a chat LLM (`localLlmReady` must stay false until a local **chat** model exists on sideload; Play `ChannelHooks.localChatReady` is always false).
 - Using `Noob-Dougie` as the launcher or as the default Chat avatar when a provider is usable. Mapping is `intelligenceMark(...)` in `:feature:chat`.
 - English-only user chrome, “KISS”, or a lone “正在思考” without a loop number (`PRD` §11.1).
@@ -34,7 +34,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 | `:feature:chat` | `ChatUiStateTest` (incl. `voiceOverlayStatus` partial vs 正在录音, `insertVoiceTranscript` at selection), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
 | `:feature:history` | `HistoryItemTest` | `./gradlew :feature:history:testDebugUnitTest` |
-| `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak) | `./gradlew :feature:debug:testDebugUnitTest` |
+| `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak; Rule E copy 评测意图规则 E, no 已达标) | `./gradlew :feature:debug:testDebugUnitTest` |
 | `:app` Tile / notice / leak | `ChatLaunchTest`, `TaskNoticeTest`, `PlayShortcutCopyTest`, `OverlayCopyTest`, `ChatAttachmentSessionTest`, `ShortcutScreenPinTest`, `AppBackNavTest`; no Compose UI test for Tile, shade, overlay, or bubbles | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
 
 `:feature:memory` and `:feature:permissions` currently have **no** unit tests. Do not invent Compose UI tests as a bootstrap requirement. If a mapping function is added there, follow the chat/history style (JUnit on the mapper).

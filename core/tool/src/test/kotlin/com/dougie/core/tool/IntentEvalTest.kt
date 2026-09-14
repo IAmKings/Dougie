@@ -1,5 +1,7 @@
 package com.dougie.core.tool
 
+import com.dougie.core.model.AgentException
+import com.dougie.core.model.UserFacingErrors
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -10,6 +12,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class IntentEvalTest {
     @Test
@@ -229,6 +232,87 @@ class IntentEvalTest {
         assertEquals(listOf("还剩多少电"), engine.classified)
     }
 
+    @Test
+    fun mainAndTestHeldoutHaveEightyEightMatchingLines() {
+        val main = File("src/main/resources/intent-corpus/heldout.jsonl")
+        val test = File("src/test/resources/intent-corpus/heldout.jsonl")
+        assertTrue(main.isFile)
+        assertTrue(test.isFile)
+        val mainLines = main.readLines().map { it.trim() }.filter { it.isNotEmpty() }
+        val testLines = test.readLines().map { it.trim() }.filter { it.isNotEmpty() }
+        assertEquals(88, mainLines.size)
+        assertEquals(mainLines, testLines)
+    }
+
+    @Test
+    fun loadHeldoutAssignsPaddedIdsWithoutPredictions() {
+        val items = IntentEval.loadHeldout()
+        assertEquals(88, items.size)
+        assertEquals("h001", items.first().id)
+        assertEquals("h088", items.last().id)
+        assertEquals(11, items.map { it.goldIntent }.toSet().size)
+        assertTrue(items.all { it.predictedIntent == null && it.latencyMs == null })
+    }
+
+    @Test
+    fun runForwardScoresEightyEightHeldoutWithFakeEngine() = runTest {
+        val gold = IntentEval.loadHeldout()
+        val byText = gold.associate { it.text to it.goldIntent }
+        val engine = GoldMapEngine(byText)
+        val (items, report) = IntentEval.runForward(engine, gold)
+        assertEquals(88, items.size)
+        assertEquals(88, report.nScored)
+        assertEquals(0, report.nUnscored)
+        assertEquals(11, report.nClasses)
+        assertEquals(1.0, report.accuracy, 0.0)
+        assertTrue(report.latencyApplied)
+        assertTrue(report.ruleEPassed)
+        val dump = report.toString()
+        assertFalse(dump.contains("现在几点了"))
+        assertFalse(dump.contains("query_time"))
+        val tmp = File.createTempFile("intent-pred", ".jsonl")
+        tmp.deleteOnExit()
+        IntentEval.writeJsonl(tmp, items)
+        val roundtrip = IntentEval.loadJsonl(tmp.readText())
+        assertEquals(88, roundtrip.size)
+        assertEquals(items, roundtrip)
+        assertTrue(roundtrip.all { it.predictedIntent != null && it.latencyMs != null })
+    }
+
+    @Test
+    fun runForwardLeavesFailuresUnscored() = runTest {
+        val gold = IntentEval.loadHeldout()
+        val engine = object : IntentEngine {
+            override fun isReady(): Boolean = true
+            override suspend fun classify(text: String): IntentHit {
+                throw AgentException(UserFacingErrors.INTENT_FAILED)
+            }
+        }
+        val (items, report) = IntentEval.runForward(engine, gold)
+        assertEquals(88, report.nLabeled)
+        assertEquals(0, report.nScored)
+        assertEquals(88, report.nUnscored)
+        assertTrue(items.all { it.predictedIntent == null && it.latencyMs == null })
+        assertFalse(report.ruleEPassed)
+        assertFalse(report.toString().contains("现在几点了"))
+    }
+
+    @Test
+    fun writeJsonlOmitsUnscoredFieldsAndRoundtrips() {
+        val items = listOf(
+            IntentPredItem("h001", "现在几点了", "query_time", "query_time", 12L),
+            IntentPredItem("h002", "讲个冷笑话", "unknown"),
+        )
+        val tmp = File.createTempFile("intent-unscored", ".jsonl")
+        tmp.deleteOnExit()
+        IntentEval.writeJsonl(tmp, items)
+        val raw = tmp.readText()
+        val second = raw.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()[1]
+        assertFalse(second.contains("predictedIntent"))
+        assertFalse(second.contains("latencyMs"))
+        assertEquals(items, IntentEval.loadJsonl(raw))
+    }
+
     private fun loadGold(): String =
         javaClass.getResourceAsStream("/eval/intent-gold.json")!!.bufferedReader().use { it.readText() }
 
@@ -264,6 +348,15 @@ class IntentEvalTest {
             val slow = i >= 88 - slowCount
             item.copy(latencyMs = if (slow) slowMs else IntentEval.P95_LIMIT_MS)
         }
+
+    private class GoldMapEngine(private val goldByText: Map<String, String>) : IntentEngine {
+        override fun isReady(): Boolean = true
+        override suspend fun classify(text: String): IntentHit = IntentHit(
+            intent = goldByText.getValue(text),
+            route = "eval",
+            confidence = 1.0,
+        )
+    }
 
     companion object {
         private val GOLD_LABELS = listOf(

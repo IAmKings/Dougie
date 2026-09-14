@@ -8,6 +8,7 @@ import com.dougie.core.runtime.AuditEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DebugUiStateTest {
@@ -95,5 +96,23 @@ class DebugUiStateTest {
         assertFalse(names.any { it.contains("finalAnswer", ignoreCase = true) })
         assertFalse(names.any { it.contains("toolTrace", ignoreCase = true) })
         assertNull(DebugTaskSnapshot::class.java.declaredFields.find { it.name == "input" })
+        val fields = DebugUiState::class.java.declaredFields.map { it.name }
+        assertTrue(fields.any { it == "ruleEMessage" })
+        assertTrue(fields.any { it == "ruleEBusy" })
+    }
+
+    @Test
+    fun ruleECopyNeverClaimsPassed() {
+        assertEquals("评测意图规则 E", RULE_E_ACTION_LABEL)
+        assertFalse(RULE_E_ACTION_LABEL.contains("已达标"))
+        val state = DebugUiState(
+            ruleEBusy = false,
+            ruleEMessage = "intent nLabeled=88 nScored=88 nUnscored=0 nClasses=11 " +
+                "accuracy=1.0 p95Ms=10 latencyApplied=true ruleEPassed=true",
+        )
+        assertFalse(state.toString().contains("已达标"))
+        assertFalse(state.ruleEMessage!!.contains("已达标"))
+        assertNull(DebugUiState().ruleEMessage)
+        assertFalse(DebugUiState().ruleEBusy)
     }
 }

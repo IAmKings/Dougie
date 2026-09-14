@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Rule E report and Debug UI must not show utterances or labels"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": ":feature:debug remains runtime/model only"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JVM tests for runForward; checkChannelLeak; no eval jsonl in git"}
