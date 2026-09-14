@@ -1720,3 +1720,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 74: Kokoro 规则 B runner
+
+**Date**: 2026-09-15
+**Task**: Kokoro 规则 B runner
+**Branch**: `master`
+
+### Summary
+
+落地 KokoroEval JSONL：≥5 条 scored、单线程、P95 RTF≤1.0、自然度全 true 才 ruleBPassed。缺 eval/tts/kokoro-rtf.jsonl 时 CI 跳过。不改 VITS catalog / SherpaJni。归档 09-14-kokoro-rtf 与父任务 09-14-phase-5-calibration。Phase 5 三刀 runner 齐，均未宣称 ASR/意图/Kokoro 已达标。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `decb32f` | (see git log) |
+
+### Status
+
+[OK] **Completed**
