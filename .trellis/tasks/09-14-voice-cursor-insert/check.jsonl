@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Voice insert must use TextField selection, not string end"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "insertVoiceTranscript JVM cases"}

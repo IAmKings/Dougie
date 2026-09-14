@@ -84,6 +84,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -99,8 +100,8 @@ fun ChatRoute(
     viewModel: ChatViewModel,
     allowCloud: Boolean = false,
     intelligenceMark: IntelligenceMark = IntelligenceMark.NOOB,
-    composerText: String = "",
-    onComposerChange: (String) -> Unit = {},
+    composerValue: TextFieldValue = TextFieldValue(),
+    onComposerChange: (TextFieldValue) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
@@ -151,7 +152,7 @@ fun ChatRoute(
         },
         allowCloud = allowCloud,
         intelligenceMark = intelligenceMark,
-        composerText = composerText,
+        composerValue = composerValue,
         onComposerChange = onComposerChange,
         onOpenSettings = onOpenSettings,
         onOpenMemory = onOpenMemory,
@@ -194,8 +195,8 @@ fun ChatScreen(
     onOpenMemory: () -> Unit = {},
     onOpenPermissions: () -> Unit = {},
     onOpenHistory: () -> Unit = {},
-    composerText: String = "",
-    onComposerChange: (String) -> Unit = {},
+    composerValue: TextFieldValue = TextFieldValue(),
+    onComposerChange: (TextFieldValue) -> Unit = {},
     attachments: List<ChatAttachmentUi> = emptyList(),
     attachedError: String? = null,
     attaching: Boolean = false,
@@ -264,8 +265,8 @@ fun ChatScreen(
         }
         ChatInputBar(
             enabled = uiState.inputEnabled,
-            text = composerText,
-            onTextChange = onComposerChange,
+            value = composerValue,
+            onValueChange = onComposerChange,
             onSend = onSend,
             attachments = attachments,
             attachedError = attachedError,
@@ -869,8 +870,8 @@ private fun ConfirmActionButton(
 @Composable
 private fun ChatInputBar(
     enabled: Boolean,
-    text: String,
-    onTextChange: (String) -> Unit,
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
     onSend: (String) -> Unit,
     attachments: List<ChatAttachmentUi> = emptyList(),
     attachedError: String? = null,
@@ -977,8 +978,8 @@ private fun ChatInputBar(
                 }
             }
             TextField(
-                value = text,
-                onValueChange = onTextChange,
+                value = value,
+                onValueChange = onValueChange,
                 enabled = enabled,
                 placeholder = { Text("给 Dougie 发消息...") },
                 modifier = Modifier.fillMaxWidth(),
@@ -1113,13 +1114,13 @@ private fun ChatInputBar(
                             onStopReply()
                             return@IconButton
                         }
-                        val trimmed = text.trim()
+                        val trimmed = value.text.trim()
                         if (trimmed.isNotEmpty()) {
                             onSend(trimmed)
-                            onTextChange("")
+                            onValueChange(TextFieldValue())
                         }
                     },
-                    enabled = speakingReply || (enabled && text.isNotBlank()),
+                    enabled = speakingReply || (enabled && value.text.isNotBlank()),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(DougieColors.Primary),

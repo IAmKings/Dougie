@@ -66,11 +66,32 @@ fun showAgentReplySpeak(
 fun agentReplySpeakLabel(speakingReply: Boolean): String =
     if (speakingReply) "停止播报" else "播报"
 
-fun appendVoiceTranscript(draft: String, spoken: String): String {
+data class VoiceInsert(
+    val text: String,
+    val cursor: Int,
+)
+
+fun insertVoiceTranscript(
+    draft: String,
+    start: Int,
+    end: Int,
+    spoken: String,
+): VoiceInsert {
+    val from = start.coerceIn(0, draft.length)
+    val to = end.coerceIn(from, draft.length)
     val piece = spoken.trim()
-    if (piece.isEmpty()) return draft
-    val base = draft.trimEnd()
-    return if (base.isEmpty()) piece else "$base $piece"
+    if (piece.isEmpty()) return VoiceInsert(draft, to)
+    val left = draft.substring(0, from)
+    val right = draft.substring(to)
+    val prefix = if (left.isNotEmpty() && !left.last().isWhitespace()) " " else ""
+    val suffix = if (right.isNotEmpty() && !right.first().isWhitespace()) " " else ""
+    return VoiceInsert(
+        text = left + prefix + piece + suffix + right,
+        cursor = left.length + prefix.length + piece.length,
+    )
 }
+
+fun appendVoiceTranscript(draft: String, spoken: String): String =
+    insertVoiceTranscript(draft, draft.length, draft.length, spoken).text
 
 const val ATTACHMENT_MAX = AttachmentLimits.MAX

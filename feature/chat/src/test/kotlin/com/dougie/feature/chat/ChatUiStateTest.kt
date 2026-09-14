@@ -318,6 +318,29 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun insertVoiceTranscriptUsesSelectionAndLeavesCursorAfterSpoken() {
+        val empty = insertVoiceTranscript("", 0, 0, " 查电量 ")
+        assertEquals("查电量", empty.text)
+        assertEquals(3, empty.cursor)
+
+        val atEnd = insertVoiceTranscript("查电量", 3, 3, "现在几点")
+        assertEquals("查电量 现在几点", atEnd.text)
+        assertEquals("查电量 现在几点".length, atEnd.cursor)
+
+        val middle = insertVoiceTranscript("你好世界", 2, 2, "啊")
+        assertEquals("你好 啊 世界", middle.text)
+        assertEquals("你好 啊".length, middle.cursor)
+
+        val replace = insertVoiceTranscript("查电量 现在几点", 0, 3, "看日历")
+        assertEquals("看日历 现在几点", replace.text)
+        assertEquals("看日历".length, replace.cursor)
+
+        val blank = insertVoiceTranscript("已有", 1, 1, "  ")
+        assertEquals("已有", blank.text)
+        assertEquals(1, blank.cursor)
+    }
+
+    @Test
     fun voiceOverlayStatusMatchesRecordingAndLocalRecognizeCopy() {
         assertEquals("正在录音", voiceOverlayStatus(holding = true, transcribing = false))
         assertEquals("现在几点", voiceOverlayStatus(holding = true, transcribing = false, partial = " 现在几点 "))

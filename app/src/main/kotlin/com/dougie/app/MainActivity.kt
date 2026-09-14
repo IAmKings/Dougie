@@ -15,6 +15,8 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.FileProvider
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
@@ -43,7 +45,7 @@ import com.dougie.feature.chat.ChatViewModel
 import com.dougie.feature.chat.DougieColors
 import com.dougie.feature.chat.intelligenceMark
 import com.dougie.core.tool.SpeechHold
-import com.dougie.feature.chat.appendVoiceTranscript
+import com.dougie.feature.chat.insertVoiceTranscript
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,7 +66,7 @@ import com.dougie.feature.settings.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
-    private val chatDraftState = mutableStateOf("")
+    private val chatDraftState = mutableStateOf(TextFieldValue())
     private val attachmentsState = mutableStateOf<List<ChatAttachmentUi>>(emptyList())
     private val attachErrorState = mutableStateOf<String?>(null)
     private val attachingState = mutableStateOf(false)
@@ -108,7 +110,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        savedInstanceState?.getString(KEY_CHAT_DRAFT)?.let { chatDraftState.value = it }
+        savedInstanceState?.getString(KEY_CHAT_DRAFT)?.let { chatDraftState.value = draftAtEnd(it) }
         voiceUsedThisDraftState.value =
             savedInstanceState?.getBoolean(KEY_VOICE_USED_THIS_DRAFT, false) == true
         if (savedInstanceState == null) {
@@ -197,7 +199,7 @@ class MainActivity : ComponentActivity() {
                                     ?.takeIf { it.status == TaskStatus.FAILED }
                                     ?.lastError,
                             ),
-                            composerText = chatDraft,
+                            composerValue = chatDraft,
                             onComposerChange = { chatDraft = it },
                             attachments = attachments,
                             attachedError = attachError,
@@ -371,7 +373,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putString(KEY_CHAT_DRAFT, chatDraftState.value)
+        outState.putString(KEY_CHAT_DRAFT, chatDraftState.value.text)
         outState.putBoolean(KEY_VOICE_USED_THIS_DRAFT, voiceUsedThisDraftState.value)
     }
 
@@ -558,7 +560,14 @@ class MainActivity : ComponentActivity() {
             voiceTranscribingState.value = false
             result.fold(
                 onSuccess = { spoken ->
-                    chatDraftState.value = appendVoiceTranscript(chatDraftState.value, spoken)
+                    val current = chatDraftState.value
+                    val inserted = insertVoiceTranscript(
+                        current.text,
+                        current.selection.min,
+                        current.selection.max,
+                        spoken,
+                    )
+                    chatDraftState.value = TextFieldValue(inserted.text, TextRange(inserted.cursor))
                     voiceUsedThisDraftState.value = true
                     attachErrorState.value = null
                 },
@@ -750,8 +759,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applyScheduleDraft(id: String) {
-        ScheduleStore(filesDir).draftForNotificationTap(id)?.let { chatDraftState.value = it }
+        ScheduleStore(filesDir).draftForNotificationTap(id)?.let { chatDraftState.value = draftAtEnd(it) }
     }
+
+    private fun draftAtEnd(text: String): TextFieldValue =
+        TextFieldValue(text, TextRange(text.length))
 
     companion object {
         private const val KEY_CHAT_DRAFT = "dougie.chat.draft"
