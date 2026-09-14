@@ -1645,3 +1645,36 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Next Steps
 
 - Phase 5 余项：ASR 规则 D、Kokoro RTF
+
+
+## Session 71: 语音插入到输入框光标处
+
+**Date**: 2026-09-14
+**Task**: 语音插入到输入框光标处
+**Branch**: `master`
+
+### Summary
+
+松手识别插在当前光标/选区，光标跟在新字后；失败不改草稿。
+
+### Main Changes
+
+- insertVoiceTranscript + TextFieldValue 选区 hoist 到 MainActivity
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6772a98` | (see git log) |
+
+### Testing
+
+- [OK] :feature:chat:testDebugUnitTest；真机空框/中间/末尾光标
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Phase 5 余项：ASR 规则 D、Kokoro RTF
