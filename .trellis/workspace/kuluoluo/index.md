@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 71
+- **Total Sessions**: 72
 - **Last Active**: 2026-09-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1680 | Active |
+| `journal-1.md` | ~1701 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 72 | 2026-09-14 | ASR 规则 D runner | `adeb121` | `master` |
 | 71 | 2026-09-14 | 语音插入到输入框光标处 | `6772a98` | `master` |
 | 70 | 2026-09-14 | Chat 按住说话流式回显 | `5a8d672` | `master` |
 | 69 | 2026-09-14 | 发布语义记忆句向量包 | `17d2545` | `master` |

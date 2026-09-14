@@ -1678,3 +1678,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Next Steps
 
 - Phase 5 余项：ASR 规则 D、Kokoro RTF
+
+
+## Session 72: ASR 规则 D runner
+
+**Date**: 2026-09-14
+**Task**: ASR 规则 D runner
+**Branch**: `master`
+
+### Summary
+
+落地 gitignored eval/asr/manifest.jsonl 的 AsrEval：nLabeled/nScored、meanCer、successRate、vadApplied；ruleDPassed 需 ≥500 条、CER≤5%、成功率≥95% 且每条 scored 有 vadOk。缺集跳过 CI。不调 sherpa、不进 wav。归档 09-14-asr-rule-d。下一步意图规则 E。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `adeb121` | (see git log) |
+
+### Status
+
+[OK] **Completed**
