@@ -16,9 +16,12 @@ A local-first Android agent. Chat, memory, and tool side effects stay on device 
   <img src="screens/dougie_chat_tool_card.jpg" width="220" alt="时间工具卡片">
 </p>
 <p align="center">
+  <img src="screens/dougie_memory.jpg" width="220" alt="记忆">
+  <img src="screens/dougie_task.jpg" width="220" alt="任务历史">
+</p>
+<p align="center">
   <img src="screens/dougie_permission.jpg" width="220" alt="权限中心">
   <img src="screens/dougie_setting.jpg" width="220" alt="设置">
-  <img src="screens/dougie_task.jpg" width="220" alt="任务历史">
 </p>
 
 ## 安装
