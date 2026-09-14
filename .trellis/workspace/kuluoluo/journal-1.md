@@ -1699,3 +1699,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 73: 意图规则 E runner
+
+**Date**: 2026-09-14
+**Task**: 意图规则 E runner
+**Branch**: `master`
+
+### Summary
+
+落地 IntentEval.loadJsonl/ruleEReport：88 条、≥10 类、准确率≥90%、P95≤500ms 且每条 scored 有 latencyMs 才 ruleEPassed。解析器 passed 不变。缺 eval/intent/predictions.jsonl 时 CI 跳过。不调 ORT。归档 09-14-intent-rule-e。下一步 Kokoro 规则 B。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1de9e64` | (see git log) |
+
+### Status
+
+[OK] **Completed**
