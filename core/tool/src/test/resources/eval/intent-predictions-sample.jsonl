@@ -1,0 +1,3 @@
+{"id":"h001","text":"现在几点","goldIntent":"query_time","predictedIntent":"query_time","latencyMs":12}
+{"id":"h002","text":"还剩多少电","goldIntent":"query_battery","predictedIntent":"query_battery","latencyMs":9}
+{"id":"h003","text":"帮我查一下日程","goldIntent":"query_calendar"}

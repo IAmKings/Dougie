@@ -10,7 +10,7 @@
 - Tool arguments that contain secrets
 - Raw microphone PCM / WAV / audio byte arrays, and ASR transcripts in Logcat or `AuditLog`. `AsrEvalReport.toString()` is counts/rates only — never `reference` or `hypothesis`
 - TTS utterance text (what `speech_output` speaks) and host reply playback (`finalAnswer` / PCM)
-- Intent classifier input text, intent labels, slots, or route JSON
+- Intent classifier input text, intent labels, slots, or route JSON. `IntentRuleEReport.toString()` is counts/rates only — never utterance `text` or intent labels
 - Native intent JNI must not log features, labels, or input text. Embed JNI (`g_embed_session` in the same `dougie_intent` `.so`) must not log tokens, pool vectors, model paths, or input text.
 - Model download URLs (especially query strings) and partial `.part` paths in Logcat
 - SAF content URIs and import source paths in Logcat

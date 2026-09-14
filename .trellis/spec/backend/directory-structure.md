@@ -85,7 +85,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   BundledModelSeed.kt
   CharacterErrorRate.kt
   AsrEval.kt
-  IntentEval.kt
+  IntentEval.kt (loadItems/report parser; loadJsonl/ruleEReport/timedClassify)
   FullEvalSet.kt
   ScreenFrame.kt
   ScreenCapturePort.kt
@@ -102,6 +102,7 @@ core/tool/src/test/resources/eval/
   asr-gold.json
   asr-manifest-sample.jsonl
   intent-gold.json
+  intent-predictions-sample.jsonl
 tool/system/src/main/kotlin/com/dougie/tool/system/
   DeviceBatteryTool.kt
   AndroidCalendarPort.kt
@@ -344,7 +345,13 @@ Idle Default backfill; ALTER v2; Fake vectors for synonym AC; Xenova BGE int8 + 
 
 **Problem**: Rule D wants ≥500 wav clips and CER ≤ 5%. Checking in audio, ONNX, or GGUF blows git and CI.
 
-**Instead**: JVM `CharacterErrorRate` + `AsrEval` + `IntentEval` run on tiny text gold / sample JSONL under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav` and `eval/asr/manifest.jsonl`) is gitignored; `FullEvalSet.isPresent()` is wav presence; `labeledCount` reads the manifest. Missing dir/manifest skips CI. `AsrEval` does not read wav or call sherpa/ORT. `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing `vadOk` on any scored row cannot pass. Fixture `passed` / sample jsonl is not a claim that the 500-clip set is done.
+**Instead**: JVM `CharacterErrorRate` + `AsrEval` + `IntentEval` run on tiny text gold / sample JSONL under `core/tool/src/test/resources/eval/`. Repo-root `eval/` (e.g. `eval/asr/*.wav`, `eval/asr/manifest.jsonl`, and `eval/intent/predictions.jsonl`) is gitignored; `FullEvalSet.isPresent()` is wav presence; `labeledCount` reads the ASR manifest. Missing dir/manifest/predictions skips CI. `AsrEval` does not read wav or call sherpa/ORT. `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing `vadOk` on any scored row cannot pass. Fixture `passed` / sample jsonl is not a claim that the 500-clip set is done.
+
+## Don't: Claim Rule E from parser gold or commit MiniRBT predictions
+
+**Problem**: Rule E wants ≥88 held-out rows, ≥10 classes, accuracy ≥ 90%, and device classify P95 ≤ 500ms. Checking in ONNX or treating canned `intent-gold.json` `passed` as Rule E done hides a missing forward pass.
+
+**Instead**: `IntentEval.loadJsonl` / `ruleEReport` / `timedClassify` on JSONL. JVM must not call ORT/JNI; tests inject `FakeIntentEngine`. Missing `eval/intent/predictions.jsonl` skips CI (`:core:tool:test` still passes). `ruleEPassed` = nClasses≥10 ∧ nLabeled≥88 ∧ nScored≥88 ∧ accuracy≥0.90 ∧ latencyApplied ∧ p95Ms≤500 (nearest-rank `sorted[ceil(0.95 * n) - 1]`). Missing `predictedIntent` is unscored; any scored row without `latencyMs` → `latencyApplied=false` → cannot pass. Parser `loadItems` / `report` / `IntentEvalReport.passed` stay canned `modelJson` — fixture `passed` is not Rule E. `FullEvalSet` stays ASR-only. Testdata `intent-predictions-sample.jsonl` is a few lines.
 
 ## Don't: AgentTool with attacker-controlled download URL
 
