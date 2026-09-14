@@ -51,6 +51,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import com.dougie.core.tool.TtsSpeakResult
 import com.dougie.feature.history.HistoryRoute
 import com.dougie.feature.history.HistoryViewModel
@@ -70,14 +71,17 @@ class MainActivity : ComponentActivity() {
     private val previewState = mutableStateOf<ImageBitmap?>(null)
     private val holdingMicState = mutableStateOf(false)
     private val voiceTranscribingState = mutableStateOf(false)
+    private val voicePartialState = mutableStateOf("")
     private val voiceUsedThisDraftState = mutableStateOf(false)
     private val speakingReplyState = mutableStateOf(false)
     private val asrReadyState = mutableStateOf(false)
     private val ttsReadyState = mutableStateOf(false)
     private var cameraOutput: File? = null
+    @Volatile
     private var holdActive = false
     private var ignoreUntilUp = false
     private var holdLimitJob: Job? = null
+    private var partialAsrJob: Job? = null
     private var speakJob: Job? = null
     private var previousReplyStatus: TaskStatus? = null
     private var spokenReplyTaskId: String? = null
@@ -127,6 +131,7 @@ class MainActivity : ComponentActivity() {
                 var previewImage by previewState
                 var holdingMic by holdingMicState
                 var voiceTranscribing by voiceTranscribingState
+                var voicePartial by voicePartialState
                 var voiceUsedThisDraft by voiceUsedThisDraftState
                 var speakingReply by speakingReplyState
                 var asrReady by asrReadyState
@@ -217,6 +222,7 @@ class MainActivity : ComponentActivity() {
                             onMicUp = { onMicUp() },
                             holdingMic = holdingMic,
                             transcribingVoice = voiceTranscribing,
+                            voicePartial = voicePartial,
                             speakReplyOnSend = voiceUsedThisDraft,
                             speakingReply = speakingReply,
                             asrReady = asrReady,
@@ -461,12 +467,14 @@ class MainActivity : ComponentActivity() {
         if (!app.speechPort.holdRecorder.start()) return
         holdActive = true
         holdingMicState.value = true
+        voicePartialState.value = ""
         attachErrorState.value = null
         holdLimitJob?.cancel()
         holdLimitJob = lifecycleScope.launch {
             delay(SpeechHold.MAX_MS.toLong())
             finishHold(fromLimit = true)
         }
+        startPartialAsrLoop()
     }
 
     private fun onMicUp() {
@@ -477,27 +485,73 @@ class MainActivity : ComponentActivity() {
         finishHold(fromLimit = false)
     }
 
+    private fun startPartialAsrLoop() {
+        partialAsrJob?.cancel()
+        val app = application as DougieApplication
+        val inFlight = AtomicBoolean(false)
+        partialAsrJob = lifecycleScope.launch(Dispatchers.Default) {
+            while (isActive && holdActive) {
+                delay(PARTIAL_ASR_MS)
+                if (!isActive || !holdActive) break
+                if (!inFlight.compareAndSet(false, true)) continue
+                launch {
+                    try {
+                        val snapshot = app.speechPort.holdRecorder.snapshot()
+                        val minSamples = snapshot.sampleRate * 2 / 5
+                        if (snapshot.samples.size < minSamples) return@launch
+                        val text = try {
+                            app.speechPort.transcribe(snapshot)
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Throwable) {
+                            return@launch
+                        }
+                        if (text.isBlank() || !isActive || !holdActive) return@launch
+                        withContext(Dispatchers.Main.immediate) {
+                            if (isActive && holdActive) {
+                                voicePartialState.value = text.trim()
+                            }
+                        }
+                    } finally {
+                        inFlight.set(false)
+                    }
+                }
+            }
+        }
+    }
+
     private fun finishHold(fromLimit: Boolean) {
         if (!holdActive) return
         holdActive = false
         holdingMicState.value = false
         holdLimitJob?.cancel()
         holdLimitJob = null
+        val runningPartial = partialAsrJob
+        partialAsrJob = null
+        runningPartial?.cancel()
         if (fromLimit) ignoreUntilUp = true
         val app = application as DougieApplication
         attachingState.value = true
         voiceTranscribingState.value = true
+        voicePartialState.value = ""
         lifecycleScope.launch {
+            runningPartial?.join()
             val result = withContext(Dispatchers.Default) {
-                val utterance = app.speechPort.holdRecorder.stop()
-                if (utterance.samples.isEmpty()) {
-                    return@withContext Result.failure(AgentException(UserFacingErrors.SPEECH_EMPTY))
-                }
-                val text = app.speechPort.transcribe(utterance)
-                if (text.isBlank()) {
-                    Result.failure(AgentException(UserFacingErrors.SPEECH_EMPTY))
-                } else {
-                    Result.success(text)
+                try {
+                    val utterance = app.speechPort.holdRecorder.stop()
+                    if (utterance.samples.isEmpty()) {
+                        return@withContext Result.failure(AgentException(UserFacingErrors.SPEECH_EMPTY))
+                    }
+                    val text = app.speechPort.transcribe(utterance)
+                    if (text.isBlank()) {
+                        Result.failure(AgentException(UserFacingErrors.SPEECH_EMPTY))
+                    } else {
+                        Result.success(text)
+                    }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Throwable) {
+                    Result.failure(error)
                 }
             }
             attachingState.value = false
@@ -702,6 +756,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val KEY_CHAT_DRAFT = "dougie.chat.draft"
         private const val KEY_VOICE_USED_THIS_DRAFT = "dougie.chat.voiceUsedThisDraft"
+        private const val PARTIAL_ASR_MS = 400L
     }
 }
 

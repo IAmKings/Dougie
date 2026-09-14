@@ -186,6 +186,24 @@ class HoldSpeechRecorderTest {
     }
 
     @Test
+    fun snapshotEmptyUntilStartGrowsThenEmptyAfterStop() = runTest {
+        val hold = FakeHoldSpeechRecorder()
+        val engine = FakeSpeechEngine()
+        assertEquals(0, hold.snapshot().samples.size)
+        assertTrue(hold.start())
+        val first = hold.snapshot()
+        val second = hold.snapshot()
+        assertTrue(first.samples.isNotEmpty())
+        assertTrue(second.samples.size > first.samples.size)
+        assertFalse(first.samples === second.samples)
+        engine.transcribe(second)
+        assertTrue(engine.transcribeCount >= 1)
+        hold.stop()
+        assertEquals(0, hold.snapshot().samples.size)
+        assertEquals(1, hold.stopCount)
+    }
+
+    @Test
     fun holdMaxIsFifteenSeconds() {
         assertEquals(15_000, SpeechHold.MAX_MS)
     }

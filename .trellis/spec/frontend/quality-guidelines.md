@@ -31,7 +31,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 
 | Module | What exists | Command (JDK 17) |
 |--------|-------------|------------------|
-| `:feature:chat` | `ChatUiStateTest`, `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
+| `:feature:chat` | `ChatUiStateTest` (incl. `voiceOverlayStatus` partial vs 正在录音), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
 | `:feature:history` | `HistoryItemTest` | `./gradlew :feature:history:testDebugUnitTest` |
 | `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak) | `./gradlew :feature:debug:testDebugUnitTest` |

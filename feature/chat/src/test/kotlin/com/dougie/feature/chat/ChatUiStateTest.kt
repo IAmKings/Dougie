@@ -320,6 +320,12 @@ class ChatUiStateTest {
     @Test
     fun voiceOverlayStatusMatchesRecordingAndLocalRecognizeCopy() {
         assertEquals("正在录音", voiceOverlayStatus(holding = true, transcribing = false))
+        assertEquals("现在几点", voiceOverlayStatus(holding = true, transcribing = false, partial = " 现在几点 "))
+        assertEquals("正在录音", voiceOverlayStatus(holding = true, transcribing = false, partial = "  "))
+        assertEquals(
+            "正在进行本地识别...",
+            voiceOverlayStatus(holding = false, transcribing = true, partial = "现在几点"),
+        )
         assertEquals("正在进行本地识别...", voiceOverlayStatus(holding = false, transcribing = true))
         assertEquals("", voiceOverlayStatus(holding = false, transcribing = false))
     }

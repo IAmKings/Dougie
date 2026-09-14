@@ -18,6 +18,7 @@ class AudioRecordHoldRecorder(
     private val stopRequested = AtomicBoolean(false)
     private var pending: CompletableDeferred<SpeechUtterance>? = null
     private var worker: Thread? = null
+    private var collected: ArrayList<Short>? = null
 
     override fun start(): Boolean {
         synchronized(lock) {
@@ -34,6 +35,19 @@ class AudioRecordHoldRecorder(
             ).also { it.start() }
             return true
         }
+    }
+
+    override fun snapshot(): SpeechUtterance {
+        val copy: ShortArray
+        synchronized(lock) {
+            val src = collected ?: return SpeechUtterance(floatArrayOf(), sampleRate)
+            copy = ShortArray(src.size)
+            for (i in copy.indices) {
+                copy[i] = src[i]
+            }
+        }
+        val floats = FloatArray(copy.size) { index -> copy[index] / 32768.0f }
+        return SpeechUtterance(samples = floats, sampleRate = sampleRate)
     }
 
     override suspend fun stop(): SpeechUtterance {
@@ -71,24 +85,32 @@ class AudioRecordHoldRecorder(
             return SpeechUtterance(floatArrayOf(), sampleRate)
         }
         val maxSamples = (sampleRate * maxMs / 1000).coerceAtLeast(1)
-        val collected = ArrayList<Short>(maxSamples)
+        val buffer = ArrayList<Short>(maxSamples)
+        synchronized(lock) { collected = buffer }
         val chunk = ShortArray(minBuffer)
         try {
             record.startRecording()
-            while (collected.size < maxSamples && !stopRequested.get()) {
+            while (!stopRequested.get()) {
+                val size = synchronized(lock) { buffer.size }
+                if (size >= maxSamples) break
                 val read = record.read(chunk, 0, chunk.size)
                 if (read <= 0) break
-                val remain = maxSamples - collected.size
-                val take = minOf(read, remain)
-                for (i in 0 until take) {
-                    collected.add(chunk[i])
+                synchronized(lock) {
+                    val remain = maxSamples - buffer.size
+                    val take = minOf(read, remain)
+                    for (i in 0 until take) {
+                        buffer.add(chunk[i])
+                    }
                 }
             }
         } finally {
             runCatching { record.stop() }
             record.release()
         }
-        val floats = FloatArray(collected.size) { index -> collected[index] / 32768.0f }
-        return SpeechUtterance(samples = floats, sampleRate = sampleRate)
+        return synchronized(lock) {
+            val floats = FloatArray(buffer.size) { index -> buffer[index] / 32768.0f }
+            collected = null
+            SpeechUtterance(samples = floats, sampleRate = sampleRate)
+        }
     }
 }

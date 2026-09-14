@@ -29,6 +29,7 @@ object SpeechHold {
 
 interface HoldSpeechRecorder {
     fun start(): Boolean
+    fun snapshot(): SpeechUtterance
     suspend fun stop(): SpeechUtterance
 }
 
@@ -64,17 +65,28 @@ class FakeHoldSpeechRecorder(
     var stopCount: Int = 0
         private set
     private var running: Boolean = false
+    private var collected: FloatArray = floatArrayOf()
 
     override fun start(): Boolean {
         if (running) return false
         running = true
         startCount += 1
+        collected = floatArrayOf()
         return true
+    }
+
+    override fun snapshot(): SpeechUtterance {
+        if (!running) {
+            return SpeechUtterance(floatArrayOf(), utterance.sampleRate)
+        }
+        collected += utterance.samples
+        return SpeechUtterance(samples = collected.copyOf(), sampleRate = utterance.sampleRate)
     }
 
     override suspend fun stop(): SpeechUtterance {
         running = false
         stopCount += 1
+        collected = floatArrayOf()
         return utterance
     }
 }

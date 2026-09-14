@@ -65,7 +65,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   SpeechPort.kt
   SpeechInputTool.kt
   SpeechSession.kt
-  SpeechHold / HoldSpeechRecorder (composer hold-to-talk; Tool still uses 3s capture())
+  SpeechHold / HoldSpeechRecorder (`start` / `snapshot` copy / `stop`; Tool still uses 3s `capture()`)
   SherpaSpeechEngine.kt
   TtsPort.kt (stop(); PreferOfflineTtsPort.speakFinal offline-only for Chat replies)
   TtsSpeakText.kt (ASCII digits → Chinese numerals before offline speakFinal; Chat still shows original finalAnswer)

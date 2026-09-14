@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Hold overlay copy, PCM stays out of :feature:chat, appendVoiceTranscript"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "HoldSpeechRecorder vs SpeechInputTool 3s capture; sherpa JNI lock"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No PCM or ASR transcripts in Logcat or AuditLog"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Existing SPEECH_* copy; partial decode must not invent new errors"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "app / tool:system / feature:chat partial-text boundary"}

@@ -120,6 +120,7 @@ fun ChatRoute(
     onMicUp: () -> Unit = {},
     holdingMic: Boolean = false,
     transcribingVoice: Boolean = false,
+    voicePartial: String = "",
     speakReplyOnSend: Boolean = false,
     speakingReply: Boolean = false,
     asrReady: Boolean = false,
@@ -170,6 +171,7 @@ fun ChatRoute(
         onMicUp = onMicUp,
         holdingMic = holdingMic,
         transcribingVoice = transcribingVoice,
+        voicePartial = voicePartial,
         speakingReply = speakingReply,
         asrReady = asrReady,
         ttsReady = ttsReady,
@@ -208,6 +210,7 @@ fun ChatScreen(
     onMicUp: () -> Unit = {},
     holdingMic: Boolean = false,
     transcribingVoice: Boolean = false,
+    voicePartial: String = "",
     speakingReply: Boolean = false,
     asrReady: Boolean = false,
     ttsReady: Boolean = false,
@@ -291,6 +294,7 @@ fun ChatScreen(
         VoiceRecordOverlay(
             holding = holdingMic,
             transcribing = transcribingVoice,
+            partial = voicePartial,
             onRelease = onMicUp,
             modifier = Modifier.zIndex(3f),
         )
@@ -1220,6 +1224,7 @@ internal fun batterySummary(resultJson: String): String = toolResultSummary("bat
 private fun VoiceRecordOverlay(
     holding: Boolean,
     transcribing: Boolean,
+    partial: String = "",
     onRelease: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1289,10 +1294,13 @@ private fun VoiceRecordOverlay(
                         .scale(if (holding) ringScale.coerceIn(0.85f, 1.2f) else 1f),
                 )
                 Text(
-                    text = voiceOverlayStatus(holding, transcribing),
+                    text = voiceOverlayStatus(holding, transcribing, partial),
                     color = DougieColors.StatusThinking,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 280.dp),
                 )
             }
             Spacer(Modifier.height(28.dp))

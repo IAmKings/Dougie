@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Overlay must show partial without writing the TextField"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Partial and final transcripts still forbidden in logs"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Release failures stay SPEECH_* ; no new strings"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": ":core:tool and :feature:chat JVM tests; checkChannelLeak"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest overlay copy"}
