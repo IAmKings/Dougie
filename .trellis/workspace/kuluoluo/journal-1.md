@@ -1741,3 +1741,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 75: 意图规则 E 真机采集
+
+**Date**: 2026-09-15
+**Task**: 意图规则 E 真机采集
+**Branch**: `master`
+
+### Summary
+
+开发者页一键对 88 条 held-out 跑 MiniRBT，写入 filesDir/eval/intent/predictions.jsonl。PJZ110：nLabeled=nScored=88，accuracy=0.9318（82/88），p95Ms=17，ruleEPassed=true。设置页不写已达标。jsonl 不入库。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce97b2b` | (see git log) |
+
+### Status
+
+[OK] **Completed**

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 74
+- **Total Sessions**: 75
 - **Last Active**: 2026-09-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1743 | Active |
+| `journal-1.md` | ~1764 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 75 | 2026-09-15 | 意图规则 E 真机采集 | `ce97b2b` | `master` |
 | 74 | 2026-09-15 | Kokoro 规则 B runner | `decb32f` | `master` |
 | 73 | 2026-09-14 | 意图规则 E runner | `1de9e64` | `master` |
 | 72 | 2026-09-14 | ASR 规则 D runner | `adeb121` | `master` |
