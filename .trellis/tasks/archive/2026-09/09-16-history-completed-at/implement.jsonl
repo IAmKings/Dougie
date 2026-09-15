@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "History meta line duration · provider · completedAt from endedAt"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "completedAtLabel is a preformatted string; Compose does not parse epoch"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "HistoryItemTest covers today/yesterday/same-year/cross-year"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "History card completed-at copy"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Use snapshot endedAt, never updated_at; no DB bump"}

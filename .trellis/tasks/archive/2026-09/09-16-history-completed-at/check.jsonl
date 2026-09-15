@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Mapper tests only; no Compose UI tests"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "completedAt from endedAt; omit when null"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Do not decode snapshot_json in History"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "updated_at is list order only, not completion time"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Card chrome stays History-only"}
