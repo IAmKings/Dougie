@@ -1846,3 +1846,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 80: 任务卡耗时与 Provider
+
+**Date**: 2026-09-16
+**Task**: 任务卡耗时与 Provider
+**Branch**: `master`
+
+### Summary
+
+任务卡显示墙钟耗时（snapshot startedAt/endedAt）与 completionPath Provider；旧卡缺字段不显示。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `751f016` | (see git log) |
+
+### Status
+
+[OK] **Completed**
