@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No Compose UI tests; mapper/store/TaskManager JVM tests"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Full-table scan delete; never bump dougie_tasks.db; never delete default"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Busy no-op; current window switches to default"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Confirm copy; delete button does not openConversation"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No title/input/snapshot in logs"}
