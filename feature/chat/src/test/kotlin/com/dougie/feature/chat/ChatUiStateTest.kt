@@ -398,6 +398,149 @@ class ChatUiStateTest {
         assertEquals("去权限中心", GO_PERMISSION_CENTER)
     }
 
+    @Test
+    fun pastTurnsOmitToolsAndMergeKeepsLiveLoop() {
+        val past = AgentTask(
+            taskId = "p",
+            input = "我叫小明",
+            status = TaskStatus.COMPLETED,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "battery-1",
+                    toolName = "battery",
+                    argsSummary = "{}",
+                    resultJson = "{}",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+            finalAnswer = "记下了。",
+        )
+        val live = AgentTask(taskId = "n", input = TIME_EXAMPLE, status = TaskStatus.THINKING)
+        val pastItems = past.toPastChatItems()
+        assertEquals(listOf("user", "agent"), pastItems.map { it.kind() })
+        val merged = mergeChatUiState(live, listOf(past))
+        assertEquals(
+            listOf("user", "agent", "user", "thinking-1"),
+            merged.items.map { it.kind() },
+        )
+        assertEquals(false, merged.isEmpty)
+        assertEquals(false, merged.inputEnabled)
+        assertEquals(false, merged.canNewConversation)
+        assertEquals(true, mergeChatUiState(past, emptyList()).canNewConversation)
+    }
+
+    @Test
+    fun mergeDropsPastTurnThatIsAlsoLive() {
+        val turn = AgentTask(
+            taskId = "p",
+            input = "我叫小明",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "记下了。",
+        )
+        val keys = mergeChatUiState(turn, listOf(turn)).items.map { it.listKey }
+        assertEquals(keys.size, keys.toSet().size)
+        assertEquals(listOf("p:user", "p:agent"), keys)
+    }
+
+    @Test
+    fun pastTurnsWithoutLiveStillFillWindow() {
+        val past = AgentTask(
+            taskId = "p",
+            input = "我叫小明",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "记下了。",
+        )
+        val merged = mergeChatUiState(null, listOf(past))
+        assertEquals(listOf("p:user", "p:agent"), merged.items.map { it.listKey })
+        assertEquals(false, merged.isEmpty)
+        assertEquals(true, merged.inputEnabled)
+        assertEquals(true, merged.canNewConversation)
+        assertEquals(false, merged.canRetry)
+        assertEquals(false, merged.canSpeakReply)
+    }
+
+    @Test
+    fun mergedTurnsHaveUniqueLazyListKeys() {
+        val pastOne = AgentTask(
+            taskId = "p1",
+            input = "我叫小明",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "记下了。",
+        )
+        val pastTwo = AgentTask(
+            taskId = "p2",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "现在是中午。",
+        )
+        val live = AgentTask(taskId = "n", input = BATTERY_EXAMPLE, status = TaskStatus.THINKING)
+        val keys = mergeChatUiState(live, listOf(pastOne, pastTwo)).items.map { it.listKey }
+        assertEquals(keys.size, keys.toSet().size)
+        assertEquals(
+            listOf("p1:user", "p1:agent", "p2:user", "p2:agent", "n:user", "n:thinking-1"),
+            keys,
+        )
+    }
+
+    @Test
+    fun followChatFeedSkipsUnchangedListAfterBottomNavReturn() {
+        assertEquals(
+            false,
+            shouldFollowChatFeed(
+                itemCount = 4,
+                firstKey = "p1:user",
+                lastAgent = "记下了。",
+                previousItemCount = 4,
+                previousFirstKey = "p1:user",
+                previousLastAgent = "记下了。",
+            ),
+        )
+        assertEquals(
+            true,
+            shouldFollowChatFeed(
+                itemCount = 4,
+                firstKey = "p1:user",
+                lastAgent = "记下了。",
+                previousItemCount = 0,
+                previousFirstKey = null,
+                previousLastAgent = null,
+            ),
+        )
+        assertEquals(
+            true,
+            shouldFollowChatFeed(
+                itemCount = 6,
+                firstKey = "p1:user",
+                lastAgent = "现在是中午。",
+                previousItemCount = 4,
+                previousFirstKey = "p1:user",
+                previousLastAgent = "记下了。",
+            ),
+        )
+        assertEquals(
+            true,
+            shouldFollowChatFeed(
+                itemCount = 2,
+                firstKey = "n:user",
+                lastAgent = "新窗口。",
+                previousItemCount = 4,
+                previousFirstKey = "p1:user",
+                previousLastAgent = "记下了。",
+            ),
+        )
+        assertEquals(
+            true,
+            shouldFollowChatFeed(
+                itemCount = 4,
+                firstKey = "p1:user",
+                lastAgent = "你现在的手",
+                previousItemCount = 4,
+                previousFirstKey = "p1:user",
+                previousLastAgent = "你现在的",
+            ),
+        )
+    }
+
     private fun fact(id: String, source: String) = MemoryEntry(
         id = id,
         content = "我叫小明，住在上海",

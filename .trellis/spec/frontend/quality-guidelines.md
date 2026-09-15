@@ -10,8 +10,10 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 
 ## Forbidden Patterns
 
-- Running `LoopEngine` / OkHttp / `BatteryManager` / `CalendarContract` / `ClipboardManager` from a feature composable. Chat collects `TaskManager.task`; tools stay in `:core:tool` + `:tool:system`.
+- Running `LoopEngine` / OkHttp / `BatteryManager` / `CalendarContract` / `ClipboardManager` from a feature composable. Chat collects `TaskManager.task` and `transcript`; tools stay in `:core:tool` + `:tool:system`.
 - A second `mutableStateOf(TaskStatus)` in a ViewModel. Map from `AgentTask` (see `state-management.md`).
+- Chat `LazyColumn` keys that are only `"user"` / `"agent"` / `thinking-n`. Two turns in one window crash with `Key "user" was already used`. Use `ChatItem.listKey`.
+- Pinning Chat to the last bubble whenever `ChatRoute` recomposes (bottom nav). Restore `LazyListState` from `ChatViewModel`; follow only via `shouldFollowChatFeed`.
 - Showing prompts, API keys, `resultJson`, tool args, transcripts, or `snapshot_json` on Debug. `DebugUiStateTest` asserts those field names are absent. Rule E chrome is **评测意图规则 E**; `ruleEMessage` is counts/rates + relative path (or `INTENT_*` copy), never utterance, intent labels, or 「已达标」.
 - Auto-scanning the SAF model tree when Settings opens; auto-download without confirm; treating intent ONNX as a chat LLM (`localLlmReady` must stay false until a local **chat** model exists on sideload; Play `ChannelHooks.localChatReady` is always false).
 - Using `Noob-Dougie` as the launcher or as the default Chat avatar when a provider is usable. Mapping is `intelligenceMark(...)` in `:feature:chat`.
@@ -31,7 +33,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 
 | Module | What exists | Command (JDK 17) |
 |--------|-------------|------------------|
-| `:feature:chat` | `ChatUiStateTest` (incl. `voiceOverlayStatus` partial vs 正在录音, `insertVoiceTranscript` at selection), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
+| `:feature:chat` | `ChatUiStateTest` (incl. unique `listKey`s across merged turns, `shouldFollowChatFeed` skip after bottom-nav return, `voiceOverlayStatus` partial vs 正在录音, `insertVoiceTranscript` at selection), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
 | `:feature:history` | `HistoryItemTest` | `./gradlew :feature:history:testDebugUnitTest` |
 | `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak; Rule E copy 评测意图规则 E, no 已达标) | `./gradlew :feature:debug:testDebugUnitTest` |

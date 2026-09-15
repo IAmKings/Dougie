@@ -7,7 +7,7 @@
 Shared stateful logic lives in `*ViewModel` (`androidx.lifecycle.ViewModel`). Compose uses:
 
 - `collectAsStateWithLifecycle()` on `StateFlow`
-- `LaunchedEffect` for one-shot refresh / scroll
+- `LaunchedEffect` for one-shot refresh / scroll. Chat feed follows to the last item only when the transcript grows, the first `listKey` changes (new/opened conversation), or the last agent text streams. Bottom-nav return must restore `LazyListState` from `ChatViewModel` and must not pin to end.
 - `remember` / `mutableStateOf` for ephemeral UI (input draft, dialog, key visibility)
 
 `PermissionsViewModel` is an `AndroidViewModel` because it reads `ContextCompat.checkSelfPermission`. That is the exception; Chat/Settings/Memory/History/Debug ViewModels take interfaces (`TaskManager`, `PreferenceStore`, `MemoryStore`, `TaskStore`, `AuditLog`) via `ViewModelProvider.Factory`.
@@ -35,13 +35,15 @@ There is no React Query / SWR. Reads are:
 | Data | Owner | How UI gets it |
 |------|--------|----------------|
 | Current agent task | `TaskManager.task` | Chat/Debug `map`/`combine` → `stateIn(WhileSubscribed(5_000))` |
+| Current conversation turns | `TaskManager.transcript` | Chat `combine` with `task`; loaded via `TaskStore.listByConversation` inside TaskManager |
 | Provider prefs | `PreferenceStore.settings` | Settings form seed; Chat `allowCloud` from Activity collect |
+| Current conversation id | `PreferenceStore.currentConversationId()` | Independent key; **保存配置** must not write or clear it |
 | Memory list | `MemoryStore.list()` | `MemoryViewModel.refresh()` |
 | Task history | `TaskStore.listRecent(50)` | `HistoryViewModel.refresh()` |
 | Audit rows | `AuditLog.listRecent(50)` | `DebugViewModel.refresh()` |
 | Runtime permission bits | `ContextCompat` | `PermissionsViewModel.refresh()` |
 
-Do not open SQLite from `:feature:chat`. Chat maps `AgentTask` only (including `retrievedMemories` → citation `source` labels).
+Do not open SQLite from `:feature:chat`. Chat maps `AgentTask` lists from `TaskManager` (including `retrievedMemories` → citation `source` labels).
 
 SAF `OpenDocumentTree` stays in `:app` (`rememberLauncherForActivityResult`). Settings receives `onPickModelTree` and `setModelTreeUri`.
 

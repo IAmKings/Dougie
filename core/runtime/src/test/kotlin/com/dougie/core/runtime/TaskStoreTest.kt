@@ -6,6 +6,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.TaskStatus
@@ -44,6 +45,7 @@ class TaskStoreTest {
                 input = "查电量",
                 status = TaskStatus.THINKING,
                 loopCount = 1,
+                conversationId = "other-thread",
             ),
         )
         val recovered = recoverInterrupted(store)
@@ -51,6 +53,7 @@ class TaskStoreTest {
         assertEquals("live", recovered.taskId)
         assertEquals(TaskStatus.FAILED, recovered.status)
         assertEquals(UserFacingErrors.INTERRUPTED, recovered.lastError)
+        assertEquals("other-thread", recovered.conversationId)
         assertEquals(TaskStatus.FAILED, store.listRecent(1).single().status)
         assertNull(recoverInterrupted(store))
     }
@@ -298,5 +301,51 @@ class TaskStoreTest {
         assertEquals(TaskStatus.COMPLETED, retried.status)
         assertEquals(true, retried.speakReply)
         assertEquals(TaskStatus.COMPLETED, retried.status)
+    }
+
+    @Test
+    fun snapshotDecodeWithoutConversationIdUsesDefault() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"old","input":"查电量","status":"COMPLETED","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":"好了","lastError":null,"streamingText":null,"retrievedMemories":[],"attachments":[]}""",
+        )
+        assertEquals(ConversationIds.DEFAULT, restored.conversationId)
+    }
+
+    @Test
+    fun snapshotDecodeBlankConversationIdUsesDefault() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"old","input":"查电量","status":"COMPLETED","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":"好了","lastError":null,"streamingText":null,"retrievedMemories":[],"attachments":[],"conversationId":"  "}""",
+        )
+        assertEquals(ConversationIds.DEFAULT, restored.conversationId)
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesConversationId() {
+        val original = AgentTask(
+            taskId = "c1",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "63%",
+            conversationId = "thread-a",
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals("thread-a", restored.conversationId)
+    }
+
+    @Test
+    fun listByConversationIsOldestFirstAndIgnoresOtherThreads() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(taskId = "a1", input = "一", status = TaskStatus.COMPLETED, conversationId = "a"),
+        )
+        store.upsert(
+            AgentTask(taskId = "b1", input = "旁", status = TaskStatus.COMPLETED, conversationId = "b"),
+        )
+        store.upsert(
+            AgentTask(taskId = "a2", input = "二", status = TaskStatus.COMPLETED, conversationId = "a"),
+        )
+        val threadA = store.listByConversation("a")
+        assertEquals(listOf("a1", "a2"), threadA.map { it.taskId })
+        assertEquals(listOf("b1"), store.listByConversation("b").map { it.taskId })
     }
 }

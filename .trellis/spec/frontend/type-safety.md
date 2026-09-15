@@ -4,7 +4,7 @@
 
 ## Overview
 
-- Shared domain: `:core:model` (`AgentTask`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
+- Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
 - UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `IntelligenceMark` enum, `HistoryItem`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
 - JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files.
 - Persistence codec is hand-written `TaskSnapshotCodec` (`ignoreUnknownKeys`). Do not switch Chat to decode `snapshot_json`.
@@ -13,8 +13,8 @@
 
 | Kind | Where | Examples |
 |------|--------|----------|
-| Domain | `:core:model` | `AgentTask`, `TaskStatus`, `UserFacingErrors` |
-| Runtime handles | `:core:runtime` | `TaskManager`, `AuditEntry` |
+| Domain | `:core:model` | `AgentTask`, `ConversationIds`, `TaskStatus`, `UserFacingErrors` |
+| Runtime handles | `:core:runtime` | `TaskManager`, `ConversationPointer`, `AuditEntry` |
 | Feature UI | `:feature:*` | `ChatUiState`, `ChatItem`, `DebugUiState` |
 | Prefs | `:data:preferences` | `ProviderSettings` |
 

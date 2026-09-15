@@ -24,9 +24,13 @@ class TaskManager(
     private val taskStore: TaskStore? = null,
     private val screenFrames: ScreenFrameStore? = null,
     private val onTaskFinished: () -> Unit = {},
+    private val conversation: ConversationPointer = InMemoryConversationPointer(),
 ) {
     private val _task = MutableStateFlow<AgentTask?>(null)
     val task: StateFlow<AgentTask?> = _task.asStateFlow()
+
+    private val _transcript = MutableStateFlow<List<AgentTask>>(emptyList())
+    val transcript: StateFlow<List<AgentTask>> = _transcript.asStateFlow()
 
     private var running: Job? = null
 
@@ -44,12 +48,7 @@ class TaskManager(
     ) {
         val trimmed = input.trim()
         if (trimmed.isEmpty()) return
-        val current = _task.value
-        if (current != null && current.status != TaskStatus.COMPLETED &&
-            current.status != TaskStatus.FAILED
-        ) {
-            return
-        }
+        if (isBusy()) return
         val lastScreen = attachments.lastOrNull { it.kind == AttachmentKind.SCREEN }
         val captureId = lastScreen?.id?.takeIf { it.isNotBlank() }
             ?: attachedCaptureId?.takeIf { it.isNotBlank() }
@@ -65,10 +64,12 @@ class TaskManager(
             attachedHeight = (lastScreen?.height ?: attachedHeight)?.takeIf { it > 0 },
             attachments = attachments,
             speakReply = speakReply,
+            conversationId = conversation.currentId(),
         )
         _task.value = created
         running = scope.launch(dispatcher) {
             persist(created)
+            reloadTranscript()
             try {
                 loopEngine.run(created) { snapshot ->
                     _task.value = snapshot
@@ -84,6 +85,45 @@ class TaskManager(
         }
     }
 
+    fun newConversation() {
+        if (isBusy()) return
+        if (_task.value == null && _transcript.value.isEmpty()) return
+        conversation.setCurrentId(UUID.randomUUID().toString())
+        _task.value = null
+        _transcript.value = emptyList()
+    }
+
+    fun openConversation(conversationId: String) {
+        if (isBusy()) return
+        val id = conversationId.ifBlank { return }
+        conversation.setCurrentId(id)
+        scope.launch(dispatcher) {
+            val rows = taskStore?.listByConversation(id).orEmpty()
+            if (conversation.currentId() != id || isBusy()) return@launch
+            _task.value = rows.lastOrNull()
+            reloadTranscript()
+        }
+    }
+
+    suspend fun reloadTranscript() {
+        val store = taskStore
+        if (store == null) {
+            _transcript.value = emptyList()
+            return
+        }
+        val liveId = _task.value?.taskId
+        val id = conversation.currentId()
+        _transcript.value = try {
+            store.listByConversation(id).filter { entry ->
+                isTerminal(entry.status) && entry.taskId != liveId
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
     fun confirm() {
         loopEngine.confirm()
     }
@@ -96,9 +136,14 @@ class TaskManager(
         running?.cancel()
     }
 
+    private fun isBusy(): Boolean {
+        val current = _task.value ?: return false
+        return current.status != TaskStatus.COMPLETED && current.status != TaskStatus.FAILED
+    }
+
     private suspend fun markCancelled() {
         val current = _task.value ?: return
-        if (current.status == TaskStatus.COMPLETED || current.status == TaskStatus.FAILED) return
+        if (isTerminal(current.status)) return
         val failed = current.copy(
             status = TaskStatus.FAILED,
             lastError = UserFacingErrors.CANCELLED,
@@ -106,6 +151,7 @@ class TaskManager(
         )
         _task.value = failed
         persist(failed)
+        reloadTranscript()
     }
 
     private suspend fun persist(task: AgentTask) {
@@ -118,4 +164,7 @@ class TaskManager(
             // Skip persist if encode/store throws; the loop still runs.
         }
     }
+
+    private fun isTerminal(status: TaskStatus): Boolean =
+        status == TaskStatus.COMPLETED || status == TaskStatus.FAILED
 }

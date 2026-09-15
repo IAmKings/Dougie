@@ -5,6 +5,7 @@ import com.dougie.core.model.TaskStatus
 
 data class HistoryItem(
     val taskId: String,
+    val conversationId: String,
     val inputSummary: String,
     val status: TaskStatus,
     val statusLabel: String,
@@ -17,6 +18,7 @@ fun AgentTask.toHistoryItem(maxInputChars: Int = 80): HistoryItem {
     val summary = if (input.length <= maxInputChars) input else input.take(maxInputChars) + "…"
     return HistoryItem(
         taskId = taskId,
+        conversationId = conversationId,
         inputSummary = summary,
         status = status,
         statusLabel = statusLabel(status),

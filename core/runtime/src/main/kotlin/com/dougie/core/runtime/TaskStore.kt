@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.withLock
 interface TaskStore {
     suspend fun upsert(task: AgentTask)
     suspend fun listRecent(limit: Int = 50): List<AgentTask>
+    suspend fun listByConversation(conversationId: String): List<AgentTask>
 }
 
 class InMemoryTaskStore : TaskStore {
@@ -26,6 +27,10 @@ class InMemoryTaskStore : TaskStore {
 
     override suspend fun listRecent(limit: Int): List<AgentTask> = mutex.withLock {
         recentIds.asReversed().take(limit).mapNotNull { byId[it] }
+    }
+
+    override suspend fun listByConversation(conversationId: String): List<AgentTask> = mutex.withLock {
+        recentIds.mapNotNull { byId[it] }.filter { it.conversationId == conversationId }
     }
 }
 

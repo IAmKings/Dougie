@@ -47,7 +47,9 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Mic
@@ -69,7 +71,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -132,8 +136,44 @@ fun ChatRoute(
     overlayShortcutHint: String? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.feedIndex,
+        initialFirstVisibleItemScrollOffset = viewModel.feedOffset,
+    )
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.saveFeedScroll(
+                listState.firstVisibleItemIndex,
+                listState.firstVisibleItemScrollOffset,
+            )
+        }
+    }
+    val firstKey = uiState.items.firstOrNull()?.listKey
+    val lastAgent = (uiState.items.lastOrNull() as? ChatItem.AgentMessage)?.text
+    LaunchedEffect(uiState.items.size, firstKey, lastAgent) {
+        val items = uiState.items
+        if (items.isEmpty()) return@LaunchedEffect
+        val follow = shouldFollowChatFeed(
+            itemCount = items.size,
+            firstKey = firstKey,
+            lastAgent = lastAgent,
+            previousItemCount = viewModel.feedItemCount,
+            previousFirstKey = viewModel.feedFirstKey,
+            previousLastAgent = viewModel.feedLastAgent,
+        )
+        if (follow) {
+            val animate = viewModel.feedItemCount > 0 && firstKey == viewModel.feedFirstKey
+            if (animate) {
+                listState.animateScrollToItem(items.lastIndex)
+            } else {
+                listState.scrollToItem(items.lastIndex)
+            }
+        }
+        viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
+    }
     ChatScreen(
         uiState = uiState,
+        listState = listState,
         onSend = { text ->
             onStopReply()
             viewModel.send(
@@ -179,12 +219,14 @@ fun ChatRoute(
         onStopReply = onStopReply,
         onSpeakReply = onSpeakReply,
         overlayShortcutHint = overlayShortcutHint,
+        onNewConversation = viewModel::newConversation,
     )
 }
 
 @Composable
 fun ChatScreen(
     uiState: ChatUiState,
+    listState: LazyListState,
     onSend: (String) -> Unit,
     onConfirm: () -> Unit = {},
     onReject: () -> Unit = {},
@@ -218,7 +260,9 @@ fun ChatScreen(
     onStopReply: () -> Unit = {},
     onSpeakReply: (String) -> Unit = {},
     overlayShortcutHint: String? = null,
+    onNewConversation: () -> Unit = {},
 ) {
+    var confirmNewConversation by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier
@@ -231,7 +275,8 @@ fun ChatScreen(
         DougieTopBar(
             allowCloud = allowCloud,
             intelligenceMark = intelligenceMark,
-            onOpenSettings = onOpenSettings,
+            canNewConversation = uiState.canNewConversation,
+            onNewConversation = { confirmNewConversation = true },
             onOpenPermissions = onOpenPermissions,
         )
         Box(modifier = Modifier.weight(1f)) {
@@ -243,6 +288,7 @@ fun ChatScreen(
             } else {
                 ChatFeed(
                     items = uiState.items,
+                    listState = listState,
                     canRetry = uiState.canRetry,
                     canSpeakReply = uiState.canSpeakReply,
                     ttsReady = ttsReady,
@@ -317,6 +363,24 @@ fun ChatScreen(
             )
         }
     }
+    if (confirmNewConversation) {
+        AlertDialog(
+            onDismissRequest = { confirmNewConversation = false },
+            title = { Text("开始新对话？") },
+            text = { Text("当前窗口会清空。旧轮次仍在任务页，可以点回去。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmNewConversation = false
+                        onNewConversation()
+                    },
+                ) { Text("开始") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmNewConversation = false }) { Text("取消") }
+            },
+        )
+    }
     }
 }
 
@@ -324,7 +388,8 @@ fun ChatScreen(
 private fun DougieTopBar(
     allowCloud: Boolean,
     intelligenceMark: IntelligenceMark,
-    onOpenSettings: () -> Unit,
+    canNewConversation: Boolean,
+    onNewConversation: () -> Unit,
     onOpenPermissions: () -> Unit,
 ) {
     Row(
@@ -392,6 +457,20 @@ private fun DougieTopBar(
                 )
             }
         }
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = "新对话",
+            tint = if (canNewConversation) DougieColors.Primary else DougieColors.OnSurfaceVariant,
+            modifier = Modifier
+                .size(24.dp)
+                .then(
+                    if (canNewConversation) {
+                        Modifier.clickable(onClick = onNewConversation)
+                    } else {
+                        Modifier
+                    },
+                ),
+        )
         Icon(
             imageVector = Icons.Filled.Lock,
             contentDescription = "权限中心",
@@ -495,6 +574,7 @@ private fun ExampleChip(text: String, onClick: (String) -> Unit) {
 @Composable
 private fun ChatFeed(
     items: List<ChatItem>,
+    listState: LazyListState,
     canRetry: Boolean,
     canSpeakReply: Boolean,
     ttsReady: Boolean,
@@ -505,13 +585,6 @@ private fun ChatFeed(
     onStopReply: () -> Unit,
     onSpeakReply: (String) -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    val lastAgent = (items.lastOrNull() as? ChatItem.AgentMessage)?.text
-    LaunchedEffect(items.size, lastAgent) {
-        if (items.isNotEmpty()) {
-            listState.animateScrollToItem(items.lastIndex)
-        }
-    }
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -520,15 +593,7 @@ private fun ChatFeed(
     ) {
         items(
             items = items,
-            key = { item ->
-                when (item) {
-                    is ChatItem.UserMessage -> "user"
-                    is ChatItem.Thinking -> "thinking-${item.loopNumber}"
-                    is ChatItem.ToolCard -> "tool-${item.entry.toolCallId}"
-                    is ChatItem.ConfirmCard -> "confirm-${item.toolCallId}"
-                    is ChatItem.AgentMessage -> "agent"
-                }
-            },
+            key = { item -> item.listKey },
         ) { item ->
             when (item) {
                 is ChatItem.UserMessage -> UserBubble(item.text)

@@ -1,6 +1,7 @@
 package com.dougie.feature.history
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.UserFacingErrors
@@ -20,11 +21,24 @@ class HistoryItemTest {
                 ToolTraceEntry(toolCallId = "c2", toolName = "calendar_create", argsSummary = "{}"),
             ),
             lastError = UserFacingErrors.INTERRUPTED,
+            conversationId = "thread-z",
         ).toHistoryItem(maxInputChars = 8)
         assertEquals("帮我约明天下午开…", item.inputSummary)
         assertEquals("失败", item.statusLabel)
         assertEquals(2, item.loopCount)
         assertEquals("calendar_query → calendar_create", item.toolChain)
         assertEquals(UserFacingErrors.INTERRUPTED, item.error)
+        assertEquals("thread-z", item.conversationId)
+    }
+
+    @Test
+    fun mapsMissingConversationIdToDefault() {
+        val item = AgentTask(
+            taskId = "t2",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "63%",
+        ).toHistoryItem()
+        assertEquals(ConversationIds.DEFAULT, item.conversationId)
     }
 }

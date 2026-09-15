@@ -337,6 +337,16 @@ class MainActivity : ComponentActivity() {
                             onOpenChat = { route = AppRoute.Chat },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenSettings = { route = AppRoute.Settings },
+                            onOpenConversation = { conversationId ->
+                                val current = app.taskManager.task.value
+                                val busy = current != null &&
+                                    current.status != TaskStatus.COMPLETED &&
+                                    current.status != TaskStatus.FAILED
+                                if (!busy) {
+                                    app.taskManager.openConversation(conversationId)
+                                    route = AppRoute.Chat
+                                }
+                            },
                         )
                     }
                     AppRoute.Permissions -> {

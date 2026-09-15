@@ -21,6 +21,7 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
 core/runtime/src/main/kotlin/com/dougie/core/runtime/
   LoopEngine.kt
   IntentRouteAnswers.kt
+  ConversationPointer.kt
   TaskManager.kt
   TaskStore.kt
   AuditLog.kt
@@ -164,7 +165,7 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 | `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `CloudLlmConfig`, `LlmVendors` | I/O, Android, HTTP |
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `ChatPromptAssembler` (Chinese Dougie identity + attachment metadata + `Known facts:` + tools inventory after identity; identity itself has no tool names; **`localPrompt` inventory is seven no-slot tools plus `clipboard_write` / `calendar_create` / `app_intent` / `screen_match` / `speech_output` and is taught only when `localToolProtocolActive`**, remote `systemPrefix` stays full table), `LocalToolCallParser` (whole-reply or one markdown fence `{"name","args"}` → `LlmEvent.ToolCall`; mixed Chinese + JSON stays text), `OpenAICompatibleProvider` SSE (OkHttp), `SelectingLlmProvider` (cloud if configured else local if ready else cloud for gateway copy; `hasConversationalLlm` = cloud configured **or** local pack ready) | Tool execution, UI, policy bypass |
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) + `ModelInstaller` / `ModelImporter` (not AgentTools) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets, SAF / `ContentResolver` |
-| `:core:runtime` | `LoopEngine`, `TaskManager`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
+| `:core:runtime` | `LoopEngine`, `TaskManager`, `ConversationPointer`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore`, `HybridMemoryStore`, `EmbeddingPort`, `HashBagEmbeddingPort` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `EmbedOrtJni`, `AndroidEmbeddingPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |

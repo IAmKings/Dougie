@@ -12,6 +12,7 @@ import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
 import com.dougie.core.model.AndroidPermissions
+import com.dougie.core.runtime.ConversationPointer
 import com.dougie.core.runtime.EgressGateway
 import com.dougie.core.runtime.LoopEngine
 import com.dougie.core.runtime.PolicyEngine
@@ -274,9 +275,21 @@ class DougieApplication : Application() {
             taskStore = taskStores.taskStore,
             screenFrames = screenStore,
             onTaskFinished = { finishComposerAfterTask() },
+            conversation = object : ConversationPointer {
+                override fun currentId(): String = preferenceStore.currentConversationId()
+                override fun setCurrentId(id: String) {
+                    preferenceStore.setCurrentConversationId(id)
+                }
+            },
         )
         runBlocking {
-            recoverInterrupted(taskStores.taskStore)?.let { taskManager.seed(it) }
+            val recovered = recoverInterrupted(taskStores.taskStore)
+            if (recovered != null &&
+                recovered.conversationId == preferenceStore.currentConversationId()
+            ) {
+                taskManager.seed(recovered)
+            }
+            taskManager.reloadTranscript()
         }
         TaskProgressNotifier(this).also { taskProgressNotifier = it }
             .start(appScope, taskManager.task)

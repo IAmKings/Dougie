@@ -54,4 +54,28 @@ internal class SqliteTaskStore(
             }
         }
     }
+
+    override suspend fun listByConversation(conversationId: String): List<AgentTask> =
+        withContext(Dispatchers.IO) {
+            helper.readableDatabase.rawQuery(
+                """
+                SELECT snapshot_json
+                FROM agent_tasks
+                ORDER BY updated_at ASC
+                """.trimIndent(),
+                emptyArray(),
+            ).use { cursor ->
+                buildList {
+                    while (cursor.moveToNext()) {
+                        val raw = cursor.getString(0) ?: continue
+                        try {
+                            val task = TaskSnapshotCodec.decode(raw)
+                            if (task.conversationId == conversationId) add(task)
+                        } catch (_: Exception) {
+                            // Skip corrupt rows.
+                        }
+                    }
+                }
+            }
+        }
 }

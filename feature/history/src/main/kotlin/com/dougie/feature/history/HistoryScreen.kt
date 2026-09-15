@@ -43,6 +43,7 @@ fun HistoryRoute(
     onOpenChat: () -> Unit,
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenConversation: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -51,6 +52,7 @@ fun HistoryRoute(
         onOpenChat = onOpenChat,
         onOpenMemory = onOpenMemory,
         onOpenSettings = onOpenSettings,
+        onOpenConversation = onOpenConversation,
     )
 }
 
@@ -60,6 +62,7 @@ fun HistoryScreen(
     onOpenChat: () -> Unit,
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenConversation: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -106,7 +109,7 @@ fun HistoryScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(uiState.items, key = { it.taskId }) { item ->
-                    HistoryCard(item)
+                    HistoryCard(item, onOpen = { onOpenConversation(item.conversationId) })
                 }
             }
         }
@@ -119,7 +122,7 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryCard(item: HistoryItem) {
+private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
     val badgeColor = when (item.status) {
         TaskStatus.COMPLETED -> DougieColors.StatusCompleted
         TaskStatus.FAILED -> DougieColors.Error
@@ -131,6 +134,7 @@ private fun HistoryCard(item: HistoryItem) {
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
             .background(DougieColors.SurfaceContainerLowest)
+            .clickable(onClick = onOpen)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

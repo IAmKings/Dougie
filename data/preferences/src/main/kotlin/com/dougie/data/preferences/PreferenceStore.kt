@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.LlmVendors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,6 +91,15 @@ class PreferenceStore(context: Context) {
         _activeChatSku.value = skuId
     }
 
+    fun currentConversationId(): String =
+        prefs.getString(KEY_CURRENT_CONVERSATION, null)?.ifBlank { null }
+            ?: ConversationIds.DEFAULT
+
+    fun setCurrentConversationId(id: String) {
+        val stored = id.ifBlank { ConversationIds.DEFAULT }
+        prefs.edit().putString(KEY_CURRENT_CONVERSATION, stored).apply()
+    }
+
     private fun read(): ProviderSettings {
         val consent = if (prefs.contains(KEY_CONSENT_AT)) prefs.getLong(KEY_CONSENT_AT, 0L) else null
         return ProviderSettings(
@@ -126,5 +136,6 @@ class PreferenceStore(context: Context) {
         const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
         const val KEY_OPEN_APPS = "open_app_allowlist"
         const val KEY_ACTIVE_CHAT_SKU = "active_chat_sku"
+        const val KEY_CURRENT_CONVERSATION = "current_conversation_id"
     }
 }
