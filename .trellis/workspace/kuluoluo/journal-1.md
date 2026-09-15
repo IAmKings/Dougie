@@ -1804,3 +1804,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 78: 任务页按窗口分组定位
+
+**Date**: 2026-09-15
+**Task**: 任务页按窗口分组定位
+**Branch**: `master`
+
+### Summary
+
+任务页按 conversationId 分节（默认会话/对话 n，吸顶、全部展开）；点卡打开该窗口并滚到对应用户句。忙时 no-op；底栏对话不消耗定位。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c94eb32` | (see git log) |
+
+### Status
+
+[OK] **Completed**
