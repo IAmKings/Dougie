@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "HistoryItemTest must cover duration/provider mapping; no Compose UI tests"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "No DB bump; missing snapshot keys stay null; priorTurns still omitted"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Feature maps AgentTask; History must not decode snapshot_json"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Cards show wall-clock duration and path labels; null path omits Provider"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt/snapshot dump; Debug still 本地意图/本地 LLM/远程 LLM/无"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "AgentTaskTest and runtime codec/submit/recover coverage"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "History card extra line only; Chat chrome unchanged"}

@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "startedAt/endedAt live in snapshot_json; do not bump dougie_tasks.db or use updated_at as duration"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "AgentTask timestamps; TaskManager submit/persist stamp; codec omits priorTurns"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "History maps duration and completionPath labels; Chat does not"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Domain timestamps → codec → HistoryItem labels; do not parse snapshot_json in UI"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Share CompletionPath.toUserLabel() with Debug; stamp endedAt in one helper"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "HistoryCard meta line; no Chat duration"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log snapshot_json or input when adding timestamps"}
