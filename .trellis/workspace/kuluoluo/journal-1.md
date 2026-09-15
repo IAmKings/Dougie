@@ -1867,3 +1867,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 81: 任务卡展开与完成时刻
+
+**Date**: 2026-09-16
+**Task**: 任务卡展开与完成时刻
+**Branch**: `master`
+
+### Summary
+
+任务卡可展开工具名+成败；已结束卡显示今天/昨天完成钟点。CI 不再安装已下架的 SDK tools。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `033b73b` | (see git log) |
+
+### Status
+
+[OK] **Completed**

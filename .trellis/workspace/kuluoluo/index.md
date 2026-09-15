@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 80
+- **Total Sessions**: 81
 - **Last Active**: 2026-09-16
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1869 | Active |
+| `journal-1.md` | ~1890 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 81 | 2026-09-16 | 任务卡展开与完成时刻 | `033b73b` | `master` |
 | 80 | 2026-09-16 | 任务卡耗时与 Provider | `751f016` | `master` |
 | 79 | 2026-09-15 | 会话可重命名 | `bde94da` | `master` |
 | 78 | 2026-09-15 | 任务页按窗口分组定位 | `c94eb32` | `master` |
