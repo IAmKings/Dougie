@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "History card tap still openConversation; expand is local remember only"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "HistoryCard nested 展开 button vs card clickable"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "HistoryItemTest for steps; no Compose UI tests; still no tool args dump"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log snapshot or tool args when expanding history"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Do not extract toolDisplayName this knife; do not depend on :feature:chat"}

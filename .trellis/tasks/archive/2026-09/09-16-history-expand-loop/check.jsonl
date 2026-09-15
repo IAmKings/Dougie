@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "History must not dump tool args or resultJson; mapper tests only"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Card body still openConversation + focus; expand does not switch windows"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Nested 展开 control; Chinese contentDescription"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "HistoryItem maps AgentTask; do not decode snapshot_json in UI"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No argsSummary or resultJson on History chrome"}
