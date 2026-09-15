@@ -178,13 +178,13 @@ class MainActivity : ComponentActivity() {
                     }
                     previousReplyStatus = current?.status
                 }
+                val chatViewModel: ChatViewModel = viewModel(
+                    factory = ChatViewModel.Factory(app.taskManager),
+                )
                 when (route) {
                     AppRoute.Chat -> {
-                        val viewModel: ChatViewModel = viewModel(
-                            factory = ChatViewModel.Factory(app.taskManager),
-                        )
                         ChatRoute(
-                            viewModel = viewModel,
+                            viewModel = chatViewModel,
                             allowCloud = prefs.allowCloud,
                             intelligenceMark = intelligenceMark(
                                 allowCloud = prefs.allowCloud,
@@ -337,13 +337,14 @@ class MainActivity : ComponentActivity() {
                             onOpenChat = { route = AppRoute.Chat },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenSettings = { route = AppRoute.Settings },
-                            onOpenConversation = { conversationId ->
+                            onOpenConversation = { conversationId, taskId ->
                                 val current = app.taskManager.task.value
                                 val busy = current != null &&
                                     current.status != TaskStatus.COMPLETED &&
                                     current.status != TaskStatus.FAILED
                                 if (!busy) {
                                     app.taskManager.openConversation(conversationId)
+                                    chatViewModel.requestFocus(taskId)
                                     route = AppRoute.Chat
                                 }
                             },

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 data class HistoryUiState(
-    val items: List<HistoryItem> = emptyList(),
+    val sections: List<HistorySection> = emptyList(),
 )
 
 class HistoryViewModel(
@@ -26,7 +26,7 @@ class HistoryViewModel(
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = HistoryUiState(
-                items = taskStore.listRecent(50).map { it.toHistoryItem() },
+                sections = toHistorySections(taskStore.listRecent(50).map { it.toHistoryItem() }),
             )
         }
     }

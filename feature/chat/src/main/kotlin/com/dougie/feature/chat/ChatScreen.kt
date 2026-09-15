@@ -136,6 +136,7 @@ fun ChatRoute(
     overlayShortcutHint: String? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val pendingFocusKey by viewModel.pendingFocusKey.collectAsStateWithLifecycle()
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = viewModel.feedIndex,
         initialFirstVisibleItemScrollOffset = viewModel.feedOffset,
@@ -150,9 +151,23 @@ fun ChatRoute(
     }
     val firstKey = uiState.items.firstOrNull()?.listKey
     val lastAgent = (uiState.items.lastOrNull() as? ChatItem.AgentMessage)?.text
-    LaunchedEffect(uiState.items.size, firstKey, lastAgent) {
+    LaunchedEffect(uiState.items.size, firstKey, lastAgent, pendingFocusKey) {
         val items = uiState.items
         if (items.isEmpty()) return@LaunchedEffect
+        val pending = pendingFocusKey
+        if (!pending.isNullOrEmpty()) {
+            val index = items.indexOfFirst { it.listKey == pending }
+            if (index >= 0) {
+                viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
+                listState.scrollToItem(index)
+                viewModel.clearPendingFocus()
+            } else if (viewModel.feedItemCount > 0 && firstKey != viewModel.feedFirstKey) {
+                viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
+                listState.scrollToItem(items.lastIndex)
+                viewModel.clearPendingFocus()
+            }
+            return@LaunchedEffect
+        }
         val follow = shouldFollowChatFeed(
             itemCount = items.size,
             firstKey = firstKey,
@@ -160,6 +175,7 @@ fun ChatRoute(
             previousItemCount = viewModel.feedItemCount,
             previousFirstKey = viewModel.feedFirstKey,
             previousLastAgent = viewModel.feedLastAgent,
+            pendingFocusKey = pending,
         )
         if (follow) {
             val animate = viewModel.feedItemCount > 0 && firstKey == viewModel.feedFirstKey

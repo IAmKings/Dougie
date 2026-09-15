@@ -41,4 +41,97 @@ class HistoryItemTest {
         ).toHistoryItem()
         assertEquals(ConversationIds.DEFAULT, item.conversationId)
     }
+
+    @Test
+    fun groupsTwoWindowsMostRecentlyActiveFirst() {
+        val extra = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        val sections = toHistorySections(
+            listOf(
+                historyTurn("e2", extra, "extra newer"),
+                historyTurn("e1", extra, "extra older"),
+                historyTurn("d2", ConversationIds.DEFAULT, "default newer"),
+                historyTurn("d1", ConversationIds.DEFAULT, "default older"),
+            ),
+        )
+        assertEquals(2, sections.size)
+        assertEquals(extra, sections[0].conversationId)
+        assertEquals("对话 2", sections[0].title)
+        assertEquals(listOf("e2", "e1"), sections[0].items.map { it.taskId })
+        assertEquals(ConversationIds.DEFAULT, sections[1].conversationId)
+        assertEquals("默认会话", sections[1].title)
+        assertEquals(listOf("d2", "d1"), sections[1].items.map { it.taskId })
+        sections.forEach { section ->
+            assertEquals(false, section.title.contains(extra))
+            assertEquals(false, section.title.contains("aaaa"))
+        }
+    }
+
+    @Test
+    fun emptyHistoryHasNoSections() {
+        assertEquals(emptyList<HistorySection>(), toHistorySections(emptyList()))
+    }
+
+    @Test
+    fun groupsInterleavedTurnsByWindowKeepingNewestFirst() {
+        val extra = "window-extra"
+        val sections = toHistorySections(
+            listOf(
+                historyTurn("d3", ConversationIds.DEFAULT),
+                historyTurn("e2", extra),
+                historyTurn("d2", ConversationIds.DEFAULT),
+                historyTurn("e1", extra),
+                historyTurn("d1", ConversationIds.DEFAULT),
+            ),
+        )
+        assertEquals(listOf(ConversationIds.DEFAULT, extra), sections.map { it.conversationId })
+        assertEquals(listOf("d3", "d2", "d1"), sections[0].items.map { it.taskId })
+        assertEquals(listOf("e2", "e1"), sections[1].items.map { it.taskId })
+        assertEquals("默认会话", sections[0].title)
+        assertEquals("对话 2", sections[1].title)
+    }
+
+    @Test
+    fun extraWindowIsDialogueTwoEvenWhenAlone() {
+        val extra = "11111111-2222-3333-4444-555555555555"
+        val sections = toHistorySections(
+            listOf(
+                historyTurn("e2", extra),
+                historyTurn("e1", extra),
+            ),
+        )
+        assertEquals(1, sections.size)
+        assertEquals("对话 2", sections[0].title)
+        assertEquals(false, sections[0].title.contains(extra))
+    }
+
+    @Test
+    fun numbersNonDefaultByOldestFirstAppearance() {
+        val newerExtra = "window-newer-uuid"
+        val olderExtra = "window-older-uuid"
+        val sections = toHistorySections(
+            listOf(
+                historyTurn("n2", newerExtra),
+                historyTurn("n1", newerExtra),
+                historyTurn("o2", olderExtra),
+                historyTurn("o1", olderExtra),
+            ),
+        )
+        assertEquals(newerExtra, sections[0].conversationId)
+        assertEquals("对话 3", sections[0].title)
+        assertEquals(olderExtra, sections[1].conversationId)
+        assertEquals("对话 2", sections[1].title)
+    }
+
+    private fun historyTurn(
+        taskId: String,
+        conversationId: String,
+        input: String = "查电量",
+    ) = AgentTask(
+        taskId = taskId,
+        input = input,
+        status = TaskStatus.COMPLETED,
+        finalAnswer = "ok",
+        conversationId = conversationId,
+        loopCount = 1,
+    ).toHistoryItem()
 }

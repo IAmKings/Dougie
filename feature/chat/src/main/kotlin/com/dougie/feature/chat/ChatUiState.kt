@@ -123,13 +123,17 @@ fun shouldFollowChatFeed(
     previousItemCount: Int,
     previousFirstKey: String?,
     previousLastAgent: String?,
+    pendingFocusKey: String? = null,
 ): Boolean {
     if (itemCount <= 0) return false
+    if (!pendingFocusKey.isNullOrEmpty()) return false
     if (previousItemCount <= 0) return true
     if (firstKey != previousFirstKey) return true
     if (itemCount > previousItemCount) return true
     return lastAgent != previousLastAgent
 }
+
+fun userMessageListKey(taskId: String): String = "$taskId:user"
 
 fun AgentTask.toPastChatItems(): List<ChatItem> {
     val items = ArrayList<ChatItem>(2)

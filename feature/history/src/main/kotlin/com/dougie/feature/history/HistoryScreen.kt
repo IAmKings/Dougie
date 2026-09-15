@@ -1,5 +1,6 @@
 package com.dougie.feature.history
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,7 +44,7 @@ fun HistoryRoute(
     onOpenChat: () -> Unit,
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenConversation: (String) -> Unit,
+    onOpenConversation: (String, String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -56,13 +57,14 @@ fun HistoryRoute(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HistoryScreen(
     uiState: HistoryUiState,
     onOpenChat: () -> Unit,
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenConversation: (String) -> Unit,
+    onOpenConversation: (String, String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -85,7 +87,7 @@ fun HistoryScreen(
                 fontWeight = FontWeight.ExtraBold,
             )
         }
-        if (uiState.items.isEmpty()) {
+        if (uiState.sections.isEmpty()) {
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -108,8 +110,26 @@ fun HistoryScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(uiState.items, key = { it.taskId }) { item ->
-                    HistoryCard(item, onOpen = { onOpenConversation(item.conversationId) })
+                uiState.sections.forEach { section ->
+                    stickyHeader(key = "section:${section.conversationId}") {
+                        Text(
+                            text = section.title,
+                            color = DougieColors.Primary,
+                            fontSize = 14.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(DougieColors.Surface)
+                                .padding(vertical = 4.dp),
+                        )
+                    }
+                    items(section.items, key = { it.taskId }) { item ->
+                        HistoryCard(
+                            item,
+                            onOpen = { onOpenConversation(item.conversationId, item.taskId) },
+                        )
+                    }
                 }
             }
         }

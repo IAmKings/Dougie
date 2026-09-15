@@ -5,7 +5,7 @@
 ## Overview
 
 - Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
-- UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `IntelligenceMark` enum, `HistoryItem`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
+- UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `IntelligenceMark` enum, `HistoryItem`, `HistorySection`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
 - JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files.
 - Persistence codec is hand-written `TaskSnapshotCodec` (`ignoreUnknownKeys`). Do not switch Chat to decode `snapshot_json`.
 
@@ -38,7 +38,7 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 
 ## Common Patterns
 
-- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun AgentTask.toDebugTaskSnapshot()`.
+- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun toHistorySections()`, `fun AgentTask.toDebugTaskSnapshot()`.
 - `StateFlow` + `map` / `combine` + `stateIn(viewModelScope, WhileSubscribed(5_000), initial)`.
 - `ViewModelProvider.Factory` unchecked cast is the existing DI style (no Hilt/Anvil in the project).
 - `IntelligenceMark` is computed in `:app` from prefs + `task.lastError`, then passed into `ChatRoute` — Chat does not read EncryptedSharedPreferences.

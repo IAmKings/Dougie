@@ -5,8 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dougie.core.runtime.TaskManager
 import com.dougie.core.model.TaskStatus
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
@@ -28,6 +30,19 @@ class ChatViewModel(
         private set
     var feedLastAgent: String? = null
         private set
+
+    private val _pendingFocusKey = MutableStateFlow<String?>(null)
+    val pendingFocusKey: StateFlow<String?> = _pendingFocusKey.asStateFlow()
+
+    fun requestFocus(taskId: String) {
+        val id = taskId.trim()
+        if (id.isEmpty()) return
+        _pendingFocusKey.value = userMessageListKey(id)
+    }
+
+    fun clearPendingFocus() {
+        _pendingFocusKey.value = null
+    }
 
     fun saveFeedScroll(index: Int, offset: Int) {
         feedIndex = index
@@ -53,6 +68,7 @@ class ChatViewModel(
         attachments: List<com.dougie.core.model.AttachmentMeta> = emptyList(),
         speakReply: Boolean = false,
     ) {
+        clearPendingFocus()
         val lastScreen = attachments.lastOrNull {
             it.kind == com.dougie.core.model.AttachmentKind.SCREEN
         }
@@ -69,6 +85,7 @@ class ChatViewModel(
     fun retry() {
         val current = taskManager.task.value ?: return
         if (current.status != TaskStatus.FAILED) return
+        clearPendingFocus()
         taskManager.submit(
             current.input,
             current.attachedCaptureId,
@@ -80,6 +97,7 @@ class ChatViewModel(
     }
 
     fun newConversation() {
+        clearPendingFocus()
         taskManager.newConversation()
         resetFeedFollow()
     }

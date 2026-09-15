@@ -541,6 +541,34 @@ class ChatUiStateTest {
         )
     }
 
+    @Test
+    fun followChatFeedSkipsWhenFocusListKeyPending() {
+        assertEquals(
+            false,
+            shouldFollowChatFeed(
+                itemCount = 4,
+                firstKey = "n:user",
+                lastAgent = "新窗口。",
+                previousItemCount = 4,
+                previousFirstKey = "p1:user",
+                previousLastAgent = "记下了。",
+                pendingFocusKey = userMessageListKey("old"),
+            ),
+        )
+        assertEquals(
+            true,
+            shouldFollowChatFeed(
+                itemCount = 4,
+                firstKey = "n:user",
+                lastAgent = "新窗口。",
+                previousItemCount = 4,
+                previousFirstKey = "p1:user",
+                previousLastAgent = "记下了。",
+            ),
+        )
+        assertEquals("t1:user", userMessageListKey("t1"))
+    }
+
     private fun fact(id: String, source: String) = MemoryEntry(
         id = id,
         content = "我叫小明，住在上海",

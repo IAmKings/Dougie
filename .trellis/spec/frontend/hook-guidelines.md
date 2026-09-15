@@ -7,7 +7,7 @@
 Shared stateful logic lives in `*ViewModel` (`androidx.lifecycle.ViewModel`). Compose uses:
 
 - `collectAsStateWithLifecycle()` on `StateFlow`
-- `LaunchedEffect` for one-shot refresh / scroll. Chat feed follows to the last item only when the transcript grows, the first `listKey` changes (new/opened conversation), or the last agent text streams. Bottom-nav return must restore `LazyListState` from `ChatViewModel` and must not pin to end.
+- `LaunchedEffect` for one-shot refresh / scroll. Chat feed follows to the last item only when the transcript grows, the first `listKey` changes (new/opened conversation), or the last agent text streams — unless `pendingFocusKey` is set, which overrides follow-to-end until `scrollToItem` on `{taskId}:user` (or fallback if that key never appears). After a focus scroll, `rememberFeedFollow` before `clearPendingFocus` so the follow effect does not pin to end. `send` / `retry` / `newConversation` also clear pending focus. Bottom-nav return must restore `LazyListState` from `ChatViewModel` and must not pin to end or call `requestFocus`.
 - `remember` / `mutableStateOf` for ephemeral UI (input draft, dialog, key visibility)
 
 `PermissionsViewModel` is an `AndroidViewModel` because it reads `ContextCompat.checkSelfPermission`. That is the exception; Chat/Settings/Memory/History/Debug ViewModels take interfaces (`TaskManager`, `PreferenceStore`, `MemoryStore`, `TaskStore`, `AuditLog`) via `ViewModelProvider.Factory`.
@@ -52,7 +52,7 @@ SAF `OpenDocumentTree` stays in `:app` (`rememberLauncherForActivityResult`). Se
 - ViewModels: `ChatViewModel`, `SettingsViewModel`, …
 - UI state: `ChatUiState`, `SettingsFormState`, `MemoryUiState`, `HistoryUiState`, `DebugUiState`, `PermissionUiState`
 - Routes: `ChatRoute`, `SettingsRoute`, …
-- Mappers: `toChatUiState()`, `toHistoryItem()`, `toDebugTaskSnapshot()`, `intelligenceMark(...)`
+- Mappers: `toChatUiState()`, `toHistoryItem()`, `toHistorySections()`, `toDebugTaskSnapshot()`, `intelligenceMark(...)`
 
 Do not name Compose functions `useXxx`.
 
@@ -62,3 +62,4 @@ Do not name Compose functions `useXxx`.
 - Keeping confirmation as a boolean in Chat ViewModel. `confirm()` / `reject()` must call `TaskManager`; UI maps `AWAITING_CONFIRMATION` to `ConfirmCard`.
 - Collecting flows without `viewModelScope` / `stateIn`, or launching probes on Main. Offline probe runs on `Dispatchers.Default` (`state-management.md`).
 - Auto-collecting `PreferenceStore` into Settings fields on every emission in a way that wipes unsaved edits. Form is a local `MutableStateFlow` until **保存配置**.
+- Calling `requestFocus` from bottom-nav **对话**, or clearing `pendingFocusKey` before `rememberFeedFollow` after a History tap — both pin Chat to the last bubble and undo mid-thread positioning.
