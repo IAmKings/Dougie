@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "History grouping vs openConversation/focus scroll"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Chat feed follow vs pending focus listKey"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "feature:history owns task list UI"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM tests on history mappers and chat listKey"}
