@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/09-15-chat-conversation-window/prd.md", "reason": "Cross-child AC and Alignment: window + Recent Conversation vs tables we refuse"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Chat mapping must stay derived from AgentTask snapshots"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JVM tests JDK 17; core stays free of android.*"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Assembled prompts and conversation text must not hit Logcat"}

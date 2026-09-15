@@ -1,0 +1,31 @@
+{
+  "id": "chat-conversation-window",
+  "name": "chat-conversation-window",
+  "title": "对话窗口：默认会话与多轮",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "kuluoluo",
+  "assignee": "kuluoluo",
+  "createdAt": "2026-09-15",
+  "completedAt": "2026-09-15",
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "09-15-chat-thread-default",
+    "09-15-chat-thread-llm-context"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "description": "默认会话+新对话；窗口多轮后再注入 LLM 近期轮次"
+  }
+}

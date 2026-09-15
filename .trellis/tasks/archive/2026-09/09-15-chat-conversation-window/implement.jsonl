@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/09-15-chat-conversation-window/prd.md", "reason": "Parent scope, alignment table vs root PRD tables we are not building"}
+{"file": "docs/adr/0002-task-first-class-unit.md", "reason": "AgentTask stays the execution unit; conversationId was assumed but missing"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "agent_tasks snapshot_json; onUpgrade drop; do not add a column this tree unless additive"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Chat today maps a single TaskManager.task; must extend without a second TaskStatus store"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt, snapshot_json, or fact content in logs"}
