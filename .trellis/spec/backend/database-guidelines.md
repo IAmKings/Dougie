@@ -70,6 +70,7 @@ CREATE TABLE audit_log (
 - `TaskManager` calls `TaskStore.upsert` on every loop `emit`. JSON encode failures are skipped; the loop still runs.
 - `AgentTask.conversationId` lives in `snapshot_json` (default `"default"` when missing). `listByConversation` scans all snapshots in `updated_at ASC` and filters in memory — do not add a SQL column in v1, and do **not** impersonate the current thread with `listRecent(50)`.
 - `AgentTask.priorTurns` is instantaneous LLM context. `TaskSnapshotCodec` **must omit** it; do not write history text into `snapshot_json`.
+- `AgentTask.startedAt` / `endedAt` (epoch ms) live in `snapshot_json` only. `TaskManager.submit` writes `startedAt`; terminal persist / `markCancelled` / `recoverInterrupted` call `stampEndedAtIfTerminal` (set `endedAt` once, never overwrite). Do **not** add SQL columns, do **not** bump `dougie_tasks.db`, and do **not** use `updated_at` as duration. Old snapshots missing keys stay null (History omits duration).
 - Current open conversation id is prefs `current_conversation_id`, not a `conversations` table. Custom window titles are prefs `conversation_titles_json` (JSON object id→name). Do **not** add a `conversations` table or `conversation_id` SQL column, do **not** bump `dougie_tasks.db`, and do **not** put titles on `AgentTask` / `TaskSnapshotCodec` / `priorTurns`.
 - App start: `recoverInterrupted(store)` — if the latest row is not COMPLETED/FAILED, mark FAILED with `UserFacingErrors.INTERRUPTED`. `TaskManager.seed` only when that task’s `conversationId` equals the current prefs pointer. Do **not** resume the LLM stream.
 - `calendar_create` reads/writes `idempotency` via `IdempotencyStore` (INSERT OR IGNORE). A new tool instance with the same store must not call `CalendarPort.createEvent` again for the same key.
@@ -96,4 +97,5 @@ JVM tests use `InMemoryTaskStore` / `InMemoryIdempotencyStore` / `NoOpAuditLog`.
 - Treating `embed()` empty `FloatArray` as success — that writes an empty BLOB and blocks backfill; Hybrid must fall back to keyword. Device paraphrase AC needs the BGE pack (`AndroidEmbeddingPort`); JVM synonym tests stay Fake. Hash-bag is JVM-only, not a downloadable pack.
 - Auto-continuing an interrupted task with a new LLM call.
 - Writing calendar event bodies or clipboard text into `audit_log`.
+- Using `updated_at` as task duration. Wall-clock duration is `endedAt - startedAt` inside `snapshot_json`.
 - Silent Fake LLM on the app chat path.

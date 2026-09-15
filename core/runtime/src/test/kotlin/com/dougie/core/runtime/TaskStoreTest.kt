@@ -8,6 +8,7 @@ import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.ConversationTurn
+import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.TaskStatus
@@ -17,6 +18,9 @@ import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.InMemoryScreenFrameStore
 import com.dougie.core.tool.whiteSquareOnBlack
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -46,6 +50,7 @@ class TaskStoreTest {
                 input = "查电量",
                 status = TaskStatus.THINKING,
                 loopCount = 1,
+                startedAt = 1_000L,
                 conversationId = "other-thread",
             ),
         )
@@ -55,8 +60,38 @@ class TaskStoreTest {
         assertEquals(TaskStatus.FAILED, recovered.status)
         assertEquals(UserFacingErrors.INTERRUPTED, recovered.lastError)
         assertEquals("other-thread", recovered.conversationId)
+        assertEquals(1_000L, recovered.startedAt)
+        val recoveredEnded = recovered.endedAt
+        assertTrue(recoveredEnded != null && recoveredEnded >= 1_000L)
         assertEquals(TaskStatus.FAILED, store.listRecent(1).single().status)
+        assertEquals(recoveredEnded, store.listRecent(1).single().endedAt)
         assertNull(recoverInterrupted(store))
+    }
+
+    @Test
+    fun stampEndedAtIfTerminalIsIdempotentAndSkipsNonTerminal() {
+        val failed = AgentTask(
+            taskId = "t",
+            input = "查电量",
+            status = TaskStatus.FAILED,
+            startedAt = 1L,
+            endedAt = 2L,
+        )
+        assertEquals(2L, failed.stampEndedAtIfTerminal(nowMs = 99L).endedAt)
+        val thinking = AgentTask(
+            taskId = "live",
+            input = "查电量",
+            status = TaskStatus.THINKING,
+            startedAt = 1L,
+        )
+        assertNull(thinking.stampEndedAtIfTerminal(nowMs = 99L).endedAt)
+        val completed = AgentTask(
+            taskId = "done",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+            startedAt = 1L,
+        )
+        assertEquals(99L, completed.stampEndedAtIfTerminal(nowMs = 99L).endedAt)
     }
 
     @Test
@@ -119,6 +154,76 @@ class TaskStoreTest {
         assertEquals(TaskStatus.COMPLETED, saved.status)
         assertEquals(3, saved.loopCount)
         assertTrue(saved.toolTrace.all { it.status == ToolTraceStatus.SUCCESS })
+        val startedAt = saved.startedAt
+        val endedAt = saved.endedAt
+        assertTrue(startedAt != null)
+        assertTrue(endedAt != null && startedAt != null && endedAt >= startedAt)
+        assertEquals(startedAt, manager.task.value?.startedAt)
+        assertEquals(endedAt, manager.task.value?.endedAt)
+    }
+
+    @Test
+    fun submitSetsStartedAtBeforeLoop() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val manager = TaskManager(
+            loopEngine = LoopEngine(
+                llm = FakeLlmProvider(),
+                tools = mapOf("battery" to FakeBatteryTool()),
+                dispatcher = dispatcher,
+                stepDelayMs = 0,
+            ),
+            dispatcher = dispatcher,
+            scope = this,
+        )
+        manager.submit("我现在手机还有多少电？")
+        val live = manager.task.value
+        requireNotNull(live)
+        assertTrue(live.startedAt != null)
+        assertNull(live.endedAt)
+        advanceUntilIdle()
+        val done = manager.task.value
+        requireNotNull(done)
+        assertEquals(TaskStatus.COMPLETED, done.status)
+        assertTrue(done.endedAt != null && done.startedAt != null && done.endedAt!! >= done.startedAt!!)
+    }
+
+    @Test
+    fun cancelPersistsEndedAtOnFailedSnapshot() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override fun stream(context: LoopContext): Flow<LlmEvent> = flow {
+                emit(LlmEvent.TextDelta("部分"))
+                delay(10_000)
+                emit(LlmEvent.TextDelta("完成"))
+            }
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                error("stream should be used")
+            }
+        }
+        val manager = TaskManager(
+            loopEngine = LoopEngine(
+                llm = provider,
+                tools = emptyMap(),
+                dispatcher = dispatcher,
+                stepDelayMs = 0,
+            ),
+            dispatcher = dispatcher,
+            scope = this,
+            taskStore = store,
+        )
+        manager.submit("你好")
+        testScheduler.runCurrent()
+        manager.cancel()
+        advanceUntilIdle()
+        val saved = store.listRecent(1).single()
+        assertEquals(TaskStatus.FAILED, saved.status)
+        assertEquals(UserFacingErrors.CANCELLED, saved.lastError)
+        val startedAt = saved.startedAt
+        val endedAt = saved.endedAt
+        assertTrue(startedAt != null)
+        assertTrue(endedAt != null && startedAt != null && endedAt >= startedAt)
     }
 
     @Test
@@ -170,6 +275,8 @@ class TaskStoreTest {
         assertEquals(original.toolTrace.single().toolName, restored.toolTrace.single().toolName)
         assertEquals(original.toolTrace.single().argsSummary, restored.toolTrace.single().argsSummary)
         assertNull(restored.completionPath)
+        assertNull(restored.startedAt)
+        assertNull(restored.endedAt)
     }
 
     @Test
@@ -223,6 +330,8 @@ class TaskStoreTest {
         assertNull(restored.attachedHeight)
         assertEquals(false, restored.speakReply)
         assertNull(restored.completionPath)
+        assertNull(restored.startedAt)
+        assertNull(restored.endedAt)
     }
 
     @Test
@@ -233,6 +342,8 @@ class TaskStoreTest {
         assertEquals(false, restored.speakReply)
         assertEquals("好了", restored.finalAnswer)
         assertNull(restored.completionPath)
+        assertNull(restored.startedAt)
+        assertNull(restored.endedAt)
     }
 
     @Test
@@ -255,6 +366,38 @@ class TaskStoreTest {
             CompletionPath.REMOTE_LLM,
             TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(remote)).completionPath,
         )
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesTimestamps() {
+        val original = AgentTask(
+            taskId = "timed",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+            startedAt = 1_700_000_000_000L,
+            endedAt = 1_700_000_003_000L,
+            priorTurns = listOf(ConversationTurn("查电量", "63%")),
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals(1_700_000_000_000L, restored.startedAt)
+        assertEquals(1_700_000_003_000L, restored.endedAt)
+        val encoded = TaskSnapshotCodec.encode(original)
+        assertTrue(encoded.contains("startedAt"))
+        assertTrue(encoded.contains("endedAt"))
+        assertTrue(!encoded.contains("priorTurns"))
+        assertTrue(restored.priorTurns.isEmpty())
+    }
+
+    @Test
+    fun snapshotDecodeWithoutTimestampsStaysNull() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"old","input":"查电量","status":"COMPLETED","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":"好了","lastError":null,"streamingText":null,"retrievedMemories":[],"attachments":[]}""",
+        )
+        assertNull(restored.startedAt)
+        assertNull(restored.endedAt)
+        val encoded = TaskSnapshotCodec.encode(AgentTask(taskId = "old", input = "查电量"))
+        assertTrue(!encoded.contains("startedAt"))
+        assertTrue(!encoded.contains("endedAt"))
     }
 
     @Test

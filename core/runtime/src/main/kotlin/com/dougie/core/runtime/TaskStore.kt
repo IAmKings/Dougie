@@ -43,7 +43,15 @@ suspend fun recoverInterrupted(store: TaskStore): AgentTask? {
         status = TaskStatus.FAILED,
         lastError = UserFacingErrors.INTERRUPTED,
         streamingText = null,
-    )
+    ).stampEndedAtIfTerminal()
     store.upsert(failed)
     return failed
+}
+
+internal fun AgentTask.stampEndedAtIfTerminal(
+    nowMs: Long = System.currentTimeMillis(),
+): AgentTask {
+    if (endedAt != null) return this
+    if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED) return this
+    return copy(endedAt = nowMs)
 }

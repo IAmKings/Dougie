@@ -1,7 +1,6 @@
 package com.dougie.feature.debug
 
 import com.dougie.core.model.AgentTask
-import com.dougie.core.model.CompletionPath
 import com.dougie.core.runtime.AuditEntry
 
 data class DebugTaskSnapshot(
@@ -33,12 +32,7 @@ fun AgentTask.toDebugTaskSnapshot(): DebugTaskSnapshot = DebugTaskSnapshot(
     status = status.name,
     loopCount = loopCount,
     lastError = lastError,
-    completionPath = when (completionPath) {
-        CompletionPath.LOCAL_INTENT -> "本地意图"
-        CompletionPath.LOCAL_LLM -> "本地 LLM"
-        CompletionPath.REMOTE_LLM -> "远程 LLM"
-        null -> "无"
-    },
+    completionPath = completionPath?.toUserLabel() ?: "无",
 )
 
 fun AuditEntry.toDebugAuditRow(): DebugAuditRow = DebugAuditRow(

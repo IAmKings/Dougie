@@ -55,6 +55,8 @@ object TaskSnapshotCodec {
         )
         put("speakReply", task.speakReply)
         putNullable("completionPath", task.completionPath?.name)
+        if (task.startedAt != null) put("startedAt", task.startedAt)
+        if (task.endedAt != null) put("endedAt", task.endedAt)
         put("conversationId", task.conversationId)
     }.toString()
 
@@ -82,6 +84,8 @@ object TaskSnapshotCodec {
             speakReply = obj.optionalBoolean("speakReply"),
             completionPath = obj.optionalString("completionPath")
                 ?.let { runCatching { CompletionPath.valueOf(it) }.getOrNull() },
+            startedAt = obj["startedAt"]?.jsonPrimitive?.longOrNull,
+            endedAt = obj["endedAt"]?.jsonPrimitive?.longOrNull,
             conversationId = obj.optionalString("conversationId")
                 ?.takeIf { it.isNotBlank() }
                 ?: ConversationIds.DEFAULT,

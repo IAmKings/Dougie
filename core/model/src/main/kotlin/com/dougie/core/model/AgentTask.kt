@@ -26,6 +26,8 @@ data class AgentTask(
     val attachments: List<AttachmentMeta> = emptyList(),
     val speakReply: Boolean = false,
     val completionPath: CompletionPath? = null,
+    val startedAt: Long? = null,
+    val endedAt: Long? = null,
     val conversationId: String = ConversationIds.DEFAULT,
     val priorTurns: List<ConversationTurn> = emptyList(),
 )
@@ -34,6 +36,13 @@ enum class CompletionPath {
     LOCAL_INTENT,
     LOCAL_LLM,
     REMOTE_LLM,
+    ;
+
+    fun toUserLabel(): String = when (this) {
+        LOCAL_INTENT -> "本地意图"
+        LOCAL_LLM -> "本地 LLM"
+        REMOTE_LLM -> "远程 LLM"
+    }
 }
 
 enum class TaskStatus {

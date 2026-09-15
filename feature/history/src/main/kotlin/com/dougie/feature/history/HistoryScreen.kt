@@ -227,6 +227,14 @@ private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
                 fontWeight = FontWeight.Bold,
             )
         }
+        val meta = listOfNotNull(item.durationLabel, item.providerLabel).joinToString(" · ")
+        if (meta.isNotEmpty()) {
+            Text(
+                text = meta,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 13.sp,
+            )
+        }
         Text(
             text = "循环 ${item.loopCount}" +
                 if (item.toolChain.isNotBlank()) "  ·  ${item.toolChain}" else "",

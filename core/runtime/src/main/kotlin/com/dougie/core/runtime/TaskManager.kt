@@ -64,6 +64,7 @@ class TaskManager(
             attachedHeight = (lastScreen?.height ?: attachedHeight)?.takeIf { it > 0 },
             attachments = attachments,
             speakReply = speakReply,
+            startedAt = System.currentTimeMillis(),
             conversationId = conversation.currentId(),
         )
         _task.value = created
@@ -72,8 +73,9 @@ class TaskManager(
             reloadTranscript()
             try {
                 loopEngine.run(created) { snapshot ->
-                    _task.value = snapshot
-                    persist(snapshot)
+                    val stamped = snapshot.stampEndedAtIfTerminal()
+                    _task.value = stamped
+                    persist(stamped)
                 }
             } catch (e: CancellationException) {
                 markCancelled()
@@ -148,7 +150,7 @@ class TaskManager(
             status = TaskStatus.FAILED,
             lastError = UserFacingErrors.CANCELLED,
             streamingText = null,
-        )
+        ).stampEndedAtIfTerminal()
         _task.value = failed
         persist(failed)
         reloadTranscript()
@@ -157,7 +159,7 @@ class TaskManager(
     private suspend fun persist(task: AgentTask) {
         val store = taskStore ?: return
         try {
-            store.upsert(task)
+            store.upsert(task.stampEndedAtIfTerminal())
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

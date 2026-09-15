@@ -1,11 +1,13 @@
 package com.dougie.feature.history
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.UserFacingErrors
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class HistoryItemTest {
@@ -29,6 +31,99 @@ class HistoryItemTest {
         assertEquals("calendar_query → calendar_create", item.toolChain)
         assertEquals(UserFacingErrors.INTERRUPTED, item.error)
         assertEquals("thread-z", item.conversationId)
+        assertNull(item.durationLabel)
+        assertNull(item.providerLabel)
+    }
+
+    @Test
+    fun mapsDurationAndProviderLabels() {
+        val item = AgentTask(
+            taskId = "t-meta",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "63%",
+            completionPath = CompletionPath.LOCAL_LLM,
+            startedAt = 1_000L,
+            endedAt = 4_000L,
+        ).toHistoryItem()
+        assertEquals("3秒", item.durationLabel)
+        assertEquals("本地 LLM", item.providerLabel)
+        assertEquals(
+            "本地意图",
+            AgentTask(
+                taskId = "t-intent",
+                input = "现在几点",
+                status = TaskStatus.COMPLETED,
+                completionPath = CompletionPath.LOCAL_INTENT,
+            ).toHistoryItem().providerLabel,
+        )
+        assertEquals(
+            "远程 LLM",
+            AgentTask(
+                taskId = "t-remote",
+                input = "你好",
+                status = TaskStatus.COMPLETED,
+                completionPath = CompletionPath.REMOTE_LLM,
+            ).toHistoryItem().providerLabel,
+        )
+        assertEquals(
+            "3秒 · 本地 LLM",
+            listOfNotNull(item.durationLabel, item.providerLabel).joinToString(" · "),
+        )
+        val none = AgentTask(
+            taskId = "t-none",
+            input = "查电量",
+            status = TaskStatus.COMPLETED,
+        ).toHistoryItem()
+        assertNull(none.providerLabel)
+        assertEquals(
+            "",
+            listOfNotNull(none.durationLabel, none.providerLabel).joinToString(" · "),
+        )
+        assertEquals(
+            "2秒",
+            AgentTask(
+                taskId = "t-fail",
+                input = "查电量",
+                status = TaskStatus.FAILED,
+                lastError = UserFacingErrors.CANCELLED,
+                startedAt = 1_000L,
+                endedAt = 3_000L,
+            ).toHistoryItem().durationLabel,
+        )
+    }
+
+    @Test
+    fun durationMissingEitherTimestampStaysNull() {
+        val startedOnly = AgentTask(
+            taskId = "t-start",
+            input = "查电量",
+            status = TaskStatus.THINKING,
+            completionPath = CompletionPath.REMOTE_LLM,
+            startedAt = 1_000L,
+        ).toHistoryItem()
+        assertNull(startedOnly.durationLabel)
+        assertEquals("远程 LLM", startedOnly.providerLabel)
+        assertNull(
+            AgentTask(
+                taskId = "t-end",
+                input = "查电量",
+                status = TaskStatus.COMPLETED,
+                endedAt = 2_000L,
+            ).toHistoryItem().durationLabel,
+        )
+    }
+
+    @Test
+    fun formatTaskDurationCoversBucketsAndNegative() {
+        assertNull(formatTaskDuration(null, 1_000L))
+        assertNull(formatTaskDuration(1_000L, null))
+        assertEquals("不足1秒", formatTaskDuration(1_000L, 1_500L))
+        assertEquals("3秒", formatTaskDuration(0L, 3_000L))
+        assertEquals("59秒", formatTaskDuration(0L, 59_000L))
+        assertEquals("1分", formatTaskDuration(0L, 60_000L))
+        assertEquals("1分12秒", formatTaskDuration(0L, 72_000L))
+        assertEquals("不足1秒", formatTaskDuration(5_000L, 1_000L))
     }
 
     @Test

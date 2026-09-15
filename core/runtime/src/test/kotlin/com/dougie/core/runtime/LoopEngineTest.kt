@@ -432,6 +432,8 @@ class LoopEngineTest {
         assertEquals(UserFacingErrors.CANCELLED, task.lastError)
         assertEquals(null, task.streamingText)
         assertEquals(null, task.finalAnswer)
+        assertTrue(task.startedAt != null)
+        assertTrue(task.endedAt != null && task.startedAt != null && task.endedAt!! >= task.startedAt!!)
     }
 
     @Test

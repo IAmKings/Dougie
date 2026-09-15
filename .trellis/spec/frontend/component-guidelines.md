@@ -46,7 +46,7 @@ Do not add a Compose semantics test suite unless the task asks for it — none e
 
 ## Common Mistakes
 
-- Putting mapping logic in the composable (`if (status == FAILED)`) instead of `AgentTask.toChatUiState()` / `toHistoryItem()`. UI tests cannot see that; JVM tests can (`ChatUiStateTest`).
+- Putting mapping logic in the composable (`if (status == FAILED)`) instead of `AgentTask.toChatUiState()` / `toHistoryItem()`. Duration and Provider on History cards come from `durationLabel` / `providerLabel`, not from parsing `snapshot_json` in Compose. UI tests cannot see mapping; JVM tests can (`ChatUiStateTest`, `HistoryItemTest`).
 - Hardcoding tool label “电池” for every `ToolCard`. Chat maps known ids to Chinese (`battery` → 电池工具, `js_eval` → 运行脚本, `py_eval` → 运行 Python, `sms_compose` → 发短信, `phone_dial` → 打电话) and otherwise shows raw `toolName`. `confirmToolBody("js_eval")` is 隔离运行脚本，不读写文件、不上网 — do not reuse 写入设备数据. L4 JS confirm uses 按完整脚本运行，结果取最后一次表达式. `confirmToolBody("py_eval")` is 可用沙箱文件处理数据，不能上网或读应用外文件. `confirmToolBody("sms_compose")` / `phone_dial` is 将打开系统短信或拨号并填入内容，需你再按发送或呼叫 — do not reuse 写入设备数据.
 - Using the sketch SVG as the default avatar regardless of `IntelligenceMark`.
 - Forgetting IME/nav padding (`imePadding`, `navigationBarsPadding`, `statusBarsPadding`) on new full-screen columns — Chat and Settings already do this.
