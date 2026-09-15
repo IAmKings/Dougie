@@ -55,6 +55,7 @@ fun HistoryRoute(
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenConversation: (String, String) -> Unit,
+    onDelete: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -65,6 +66,7 @@ fun HistoryRoute(
         onOpenSettings = onOpenSettings,
         onOpenConversation = onOpenConversation,
         onRename = viewModel::setTitle,
+        onDelete = onDelete,
     )
 }
 
@@ -77,8 +79,10 @@ fun HistoryScreen(
     onOpenSettings: () -> Unit,
     onOpenConversation: (String, String) -> Unit,
     onRename: (String, String) -> Unit = { _, _ -> },
+    onDelete: (String) -> Unit = {},
 ) {
     var renaming by remember { mutableStateOf<HistorySection?>(null) }
+    var deleting by remember { mutableStateOf<HistorySection?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -145,6 +149,14 @@ fun HistoryScreen(
                             TextButton(onClick = { renaming = section }) {
                                 Text("改名", color = DougieColors.Primary, fontSize = 13.sp)
                             }
+                            if (section.canDelete()) {
+                                TextButton(
+                                    onClick = { deleting = section },
+                                    modifier = Modifier.semantics { contentDescription = "删除" },
+                                ) {
+                                    Text("删除", color = DougieColors.Error, fontSize = 13.sp)
+                                }
+                            }
                         }
                     }
                     items(section.items, key = { it.taskId }) { item ->
@@ -191,6 +203,29 @@ fun HistoryScreen(
             },
             dismissButton = {
                 TextButton(onClick = { renaming = null }) { Text("取消") }
+            },
+        )
+    }
+    val deletingSection = deleting
+    if (deletingSection != null) {
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text("删除会话") },
+            text = {
+                Text("将删除「${deletingSection.title}」中的全部任务，且无法恢复。")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (deletingSection.canDelete()) {
+                            onDelete(deletingSection.conversationId)
+                        }
+                        deleting = null
+                    },
+                ) { Text("删除", color = DougieColors.Error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) { Text("取消") }
             },
         )
     }

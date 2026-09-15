@@ -291,6 +291,7 @@ class DougieApplication : Application() {
                     preferenceStore.setCurrentConversationId(id)
                 }
             },
+            titles = conversationTitles,
         )
         runBlocking {
             val recovered = recoverInterrupted(taskStores.taskStore)

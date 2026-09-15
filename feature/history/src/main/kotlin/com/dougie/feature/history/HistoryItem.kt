@@ -39,6 +39,8 @@ data class HistorySection(
     val items: List<HistoryItem>,
 )
 
+fun HistorySection.canDelete(): Boolean = conversationId != ConversationIds.DEFAULT
+
 fun toHistorySections(
     items: List<HistoryItem>,
     titles: Map<String, String> = emptyMap(),

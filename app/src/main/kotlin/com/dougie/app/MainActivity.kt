@@ -372,6 +372,22 @@ class MainActivity : ComponentActivity() {
                                     route = AppRoute.Chat
                                 }
                             },
+                            onDelete = { conversationId ->
+                                val current = app.taskManager.task.value
+                                val busy = current != null &&
+                                    current.status != TaskStatus.COMPLETED &&
+                                    current.status != TaskStatus.FAILED
+                                if (!busy) {
+                                    lifecycleScope.launch {
+                                        app.taskManager.deleteConversation(conversationId)?.join()
+                                        recentHistoryItems = withContext(Dispatchers.Default) {
+                                            app.taskStores.taskStore.listRecent(50)
+                                                .map { it.toHistoryItem() }
+                                        }
+                                        viewModel.refresh()
+                                    }
+                                }
+                            },
                         )
                     }
                     AppRoute.Permissions -> {

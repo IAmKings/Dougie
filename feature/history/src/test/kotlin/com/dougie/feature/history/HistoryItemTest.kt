@@ -307,6 +307,39 @@ class HistoryItemTest {
     }
 
     @Test
+    fun droppingSiblingExtraRenumbersCurrentConversationTitle() {
+        val older = "window-older"
+        val newer = "window-newer"
+        assertEquals(
+            "对话 3",
+            currentConversationTitle(
+                conversationId = newer,
+                recentItems = listOf(historyTurn("n1", newer), historyTurn("o1", older)),
+                windowEmpty = false,
+            ),
+        )
+        assertEquals(
+            "对话 2",
+            currentConversationTitle(
+                conversationId = newer,
+                recentItems = listOf(historyTurn("n1", newer)),
+                windowEmpty = false,
+            ),
+        )
+    }
+
+    @Test
+    fun extraSectionCanDeleteAndDefaultCannot() {
+        val extra = toHistorySections(listOf(historyTurn("e1", "window-extra"))).single()
+        val default = toHistorySections(
+            listOf(historyTurn("d1", ConversationIds.DEFAULT)),
+        ).single()
+        assertEquals(true, extra.canDelete())
+        assertEquals(false, default.canDelete())
+        assertEquals(false, HistorySection(ConversationIds.DEFAULT, "家里", emptyList()).canDelete())
+    }
+
+    @Test
     fun emptyHistoryHasNoSections() {
         assertEquals(emptyList<HistorySection>(), toHistorySections(emptyList()))
     }

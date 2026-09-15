@@ -1,6 +1,7 @@
 package com.dougie.core.runtime
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.UserFacingErrors
 import kotlinx.coroutines.sync.Mutex
@@ -10,6 +11,7 @@ interface TaskStore {
     suspend fun upsert(task: AgentTask)
     suspend fun listRecent(limit: Int = 50): List<AgentTask>
     suspend fun listByConversation(conversationId: String): List<AgentTask>
+    suspend fun deleteByConversation(conversationId: String): Int
 }
 
 class InMemoryTaskStore : TaskStore {
@@ -31,6 +33,16 @@ class InMemoryTaskStore : TaskStore {
 
     override suspend fun listByConversation(conversationId: String): List<AgentTask> = mutex.withLock {
         recentIds.mapNotNull { byId[it] }.filter { it.conversationId == conversationId }
+    }
+
+    override suspend fun deleteByConversation(conversationId: String): Int = mutex.withLock {
+        if (conversationId.isBlank() || conversationId == ConversationIds.DEFAULT) return@withLock 0
+        val ids = byId.values.filter { it.conversationId == conversationId }.map { it.taskId }
+        ids.forEach { taskId ->
+            byId.remove(taskId)
+            recentIds.remove(taskId)
+        }
+        ids.size
     }
 }
 

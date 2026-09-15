@@ -195,6 +195,169 @@ class ConversationTaskManagerTest {
     }
 
     @Test
+    fun deleteConversationRemovesExtraAndKeepsDefault() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val pointer = InMemoryConversationPointer()
+        val titles = InMemoryConversationTitles()
+        val manager = manager(dispatcher, store, pointer, this, titles)
+        store.upsert(
+            AgentTask(
+                taskId = "d1",
+                input = "默认",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = ConversationIds.DEFAULT,
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "e1",
+                input = "旁路",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = "extra-thread",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "e2",
+                input = "旁路2",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = "extra-thread",
+            ),
+        )
+        titles.setTitle("extra-thread", "工作")
+        manager.reloadTranscript()
+        manager.deleteConversation("extra-thread")
+        advanceUntilIdle()
+        assertTrue(store.listByConversation("extra-thread").isEmpty())
+        assertEquals(listOf("d1"), store.listByConversation(ConversationIds.DEFAULT).map { it.taskId })
+        assertTrue(titles.titles().isEmpty())
+        assertEquals(ConversationIds.DEFAULT, pointer.currentId())
+        assertEquals(listOf("d1"), manager.transcript.value.map { it.taskId })
+    }
+
+    @Test
+    fun deleteCurrentConversationSwitchesToDefault() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val pointer = InMemoryConversationPointer()
+        val titles = InMemoryConversationTitles()
+        val manager = manager(dispatcher, store, pointer, this, titles)
+        manager.submit("我现在手机还有多少电？")
+        advanceUntilIdle()
+        val defaultTaskId = manager.task.value!!.taskId
+        manager.newConversation()
+        manager.submit("我现在手机还有多少电？")
+        advanceUntilIdle()
+        val extraId = pointer.currentId()
+        assertNotEquals(ConversationIds.DEFAULT, extraId)
+        titles.setTitle(extraId, "临时")
+        manager.deleteConversation(extraId)
+        advanceUntilIdle()
+        assertEquals(ConversationIds.DEFAULT, pointer.currentId())
+        assertTrue(store.listByConversation(extraId).isEmpty())
+        assertTrue(titles.titles().isEmpty())
+        assertEquals(defaultTaskId, manager.task.value?.taskId)
+        assertEquals(ConversationIds.DEFAULT, manager.task.value?.conversationId)
+        assertTrue(manager.transcript.value.isEmpty())
+    }
+
+    @Test
+    fun deleteOtherConversationDoesNotSwitchCurrent() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val pointer = InMemoryConversationPointer()
+        val titles = InMemoryConversationTitles()
+        val manager = manager(dispatcher, store, pointer, this, titles)
+        store.upsert(
+            AgentTask(
+                taskId = "keep1",
+                input = "保留",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = "keep-thread",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "drop1",
+                input = "丢掉",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = "drop-thread",
+            ),
+        )
+        titles.setTitle("keep-thread", "工作")
+        titles.setTitle("drop-thread", "临时")
+        manager.openConversation("keep-thread")
+        advanceUntilIdle()
+        manager.deleteConversation("drop-thread")
+        advanceUntilIdle()
+        assertTrue(store.listByConversation("drop-thread").isEmpty())
+        assertEquals(listOf("keep1"), store.listByConversation("keep-thread").map { it.taskId })
+        assertEquals(mapOf("keep-thread" to "工作"), titles.titles())
+        assertEquals("keep-thread", pointer.currentId())
+        assertEquals("keep1", manager.task.value?.taskId)
+        assertEquals("keep-thread", manager.task.value?.conversationId)
+    }
+
+    @Test
+    fun busyDeleteConversationDoesNotChangeStore() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val pointer = InMemoryConversationPointer()
+        val titles = InMemoryConversationTitles()
+        val manager = manager(dispatcher, store, pointer, this, titles)
+        store.upsert(
+            AgentTask(
+                taskId = "other",
+                input = "旁路",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = "other-thread",
+            ),
+        )
+        titles.setTitle("other-thread", "工作")
+        manager.seed(
+            AgentTask(taskId = "live", input = "进行中", status = TaskStatus.THINKING),
+        )
+        manager.deleteConversation("other-thread")
+        advanceUntilIdle()
+        assertEquals(listOf("other"), store.listByConversation("other-thread").map { it.taskId })
+        assertEquals(mapOf("other-thread" to "工作"), titles.titles())
+        assertEquals(ConversationIds.DEFAULT, pointer.currentId())
+        assertEquals("live", manager.task.value?.taskId)
+    }
+
+    @Test
+    fun deleteDefaultConversationIsNoop() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val pointer = InMemoryConversationPointer()
+        val titles = InMemoryConversationTitles()
+        val manager = manager(dispatcher, store, pointer, this, titles)
+        store.upsert(
+            AgentTask(
+                taskId = "d1",
+                input = "默认",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = ConversationIds.DEFAULT,
+            ),
+        )
+        titles.setTitle(ConversationIds.DEFAULT, "家里")
+        manager.deleteConversation(ConversationIds.DEFAULT)
+        manager.deleteConversation("")
+        advanceUntilIdle()
+        assertEquals(listOf("d1"), store.listByConversation(ConversationIds.DEFAULT).map { it.taskId })
+        assertEquals(mapOf(ConversationIds.DEFAULT to "家里"), titles.titles())
+        assertEquals(ConversationIds.DEFAULT, pointer.currentId())
+    }
+
+    @Test
     fun busyOpenConversationDoesNotSwitch() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val store = InMemoryTaskStore()
@@ -224,6 +387,7 @@ class ConversationTaskManagerTest {
         store: InMemoryTaskStore,
         pointer: InMemoryConversationPointer,
         scope: CoroutineScope,
+        titles: ConversationTitles? = null,
     ) = TaskManager(
         loopEngine = LoopEngine(
             llm = FakeLlmProvider(),
@@ -236,5 +400,6 @@ class ConversationTaskManagerTest {
         scope = scope,
         taskStore = store,
         conversation = pointer,
+        titles = titles,
     )
 }

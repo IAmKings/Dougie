@@ -38,9 +38,9 @@ There is no React Query / SWR. Reads are:
 | Current conversation turns | `TaskManager.transcript` | Chat `combine` with `task`; loaded via `TaskStore.listByConversation` inside TaskManager |
 | Provider prefs | `PreferenceStore.settings` | Settings form seed; Chat `allowCloud` from Activity collect |
 | Current conversation id | `PreferenceStore.currentConversationId()` | Independent key; **保存配置** must not write or clear it |
-| Conversation titles | `PreferenceStore.conversationTitles` | Independent JSON key `conversation_titles_json`; **保存配置** must not write or clear it. History **改名** calls `setConversationTitle`; Chat only displays |
+| Conversation titles | `PreferenceStore.conversationTitles` | Independent JSON key `conversation_titles_json`; **保存配置** must not write or clear it. History **改名** calls `setConversationTitle`; `TaskManager.deleteConversation` clears with `setTitle(id, "")`; Chat only displays |
 | Memory list | `MemoryStore.list()` | `MemoryViewModel.refresh()` |
-| Task history | `TaskStore.listRecent(50)` | `HistoryViewModel.refresh()` |
+| Task history | `TaskStore.listRecent(50)` | `HistoryViewModel.refresh()`; Activity also maps `listRecent(50)` for Chat `currentConversationTitle` and must refresh that snapshot after `deleteConversation` |
 | Audit rows | `AuditLog.listRecent(50)` | `DebugViewModel.refresh()` |
 | Runtime permission bits | `ContextCompat` | `PermissionsViewModel.refresh()` |
 

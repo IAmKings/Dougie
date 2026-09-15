@@ -511,4 +511,33 @@ class TaskStoreTest {
         assertEquals(listOf("a1", "a2"), threadA.map { it.taskId })
         assertEquals(listOf("b1"), store.listByConversation("b").map { it.taskId })
     }
+
+    @Test
+    fun deleteByConversationRemovesMatchingRowsAndProtectsDefault() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(taskId = "d1", input = "默认", status = TaskStatus.COMPLETED, conversationId = ConversationIds.DEFAULT),
+        )
+        store.upsert(
+            AgentTask(taskId = "b1", input = "旁", status = TaskStatus.COMPLETED, conversationId = "b"),
+        )
+        repeat(51) { index ->
+            store.upsert(
+                AgentTask(
+                    taskId = "a$index",
+                    input = "多",
+                    status = TaskStatus.COMPLETED,
+                    conversationId = "a",
+                ),
+            )
+        }
+        assertEquals(0, store.deleteByConversation(ConversationIds.DEFAULT))
+        assertEquals(0, store.deleteByConversation("  "))
+        assertEquals(0, store.deleteByConversation(""))
+        assertEquals(51, store.deleteByConversation("a"))
+        assertTrue(store.listByConversation("a").isEmpty())
+        assertEquals(listOf("d1"), store.listByConversation(ConversationIds.DEFAULT).map { it.taskId })
+        assertEquals(listOf("b1"), store.listByConversation("b").map { it.taskId })
+        assertEquals(0, store.deleteByConversation("a"))
+    }
 }

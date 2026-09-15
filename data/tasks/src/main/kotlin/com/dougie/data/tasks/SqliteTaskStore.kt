@@ -3,6 +3,7 @@ package com.dougie.data.tasks
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.runtime.TaskSnapshotCodec
 import com.dougie.core.runtime.TaskStore
 import kotlinx.coroutines.Dispatchers
@@ -76,6 +77,51 @@ internal class SqliteTaskStore(
                         }
                     }
                 }
+            }
+        }
+
+    override suspend fun deleteByConversation(conversationId: String): Int =
+        withContext(Dispatchers.IO) {
+            if (conversationId.isBlank() || conversationId == ConversationIds.DEFAULT) {
+                return@withContext 0
+            }
+            val db = helper.writableDatabase
+            db.beginTransaction()
+            try {
+                val ids = buildList {
+                    db.rawQuery(
+                        """
+                        SELECT task_id, snapshot_json
+                        FROM agent_tasks
+                        """.trimIndent(),
+                        emptyArray(),
+                    ).use { cursor ->
+                        while (cursor.moveToNext()) {
+                            val taskId = cursor.getString(0) ?: continue
+                            val raw = cursor.getString(1) ?: continue
+                            try {
+                                val task = TaskSnapshotCodec.decode(raw)
+                                if (task.conversationId == conversationId) add(taskId)
+                            } catch (_: Exception) {
+                                // Skip corrupt rows.
+                            }
+                        }
+                    }
+                }
+                if (ids.isEmpty()) {
+                    db.setTransactionSuccessful()
+                    return@withContext 0
+                }
+                val placeholders = ids.joinToString(",") { "?" }
+                val deleted = db.delete(
+                    "agent_tasks",
+                    "task_id IN ($placeholders)",
+                    ids.toTypedArray(),
+                )
+                db.setTransactionSuccessful()
+                deleted
+            } finally {
+                db.endTransaction()
             }
         }
 }

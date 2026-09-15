@@ -3,6 +3,7 @@ package com.dougie.core.runtime
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.ScreenFrameStore
@@ -25,6 +26,7 @@ class TaskManager(
     private val screenFrames: ScreenFrameStore? = null,
     private val onTaskFinished: () -> Unit = {},
     private val conversation: ConversationPointer = InMemoryConversationPointer(),
+    private val titles: ConversationTitles? = null,
 ) {
     private val _task = MutableStateFlow<AgentTask?>(null)
     val task: StateFlow<AgentTask?> = _task.asStateFlow()
@@ -102,6 +104,23 @@ class TaskManager(
         scope.launch(dispatcher) {
             val rows = taskStore?.listByConversation(id).orEmpty()
             if (conversation.currentId() != id || isBusy()) return@launch
+            _task.value = rows.lastOrNull()
+            reloadTranscript()
+        }
+    }
+
+    fun deleteConversation(conversationId: String): Job? {
+        if (isBusy()) return null
+        val id = conversationId.ifBlank { return null }
+        if (id == ConversationIds.DEFAULT) return null
+        return scope.launch(dispatcher) {
+            if (isBusy()) return@launch
+            taskStore?.deleteByConversation(id)
+            titles?.setTitle(id, "")
+            if (conversation.currentId() != id) return@launch
+            conversation.setCurrentId(ConversationIds.DEFAULT)
+            val rows = taskStore?.listByConversation(ConversationIds.DEFAULT).orEmpty()
+            if (conversation.currentId() != ConversationIds.DEFAULT || isBusy()) return@launch
             _task.value = rows.lastOrNull()
             reloadTranscript()
         }
