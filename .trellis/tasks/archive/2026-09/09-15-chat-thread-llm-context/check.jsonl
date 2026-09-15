@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/09-15-chat-thread-llm-context/prd.md", "reason": "History user/assistant only; current-turn tools stay after the live user message"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "localToolProtocolActive must stay JSON-clean when history is present"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No prompt dump in OpenAICompatibleProvider or ChatLlmProvider"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Codec must omit priorTurns so snapshots do not grow with chat text"}

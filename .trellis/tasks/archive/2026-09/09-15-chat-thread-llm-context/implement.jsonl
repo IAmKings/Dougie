@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/09-15-chat-thread-llm-context/prd.md", "reason": "§8-style Recent Conversation slice: sliding window, no tiktoken, no ContextBuilder"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "ChatPromptAssembler is the only identity string; local protocol must not swallow old tool JSON"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not Logcat assembled prompts or prior turn text"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": ":core:llm tests stay JVM; no ORT"}
+{"file": ".trellis/tasks/09-15-chat-thread-default/prd.md", "reason": "priorTurns come from listByConversation and conversationId of the previous child"}
