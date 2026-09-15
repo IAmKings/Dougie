@@ -5,6 +5,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CloudLlmConfig
+import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
@@ -440,6 +441,91 @@ class OpenAICompatibleProviderTest {
         } catch (e: AgentException) {
             assertEquals(UserFacingErrors.LLM_MODEL_UNAVAILABLE, e.userMessage)
         }
+    }
+
+    @Test
+    fun requestJsonIncludesPriorUserAndAssistantWithoutHistoricalToolCalls() {
+        val json = testProvider().buildRequestJson(
+            model = "gpt-4o-mini",
+            task = AgentTask(
+                taskId = "t2",
+                input = "他叫什么",
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "call_time_1",
+                        toolName = "time",
+                        argsSummary = "{}",
+                        resultJson = """{"iso":"2026-09-15T12:00:00"}""",
+                        status = ToolTraceStatus.SUCCESS,
+                    ),
+                ),
+                priorTurns = listOf(
+                    ConversationTurn("我同事叫张伟", "好的，他叫张伟。"),
+                ),
+            ),
+        )
+        val messages = Json.parseToJsonElement(json).jsonObject["messages"]!!.jsonArray
+        assertEquals("system", messages[0].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("user", messages[1].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("我同事叫张伟", messages[1].jsonObject["content"]!!.jsonPrimitive.content)
+        assertEquals("assistant", messages[2].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("好的，他叫张伟。", messages[2].jsonObject["content"]!!.jsonPrimitive.content)
+        assertTrue(!messages[2].jsonObject.containsKey("tool_calls"))
+        assertEquals("user", messages[3].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("他叫什么", messages[3].jsonObject["content"]!!.jsonPrimitive.content)
+        assertEquals("assistant", messages[4].jsonObject["role"]!!.jsonPrimitive.content)
+        assertTrue(messages[4].jsonObject.containsKey("tool_calls"))
+        assertEquals("tool", messages[5].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("call_time_1", messages[5].jsonObject["tool_call_id"]!!.jsonPrimitive.content)
+    }
+
+    @Test
+    fun requestJsonOmitsPriorTurnsWhenNewConversation() {
+        val json = testProvider().buildRequestJson(
+            model = "gpt-4o-mini",
+            task = AgentTask(taskId = "fresh", input = "新会话第一句"),
+        )
+        val messages = Json.parseToJsonElement(json).jsonObject["messages"]!!.jsonArray
+        assertEquals(2, messages.size)
+        assertEquals("system", messages[0].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("user", messages[1].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("新会话第一句", messages[1].jsonObject["content"]!!.jsonPrimitive.content)
+        assertTrue(!json.contains("我同事叫张伟"))
+        assertTrue(!json.contains("好的，他叫张伟。"))
+    }
+
+    @Test
+    fun requestJsonDropsOldestPriorTurnBeyondSixteenAndKeepsCurrentUserAndFacts() {
+        val oldest = ConversationTurn("OLDEST_TURN_USER", "OLDEST_TURN_ASSISTANT")
+        val kept = (1..16).map { ConversationTurn("KEEP_USER_$it", "KEEP_ASST_$it") }
+        val json = testProvider().buildRequestJson(
+            model = "gpt-4o-mini",
+            task = AgentTask(
+                taskId = "t-cap",
+                input = "CURRENT_USER_UNIQUE_ZZZ",
+                retrievedMemories = listOf(
+                    MemoryEntry(
+                        id = "m1",
+                        content = "KnownFactUniqueXYZ",
+                        source = "task-0",
+                        confidence = 0.8f,
+                        createdAt = 1L,
+                        updatedAt = 1L,
+                    ),
+                ),
+                priorTurns = listOf(oldest) + kept,
+            ),
+        )
+        val messages = Json.parseToJsonElement(json).jsonObject["messages"]!!.jsonArray
+        val system = messages.first().jsonObject["content"]!!.jsonPrimitive.content
+        assertTrue(system.contains("Known facts"))
+        assertTrue(system.contains("KnownFactUniqueXYZ"))
+        assertEquals("user", messages[1].jsonObject["role"]!!.jsonPrimitive.content)
+        assertEquals("KEEP_USER_1", messages[1].jsonObject["content"]!!.jsonPrimitive.content)
+        assertEquals("KEEP_USER_16", messages[31].jsonObject["content"]!!.jsonPrimitive.content)
+        assertEquals("CURRENT_USER_UNIQUE_ZZZ", messages.last().jsonObject["content"]!!.jsonPrimitive.content)
+        assertTrue(messages.none { it.jsonObject["content"]?.jsonPrimitive?.content == "OLDEST_TURN_USER" })
+        assertEquals(1 + 16 * 2 + 1, messages.size)
     }
 
     private fun testProvider(

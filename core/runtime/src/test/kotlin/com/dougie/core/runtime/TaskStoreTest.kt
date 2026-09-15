@@ -7,6 +7,7 @@ import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.ConversationIds
+import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmResponse
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.TaskStatus
@@ -330,6 +331,25 @@ class TaskStoreTest {
         )
         val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
         assertEquals("thread-a", restored.conversationId)
+    }
+
+    @Test
+    fun snapshotOmitsPriorTurns() {
+        val original = AgentTask(
+            taskId = "c1",
+            input = "他叫什么",
+            status = TaskStatus.THINKING,
+            conversationId = "thread-a",
+            priorTurns = listOf(
+                ConversationTurn("我同事叫张伟", "好的，他叫张伟。"),
+            ),
+        )
+        val encoded = TaskSnapshotCodec.encode(original)
+        assertTrue(!encoded.contains("priorTurns"))
+        assertTrue(!encoded.contains("我同事叫张伟"))
+        assertTrue(!encoded.contains("好的，他叫张伟。"))
+        val restored = TaskSnapshotCodec.decode(encoded)
+        assertTrue(restored.priorTurns.isEmpty())
     }
 
     @Test

@@ -2,12 +2,20 @@ package com.dougie.core.llm
 
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
+import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.ToolDescriptor
+import kotlin.math.ceil
 
 /** Shared Chat identity + task context. Do not log the assembled string. */
 object ChatPromptAssembler {
     const val IDENTITY =
         "你是 Dougie，运行在用户手机上的本地优先助手。用中文回答。"
+
+    const val CLOUD_MAX_PRIOR_TURNS = 16
+    const val CLOUD_MAX_PRIOR_TOKENS = 4000
+    const val LOCAL_MAX_PRIOR_TURNS = 4
+    const val LOCAL_PROTOCOL_MAX_PRIOR_TURNS = 2
+    const val LOCAL_MAX_PRIOR_CHARS = 800
 
     fun systemPrefix(
         task: AgentTask,
@@ -86,7 +94,16 @@ object ChatPromptAssembler {
             traces.isNotEmpty() -> prefix
             else -> prefix + "\n\n" + LOCAL_IDLE_SUFFIX
         }
-        val body = followUp + "\n\n" + userBlock
+        val historyBlock = localHistoryBlock(task, protocolActive)
+        val body = buildString {
+            append(followUp)
+            if (historyBlock != null) {
+                append("\n\n")
+                append(historyBlock)
+            }
+            append("\n\n")
+            append(userBlock)
+        }
         return if (
             !protocolActive &&
             traces.isEmpty() &&
@@ -96,6 +113,60 @@ object ChatPromptAssembler {
         } else {
             body
         }
+    }
+
+    fun windowPriorTurns(
+        turns: List<ConversationTurn>,
+        maxTurns: Int,
+        maxTokens: Int? = null,
+        maxChars: Int? = null,
+        dropBraceTurns: Boolean = false,
+    ): List<ConversationTurn> {
+        var selected = turns.filter { it.user.isNotBlank() && it.assistant.isNotBlank() }
+        if (dropBraceTurns) {
+            selected = selected.filter { '{' !in it.user && '{' !in it.assistant }
+        }
+        if (selected.size > maxTurns) {
+            selected = selected.takeLast(maxTurns)
+        }
+        while (selected.isNotEmpty() && overHistoryBudget(selected, maxTokens, maxChars)) {
+            selected = selected.drop(1)
+        }
+        return selected
+    }
+
+    fun estimateTokens(text: String): Int {
+        var han = 0
+        var words = 0
+        var other = 0
+        var inWord = false
+        for (ch in text) {
+            when {
+                Character.UnicodeScript.of(ch.code) == Character.UnicodeScript.HAN -> {
+                    if (inWord) {
+                        words++
+                        inWord = false
+                    }
+                    han++
+                }
+                ch in 'A'..'Z' || ch in 'a'..'z' -> inWord = true
+                ch.isWhitespace() -> {
+                    if (inWord) {
+                        words++
+                        inWord = false
+                    }
+                }
+                else -> {
+                    if (inWord) {
+                        words++
+                        inWord = false
+                    }
+                    other++
+                }
+            }
+        }
+        if (inWord) words++
+        return ceil(han / 0.75).toInt() + ceil(words / 0.25).toInt() + other
     }
 
     fun stripLeadingQuestion(reply: String, question: String): String {
@@ -114,6 +185,43 @@ object ChatPromptAssembler {
             if (rest.isNotEmpty()) return rest
         }
         return raw
+    }
+
+    private fun localHistoryBlock(task: AgentTask, protocolActive: Boolean): String? {
+        val turns = windowPriorTurns(
+            turns = task.priorTurns,
+            maxTurns = if (protocolActive) LOCAL_PROTOCOL_MAX_PRIOR_TURNS else LOCAL_MAX_PRIOR_TURNS,
+            maxChars = LOCAL_MAX_PRIOR_CHARS,
+            dropBraceTurns = protocolActive,
+        )
+        if (turns.isEmpty()) return null
+        return buildString {
+            append("近期对话：")
+            for (turn in turns) {
+                append('\n')
+                append("用户：")
+                append(turn.user)
+                append('\n')
+                append("助手：")
+                append(turn.assistant)
+            }
+        }
+    }
+
+    private fun overHistoryBudget(
+        turns: List<ConversationTurn>,
+        maxTokens: Int?,
+        maxChars: Int?,
+    ): Boolean {
+        if (maxTokens != null) {
+            val tokens = turns.sumOf { estimateTokens(it.user) + estimateTokens(it.assistant) }
+            if (tokens > maxTokens) return true
+        }
+        if (maxChars != null) {
+            val chars = turns.sumOf { it.user.length + it.assistant.length }
+            if (chars > maxChars) return true
+        }
+        return false
     }
 
     private fun toolsInventory(descriptors: List<ToolDescriptor>): String {

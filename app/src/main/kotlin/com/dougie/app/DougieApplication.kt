@@ -270,6 +270,7 @@ class DougieApplication : Application() {
                 intentPort = intentPort,
                 openAppEntries = { OpenAppEntries.parse(preferenceStore.openAppsJson.value) },
                 skipIntentShortcut = { provider.hasConversationalLlm },
+                taskStore = taskStores.taskStore,
             ),
             dispatcher = dispatcher,
             taskStore = taskStores.taskStore,

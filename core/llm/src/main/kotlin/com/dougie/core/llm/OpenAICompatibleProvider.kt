@@ -164,6 +164,11 @@ class OpenAICompatibleProvider(
         stream: Boolean = false,
         maxTokens: Int = LlmVendors.DEFAULT_MAX_TOKENS,
     ): String {
+        val history = ChatPromptAssembler.windowPriorTurns(
+            turns = task.priorTurns,
+            maxTurns = ChatPromptAssembler.CLOUD_MAX_PRIOR_TURNS,
+            maxTokens = ChatPromptAssembler.CLOUD_MAX_PRIOR_TOKENS,
+        )
         val messages = buildJsonArray {
             add(
                 buildJsonObject {
@@ -171,6 +176,20 @@ class OpenAICompatibleProvider(
                     put("content", ChatPromptAssembler.systemPrefix(task, toolDescriptors()))
                 },
             )
+            for (turn in history) {
+                add(
+                    buildJsonObject {
+                        put("role", "user")
+                        put("content", turn.user)
+                    },
+                )
+                add(
+                    buildJsonObject {
+                        put("role", "assistant")
+                        put("content", turn.assistant)
+                    },
+                )
+            }
             add(
                 buildJsonObject {
                     put("role", "user")

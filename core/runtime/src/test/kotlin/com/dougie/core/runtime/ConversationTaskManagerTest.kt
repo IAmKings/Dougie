@@ -230,6 +230,7 @@ class ConversationTaskManagerTest {
             tools = mapOf("battery" to FakeBatteryTool()),
             dispatcher = dispatcher,
             stepDelayMs = 0,
+            taskStore = store,
         ),
         dispatcher = dispatcher,
         scope = scope,

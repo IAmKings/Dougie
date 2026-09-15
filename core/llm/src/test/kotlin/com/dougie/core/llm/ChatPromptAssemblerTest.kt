@@ -3,6 +3,7 @@ package com.dougie.core.llm
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
+import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.ToolTraceEntry
@@ -451,6 +452,146 @@ class ChatPromptAssemblerTest {
             ChatPromptAssembler.stripLeadingQuestion("现在几点了现在是中午12点。", "现在几点了？"),
         )
         assertEquals("你好", ChatPromptAssembler.stripLeadingQuestion("你好", "现在几点了"))
+    }
+
+    @Test
+    fun estimateTokensUsesHanAndEnglishWorstCase() {
+        assertEquals(0, ChatPromptAssembler.estimateTokens(""))
+        assertEquals(3, ChatPromptAssembler.estimateTokens("你好"))
+        assertEquals(4, ChatPromptAssembler.estimateTokens("hi"))
+        assertEquals(8, ChatPromptAssembler.estimateTokens("hello world"))
+    }
+
+    @Test
+    fun windowPriorTurnsDropsOldestBeyondCloudCap() {
+        val turns = listOf(ConversationTurn("OLDEST_TURN_USER", "OLDEST_TURN_ASSISTANT")) +
+            (1..16).map { ConversationTurn("KEEP_USER_$it", "KEEP_ASST_$it") }
+        val windowed = ChatPromptAssembler.windowPriorTurns(
+            turns = turns,
+            maxTurns = ChatPromptAssembler.CLOUD_MAX_PRIOR_TURNS,
+            maxTokens = ChatPromptAssembler.CLOUD_MAX_PRIOR_TOKENS,
+        )
+        assertEquals(16, windowed.size)
+        assertEquals("KEEP_USER_1", windowed.first().user)
+        assertEquals("KEEP_USER_16", windowed.last().user)
+        assertTrue(windowed.none { it.user == "OLDEST_TURN_USER" })
+    }
+
+    @Test
+    fun localPromptInsertsRecentConversationBeforeCurrentUser() {
+        val task = AgentTask(
+            taskId = "t2",
+            input = "他叫什么",
+            priorTurns = listOf(
+                ConversationTurn("我同事叫张伟", "好的，他叫张伟。"),
+            ),
+        )
+        val prompt = ChatPromptAssembler.localPrompt(task)
+        assertTrue(prompt.contains("近期对话："))
+        assertTrue(prompt.contains("用户：我同事叫张伟"))
+        assertTrue(prompt.contains("助手：好的，他叫张伟。"))
+        assertTrue(prompt.indexOf("近期对话：") < prompt.indexOf("他叫什么"))
+        assertTrue(prompt.trimEnd().endsWith("他叫什么"))
+    }
+
+    @Test
+    fun localPromptCapsHistoryToFourTurnsWithoutDroppingCurrentOrFacts() {
+        val recent = (1..5).map { ConversationTurn("LOCAL_TURN_USER_$it", "LOCAL_TURN_ASST_$it") }
+        val task = AgentTask(
+            taskId = "t-budget",
+            input = "CURRENT_USER_UNIQUE_ZZZ",
+            retrievedMemories = listOf(
+                MemoryEntry(
+                    id = "m1",
+                    content = "KnownFactUniqueXYZ",
+                    source = "task-0",
+                    confidence = 0.8f,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+            ),
+            priorTurns = recent,
+        )
+        val prompt = ChatPromptAssembler.localPrompt(task)
+        assertTrue(prompt.contains("Known facts"))
+        assertTrue(prompt.contains("KnownFactUniqueXYZ"))
+        assertTrue(prompt.contains("CURRENT_USER_UNIQUE_ZZZ"))
+        assertTrue(!prompt.contains("LOCAL_TURN_USER_1"))
+        assertTrue(prompt.contains("LOCAL_TURN_USER_2"))
+        assertTrue(prompt.contains("LOCAL_TURN_USER_5"))
+    }
+
+    @Test
+    fun localPromptDropsOldestHistoryWhenOverCharBudget() {
+        val old = ConversationTurn(
+            user = "UNIQUE_OLD_HISTORY_AAA".repeat(40),
+            assistant = "UNIQUE_OLD_ASSIST_BBB".repeat(40),
+        )
+        val recent = ConversationTurn("NEAR_USER_UNIQUE", "NEAR_ASST_UNIQUE")
+        val task = AgentTask(
+            taskId = "t-chars",
+            input = "CURRENT_USER_UNIQUE_ZZZ",
+            retrievedMemories = listOf(
+                MemoryEntry(
+                    id = "m1",
+                    content = "KnownFactUniqueXYZ",
+                    source = "task-0",
+                    confidence = 0.8f,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+            ),
+            priorTurns = listOf(old, recent),
+        )
+        val prompt = ChatPromptAssembler.localPrompt(task)
+        assertTrue(prompt.contains("Known facts"))
+        assertTrue(prompt.contains("KnownFactUniqueXYZ"))
+        assertTrue(prompt.contains("CURRENT_USER_UNIQUE_ZZZ"))
+        assertTrue(!prompt.contains("UNIQUE_OLD_HISTORY_AAA"))
+        assertTrue(prompt.contains("NEAR_USER_UNIQUE"))
+        assertTrue(prompt.contains("NEAR_ASST_UNIQUE"))
+    }
+
+    @Test
+    fun windowPriorTurnsDropsOldestWhenOverTokenBudget() {
+        val oldest = ConversationTurn("古".repeat(4000), "答")
+        val recent = ConversationTurn("近用户", "近助手")
+        val windowed = ChatPromptAssembler.windowPriorTurns(
+            turns = listOf(oldest, recent),
+            maxTurns = ChatPromptAssembler.CLOUD_MAX_PRIOR_TURNS,
+            maxTokens = ChatPromptAssembler.CLOUD_MAX_PRIOR_TOKENS,
+        )
+        assertEquals(listOf(recent), windowed)
+    }
+
+    @Test
+    fun localPromptProtocolHistoryOmitsOldToolJsonObjects() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+        )
+        val task = AgentTask(
+            taskId = "t-proto",
+            input = "现在几点了",
+            priorTurns = listOf(
+                ConversationTurn("之前几点", """{"name":"time","args":{}}"""),
+                ConversationTurn("再查一次电量", """{"name":"battery","args":{}}"""),
+                ConversationTurn("他叫张伟", "好的，记下了。"),
+            ),
+        )
+        val prompt = ChatPromptAssembler.localPrompt(task, descriptors)
+        assertTrue(ChatPromptAssembler.localToolProtocolActive(task, descriptors))
+        assertTrue(prompt.contains("一行 JSON"))
+        assertTrue(prompt.contains("{\"name\":\"time\""))
+        assertTrue(!prompt.contains("助手：{\"name\":\"time\""))
+        assertTrue(!prompt.contains("助手：{\"name\":\"battery\""))
+        val history = if (prompt.contains("近期对话：")) {
+            prompt.substringAfter("近期对话：").substringBefore("现在几点了")
+        } else {
+            ""
+        }
+        assertTrue('{' !in history)
+        assertTrue(history.contains("他叫张伟"))
+        assertTrue(history.contains("好的，记下了。"))
     }
 
     companion object {

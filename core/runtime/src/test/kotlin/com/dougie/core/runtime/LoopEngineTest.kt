@@ -10,6 +10,7 @@ import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.EgressPolicy
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
@@ -1918,6 +1919,179 @@ class LoopEngineTest {
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
         assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
+    }
+
+    @Test
+    fun sameConversationSecondTurnInjectsCompletedPriorTurns() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val captured = mutableListOf<List<ConversationTurn>>()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                captured += context.task.priorTurns
+                return LlmResponse.FinalAnswer("记下了")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        val manager = TaskManager(
+            loopEngine = engine,
+            dispatcher = dispatcher,
+            scope = this,
+            taskStore = store,
+        )
+        manager.submit("我同事叫张伟")
+        advanceUntilIdle()
+        assertEquals(emptyList<ConversationTurn>(), captured.single())
+        manager.submit("他叫什么")
+        advanceUntilIdle()
+        assertEquals(2, captured.size)
+        assertEquals("我同事叫张伟", captured[1].single().user)
+        assertEquals("记下了", captured[1].single().assistant)
+        assertEquals(TaskStatus.COMPLETED, manager.task.value?.status)
+    }
+
+    @Test
+    fun newConversationFirstTurnHasNoPriorTurns() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        val captured = mutableListOf<List<ConversationTurn>>()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                captured += context.task.priorTurns
+                return LlmResponse.FinalAnswer("记下了")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        val manager = TaskManager(
+            loopEngine = engine,
+            dispatcher = dispatcher,
+            scope = this,
+            taskStore = store,
+        )
+        manager.submit("我同事叫张伟")
+        advanceUntilIdle()
+        manager.newConversation()
+        manager.submit("他叫什么")
+        advanceUntilIdle()
+        assertEquals(2, captured.size)
+        assertTrue(captured.last().isEmpty())
+    }
+
+    @Test
+    fun failedAndBlankFinalAnswersAreNotInjectedAsPriorTurns() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "ok",
+                input = "我同事叫张伟",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好的，他叫张伟。",
+                conversationId = "c1",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "fail",
+                input = "坏了",
+                status = TaskStatus.FAILED,
+                lastError = "任务失败：网络异常",
+                finalAnswer = "任务失败：网络异常",
+                conversationId = "c1",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "blank",
+                input = "空白终答",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "   ",
+                conversationId = "c1",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "other",
+                input = "上一会话用户",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "上一会话助手",
+                conversationId = "other-thread",
+            ),
+        )
+        val captured = mutableListOf<List<ConversationTurn>>()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                captured += context.task.priorTurns
+                return LlmResponse.FinalAnswer("他叫张伟")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        engine.run(
+            AgentTask(taskId = "now", input = "他叫什么", conversationId = "c1"),
+        ) {}
+        assertEquals(1, captured.single().size)
+        assertEquals("我同事叫张伟", captured.single().single().user)
+        assertEquals("好的，他叫张伟。", captured.single().single().assistant)
+    }
+
+    @Test
+    fun priorTurnsSurviveToolLoopCopies() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "ok",
+                input = "我同事叫张伟",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好的，他叫张伟。",
+                conversationId = "c1",
+            ),
+        )
+        val sizes = mutableListOf<Int>()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                sizes += context.task.priorTurns.size
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "c1", name = "time", argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer("现在三点")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        val result = engine.run(
+            AgentTask(taskId = "now", input = "他叫什么", conversationId = "c1"),
+        ) {}
+        assertEquals(listOf(1, 1), sizes)
+        assertEquals(TaskStatus.COMPLETED, result.status)
     }
 
     private class SpyLocalLlm(

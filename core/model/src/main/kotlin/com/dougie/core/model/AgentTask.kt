@@ -4,6 +4,11 @@ object ConversationIds {
     const val DEFAULT = "default"
 }
 
+data class ConversationTurn(
+    val user: String,
+    val assistant: String,
+)
+
 data class AgentTask(
     val taskId: String,
     val input: String,
@@ -22,6 +27,7 @@ data class AgentTask(
     val speakReply: Boolean = false,
     val completionPath: CompletionPath? = null,
     val conversationId: String = ConversationIds.DEFAULT,
+    val priorTurns: List<ConversationTurn> = emptyList(),
 )
 
 enum class CompletionPath {

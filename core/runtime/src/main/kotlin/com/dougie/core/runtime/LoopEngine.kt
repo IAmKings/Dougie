@@ -7,6 +7,7 @@ import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
@@ -50,6 +51,7 @@ class LoopEngine(
     private val intentPort: IntentPort? = null,
     private val openAppEntries: () -> List<OpenAppEntry> = { emptyList() },
     private val skipIntentShortcut: () -> Boolean = { false },
+    private val taskStore: TaskStore? = null,
 ) {
     private val sanitizer: ToolCallSanitizer
         get() = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
@@ -94,6 +96,8 @@ class LoopEngine(
             if (shortcut != null) {
                 return@withContext shortcut
             }
+
+            task = attachPriorTurns(task)
 
             while (task.loopCount < task.maxLoops) {
                 task = task.copy(
@@ -461,6 +465,26 @@ class LoopEngine(
     private sealed class ToolPass {
         data class Success(val task: AgentTask, val resultJson: String) : ToolPass()
         data class Halt(val task: AgentTask) : ToolPass()
+    }
+
+    private suspend fun attachPriorTurns(task: AgentTask): AgentTask {
+        val store = taskStore ?: return task
+        val rows = try {
+            store.listByConversation(task.conversationId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return task
+        }
+        val turns = ArrayList<ConversationTurn>()
+        for (row in rows) {
+            if (row.taskId == task.taskId) continue
+            if (row.status != TaskStatus.COMPLETED) continue
+            val answer = row.finalAnswer?.trim().orEmpty()
+            if (answer.isEmpty()) continue
+            turns += ConversationTurn(user = row.input, assistant = answer)
+        }
+        return task.copy(priorTurns = turns)
     }
 
     private suspend fun retrieveMemories(
