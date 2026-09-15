@@ -1762,3 +1762,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 76: 默认会话窗口多轮
+
+**Date**: 2026-09-15
+**Task**: 默认会话窗口多轮
+**Branch**: `master`
+
+### Summary
+
+对话页按当前 conversationId 显示多轮；新对话换指针；任务卡片打开整段会话。未改 LLM messages。真机验收通过；修复启动重复 key 崩溃与底栏回对话滚到底。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `914d923` | (see git log) |
+
+### Status
+
+[OK] **Completed**
