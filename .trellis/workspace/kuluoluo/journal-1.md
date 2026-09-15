@@ -1888,3 +1888,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 82: 删除非默认会话窗口
+
+**Date**: 2026-09-16
+**Task**: 删除非默认会话窗口
+**Branch**: `master`
+
+### Summary
+
+任务页可删除非默认窗口：确认后清任务与自定义名，删当前则切回默认；忙时与默认窗口不可删。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `500b706` | (see git log) |
+
+### Status
+
+[OK] **Completed**
