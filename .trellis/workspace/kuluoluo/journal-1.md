@@ -1825,3 +1825,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 79: 会话可重命名
+
+**Date**: 2026-09-15
+**Task**: 会话可重命名
+**Branch**: `master`
+
+### Summary
+
+任务页「改名」给窗口起自定义名；Chat 在 Dougie 下显示当前窗口名。空名回退默认会话/对话 n；空新窗口显示新对话。标题在 prefs，不进 snapshot/LLM。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bde94da` | (see git log) |
+
+### Status
+
+[OK] **Completed**

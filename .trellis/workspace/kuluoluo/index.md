@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 78
+- **Total Sessions**: 79
 - **Last Active**: 2026-09-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1827 | Active |
+| `journal-1.md` | ~1848 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 79 | 2026-09-15 | 会话可重命名 | `bde94da` | `master` |
 | 78 | 2026-09-15 | 任务页按窗口分组定位 | `c94eb32` | `master` |
 | 77 | 2026-09-15 | LLM 注入当前会话近期轮次 | `ed6c16d` | `master` |
 | 76 | 2026-09-15 | 默认会话窗口多轮 | `914d923` | `master` |
