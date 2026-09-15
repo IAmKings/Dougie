@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Custom title overrides 对话 n; Chat does not rename"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Titles must not land in snapshot_json"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Dougie top bar keeps soul and egress lines"}

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Titles prefs vs History sections and Chat subtitle"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "save() must not clear conversation titles"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "history rename chrome; chat top bar line"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "No conversations table; titles stay in prefs"}
