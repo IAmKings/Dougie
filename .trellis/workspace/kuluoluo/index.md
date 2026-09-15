@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 76
+- **Total Sessions**: 77
 - **Last Active**: 2026-09-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1785 | Active |
+| `journal-1.md` | ~1806 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 77 | 2026-09-15 | LLM 注入当前会话近期轮次 | `ed6c16d` | `master` |
 | 76 | 2026-09-15 | 默认会话窗口多轮 | `914d923` | `master` |
 | 75 | 2026-09-15 | 意图规则 E 真机采集 | `ce97b2b` | `master` |
 | 74 | 2026-09-15 | Kokoro 规则 B runner | `decb32f` | `master` |

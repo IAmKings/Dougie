@@ -1783,3 +1783,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 77: LLM 注入当前会话近期轮次
+
+**Date**: 2026-09-15
+**Task**: LLM 注入当前会话近期轮次
+**Branch**: `master`
+
+### Summary
+
+同一会话后续 LLM 请求带上已完成轮的 user/assistant；失败轮与旧 toolTrace 不进 prompt；priorTurns 不写入 snapshot_json。真机指代验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ed6c16d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
