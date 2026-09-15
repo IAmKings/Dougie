@@ -13,6 +13,7 @@ Agent Runtime lives in Gradle `:core:*` modules. These modules use the **Kotlin 
 ```
 core/model/src/main/kotlin/com/dougie/core/model/
   LlmVendors.kt
+  ConversationDisplay.kt
 core/llm/src/main/kotlin/com/dougie/core/llm/
   ChatPromptAssembler.kt
   LocalToolCallParser.kt
@@ -22,6 +23,7 @@ core/runtime/src/main/kotlin/com/dougie/core/runtime/
   LoopEngine.kt
   IntentRouteAnswers.kt
   ConversationPointer.kt
+  ConversationTitles.kt
   TaskManager.kt
   TaskStore.kt
   AuditLog.kt
@@ -162,17 +164,17 @@ Package root is `com.dougie.*`. One conceptual type family per file (`AgentTask.
 
 | Module | Owns | Must not own |
 |--------|------|----------------|
-| `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `CloudLlmConfig`, `LlmVendors` | I/O, Android, HTTP |
+| `:core:model` | Data classes, enums, `LlmResponse`, `LlmEvent`, `ToolContext`, `EgressPolicy`, `CloudLlmConfig`, `LlmVendors`, `conversationDisplayName` / `normalizeConversationTitle` | I/O, Android, HTTP |
 | `:core:llm` | `LlmProvider.stream`, `FakeLlmProvider`, `ChatPromptAssembler` (Chinese Dougie identity + attachment metadata + `Known facts:` + **Recent Conversation** from `priorTurns` + tools inventory after identity; identity itself has no tool names; **`localPrompt` inventory is seven no-slot tools plus `clipboard_write` / `calendar_create` / `app_intent` / `screen_match` / `speech_output` and is taught only when `localToolProtocolActive`**, remote `systemPrefix` stays full table), `LocalToolCallParser` (whole-reply or one markdown fence `{"name","args"}` → `LlmEvent.ToolCall`; mixed Chinese + JSON stays text), `OpenAICompatibleProvider` SSE (OkHttp), `SelectingLlmProvider` (cloud if configured else local if ready else cloud for gateway copy; `hasConversationalLlm` = cloud configured **or** local pack ready) | Tool execution, UI, policy bypass |
 | `:core:tool` | `AgentTool` + JVM tools + `IdempotencyStore` + local `TemplateLibrary` (`solid` fixture + bundled `logo`) + `ModelInstaller` / `ModelImporter` (not AgentTools) | `BatteryManager` / other Android APIs, OpenCV AAR, PNG assets, SAF / `ContentResolver` |
-| `:core:runtime` | `LoopEngine`, `TaskManager`, `ConversationPointer`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
+| `:core:runtime` | `LoopEngine`, `TaskManager`, `ConversationPointer`, `ConversationTitles`, `TaskStore`, `AuditLog`, `EgressGateway.stream`, `ToolCallSanitizer`, `PolicyEngine` | Compose, Android Context, HTTP |
 | `:core:memory` | `MemoryStore`, `MemoryGate`, `InMemoryMemoryStore`, `HybridMemoryStore`, `EmbeddingPort`, `HashBagEmbeddingPort` | Room, Android Context |
 | `:tool:system` (Android) | `DeviceBatteryTool`, calendar/clipboard/intent/speech/screen-capture ports, `ScreenCaptureService` (MediaProjection FGS), `SherpaJni` + trimmed `com.k2fsa.sherpa.onnx` JNI bindings, `AndroidSystemTtsEngine`, `AndroidIntentPort`, `IntentOrtJni`, `EmbedOrtJni`, `AndroidEmbeddingPort`, `OkHttpModelGet` | Loop state machine, LLM HTTP, cloud STT/TTS, llama.cpp |
 | `:tool:accessibility` (Android, **sideload flavor only**) | `DougieAccessibilityService`, `GesturePort` / `AndroidGesturePort`, `HighRiskForeground`, `TapSwipeTool` (L3 tap/swipe) | Play APK, `:core:tool` |
 | `:tool:js` (Android, **sideload flavor only**) | `AndroidJsEvalPort` (Cash App QuickJS). Isolated `js_eval` is `JsEvalTool` in `:core:tool`. `data` is JSON (`OBJECT`): arrays like `[1,2]` pass through; string `1,2` is canonicalized to `[1,2]` before `JSON.parse`. `ScriptPrivilegePrefs` false → L2 function wrap; true → L4 program / last expression. | Play APK, host file/net APIs, `tap_swipe` from JS |
 | `:tool:py` (Android, **sideload flavor only**) | Chaquopy CPython + frozen numpy/pandas. Isolated `py_eval` is `PyEvalTool` in `:core:tool` (`RiskLevel.L4`). Registered only when `ScriptPrivilegePrefs` is true; otherwise `tools.remove`. `data` uses the same canonicalize as JS. Timeout 15s. Persistent `filesDir/py_sandbox/` (mkdir, never wipe; relative paths only). | Play APK, runtime pip, SAF/external storage/net/Intent/a11y/`tap_swipe` |
 | `:tool:chatllm` (Android, **sideload runtime only**) | LiteRT-LM `ChatLlmProvider` (`isLocal=true`, process-lifetime Engine, GPU then CPU) plus Debug spike `ChatLlmSpikeActivity` / `ChatLlmProbe` (Java 17 stubs at compile; AAR is Kotlin 2.3 + class file 65, `runtimeOnly`). Injects the same `toolDescriptors` as remote. `promptFor` is `ChatPromptAssembler.localPrompt` (full descriptor list in, **taught inventory seven no-slot plus clipboard_write/calendar_create/app_intent/screen_match/speech_output only when `localToolProtocolActive`**; no `image_url`). After stream text, `LocalToolCallParser` may emit `LlmEvent.ToolCall` **only if `localToolProtocolActive`** for the same descriptors; otherwise `TextDelta`. Sideload `ChannelHooks.localChatProvider` injects it into `SelectingLlmProvider`. When `shouldWarmLocalEngine` (`!cloudConfigured && localReady`), `DougieApplication` warms the **active** SKU on `Dispatchers.Default` via `warmup()` → `ensureEngine()` (does not touch `inFlight`; does not replace an engine while `inFlight != 0`). Cloud configured → `releaseIfIdle()` if no stream. Play ChannelHooks warmup/release are no-ops. | Play APK, Play classpath `litertlm`, GGUF / llama.cpp |
-| `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` | Loop / Chat UI |
+| `:data:preferences` (Android) | EncryptedSharedPreferences + `allowCloud` default false + `memoryEnabled` default true + `vendorId` / `maxTokens` + `conversation_titles_json` (not in `save()`) | Loop / Chat UI |
 | `:data:memory` (Android) | SQLite + FTS4 facts (`RoomMemoryStore`, v2 `embedding BLOB`) | LoopEngine, Compose |
 | `:data:tasks` (Android) | SQLite `agent_tasks` / `idempotency` / `audit_log` | LoopEngine, Compose |
 | `:feature:history` (Android) | Task History list UI | LLM HTTP, SQLite helpers |

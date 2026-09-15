@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -55,8 +56,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 import com.dougie.core.tool.TtsSpeakResult
+import com.dougie.feature.history.HistoryItem
 import com.dougie.feature.history.HistoryRoute
 import com.dougie.feature.history.HistoryViewModel
+import com.dougie.feature.history.currentConversationTitle
+import com.dougie.feature.history.toHistoryItem
 import com.dougie.feature.memory.MemoryRoute
 import com.dougie.feature.memory.MemoryViewModel
 import com.dougie.feature.settings.OpenAppsRoute
@@ -139,7 +143,23 @@ class MainActivity : ComponentActivity() {
                 var asrReady by asrReadyState
                 var ttsReady by ttsReadyState
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
+                val titles by app.preferenceStore.conversationTitles.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
+                val transcript by app.taskManager.transcript.collectAsStateWithLifecycle()
+                var recentHistoryItems by remember {
+                    mutableStateOf(emptyList<HistoryItem>())
+                }
+                LaunchedEffect(task?.taskId, task?.status, transcript.size) {
+                    recentHistoryItems = withContext(Dispatchers.Default) {
+                        app.taskStores.taskStore.listRecent(50).map { it.toHistoryItem() }
+                    }
+                }
+                val conversationTitle = currentConversationTitle(
+                    conversationId = app.preferenceStore.currentConversationId(),
+                    titles = titles,
+                    recentItems = recentHistoryItems,
+                    windowEmpty = task == null && transcript.isEmpty(),
+                )
                 val composerEpoch by app.composerEpoch.collectAsStateWithLifecycle()
                 LaunchedEffect(composerEpoch) {
                     syncChips()
@@ -238,6 +258,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             overlayShortcutHint = ChannelHooks.screenShortcutHint(this@MainActivity, task),
+                            conversationTitle = conversationTitle,
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenMemory = { route = AppRoute.Memory },
                             onOpenPermissions = { route = AppRoute.Permissions },
@@ -330,7 +351,10 @@ class MainActivity : ComponentActivity() {
                     }
                     AppRoute.History -> {
                         val viewModel: HistoryViewModel = viewModel(
-                            factory = HistoryViewModel.Factory(app.taskStores.taskStore),
+                            factory = HistoryViewModel.Factory(
+                                app.taskStores.taskStore,
+                                app.conversationTitles,
+                            ),
                         )
                         HistoryRoute(
                             viewModel = viewModel,

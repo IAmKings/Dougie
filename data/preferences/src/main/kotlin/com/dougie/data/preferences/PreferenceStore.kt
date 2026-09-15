@@ -6,9 +6,11 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.normalizeConversationTitle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONObject
 
 class PreferenceStore(context: Context) {
     private val prefs: SharedPreferences
@@ -18,6 +20,8 @@ class PreferenceStore(context: Context) {
     val openAppsJson: StateFlow<String>
     private val _activeChatSku: MutableStateFlow<String>
     val activeChatSku: StateFlow<String>
+    private val _conversationTitles: MutableStateFlow<Map<String, String>>
+    val conversationTitles: StateFlow<Map<String, String>>
 
     init {
         val appContext = context.applicationContext
@@ -37,6 +41,8 @@ class PreferenceStore(context: Context) {
         openAppsJson = _openAppsJson.asStateFlow()
         _activeChatSku = MutableStateFlow(prefs.getString(KEY_ACTIVE_CHAT_SKU, "") ?: "")
         activeChatSku = _activeChatSku.asStateFlow()
+        _conversationTitles = MutableStateFlow(readConversationTitles())
+        conversationTitles = _conversationTitles.asStateFlow()
     }
 
     fun save(next: ProviderSettings) {
@@ -100,6 +106,50 @@ class PreferenceStore(context: Context) {
         prefs.edit().putString(KEY_CURRENT_CONVERSATION, stored).apply()
     }
 
+    fun setConversationTitle(conversationId: String, raw: String) {
+        val id = conversationId.ifBlank { return }
+        val next = _conversationTitles.value.toMutableMap()
+        val name = normalizeConversationTitle(raw)
+        if (name == null) {
+            next.remove(id)
+        } else {
+            next[id] = name
+        }
+        persistConversationTitles(next)
+    }
+
+    private fun readConversationTitles(): Map<String, String> {
+        val raw = prefs.getString(KEY_CONVERSATION_TITLES, null)
+        if (raw.isNullOrBlank()) return emptyMap()
+        return try {
+            val obj = JSONObject(raw)
+            buildMap {
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    if (key.isNullOrBlank()) continue
+                    val name = normalizeConversationTitle(obj.optString(key, ""))
+                    if (name != null) put(key, name)
+                }
+            }
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    private fun persistConversationTitles(map: Map<String, String>) {
+        val editor = prefs.edit()
+        if (map.isEmpty()) {
+            editor.remove(KEY_CONVERSATION_TITLES)
+        } else {
+            val obj = JSONObject()
+            map.forEach { (id, name) -> obj.put(id, name) }
+            editor.putString(KEY_CONVERSATION_TITLES, obj.toString())
+        }
+        editor.apply()
+        _conversationTitles.value = map
+    }
+
     private fun read(): ProviderSettings {
         val consent = if (prefs.contains(KEY_CONSENT_AT)) prefs.getLong(KEY_CONSENT_AT, 0L) else null
         return ProviderSettings(
@@ -137,5 +187,6 @@ class PreferenceStore(context: Context) {
         const val KEY_OPEN_APPS = "open_app_allowlist"
         const val KEY_ACTIVE_CHAT_SKU = "active_chat_sku"
         const val KEY_CURRENT_CONVERSATION = "current_conversation_id"
+        const val KEY_CONVERSATION_TITLES = "conversation_titles_json"
     }
 }

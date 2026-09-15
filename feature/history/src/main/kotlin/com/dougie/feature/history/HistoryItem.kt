@@ -3,6 +3,7 @@ package com.dougie.feature.history
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.TaskStatus
+import com.dougie.core.model.conversationDisplayName
 
 data class HistoryItem(
     val taskId: String,
@@ -21,14 +22,17 @@ data class HistorySection(
     val items: List<HistoryItem>,
 )
 
-fun toHistorySections(items: List<HistoryItem>): List<HistorySection> {
+fun toHistorySections(
+    items: List<HistoryItem>,
+    titles: Map<String, String> = emptyMap(),
+): List<HistorySection> {
     if (items.isEmpty()) return emptyList()
-    val titles = LinkedHashMap<String, String>()
+    val numbered = LinkedHashMap<String, String>()
     var nextNumber = 2
     for (item in items.asReversed()) {
         val id = item.conversationId
-        if (id == ConversationIds.DEFAULT || id in titles) continue
-        titles[id] = "对话 $nextNumber"
+        if (id == ConversationIds.DEFAULT || id in numbered) continue
+        numbered[id] = "对话 $nextNumber"
         nextNumber++
     }
     val order = LinkedHashSet<String>()
@@ -38,12 +42,34 @@ fun toHistorySections(items: List<HistoryItem>): List<HistorySection> {
         grouped.getOrPut(item.conversationId) { mutableListOf() }.add(item)
     }
     return order.map { id ->
+        val numberedFallback = if (id == ConversationIds.DEFAULT) {
+            "默认会话"
+        } else {
+            numbered[id] ?: "对话 2"
+        }
         HistorySection(
             conversationId = id,
-            title = if (id == ConversationIds.DEFAULT) "默认会话" else titles[id] ?: "对话 2",
+            title = conversationDisplayName(id, titles[id], numberedFallback),
             items = grouped.getValue(id),
         )
     }
+}
+
+fun currentConversationTitle(
+    conversationId: String,
+    titles: Map<String, String> = emptyMap(),
+    recentItems: List<HistoryItem>,
+    windowEmpty: Boolean,
+): String {
+    toHistorySections(recentItems, titles)
+        .firstOrNull { it.conversationId == conversationId }
+        ?.let { return it.title }
+    return conversationDisplayName(
+        conversationId = conversationId,
+        customTitle = titles[conversationId],
+        numberedFallback = "对话 2",
+        isUnlistedNew = windowEmpty,
+    )
 }
 
 fun AgentTask.toHistoryItem(maxInputChars: Int = 80): HistoryItem {

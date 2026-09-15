@@ -13,6 +13,7 @@ import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
 import com.dougie.core.model.AndroidPermissions
 import com.dougie.core.runtime.ConversationPointer
+import com.dougie.core.runtime.ConversationTitles
 import com.dougie.core.runtime.EgressGateway
 import com.dougie.core.runtime.LoopEngine
 import com.dougie.core.runtime.PolicyEngine
@@ -82,6 +83,8 @@ class DougieApplication : Application() {
         private set
     lateinit var preferenceStore: PreferenceStore
         private set
+    lateinit var conversationTitles: ConversationTitles
+        private set
     lateinit var memoryStore: MemoryStore
         private set
     lateinit var taskStores: DougieTaskStores
@@ -112,6 +115,12 @@ class DougieApplication : Application() {
         super.onCreate()
         ChannelHooks.seedBundledModels(this)
         preferenceStore = PreferenceStore(this)
+        conversationTitles = object : ConversationTitles {
+            override fun titles(): Map<String, String> = preferenceStore.conversationTitles.value
+            override fun setTitle(conversationId: String, raw: String) {
+                preferenceStore.setConversationTitle(conversationId, raw)
+            }
+        }
         ChatModelLayout.resolveActiveSku(
             File(filesDir, ChatModelLayout.DIR),
             preferenceStore.activeChatSku.value,

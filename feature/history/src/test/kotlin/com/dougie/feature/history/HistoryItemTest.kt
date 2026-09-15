@@ -105,6 +105,91 @@ class HistoryItemTest {
     }
 
     @Test
+    fun customTitleOverridesNumberedDialogue() {
+        val extra = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        val sections = toHistorySections(
+            listOf(historyTurn("e1", extra)),
+            titles = mapOf(extra to "工作"),
+        )
+        assertEquals(1, sections.size)
+        assertEquals("工作", sections[0].title)
+        assertEquals(false, sections[0].title.contains(extra))
+        assertEquals(false, sections[0].title.contains("aaaa"))
+    }
+
+    @Test
+    fun blankCustomTitleFallsBackToNumberedOrDefault() {
+        val extra = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        val extraSections = toHistorySections(
+            listOf(historyTurn("e1", extra)),
+            titles = mapOf(extra to "  \n "),
+        )
+        assertEquals("对话 2", extraSections[0].title)
+        assertEquals(false, extraSections[0].title.contains(extra))
+        val defaultSections = toHistorySections(
+            listOf(historyTurn("d1", ConversationIds.DEFAULT)),
+            titles = mapOf(ConversationIds.DEFAULT to "   "),
+        )
+        assertEquals("默认会话", defaultSections[0].title)
+    }
+
+    @Test
+    fun customDefaultTitleOverridesFallback() {
+        val sections = toHistorySections(
+            listOf(historyTurn("d1", ConversationIds.DEFAULT)),
+            titles = mapOf(ConversationIds.DEFAULT to "家里"),
+        )
+        assertEquals("家里", sections[0].title)
+    }
+
+    @Test
+    fun unlistedEmptyWindowUsesNewConversationLabel() {
+        val extra = "11111111-2222-3333-4444-555555555555"
+        assertEquals(
+            "新对话",
+            currentConversationTitle(
+                conversationId = extra,
+                recentItems = emptyList(),
+                windowEmpty = true,
+            ),
+        )
+        assertEquals(
+            "默认会话",
+            currentConversationTitle(
+                conversationId = ConversationIds.DEFAULT,
+                recentItems = emptyList(),
+                windowEmpty = true,
+            ),
+        )
+        assertEquals(
+            "家里",
+            currentConversationTitle(
+                conversationId = ConversationIds.DEFAULT,
+                titles = mapOf(ConversationIds.DEFAULT to "家里"),
+                recentItems = emptyList(),
+                windowEmpty = true,
+            ),
+        )
+        val listed = listOf(historyTurn("e1", extra))
+        assertEquals(
+            "对话 2",
+            currentConversationTitle(
+                conversationId = extra,
+                recentItems = listed,
+                windowEmpty = false,
+            ),
+        )
+        assertEquals(
+            false,
+            currentConversationTitle(
+                conversationId = extra,
+                recentItems = listed,
+                windowEmpty = false,
+            ).contains(extra),
+        )
+    }
+
+    @Test
     fun numbersNonDefaultByOldestFirstAppearance() {
         val newerExtra = "window-newer-uuid"
         val olderExtra = "window-older-uuid"

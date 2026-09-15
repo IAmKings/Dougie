@@ -14,7 +14,7 @@
 | Kind | Where | Examples |
 |------|--------|----------|
 | Domain | `:core:model` | `AgentTask`, `ConversationIds`, `TaskStatus`, `UserFacingErrors` |
-| Runtime handles | `:core:runtime` | `TaskManager`, `ConversationPointer`, `AuditEntry` |
+| Runtime handles | `:core:runtime` | `TaskManager`, `ConversationPointer`, `ConversationTitles`, `AuditEntry` |
 | Feature UI | `:feature:*` | `ChatUiState`, `ChatItem`, `DebugUiState` |
 | Prefs | `:data:preferences` | `ProviderSettings` |
 
@@ -38,7 +38,7 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 
 ## Common Patterns
 
-- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun toHistorySections()`, `fun AgentTask.toDebugTaskSnapshot()`.
+- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`.
 - `StateFlow` + `map` / `combine` + `stateIn(viewModelScope, WhileSubscribed(5_000), initial)`.
 - `ViewModelProvider.Factory` unchecked cast is the existing DI style (no Hilt/Anvil in the project).
 - `IntelligenceMark` is computed in `:app` from prefs + `task.lastError`, then passed into `ChatRoute` — Chat does not read EncryptedSharedPreferences.

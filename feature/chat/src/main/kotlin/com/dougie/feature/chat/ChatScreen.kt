@@ -134,6 +134,7 @@ fun ChatRoute(
     onSpeakReply: (String) -> Unit = {},
     onSpeakReplyConsumed: () -> Unit = {},
     overlayShortcutHint: String? = null,
+    conversationTitle: String = "默认会话",
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingFocusKey by viewModel.pendingFocusKey.collectAsStateWithLifecycle()
@@ -236,6 +237,7 @@ fun ChatRoute(
         onSpeakReply = onSpeakReply,
         overlayShortcutHint = overlayShortcutHint,
         onNewConversation = viewModel::newConversation,
+        conversationTitle = conversationTitle,
     )
 }
 
@@ -277,6 +279,7 @@ fun ChatScreen(
     onSpeakReply: (String) -> Unit = {},
     overlayShortcutHint: String? = null,
     onNewConversation: () -> Unit = {},
+    conversationTitle: String = "默认会话",
 ) {
     var confirmNewConversation by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -294,6 +297,7 @@ fun ChatScreen(
             canNewConversation = uiState.canNewConversation,
             onNewConversation = { confirmNewConversation = true },
             onOpenPermissions = onOpenPermissions,
+            conversationTitle = conversationTitle,
         )
         Box(modifier = Modifier.weight(1f)) {
             if (uiState.isEmpty) {
@@ -407,6 +411,7 @@ private fun DougieTopBar(
     canNewConversation: Boolean,
     onNewConversation: () -> Unit,
     onOpenPermissions: () -> Unit,
+    conversationTitle: String,
 ) {
     Row(
         modifier = Modifier
@@ -431,6 +436,13 @@ private fun DougieTopBar(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 lineHeight = 32.sp,
+            )
+            Text(
+                text = conversationTitle,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),

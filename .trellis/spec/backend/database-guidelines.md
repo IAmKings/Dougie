@@ -70,7 +70,7 @@ CREATE TABLE audit_log (
 - `TaskManager` calls `TaskStore.upsert` on every loop `emit`. JSON encode failures are skipped; the loop still runs.
 - `AgentTask.conversationId` lives in `snapshot_json` (default `"default"` when missing). `listByConversation` scans all snapshots in `updated_at ASC` and filters in memory — do not add a SQL column in v1, and do **not** impersonate the current thread with `listRecent(50)`.
 - `AgentTask.priorTurns` is instantaneous LLM context. `TaskSnapshotCodec` **must omit** it; do not write history text into `snapshot_json`.
-- Current open conversation id is prefs `current_conversation_id`, not a `conversations` table.
+- Current open conversation id is prefs `current_conversation_id`, not a `conversations` table. Custom window titles are prefs `conversation_titles_json` (JSON object id→name). Do **not** add a `conversations` table or `conversation_id` SQL column, do **not** bump `dougie_tasks.db`, and do **not** put titles on `AgentTask` / `TaskSnapshotCodec` / `priorTurns`.
 - App start: `recoverInterrupted(store)` — if the latest row is not COMPLETED/FAILED, mark FAILED with `UserFacingErrors.INTERRUPTED`. `TaskManager.seed` only when that task’s `conversationId` equals the current prefs pointer. Do **not** resume the LLM stream.
 - `calendar_create` reads/writes `idempotency` via `IdempotencyStore` (INSERT OR IGNORE). A new tool instance with the same store must not call `CalendarPort.createEvent` again for the same key.
 - `AuditLog.record` writes only `task_id`, `tool_name`, `outcome`, `created_at`. Never prompt text, keys, calendar titles, clipboard, coordinates, or image bytes.

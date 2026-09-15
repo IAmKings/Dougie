@@ -21,11 +21,17 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,9 +39,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dougie.core.model.CONVERSATION_TITLE_MAX_CHARS
 import com.dougie.core.model.TaskStatus
 
 @Composable
@@ -54,6 +62,7 @@ fun HistoryRoute(
         onOpenMemory = onOpenMemory,
         onOpenSettings = onOpenSettings,
         onOpenConversation = onOpenConversation,
+        onRename = viewModel::setTitle,
     )
 }
 
@@ -65,7 +74,9 @@ fun HistoryScreen(
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenConversation: (String, String) -> Unit,
+    onRename: (String, String) -> Unit = { _, _ -> },
 ) {
+    var renaming by remember { mutableStateOf<HistorySection?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -112,17 +123,27 @@ fun HistoryScreen(
             ) {
                 uiState.sections.forEach { section ->
                     stickyHeader(key = "section:${section.conversationId}") {
-                        Text(
-                            text = section.title,
-                            color = DougieColors.Primary,
-                            fontSize = 14.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(DougieColors.Surface)
                                 .padding(vertical = 4.dp),
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = section.title,
+                                color = DougieColors.Primary,
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(onClick = { renaming = section }) {
+                                Text("改名", color = DougieColors.Primary, fontSize = 13.sp)
+                            }
+                        }
                     }
                     items(section.items, key = { it.taskId }) { item ->
                         HistoryCard(
@@ -137,6 +158,38 @@ fun HistoryScreen(
             onOpenChat = onOpenChat,
             onOpenMemory = onOpenMemory,
             onOpenSettings = onOpenSettings,
+        )
+    }
+    val renamingSection = renaming
+    if (renamingSection != null) {
+        var draft by remember(renamingSection.conversationId) {
+            mutableStateOf(renamingSection.title)
+        }
+        AlertDialog(
+            onDismissRequest = { renaming = null },
+            title = { Text("改名") },
+            text = {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { next ->
+                        draft = next.replace('\n', ' ').replace('\r', ' ')
+                            .take(CONVERSATION_TITLE_MAX_CHARS)
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRename(renamingSection.conversationId, draft)
+                        renaming = null
+                    },
+                ) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { renaming = null }) { Text("取消") }
+            },
         )
     }
 }
