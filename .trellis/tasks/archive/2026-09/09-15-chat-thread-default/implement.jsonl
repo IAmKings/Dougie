@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "ChatUiState maps AgentTask; transcript is more AgentTasks, not a parallel TaskStatus"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Chat must not open SQLite; History already uses TaskStore; pointer via TaskManager"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JUnit on toChatUiState / toHistoryItem mappers; no Compose UI tests"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": ":feature:history is listRecent; click opens Chat, must not become a conversation sidebar"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Scan snapshot_json for listByConversation; do not DROP agent_tasks"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": ":core:* JVM-pure; TaskManager/TaskStore live in runtime"}
+{"file": "docs/adr/0002-task-first-class-unit.md", "reason": "Keep one AgentTask per user request"}
+{"file": ".trellis/tasks/09-15-chat-thread-default/prd.md", "reason": "Launch AC: default id, transcript, new chat, history reopen of full thread"}

@@ -1,0 +1,28 @@
+{
+  "id": "chat-thread-default",
+  "name": "chat-thread-default",
+  "title": "默认会话 + 新对话 + 窗口多轮",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "kuluoluo",
+  "assignee": "kuluoluo",
+  "createdAt": "2026-09-15",
+  "completedAt": "2026-09-15",
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-15-chat-conversation-window",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "description": "启动：conversationId、transcript、新对话；不改 LLM messages"
+  }
+}

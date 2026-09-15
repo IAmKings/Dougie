@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "inputEnabled/canRetry still from live task; past turns are display-only"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest and HistoryItemTest must cover multi-turn and conversationId"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "listByConversation must not impersonate listRecent(50)"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log input, finalAnswer, or snapshot_json"}
+{"file": ".trellis/tasks/09-15-chat-thread-default/prd.md", "reason": "Live turn still 5-state; past turns are user+final only"}
