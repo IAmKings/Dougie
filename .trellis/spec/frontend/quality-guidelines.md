@@ -6,7 +6,7 @@
 
 UI lives in `:feature:*` (Compose BOM `2024.12.01`, Material3, `lifecycle-runtime-compose`). `:app` hosts `MainActivity` routing, DI, `DougieChatTileService`, and `TaskProgressNotifier`. Product copy is **Dougie** (never Waku) and Chinese for user-visible chrome.
 
-Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `intelligenceMark`, `toHistoryItem`, `toHistorySections`, `toDebugTaskSnapshot`, `OfflineModelDownloads`, `formatTaskNotice`). Screens themselves are not tested with Compose UI tests.
+Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `intelligenceMark`, `toHistoryItem`, `toHistorySections`, `formatTaskDuration`, `formatCompletedAt`, `toDebugTaskSnapshot`, `OfflineModelDownloads`, `formatTaskNotice`). Screens themselves are not tested with Compose UI tests.
 
 ## Forbidden Patterns
 
@@ -35,7 +35,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 |--------|-------------|------------------|
 | `:feature:chat` | `ChatUiStateTest` (incl. unique `listKey`s across merged turns, `shouldFollowChatFeed` skip after bottom-nav return, pending focus skips follow-to-end on firstKey change, `voiceOverlayStatus` partial vs 正在录音, `insertVoiceTranscript` at selection), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
-| `:feature:history` | `HistoryItemTest` (incl. `toHistorySections` two-window grouping, 「默认会话」/「对话 2」, most-recently-active first; `formatTaskDuration` buckets; `durationLabel` / `providerLabel` from timestamps + `completionPath?.toUserLabel()`) | `./gradlew :feature:history:testDebugUnitTest` |
+| `:feature:history` | `HistoryItemTest` (incl. `toHistorySections` two-window grouping, 「默认会话」/「对话 2」, most-recently-active first; `formatTaskDuration` buckets; `durationLabel` / `providerLabel` from timestamps + `completionPath?.toUserLabel()`; `formatCompletedAt` today/昨天/same-year/cross-year + seconds truncated, `completedAtLabel` from `endedAt`; `steps` from `toolTrace` including empty trace, 成功/失败/进行中, no args/`resultJson`; no Compose UI test for **展开**) | `./gradlew :feature:history:testDebugUnitTest` |
 | `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak; Rule E copy 评测意图规则 E, no 已达标) | `./gradlew :feature:debug:testDebugUnitTest` |
 | `:app` Tile / notice / leak | `ChatLaunchTest`, `TaskNoticeTest`, `PlayShortcutCopyTest`, `OverlayCopyTest`, `ChatAttachmentSessionTest`, `ShortcutScreenPinTest`, `AppBackNavTest`; no Compose UI test for Tile, shade, overlay, or bubbles | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak` |
 
@@ -48,7 +48,7 @@ Play/Sideload asset leaks are an `:app` concern: `./gradlew :app:checkChannelLea
 - [ ] UI only `collect`s runtime/preference flows; no Agent loop on Main
 - [ ] Failed tasks render `任务失败：$lastError` with `UserFacingErrors` copy
 - [ ] Confirm Card appears only for `AWAITING_CONFIRMATION`; confirm/reject go to `TaskManager`
-- [ ] Debug/History do not dump tool args or fact `content` as citations (Chat citations use `source` only)
+- [ ] Debug/History do not dump tool args or fact `content` as citations (Chat citations use `source` only). History **展开** is `toolName` + 成功/失败/进行中 only — never `argsSummary` / `resultJson`
 - [ ] Settings download/probe/tree rules still match `directory-structure.md` “Don't: Let settings download without size confirm”
 - [ ] Icons that are actions have Chinese `contentDescription`; decorative icons may be `null` (current Chat/Settings mix)
 - [ ] QS Tile and task-progress notice stay in `:app`, open Chat only, shade copy is status-only, Play bubbles skip sideload, overlay stays sideload-only, and `checkChannelLeak` still requires Tile + forbids NotificationListener / overlay / `QUERY_ALL_PACKAGES` / `ChatLlmSpikeActivity` / `:tool:js` / quickjs on Play

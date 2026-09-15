@@ -37,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -201,6 +203,7 @@ private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
         TaskStatus.FAILED -> DougieColors.Error
         else -> DougieColors.Primary
     }
+    var expanded by remember(item.taskId) { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -227,7 +230,8 @@ private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
                 fontWeight = FontWeight.Bold,
             )
         }
-        val meta = listOfNotNull(item.durationLabel, item.providerLabel).joinToString(" · ")
+        val meta = listOfNotNull(item.durationLabel, item.providerLabel, item.completedAtLabel)
+            .joinToString(" · ")
         if (meta.isNotEmpty()) {
             Text(
                 text = meta,
@@ -235,13 +239,38 @@ private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
                 fontSize = 13.sp,
             )
         }
-        Text(
-            text = "循环 ${item.loopCount}" +
-                if (item.toolChain.isNotBlank()) "  ·  ${item.toolChain}" else "",
-            color = DougieColors.OnSurfaceVariant,
-            fontSize = 13.sp,
-            fontFamily = FontFamily.Monospace,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "循环 ${item.loopCount}" +
+                    if (item.toolChain.isNotBlank()) "  ·  ${item.toolChain}" else "",
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 13.sp,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.weight(1f),
+            )
+            if (item.steps.isNotEmpty()) {
+                val expandLabel = if (expanded) "收起" else "展开"
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.semantics { contentDescription = expandLabel },
+                ) {
+                    Text(expandLabel, color = DougieColors.Primary, fontSize = 13.sp)
+                }
+            }
+        }
+        if (expanded && item.steps.isNotEmpty()) {
+            item.steps.forEach { step ->
+                Text(
+                    text = "${step.toolName}  ·  ${step.statusLabel}",
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 13.sp,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
+        }
         val error = item.error
         if (!error.isNullOrBlank()) {
             Text(

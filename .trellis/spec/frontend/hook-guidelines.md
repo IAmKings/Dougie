@@ -53,7 +53,7 @@ SAF `OpenDocumentTree` stays in `:app` (`rememberLauncherForActivityResult`). Se
 - ViewModels: `ChatViewModel`, `SettingsViewModel`, …
 - UI state: `ChatUiState`, `SettingsFormState`, `MemoryUiState`, `HistoryUiState`, `DebugUiState`, `PermissionUiState`
 - Routes: `ChatRoute`, `SettingsRoute`, …
-- Mappers: `toChatUiState()`, `toHistoryItem()`, `formatTaskDuration()`, `toHistorySections()`, `currentConversationTitle()`, `conversationDisplayName()`, `toDebugTaskSnapshot()`, `intelligenceMark(...)`
+- Mappers: `toChatUiState()`, `toHistoryItem()`, `formatTaskDuration()`, `formatCompletedAt()`, `toHistorySections()`, `currentConversationTitle()`, `conversationDisplayName()`, `toDebugTaskSnapshot()`, `intelligenceMark(...)`
 
 Do not name Compose functions `useXxx`.
 

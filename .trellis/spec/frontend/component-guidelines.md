@@ -11,7 +11,7 @@ Each feature module owns one primary screen file plus a ViewModel. `:app` `MainA
 Pattern used everywhere (`ChatScreen.kt`, `SettingsScreen.kt`, `MemoryScreen.kt`, `HistoryScreen.kt`, `DebugScreen.kt`, `PermissionsScreen.kt`):
 
 1. `FooRoute(viewModel, navigation lambdas)` — `collectAsStateWithLifecycle`, optional `LaunchedEffect` refresh, then `FooScreen(...)`.
-2. `FooScreen(uiState, onEvent: ...)` — stateless UI. Local `remember { mutableStateOf }` is allowed for draft text, password visibility, dialogs — not for `TaskStatus`.
+2. `FooScreen(uiState, onEvent: ...)` — stateless UI. Local `remember { mutableStateOf }` is allowed for draft text, password visibility, dialogs, History **展开** (`remember(taskId)`) — not for `TaskStatus`.
 3. Private helpers in the same file (bubbles, nav rail, confirm card). Do not extract a new module for a single repeated `Row`.
 
 Chat is the dense case: `ChatRoute` → `ChatScreen` → item `when (ChatItem)` for `UserMessage` / `Thinking` / `ToolCard` / `ConfirmCard` / `AgentMessage`.
@@ -46,7 +46,8 @@ Do not add a Compose semantics test suite unless the task asks for it — none e
 
 ## Common Mistakes
 
-- Putting mapping logic in the composable (`if (status == FAILED)`) instead of `AgentTask.toChatUiState()` / `toHistoryItem()`. Duration and Provider on History cards come from `durationLabel` / `providerLabel`, not from parsing `snapshot_json` in Compose. UI tests cannot see mapping; JVM tests can (`ChatUiStateTest`, `HistoryItemTest`).
+- Putting mapping logic in the composable (`if (status == FAILED)`) instead of `AgentTask.toChatUiState()` / `toHistoryItem()`. Duration, Provider, completed-at, and expand steps on History cards come from `durationLabel` / `providerLabel` / `completedAtLabel` / `steps`, not from parsing `snapshot_json` in Compose. UI tests cannot see mapping; JVM tests can (`ChatUiStateTest`, `HistoryItemTest`).
+- Treating History **展开** as opening Chat. Nested `TextButton` toggles `remember(taskId)` steps; the card `clickable` still `openConversation`. Expand copy is raw `toolName` + 成功/失败/进行中 — never Chat `toolDisplayName`, `argsSummary`, or `resultJson`.
 - Hardcoding tool label “电池” for every `ToolCard`. Chat maps known ids to Chinese (`battery` → 电池工具, `js_eval` → 运行脚本, `py_eval` → 运行 Python, `sms_compose` → 发短信, `phone_dial` → 打电话) and otherwise shows raw `toolName`. `confirmToolBody("js_eval")` is 隔离运行脚本，不读写文件、不上网 — do not reuse 写入设备数据. L4 JS confirm uses 按完整脚本运行，结果取最后一次表达式. `confirmToolBody("py_eval")` is 可用沙箱文件处理数据，不能上网或读应用外文件. `confirmToolBody("sms_compose")` / `phone_dial` is 将打开系统短信或拨号并填入内容，需你再按发送或呼叫 — do not reuse 写入设备数据.
 - Using the sketch SVG as the default avatar regardless of `IntelligenceMark`.
 - Forgetting IME/nav padding (`imePadding`, `navigationBarsPadding`, `statusBarsPadding`) on new full-screen columns — Chat and Settings already do this.

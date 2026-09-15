@@ -5,7 +5,7 @@
 ## Overview
 
 - Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
-- UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `IntelligenceMark` enum, `HistoryItem`, `HistorySection`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
+- UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `IntelligenceMark` enum, `HistoryItem`, `HistorySection`, `HistoryToolStep`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
 - JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files.
 - Persistence codec is hand-written `TaskSnapshotCodec` (`ignoreUnknownKeys`). Do not switch Chat to decode `snapshot_json`.
 
@@ -20,7 +20,7 @@
 
 Sealed UI lists: `ChatItem` is `UserMessage | Thinking | ToolCard | ConfirmCard | AgentMessage`. Exhaustive `when` in Chat composables.
 
-Enums over stringly status in UI models: `HistoryItem.status: TaskStatus` plus a Chinese `statusLabel`. `durationLabel` / `providerLabel` are preformatted nullable strings (omit the meta line when both null). Debug snapshot stores `status.name` (`"FAILED"`) because it is a display string, not a second state machine. Debug Provider copy is `completionPath?.toUserLabel() ?: "无"`.
+Enums over stringly status in UI models: `HistoryItem.status: TaskStatus` plus a Chinese `statusLabel`. `durationLabel` / `providerLabel` / `completedAtLabel` are preformatted nullable strings (omit the meta line when all three are null). Compose does not parse epoch; `formatCompletedAt(endedAt, nowMs, zone)` owns today/昨天/date copy. `HistoryItem.steps` is `List<HistoryToolStep>` (`toolCallId`, raw `toolName`, `statusLabel` 成功/失败/进行中) mapped from `toolTrace` — never `argsSummary` / `resultJson` / risk. Debug snapshot stores `status.name` (`"FAILED"`) because it is a display string, not a second state machine. Debug Provider copy is `completionPath?.toUserLabel() ?: "无"`.
 
 ## Validation
 
@@ -38,7 +38,7 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 
 ## Common Patterns
 
-- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun formatTaskDuration()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`.
+- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun formatTaskDuration()`, `fun formatCompletedAt()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`.
 - `StateFlow` + `map` / `combine` + `stateIn(viewModelScope, WhileSubscribed(5_000), initial)`.
 - `ViewModelProvider.Factory` unchecked cast is the existing DI style (no Hilt/Anvil in the project).
 - `IntelligenceMark` is computed in `:app` from prefs + `task.lastError`, then passed into `ChatRoute` — Chat does not read EncryptedSharedPreferences.

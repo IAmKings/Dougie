@@ -3,7 +3,20 @@ package com.dougie.feature.history
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.TaskStatus
+import com.dougie.core.model.ToolTraceEntry
+import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.conversationDisplayName
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import java.util.Locale
+
+data class HistoryToolStep(
+    val toolCallId: String,
+    val toolName: String,
+    val statusLabel: String,
+)
 
 data class HistoryItem(
     val taskId: String,
@@ -16,6 +29,8 @@ data class HistoryItem(
     val error: String?,
     val durationLabel: String? = null,
     val providerLabel: String? = null,
+    val completedAtLabel: String? = null,
+    val steps: List<HistoryToolStep> = emptyList(),
 )
 
 data class HistorySection(
@@ -74,7 +89,11 @@ fun currentConversationTitle(
     )
 }
 
-fun AgentTask.toHistoryItem(maxInputChars: Int = 80): HistoryItem {
+fun AgentTask.toHistoryItem(
+    maxInputChars: Int = 80,
+    nowMs: Long = System.currentTimeMillis(),
+    zone: ZoneId = ZoneId.systemDefault(),
+): HistoryItem {
     val summary = if (input.length <= maxInputChars) input else input.take(maxInputChars) + "…"
     return HistoryItem(
         taskId = taskId,
@@ -87,8 +106,20 @@ fun AgentTask.toHistoryItem(maxInputChars: Int = 80): HistoryItem {
         error = lastError.takeIf { status == TaskStatus.FAILED },
         durationLabel = formatTaskDuration(startedAt, endedAt),
         providerLabel = completionPath?.toUserLabel(),
+        completedAtLabel = formatCompletedAt(endedAt, nowMs, zone),
+        steps = toolTrace.map { it.toHistoryToolStep() },
     )
 }
+
+private fun ToolTraceEntry.toHistoryToolStep(): HistoryToolStep = HistoryToolStep(
+    toolCallId = toolCallId,
+    toolName = toolName,
+    statusLabel = when (status) {
+        ToolTraceStatus.SUCCESS -> "成功"
+        ToolTraceStatus.FAILED -> "失败"
+        else -> "进行中"
+    },
+)
 
 fun formatTaskDuration(startedAt: Long?, endedAt: Long?): String? {
     if (startedAt == null || endedAt == null) return null
@@ -99,6 +130,28 @@ fun formatTaskDuration(startedAt: Long?, endedAt: Long?): String? {
     val seconds = totalSeconds % 60L
     return if (seconds == 0L) "${minutes}分" else "${minutes}分${seconds}秒"
 }
+
+fun formatCompletedAt(
+    endedAt: Long?,
+    nowMs: Long = System.currentTimeMillis(),
+    zone: ZoneId = ZoneId.systemDefault(),
+): String? {
+    if (endedAt == null) return null
+    val ended = Instant.ofEpochMilli(endedAt).atZone(zone)
+    val now = Instant.ofEpochMilli(nowMs).atZone(zone)
+    val days = ChronoUnit.DAYS.between(ended.toLocalDate(), now.toLocalDate())
+    val clock = ended.format(COMPLETED_AT_CLOCK)
+    return when {
+        days == 0L -> "今天 $clock"
+        days == 1L -> "昨天 $clock"
+        ended.year == now.year -> "${ended.format(COMPLETED_AT_MONTH_DAY)} $clock"
+        else -> "${ended.format(COMPLETED_AT_FULL_DATE)} $clock"
+    }
+}
+
+private val COMPLETED_AT_CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
+private val COMPLETED_AT_MONTH_DAY = DateTimeFormatter.ofPattern("M月d日", Locale.ROOT)
+private val COMPLETED_AT_FULL_DATE = DateTimeFormatter.ofPattern("yyyy年M月d日", Locale.ROOT)
 
 fun statusLabel(status: TaskStatus): String = when (status) {
     TaskStatus.COMPLETED -> "已完成"

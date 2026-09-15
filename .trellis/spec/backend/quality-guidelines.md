@@ -6,7 +6,7 @@
 
 - Language: Kotlin 2.0.21, JVM 17 (`compilerOptions.jvmTarget` / `kotlinOptions.jvmTarget = "17"`). Gradle commands need OpenJDK 17 (`JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` on this machine). Sideload `:tool:chatllm` compiles against Java 17 stubs because LiteRT-LM 0.16.1 ships class file 65; the real AAR is `runtimeOnly`.
 - Tests: JUnit 4 (`org.junit.Test`) + `kotlinx-coroutines-test` (`runTest`, `StandardTestDispatcher`, `advanceUntilIdle`). HTTP: OkHttp `MockWebServer` in `:core:llm`.
-- There is **no** ktlint, detekt, or Android Lint `lint {}` block. GitHub Actions: `.github/workflows/ci.yml` (push/PR) and `.github/workflows/release.yml` (`v*` tags). Reviewers still run Gradle locally on touched modules plus `:app:checkChannelLeak` when Play/Sideload classpath, manifests, or model assets change.
+- There is **no** ktlint, detekt, or Android Lint `lint {}` block. GitHub Actions: `.github/workflows/ci.yml` (push/PR) and `.github/workflows/release.yml` (`v*` tags). Both call `android-actions/setup-android@v3` with `packages: platform-tools` — do **not** omit this (the action default still includes obsolete `tools`, and `sdkmanager` then fails with `Failed to find package 'tools'`). Reviewers still run Gradle locally on touched modules plus `:app:checkChannelLeak` when Play/Sideload classpath, manifests, or model assets change.
 - User-visible failure copy is Chinese constants on `UserFacingErrors` (`core/model/.../AgentException.kt`). Tests assert those strings, not English paraphrases.
 
 ## Forbidden Patterns
