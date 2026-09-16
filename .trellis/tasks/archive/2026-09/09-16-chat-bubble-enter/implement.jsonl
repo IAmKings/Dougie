@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ChatFeed item when; no new ui module; Confirm stays a nested helper"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Do not let enter animation change shouldFollowChatFeed or pendingFocusKey"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Stable listKey; ChatRoute disposed off Chat; Activity-scoped ViewModel scroll survives"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM mapper tests only; no Compose UI test for enter animation"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Enter playback is a pure function over ChatItem listKey and type"}

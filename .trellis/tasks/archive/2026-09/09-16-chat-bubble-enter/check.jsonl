@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest covers enter keys; no Compose UI test"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Bottom-nav return and History focus must not replay enter"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ConfirmCard must not use bubble enter; fade+8dp only on user/thinking/tool/agent"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Same agent listKey streaming to final must not re-enter"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Do not key enter off firstKey reset"}
