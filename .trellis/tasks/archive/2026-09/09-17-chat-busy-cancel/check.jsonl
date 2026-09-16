@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "canCancel mapping tests; send/stop/cancel precedence"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Composer stays disabled; only the right slot is cancel"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Confirm busy still canCancel; reject is not cancel"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "FAILED lastError remains UserFacingErrors.CANCELLED"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Existing cancel stream test plus confirm cancel if added"}

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "inputEnabled busy includes confirm; canCancel is the same busy bit"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Send slot becomes Stop 终止 while busy; TTS 停止播报 only when completed"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "TaskManager.cancel stays 任务已取消。"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Do not map job cancel to LLM_FAILED"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest canCancel; no Compose UI test"}
