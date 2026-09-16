@@ -340,6 +340,88 @@ class HistoryItemTest {
     }
 
     @Test
+    fun titleHitIncludesAllTerminalTasksOfThatWindow() {
+        val extra = "window-work"
+        val titles = mapOf(extra to "工作")
+        val recent = listOf(
+            historyTurn("e-new", extra),
+            historyTurn("d1", ConversationIds.DEFAULT),
+        )
+        val sections = toHistorySections(recent, titles)
+        val needles = listOf("工作")
+        assertEquals(setOf(extra), historyTitleHitIds(needles, sections, titles))
+        val storeHits = listOf(
+            AgentTask(
+                taskId = "unrelated",
+                input = "UNO 项目",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了。",
+                conversationId = ConversationIds.DEFAULT,
+            ),
+        )
+        val titleTasks = mapOf(
+            extra to listOf(
+                AgentTask(
+                    taskId = "e-new",
+                    input = "今天开会",
+                    status = TaskStatus.COMPLETED,
+                    finalAnswer = "好了",
+                    conversationId = extra,
+                ),
+                AgentTask(
+                    taskId = "e-old",
+                    input = "无关闲聊",
+                    status = TaskStatus.FAILED,
+                    lastError = "网络失败",
+                    conversationId = extra,
+                ),
+            ),
+        )
+        val merged = mergeHistorySearchTasks(storeHits, titleTasks)
+        assertEquals(listOf("unrelated", "e-new", "e-old"), merged.map { it.taskId })
+        val grouped = toHistorySections(merged.map { it.toHistoryItem() }, titles)
+        assertEquals(listOf(ConversationIds.DEFAULT, extra), grouped.map { it.conversationId })
+        assertEquals("工作", grouped[1].title)
+        assertEquals(listOf("e-new", "e-old"), grouped[1].items.map { it.taskId })
+    }
+
+    @Test
+    fun customTitleHitDoesNotRequireWindowInRecentFifty() {
+        val extra = "window-old-work"
+        val titles = mapOf(extra to "工作")
+        val recentOnlyDefault = toHistorySections(
+            listOf(historyTurn("d1", ConversationIds.DEFAULT)),
+            titles,
+        )
+        assertEquals(setOf(extra), historyTitleHitIds(listOf("工作"), recentOnlyDefault, titles))
+        assertEquals(setOf(extra), historyTitleHitIds(listOf("工作"), emptyList(), titles))
+        assertEquals(
+            emptySet<String>(),
+            historyTitleHitIds(listOf("工作"), recentOnlyDefault, emptyMap()),
+        )
+    }
+
+    @Test
+    fun storeTextHitDoesNotPullWholeWindow() {
+        val extra = "window-work"
+        val storeHits = listOf(
+            AgentTask(
+                taskId = "e-uno",
+                input = "UNO 怎么出加2",
+                status = TaskStatus.FAILED,
+                lastError = "网络失败",
+                conversationId = extra,
+            ),
+        )
+        val merged = mergeHistorySearchTasks(storeHits, emptyMap())
+        assertEquals(listOf("e-uno"), merged.map { it.taskId })
+        assertEquals(
+            emptySet<String>(),
+            historyTitleHitIds(listOf("UNO"), toHistorySections(merged.map { it.toHistoryItem() }), emptyMap()),
+        )
+    }
+
+    @Test
     fun emptyHistoryHasNoSections() {
         assertEquals(emptyList<HistorySection>(), toHistorySections(emptyList()))
     }

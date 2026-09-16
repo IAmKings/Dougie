@@ -126,6 +126,48 @@ class TaskManager(
         }
     }
 
+    fun deleteTask(taskId: String): Job? {
+        if (isBusy()) return null
+        val id = taskId.trim()
+        if (id.isEmpty()) return null
+        val store = taskStore ?: return null
+        return scope.launch(dispatcher) {
+            if (isBusy()) return@launch
+            val existing = _task.value?.takeIf { it.taskId == id }
+                ?: _transcript.value.firstOrNull { it.taskId == id }
+                ?: store.listRecent(Int.MAX_VALUE).firstOrNull { it.taskId == id }
+            val conversationId = existing?.conversationId
+            val wasLive = _task.value?.taskId == id
+            store.deleteByTaskId(id)
+            if (
+                conversationId != null &&
+                conversationId != ConversationIds.DEFAULT &&
+                store.listByConversation(conversationId).isEmpty()
+            ) {
+                titles?.setTitle(conversationId, "")
+                if (conversation.currentId() == conversationId) {
+                    conversation.setCurrentId(ConversationIds.DEFAULT)
+                    val rows = store.listByConversation(ConversationIds.DEFAULT)
+                    if (conversation.currentId() != ConversationIds.DEFAULT || isBusy()) {
+                        return@launch
+                    }
+                    _task.value = rows.lastOrNull()
+                    reloadTranscript()
+                    return@launch
+                }
+            }
+            if (wasLive) {
+                val rows = store.listByConversation(conversation.currentId())
+                _task.value = rows.lastOrNull()
+                reloadTranscript()
+                return@launch
+            }
+            if (conversationId == conversation.currentId()) {
+                reloadTranscript()
+            }
+        }
+    }
+
     suspend fun reloadTranscript() {
         val store = taskStore
         if (store == null) {

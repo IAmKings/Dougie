@@ -6,6 +6,7 @@ import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.conversationDisplayName
+import com.dougie.core.model.normalizeConversationTitle
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -40,6 +41,44 @@ data class HistorySection(
 )
 
 fun HistorySection.canDelete(): Boolean = conversationId != ConversationIds.DEFAULT
+
+fun historyNeedlesMatch(haystack: String, needles: List<String>): Boolean =
+    needles.any { haystack.contains(it, ignoreCase = true) }
+
+fun historyTitleHitIds(
+    needles: List<String>,
+    recentSections: List<HistorySection>,
+    titles: Map<String, String>,
+): Set<String> {
+    if (needles.isEmpty()) return emptySet()
+    val ids = LinkedHashSet<String>()
+    for (section in recentSections) {
+        if (historyNeedlesMatch(section.title, needles)) ids += section.conversationId
+    }
+    for ((id, raw) in titles) {
+        val display = normalizeConversationTitle(raw) ?: continue
+        if (historyNeedlesMatch(display, needles)) ids += id
+    }
+    return ids
+}
+
+fun mergeHistorySearchTasks(
+    storeHitsNewestFirst: List<AgentTask>,
+    titleHitTasksNewestFirst: Map<String, List<AgentTask>>,
+): List<AgentTask> {
+    val order = LinkedHashSet<String>()
+    val storeByConv = LinkedHashMap<String, MutableList<AgentTask>>()
+    for (task in storeHitsNewestFirst) {
+        order.add(task.conversationId)
+        storeByConv.getOrPut(task.conversationId) { mutableListOf() }.add(task)
+    }
+    for (id in titleHitTasksNewestFirst.keys) {
+        order.add(id)
+    }
+    return order.flatMap { id ->
+        titleHitTasksNewestFirst[id] ?: storeByConv[id].orEmpty()
+    }
+}
 
 fun toHistorySections(
     items: List<HistoryItem>,

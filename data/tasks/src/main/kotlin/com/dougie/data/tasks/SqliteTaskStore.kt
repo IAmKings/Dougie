@@ -8,6 +8,7 @@ import com.dougie.core.runtime.TaskSnapshotCodec
 import com.dougie.core.runtime.TaskStore
 import com.dougie.core.runtime.conversationSearchNeedles
 import com.dougie.core.runtime.matchesCompletedTurnNeedles
+import com.dougie.core.runtime.matchesHistoryNeedles
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -127,6 +128,11 @@ internal class SqliteTaskStore(
             }
         }
 
+    override suspend fun deleteByTaskId(taskId: String): Int = withContext(Dispatchers.IO) {
+        if (taskId.isBlank()) return@withContext 0
+        helper.writableDatabase.delete("agent_tasks", "task_id = ?", arrayOf(taskId))
+    }
+
     override suspend fun searchCompletedTurns(
         query: String,
         excludeTaskIds: Set<String>,
@@ -157,4 +163,32 @@ internal class SqliteTaskStore(
             }
         }
     }
+
+    override suspend fun searchHistory(query: String, limit: Int): List<AgentTask> =
+        withContext(Dispatchers.IO) {
+            val needles = conversationSearchNeedles(query)
+            if (needles.isEmpty() || limit <= 0) return@withContext emptyList()
+            helper.readableDatabase.rawQuery(
+                """
+                SELECT task_id, snapshot_json
+                FROM agent_tasks
+                ORDER BY updated_at DESC
+                """.trimIndent(),
+                emptyArray(),
+            ).use { cursor ->
+                buildList {
+                    while (cursor.moveToNext() && size < limit) {
+                        val raw = cursor.getString(1) ?: continue
+                        try {
+                            val task = TaskSnapshotCodec.decode(raw)
+                            if (task.matchesHistoryNeedles(needles)) {
+                                add(task)
+                            }
+                        } catch (_: Exception) {
+                            // Skip corrupt rows.
+                        }
+                    }
+                }
+            }
+        }
 }

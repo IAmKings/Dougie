@@ -12,11 +12,13 @@ interface TaskStore {
     suspend fun listRecent(limit: Int = 50): List<AgentTask>
     suspend fun listByConversation(conversationId: String): List<AgentTask>
     suspend fun deleteByConversation(conversationId: String): Int
+    suspend fun deleteByTaskId(taskId: String): Int
     suspend fun searchCompletedTurns(
         query: String,
         excludeTaskIds: Set<String> = emptySet(),
         limit: Int = 3,
     ): List<AgentTask>
+    suspend fun searchHistory(query: String, limit: Int = Int.MAX_VALUE): List<AgentTask>
 }
 
 class InMemoryTaskStore : TaskStore {
@@ -50,6 +52,13 @@ class InMemoryTaskStore : TaskStore {
         ids.size
     }
 
+    override suspend fun deleteByTaskId(taskId: String): Int = mutex.withLock {
+        if (taskId.isBlank()) return@withLock 0
+        val removed = byId.remove(taskId) != null
+        recentIds.remove(taskId)
+        if (removed) 1 else 0
+    }
+
     override suspend fun searchCompletedTurns(
         query: String,
         excludeTaskIds: Set<String>,
@@ -60,6 +69,16 @@ class InMemoryTaskStore : TaskStore {
         recentIds.asReversed().asSequence()
             .mapNotNull { byId[it] }
             .filter { it.matchesCompletedTurnNeedles(needles, excludeTaskIds) }
+            .take(limit)
+            .toList()
+    }
+
+    override suspend fun searchHistory(query: String, limit: Int): List<AgentTask> = mutex.withLock {
+        val needles = conversationSearchNeedles(query)
+        if (needles.isEmpty() || limit <= 0) return@withLock emptyList()
+        recentIds.asReversed().asSequence()
+            .mapNotNull { byId[it] }
+            .filter { it.matchesHistoryNeedles(needles) }
             .take(limit)
             .toList()
     }
@@ -95,6 +114,13 @@ fun AgentTask.matchesCompletedTurnNeedles(
     val answer = finalAnswer?.trim().orEmpty()
     if (answer.isEmpty()) return false
     val haystack = input + finalAnswer.orEmpty()
+    return needles.any { needle -> haystack.contains(needle, ignoreCase = true) }
+}
+
+fun AgentTask.matchesHistoryNeedles(needles: List<String>): Boolean {
+    if (needles.isEmpty()) return false
+    if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED) return false
+    val haystack = input + finalAnswer.orEmpty() + lastError.orEmpty()
     return needles.any { needle -> haystack.contains(needle, ignoreCase = true) }
 }
 

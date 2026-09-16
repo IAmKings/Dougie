@@ -718,4 +718,160 @@ class TaskStoreTest {
         assertEquals(listOf("uno", "这个玩法"), conversationSearchNeedles("uno这个玩法"))
         assertTrue(store.searchCompletedTurns("这个").isEmpty())
     }
+
+    @Test
+    fun searchHistoryFindsFailedAndCompletedAndSkipsInProgress() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "done",
+                input = "UNO 项目关键点",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "failed",
+                input = "UNO 再试一次",
+                status = TaskStatus.FAILED,
+                lastError = UserFacingErrors.NETWORK_FAILED,
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "live",
+                input = "UNO 正在跑",
+                status = TaskStatus.THINKING,
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "error-only",
+                input = "无关问题",
+                status = TaskStatus.FAILED,
+                lastError = "网络失败，请稍后重试。",
+            ),
+        )
+        assertEquals(listOf("failed", "done"), store.searchHistory("UNO").map { it.taskId })
+        assertEquals(listOf("error-only"), store.searchHistory("网络失败").map { it.taskId })
+        assertEquals(listOf("failed"), store.searchHistory("UNO", limit = 1).map { it.taskId })
+    }
+
+    @Test
+    fun searchHistoryReturnsEmptyForBlankOrStopwordNeedles() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+            ),
+        )
+        assertTrue(store.searchHistory("").isEmpty())
+        assertTrue(store.searchHistory("   ").isEmpty())
+        assertTrue(store.searchHistory("这个").isEmpty())
+    }
+
+    @Test
+    fun searchHistoryDoesNotMatchToolTrace() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "tools-only",
+                input = "无关问题",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好的。",
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "c1",
+                        toolName = "clipboard_write",
+                        argsSummary = """{"text":"UNO 项目关键点"}""",
+                        resultJson = """{"ok":"UNO 项目关键点"}""",
+                        status = ToolTraceStatus.SUCCESS,
+                    ),
+                ),
+            ),
+        )
+        assertTrue(store.searchHistory("UNO 项目关键点").isEmpty())
+    }
+
+    @Test
+    fun searchHistoryDoesNotCiteUnrelatedChitChatForUnoQuery() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "liu",
+                input = "他是刘备",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了，他是刘备。",
+                conversationId = "chat-a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "coffee",
+                input = "我平时喝什么咖啡",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "你平时喝美式。这个习惯我记住了。",
+                conversationId = "chat-b",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "uno",
+                input = "UNO 怎么出加2",
+                status = TaskStatus.FAILED,
+                lastError = UserFacingErrors.NETWORK_FAILED,
+                conversationId = "chat-c",
+            ),
+        )
+        assertEquals(listOf("uno"), store.searchHistory("uno这个玩法").map { it.taskId })
+        assertTrue(store.searchHistory("这个").isEmpty())
+    }
+
+    @Test
+    fun searchHistoryFindsTerminalTurnsBeyondRecentFifty() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old",
+                input = "UNO 怎么出加2",
+                status = TaskStatus.FAILED,
+                lastError = UserFacingErrors.NETWORK_FAILED,
+            ),
+        )
+        repeat(50) { index ->
+            store.upsert(
+                AgentTask(
+                    taskId = "recent-$index",
+                    input = "无关问题 $index",
+                    status = TaskStatus.COMPLETED,
+                    finalAnswer = "好了",
+                ),
+            )
+        }
+        assertEquals(50, store.listRecent(50).size)
+        assertTrue(store.listRecent(50).none { it.taskId == "old" })
+        assertEquals(listOf("old"), store.searchHistory("UNO").map { it.taskId })
+    }
+
+    @Test
+    fun deleteByTaskIdRemovesPrimaryKeyAndIgnoresBlank() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(taskId = "keep", input = "保留", status = TaskStatus.COMPLETED, finalAnswer = "好了"),
+        )
+        store.upsert(
+            AgentTask(taskId = "drop", input = "丢掉", status = TaskStatus.FAILED, lastError = "网络失败"),
+        )
+        assertEquals(0, store.deleteByTaskId(""))
+        assertEquals(0, store.deleteByTaskId("   "))
+        assertEquals(0, store.deleteByTaskId("missing"))
+        assertEquals(1, store.deleteByTaskId("drop"))
+        assertEquals(listOf("keep"), store.listRecent(10).map { it.taskId })
+        assertEquals(0, store.deleteByTaskId("drop"))
+        assertEquals(listOf("keep"), store.listByConversation(ConversationIds.DEFAULT).map { it.taskId })
+    }
 }

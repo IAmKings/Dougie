@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -56,6 +57,7 @@ fun HistoryRoute(
     onOpenSettings: () -> Unit,
     onOpenConversation: (String, String) -> Unit,
     onDelete: (String) -> Unit,
+    onDeleteTask: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -65,8 +67,10 @@ fun HistoryRoute(
         onOpenMemory = onOpenMemory,
         onOpenSettings = onOpenSettings,
         onOpenConversation = onOpenConversation,
+        onQueryChange = viewModel::setQuery,
         onRename = viewModel::setTitle,
         onDelete = onDelete,
+        onDeleteTask = onDeleteTask,
     )
 }
 
@@ -78,17 +82,22 @@ fun HistoryScreen(
     onOpenMemory: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenConversation: (String, String) -> Unit,
+    onQueryChange: (String) -> Unit = {},
     onRename: (String, String) -> Unit = { _, _ -> },
     onDelete: (String) -> Unit = {},
+    onDeleteTask: (String) -> Unit = {},
 ) {
     var renaming by remember { mutableStateOf<HistorySection?>(null) }
     var deleting by remember { mutableStateOf<HistorySection?>(null) }
+    var deletingTask by remember { mutableStateOf<HistoryItem?>(null) }
+    val searching = uiState.query.trim().isNotEmpty()
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DougieColors.Surface)
             .statusBarsPadding()
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier
@@ -104,6 +113,15 @@ fun HistoryScreen(
                 fontWeight = FontWeight.ExtraBold,
             )
         }
+        OutlinedTextField(
+            value = uiState.query,
+            onValueChange = onQueryChange,
+            singleLine = true,
+            placeholder = { Text("搜索任务", color = DougieColors.OnSurfaceVariant) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
         if (uiState.sections.isEmpty()) {
             Column(
                 modifier = Modifier
@@ -113,13 +131,20 @@ fun HistoryScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Text("还没有任务记录", color = DougieColors.Primary, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Text(
-                    text = "对话完成后会显示在这里。中断的任务会标记为失败。",
-                    color = DougieColors.OnSurfaceVariant,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(top = 8.dp),
+                    text = if (searching) "没有匹配的任务" else "还没有任务记录",
+                    color = DougieColors.Primary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
                 )
+                if (!searching) {
+                    Text(
+                        text = "对话完成后会显示在这里。中断的任务会标记为失败。",
+                        color = DougieColors.OnSurfaceVariant,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         } else {
             LazyColumn(
@@ -163,6 +188,7 @@ fun HistoryScreen(
                         HistoryCard(
                             item,
                             onOpen = { onOpenConversation(item.conversationId, item.taskId) },
+                            onDelete = { deletingTask = item },
                         )
                     }
                 }
@@ -229,10 +255,29 @@ fun HistoryScreen(
             },
         )
     }
+    val deletingItem = deletingTask
+    if (deletingItem != null) {
+        AlertDialog(
+            onDismissRequest = { deletingTask = null },
+            title = { Text("删除任务") },
+            text = { Text("将删除这一轮，且无法恢复。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteTask(deletingItem.taskId)
+                        deletingTask = null
+                    },
+                ) { Text("删除", color = DougieColors.Error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingTask = null }) { Text("取消") }
+            },
+        )
+    }
 }
 
 @Composable
-private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
+private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit, onDelete: () -> Unit) {
     val badgeColor = when (item.status) {
         TaskStatus.COMPLETED -> DougieColors.StatusCompleted
         TaskStatus.FAILED -> DougieColors.Error
@@ -294,6 +339,12 @@ private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit) {
                 ) {
                     Text(expandLabel, color = DougieColors.Primary, fontSize = 13.sp)
                 }
+            }
+            TextButton(
+                onClick = onDelete,
+                modifier = Modifier.semantics { contentDescription = "删除" },
+            ) {
+                Text("删除", color = DougieColors.Error, fontSize = 13.sp)
             }
         }
         if (expanded && item.steps.isNotEmpty()) {
