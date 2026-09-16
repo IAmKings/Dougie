@@ -1951,3 +1951,24 @@ Chat LLM 轮检索全部窗口已完成对话，注入相关历史并显示来�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 85: Chat 气泡显示耗时
+
+**Date**: 2026-09-16
+**Task**: Chat 气泡显示耗时
+**Branch**: `master`
+
+### Summary
+
+完成/失败的助手气泡显示与任务卡相同的墙钟耗时；思考与流式不显示。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e38fbdf` | (see git log) |
+
+### Status
+
+[OK] **Completed**
