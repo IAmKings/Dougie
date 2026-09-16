@@ -1909,3 +1909,24 @@ HybridMemoryStore 包装 FTS；缺 embed 包时召回与现网一致。v2 只 AL
 ### Status
 
 [OK] **Completed**
+
+
+## Session 83: Chat 检索历史对话
+
+**Date**: 2026-09-16
+**Task**: Chat 检索历史对话
+**Branch**: `master`
+
+### Summary
+
+Chat LLM 轮检索全部窗口已完成对话，注入相关历史并显示来源；切词改为整词/整段中文，避免这个等常用字误引用。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3d72bc6` | (see git log) |
+
+### Status
+
+[OK] **Completed**
