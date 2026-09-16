@@ -10,6 +10,7 @@ import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.EgressPolicy
 import com.dougie.core.model.LlmEvent
@@ -18,6 +19,7 @@ import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
+import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.ToolContext
 import com.dougie.core.model.ToolDescriptor
@@ -2094,6 +2096,419 @@ class LoopEngineTest {
         ) {}
         assertEquals(listOf(1, 1), sizes)
         assertEquals(TaskStatus.COMPLETED, result.status)
+    }
+
+    @Test
+    fun otherWindowCompletedTurnIsInjectedAsConversationHit() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点是本地优先和离线模型",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：UNO 关键点包括本地优先。",
+                conversationId = "window-a",
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "c1",
+                        toolName = "clipboard_write",
+                        argsSummary = """{"text":"tool-secret-should-not-inject"}""",
+                        resultJson = """{"ok":"tool-secret-should-not-inject"}""",
+                        status = ToolTraceStatus.SUCCESS,
+                    ),
+                ),
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("关键点是本地优先。")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            memoryEnabled = { false },
+            taskStore = store,
+            conversationTitles = { mapOf("window-a" to "工作") },
+        )
+        val result = engine.run(
+            AgentTask(
+                taskId = "now",
+                input = "UNO 项目有哪些关键点？",
+                conversationId = "window-b",
+            ),
+        ) {}
+        val hits = requireNotNull(seen).retrievedConversationHits
+        assertEquals(1, hits.size)
+        assertEquals("old-uno", hits.single().taskId)
+        assertEquals("window-a", hits.single().conversationId)
+        assertEquals("工作 · UNO 项目关键点是本地优先和离线模型", hits.single().sourceLabel)
+        assertTrue(!hits.single().sourceLabel.contains("window-a"))
+        assertTrue(hits.single().user.contains("UNO"))
+        assertTrue(hits.single().assistant.contains("本地优先"))
+        assertTrue(!hits.single().user.contains("tool-secret-should-not-inject"))
+        assertTrue(!hits.single().assistant.contains("tool-secret-should-not-inject"))
+        assertEquals(hits, result.retrievedConversationHits)
+        assertTrue(result.priorTurns.isEmpty())
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("关键点是本地优先。", result.finalAnswer)
+    }
+
+    @Test
+    fun untitledWindowSourceLabelIsNotConversationId() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+                conversationId = ConversationIds.DEFAULT,
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("本地优先")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        engine.run(
+            AgentTask(
+                taskId = "now",
+                input = "UNO 项目有哪些关键点？",
+                conversationId = "window-b",
+            ),
+        ) {}
+        val label = requireNotNull(seen).retrievedConversationHits.single().sourceLabel
+        assertTrue(label.startsWith("默认会话 · "))
+        assertTrue(!label.contains(ConversationIds.DEFAULT))
+    }
+
+    @Test
+    fun extraWindowSourceLabelIsNotConversationUuid() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val windowId = "550e8400-e29b-41d4-a716-446655440000"
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+                conversationId = windowId,
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("本地优先")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        engine.run(
+            AgentTask(
+                taskId = "now",
+                input = "UNO 项目有哪些关键点？",
+                conversationId = "window-b",
+            ),
+        ) {}
+        val label = requireNotNull(seen).retrievedConversationHits.single().sourceLabel
+        assertTrue(label.startsWith("对话 · "))
+        assertTrue(!label.contains(windowId))
+    }
+
+    @Test
+    fun conversationHitSourceLabelCollapsesNewlines() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点\n第二行不要进来源",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+                conversationId = "window-a",
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("本地优先")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            conversationTitles = { mapOf("window-a" to "工作") },
+            taskStore = store,
+        )
+        engine.run(
+            AgentTask(
+                taskId = "now",
+                input = "UNO 项目有哪些关键点？",
+                conversationId = "window-b",
+            ),
+        ) {}
+        val label = requireNotNull(seen).retrievedConversationHits.single().sourceLabel
+        assertTrue(!label.contains("\n"))
+        assertTrue(label.startsWith("工作 · "))
+        assertTrue(label.contains("UNO 项目关键点"))
+    }
+
+    @Test
+    fun currentWindowPriorTurnsAreNotReinjectedAsConversationHits() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "ok",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：UNO 关键点包括本地优先。",
+                conversationId = "c1",
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("还是本地优先")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        engine.run(
+            AgentTask(taskId = "now", input = "UNO 项目有哪些关键点？", conversationId = "c1"),
+        ) {}
+        val live = requireNotNull(seen)
+        assertEquals(1, live.priorTurns.size)
+        assertEquals("UNO 项目关键点是本地优先", live.priorTurns.single().user)
+        assertTrue(live.retrievedConversationHits.isEmpty())
+    }
+
+    @Test
+    fun conversationSearchRunsWhenMemoryDisabled() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val memory = InMemoryMemoryStore()
+        memory.upsert(
+            MemoryEntry(
+                id = "m1",
+                content = "我叫小明，住在上海",
+                source = "task-0",
+                confidence = 0.8f,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+                conversationId = "window-a",
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("本地优先")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            memoryStore = memory,
+            memoryEnabled = { false },
+            taskStore = store,
+        )
+        val result = engine.run(
+            AgentTask(
+                taskId = "now",
+                input = "UNO 项目有哪些关键点？",
+                conversationId = "window-b",
+            ),
+        ) {}
+        assertTrue(requireNotNull(seen).retrievedMemories.isEmpty())
+        assertEquals(1, seen!!.retrievedConversationHits.size)
+        assertTrue(result.retrievedMemories.isEmpty())
+        assertEquals("old-uno", result.retrievedConversationHits.single().taskId)
+    }
+
+    @Test
+    fun noConversationHitsDoNotForceNotFound() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                assertTrue(context.task.retrievedConversationHits.isEmpty())
+                return LlmResponse.FinalAnswer("今天天气不错。")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = InMemoryTaskStore(),
+        )
+        val result = engine.run(AgentTask(taskId = "now", input = "今天怎么样")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("今天天气不错。", result.finalAnswer)
+        assertTrue(result.finalAnswer != "未找到")
+        assertTrue(result.retrievedConversationHits.isEmpty())
+    }
+
+    @Test
+    fun conversationHitUserAndAssistantStayWithinCharBudget() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "huge",
+                input = "UNO 项目关键点" + "问".repeat(500),
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "答".repeat(500),
+                conversationId = "window-a",
+            ),
+        )
+        var seen: AgentTask? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                seen = context.task
+                return LlmResponse.FinalAnswer("本地优先")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            taskStore = store,
+        )
+        engine.run(
+            AgentTask(taskId = "now", input = "UNO 项目有哪些关键点？", conversationId = "window-b"),
+        ) {}
+        val hit = requireNotNull(seen).retrievedConversationHits.single()
+        assertTrue(hit.user.length + hit.assistant.length <= 800)
+    }
+
+    @Test
+    fun speakShortcutDoesNotSearchCompletedTurns() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = CountingTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+            ),
+        )
+        val spy = SpyLocalLlm()
+        val offline = FakeTtsEngine(ready = true)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                SpeechOutputTool.NAME to SpeechOutputTool(
+                    PreferOfflineTtsPort(offline, FakeTtsEngine()),
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            skipIntentShortcut = { true },
+            taskStore = store,
+        )
+        val spoken = engine.run(AgentTask(taskId = "t-speak", input = "把你好念出来")) {}
+        assertEquals(TaskStatus.COMPLETED, spoken.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, store.searchCount)
+        assertTrue(spoken.retrievedConversationHits.isEmpty())
+    }
+
+    @Test
+    fun miniRbtTimeShortcutDoesNotSearchCompletedTurns() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val store = CountingTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+            ),
+        )
+        val spy = SpyLocalLlm()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            intentPort = FakeIntentPort(),
+            taskStore = store,
+        )
+        val result = engine.run(AgentTask(taskId = "t-time", input = "现在几点")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(0, spy.streamCount)
+        assertEquals(0, store.searchCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+        assertTrue(result.retrievedConversationHits.isEmpty())
+    }
+
+    private class CountingTaskStore(
+        private val inner: InMemoryTaskStore = InMemoryTaskStore(),
+    ) : TaskStore by inner {
+        var searchCount = 0
+            private set
+
+        override suspend fun searchCompletedTurns(
+            query: String,
+            excludeTaskIds: Set<String>,
+            limit: Int,
+        ): List<AgentTask> {
+            searchCount += 1
+            return inner.searchCompletedTurns(query, excludeTaskIds, limit)
+        }
     }
 
     private class SpyLocalLlm(

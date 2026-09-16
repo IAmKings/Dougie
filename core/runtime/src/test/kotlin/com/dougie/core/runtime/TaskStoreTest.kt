@@ -6,6 +6,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmEvent
@@ -539,5 +540,182 @@ class TaskStoreTest {
         assertEquals(listOf("d1"), store.listByConversation(ConversationIds.DEFAULT).map { it.taskId })
         assertEquals(listOf("b1"), store.listByConversation("b").map { it.taskId })
         assertEquals(0, store.deleteByConversation("a"))
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesConversationHitsAndOmitsPriorTurns() {
+        val hits = listOf(
+            ConversationHit(
+                taskId = "old-uno",
+                conversationId = "window-a",
+                sourceLabel = "工作 · UNO 项目关键点",
+                user = "UNO 项目关键点是本地优先",
+                assistant = "记下了：本地优先。",
+            ),
+        )
+        val original = AgentTask(
+            taskId = "now",
+            input = "UNO 项目有哪些关键点？",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "本地优先。",
+            retrievedConversationHits = hits,
+            priorTurns = listOf(ConversationTurn("我同事叫张伟", "好的，他叫张伟。")),
+        )
+        val encoded = TaskSnapshotCodec.encode(original)
+        val restored = TaskSnapshotCodec.decode(encoded)
+        assertEquals(hits, restored.retrievedConversationHits)
+        assertTrue(restored.priorTurns.isEmpty())
+        assertTrue(encoded.contains("retrievedConversationHits"))
+        assertTrue(!encoded.contains("priorTurns"))
+        assertTrue(!encoded.contains("我同事叫张伟"))
+    }
+
+    @Test
+    fun snapshotDecodeWithoutConversationHitsIsEmpty() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"old","input":"查电量","status":"COMPLETED","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":"好了","lastError":null,"streamingText":null,"retrievedMemories":[],"attachments":[]}""",
+        )
+        assertTrue(restored.retrievedConversationHits.isEmpty())
+    }
+
+    @Test
+    fun snapshotDecodeIgnoresUnknownConversationHitKeys() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"now","input":"q","status":"COMPLETED","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":"a","lastError":null,"streamingText":null,"retrievedMemories":[],"retrievedConversationHits":[{"taskId":"old","conversationId":"window-a","sourceLabel":"工作 · UNO","user":"u","assistant":"s","extra":"ignore-me"}],"attachments":[],"unexpected":true}""",
+        )
+        assertEquals(1, restored.retrievedConversationHits.size)
+        assertEquals("old", restored.retrievedConversationHits.single().taskId)
+        assertEquals("工作 · UNO", restored.retrievedConversationHits.single().sourceLabel)
+        assertEquals("u", restored.retrievedConversationHits.single().user)
+        assertEquals("s", restored.retrievedConversationHits.single().assistant)
+    }
+
+    @Test
+    fun searchCompletedTurnsReturnsEmptyForBlankQuery() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "uno",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+            ),
+        )
+        assertTrue(store.searchCompletedTurns("").isEmpty())
+        assertTrue(store.searchCompletedTurns("   ").isEmpty())
+    }
+
+    @Test
+    fun searchCompletedTurnsMatchesInputAndAnswerNewestFirstAndExcludes() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "older",
+                input = "UNO 项目关键点是本地优先",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了：本地优先。",
+                conversationId = "a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "failed",
+                input = "UNO 项目失败轮",
+                status = TaskStatus.FAILED,
+                finalAnswer = "UNO 项目失败了",
+                conversationId = "a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "blank",
+                input = "UNO 项目空白终答",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "   ",
+                conversationId = "a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "excluded",
+                input = "UNO 项目当前窗口已见",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "这轮已在近期对话。",
+                conversationId = "b",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "newer",
+                input = "补充一下",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "UNO 项目还要离线模型。",
+                conversationId = "c",
+            ),
+        )
+        val hits = store.searchCompletedTurns(
+            query = "UNO 项目关键点",
+            excludeTaskIds = setOf("excluded"),
+        )
+        assertEquals(listOf("newer", "older"), hits.map { it.taskId })
+    }
+
+    @Test
+    fun searchCompletedTurnsDoesNotMatchToolTrace() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "tools-only",
+                input = "无关问题",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好的。",
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "c1",
+                        toolName = "clipboard_write",
+                        argsSummary = """{"text":"UNO 项目关键点"}""",
+                        resultJson = """{"ok":"UNO 项目关键点"}""",
+                        status = ToolTraceStatus.SUCCESS,
+                    ),
+                ),
+            ),
+        )
+        assertTrue(store.searchCompletedTurns("UNO 项目关键点").isEmpty())
+    }
+
+    @Test
+    fun searchCompletedTurnsDoesNotCiteUnrelatedChitChatForUnoQuery() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "liu",
+                input = "他是刘备",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "记下了，他是刘备。",
+                conversationId = "chat-a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "coffee",
+                input = "我平时喝什么咖啡",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "你平时喝美式。这个习惯我记住了。",
+                conversationId = "chat-b",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "uno",
+                input = "UNO 怎么出加2",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "UNO 加2要下家摸两张。",
+                conversationId = "chat-c",
+            ),
+        )
+        val hits = store.searchCompletedTurns("uno这个玩法")
+        assertEquals(listOf("uno"), hits.map { it.taskId })
+        assertEquals(listOf("uno", "这个玩法"), conversationSearchNeedles("uno这个玩法"))
+        assertTrue(store.searchCompletedTurns("这个").isEmpty())
     }
 }

@@ -2,6 +2,7 @@ package com.dougie.core.runtime
 
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
@@ -46,6 +47,10 @@ object TaskSnapshotCodec {
             "retrievedMemories",
             JsonArray(task.retrievedMemories.map { encodeMemory(it) }),
         )
+        put(
+            "retrievedConversationHits",
+            JsonArray(task.retrievedConversationHits.map { encodeHit(it) }),
+        )
         putNullable("attachedCaptureId", task.attachedCaptureId)
         if (task.attachedWidth != null) put("attachedWidth", task.attachedWidth)
         if (task.attachedHeight != null) put("attachedHeight", task.attachedHeight)
@@ -74,6 +79,9 @@ object TaskSnapshotCodec {
             streamingText = obj.optionalString("streamingText"),
             retrievedMemories = obj["retrievedMemories"]?.jsonArray
                 ?.map { decodeMemory(it.jsonObject) }
+                .orEmpty(),
+            retrievedConversationHits = obj["retrievedConversationHits"]?.jsonArray
+                ?.map { decodeHit(it.jsonObject) }
                 .orEmpty(),
             attachedCaptureId = obj.optionalString("attachedCaptureId"),
             attachedWidth = obj["attachedWidth"]?.jsonPrimitive?.intOrNull,
@@ -128,6 +136,24 @@ object TaskSnapshotCodec {
         riskLevel = obj["riskLevel"]?.jsonPrimitive?.contentOrNull
             ?.let { runCatching { RiskLevel.valueOf(it) }.getOrNull() }
             ?: RiskLevel.L0,
+    )
+
+    private fun encodeHit(hit: ConversationHit): JsonObject = buildJsonObject {
+        put("taskId", hit.taskId)
+        put("conversationId", hit.conversationId)
+        put("sourceLabel", hit.sourceLabel)
+        put("user", hit.user)
+        put("assistant", hit.assistant)
+    }
+
+    private fun decodeHit(obj: JsonObject): ConversationHit = ConversationHit(
+        taskId = obj.string("taskId"),
+        conversationId = obj.optionalString("conversationId")
+            ?.takeIf { it.isNotBlank() }
+            ?: ConversationIds.DEFAULT,
+        sourceLabel = obj.string("sourceLabel"),
+        user = obj.string("user"),
+        assistant = obj.string("assistant"),
     )
 
     private fun encodeMemory(entry: MemoryEntry): JsonObject = buildJsonObject {

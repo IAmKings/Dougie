@@ -2,6 +2,7 @@ package com.dougie.feature.debug
 
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.runtime.AuditEntry
@@ -69,6 +70,29 @@ class DebugUiStateTest {
     }
 
     @Test
+    fun debugSnapshotOmitsConversationHitBodies() {
+        val snapshot = AgentTask(
+            taskId = "t-hist",
+            input = "UNO 项目有哪些关键点？",
+            status = TaskStatus.COMPLETED,
+            retrievedConversationHits = listOf(
+                ConversationHit(
+                    taskId = "old-uno",
+                    conversationId = "window-a",
+                    sourceLabel = "工作 · UNO 项目关键点",
+                    user = "HIT_USER_SECRET_XYZ",
+                    assistant = "HIT_ASSISTANT_SECRET_XYZ",
+                ),
+            ),
+        ).toDebugTaskSnapshot()
+        val dumped = snapshot.toString()
+        assertFalse(dumped.contains("HIT_USER_SECRET_XYZ"))
+        assertFalse(dumped.contains("HIT_ASSISTANT_SECRET_XYZ"))
+        assertFalse(dumped.contains("工作 · UNO 项目关键点"))
+        assertFalse(dumped.contains("UNO 项目有哪些关键点？"))
+    }
+
+    @Test
     fun mapsAuditEntryWithoutArgs() {
         val row = AuditEntry(
             taskId = "t2",
@@ -95,6 +119,8 @@ class DebugUiStateTest {
         assertFalse(names.any { it.contains("streaming", ignoreCase = true) })
         assertFalse(names.any { it.contains("finalAnswer", ignoreCase = true) })
         assertFalse(names.any { it.contains("toolTrace", ignoreCase = true) })
+        assertFalse(names.any { it.contains("retrievedConversation", ignoreCase = true) })
+        assertFalse(names.any { it.contains("sourceLabel", ignoreCase = true) })
         assertNull(DebugTaskSnapshot::class.java.declaredFields.find { it.name == "input" })
         val fields = DebugUiState::class.java.declaredFields.map { it.name }
         assertTrue(fields.any { it == "ruleEMessage" })

@@ -159,5 +159,11 @@ internal fun AgentTask.citationSources(): List<String> {
             seen.add(source)
         }
     }
+    for (hit in retrievedConversationHits) {
+        val source = hit.sourceLabel.trim()
+        if (source.isNotEmpty()) {
+            seen.add(source)
+        }
+    }
     return seen.toList()
 }

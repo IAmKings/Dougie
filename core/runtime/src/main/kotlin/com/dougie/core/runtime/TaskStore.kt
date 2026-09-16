@@ -12,6 +12,11 @@ interface TaskStore {
     suspend fun listRecent(limit: Int = 50): List<AgentTask>
     suspend fun listByConversation(conversationId: String): List<AgentTask>
     suspend fun deleteByConversation(conversationId: String): Int
+    suspend fun searchCompletedTurns(
+        query: String,
+        excludeTaskIds: Set<String> = emptySet(),
+        limit: Int = 3,
+    ): List<AgentTask>
 }
 
 class InMemoryTaskStore : TaskStore {
@@ -44,6 +49,53 @@ class InMemoryTaskStore : TaskStore {
         }
         ids.size
     }
+
+    override suspend fun searchCompletedTurns(
+        query: String,
+        excludeTaskIds: Set<String>,
+        limit: Int,
+    ): List<AgentTask> = mutex.withLock {
+        val needles = conversationSearchNeedles(query)
+        if (needles.isEmpty() || limit <= 0) return@withLock emptyList()
+        recentIds.asReversed().asSequence()
+            .mapNotNull { byId[it] }
+            .filter { it.matchesCompletedTurnNeedles(needles, excludeTaskIds) }
+            .take(limit)
+            .toList()
+    }
+}
+
+private val CONVERSATION_SEARCH_STOPWORDS = setOf(
+    "这个", "那个", "这些", "那些", "什么", "怎么", "哪个", "哪些",
+    "一下", "一个", "我们", "你们", "他们", "不是", "可以", "现在",
+    "如果", "因为", "所以", "然后", "还有", "问题", "怎么了",
+)
+
+fun conversationSearchNeedles(query: String): List<String> {
+    val trimmed = query.trim()
+    if (trimmed.isEmpty()) return emptyList()
+    val needles = LinkedHashSet<String>()
+    Regex("[A-Za-z0-9]{2,}").findAll(trimmed).forEach { match ->
+        needles += match.value
+    }
+    Regex("[\\u4e00-\\u9fff]{2,}").findAll(trimmed).forEach { match ->
+        val run = match.value
+        if (run !in CONVERSATION_SEARCH_STOPWORDS) needles += run
+    }
+    return needles.toList()
+}
+
+fun AgentTask.matchesCompletedTurnNeedles(
+    needles: List<String>,
+    excludeTaskIds: Set<String>,
+): Boolean {
+    if (needles.isEmpty()) return false
+    if (taskId in excludeTaskIds) return false
+    if (status != TaskStatus.COMPLETED) return false
+    val answer = finalAnswer?.trim().orEmpty()
+    if (answer.isEmpty()) return false
+    val haystack = input + finalAnswer.orEmpty()
+    return needles.any { needle -> haystack.contains(needle, ignoreCase = true) }
 }
 
 suspend fun recoverInterrupted(store: TaskStore): AgentTask? {

@@ -9,6 +9,14 @@ data class ConversationTurn(
     val assistant: String,
 )
 
+data class ConversationHit(
+    val taskId: String,
+    val conversationId: String,
+    val sourceLabel: String,
+    val user: String,
+    val assistant: String,
+)
+
 data class AgentTask(
     val taskId: String,
     val input: String,
@@ -20,6 +28,7 @@ data class AgentTask(
     val lastError: String? = null,
     val streamingText: String? = null,
     val retrievedMemories: List<MemoryEntry> = emptyList(),
+    val retrievedConversationHits: List<ConversationHit> = emptyList(),
     val attachedCaptureId: String? = null,
     val attachedWidth: Int? = null,
     val attachedHeight: Int? = null,

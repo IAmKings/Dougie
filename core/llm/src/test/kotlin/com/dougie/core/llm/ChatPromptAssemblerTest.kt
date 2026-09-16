@@ -3,6 +3,7 @@ package com.dougie.core.llm
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
+import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.ToolDescriptor
@@ -244,6 +245,88 @@ class ChatPromptAssemblerTest {
         IDENTITY_TOOL_NAMES.filter { it != "screen_match" && it != "screen_capture" }.forEach { name ->
             assertTrue(!prefix.contains(name))
         }
+    }
+
+    @Test
+    fun prefixIncludesRelatedConversationAfterKnownFactsWithoutToolTrace() {
+        val prefix = ChatPromptAssembler.systemPrefix(
+            AgentTask(
+                taskId = "t-hist",
+                input = "UNO 项目有哪些关键点？",
+                retrievedMemories = listOf(
+                    MemoryEntry(
+                        id = "m1",
+                        content = "我叫小明，住在上海",
+                        source = "task-0",
+                        confidence = 0.8f,
+                        createdAt = 1L,
+                        updatedAt = 1L,
+                    ),
+                ),
+                retrievedConversationHits = listOf(
+                    ConversationHit(
+                        taskId = "old-uno",
+                        conversationId = "window-a",
+                        sourceLabel = "工作 · UNO 项目关键点",
+                        user = "UNO 项目关键点是本地优先",
+                        assistant = "记下了：本地优先。",
+                    ),
+                ),
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "c1",
+                        toolName = "clipboard_write",
+                        argsSummary = """{"text":"tool-secret-should-not-inject"}""",
+                        resultJson = """{"ok":"tool-secret-should-not-inject"}""",
+                        status = ToolTraceStatus.SUCCESS,
+                    ),
+                ),
+            ),
+        )
+        assertTrue(prefix.contains("Known facts"))
+        assertTrue(prefix.contains("我叫小明，住在上海"))
+        assertTrue(prefix.contains("相关历史对话："))
+        assertTrue(prefix.contains("工作 · UNO 项目关键点"))
+        assertTrue(prefix.contains("用户：UNO 项目关键点是本地优先"))
+        assertTrue(prefix.contains("助手：记下了：本地优先。"))
+        assertTrue(prefix.indexOf("Known facts") < prefix.indexOf("相关历史对话："))
+        assertTrue(!prefix.contains("tool-secret-should-not-inject"))
+        assertTrue(!prefix.contains("clipboard_write"))
+    }
+
+    @Test
+    fun prefixOmitsRelatedConversationWhenNoHits() {
+        val prefix = ChatPromptAssembler.systemPrefix(
+            AgentTask(taskId = "t-empty", input = "你好"),
+        )
+        assertTrue(!prefix.contains("相关历史对话"))
+    }
+
+    @Test
+    fun localPromptKeepsRelatedHistorySeparateFromRecentConversation() {
+        val task = AgentTask(
+            taskId = "t-split",
+            input = "UNO 项目有哪些关键点？",
+            retrievedConversationHits = listOf(
+                ConversationHit(
+                    taskId = "old-uno",
+                    conversationId = "window-a",
+                    sourceLabel = "工作 · UNO 项目关键点",
+                    user = "UNO 项目关键点是本地优先",
+                    assistant = "记下了：本地优先。",
+                ),
+            ),
+            priorTurns = listOf(
+                ConversationTurn("我同事叫张伟", "好的，他叫张伟。"),
+            ),
+        )
+        val prompt = ChatPromptAssembler.localPrompt(task)
+        assertTrue(prompt.contains("相关历史对话："))
+        assertTrue(prompt.contains("近期对话："))
+        assertTrue(prompt.indexOf("相关历史对话：") < prompt.indexOf("近期对话："))
+        assertTrue(prompt.indexOf("近期对话：") < prompt.indexOf("UNO 项目有哪些关键点？"))
+        assertTrue(prompt.contains("用户：UNO 项目关键点是本地优先"))
+        assertTrue(prompt.contains("用户：我同事叫张伟"))
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.dougie.feature.chat
 
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
@@ -120,6 +121,63 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun completedMergesMemoryThenConversationCitationSources() {
+        val state = AgentTask(
+            taskId = "t",
+            input = "UNO 项目有哪些关键点？",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "本地优先。",
+            retrievedMemories = listOf(
+                fact("m1", source = "task-0"),
+                fact("m2", source = "  "),
+                fact("m3", source = "task-0"),
+            ),
+            retrievedConversationHits = listOf(
+                ConversationHit(
+                    taskId = "old-uno",
+                    conversationId = "window-a",
+                    sourceLabel = "工作 · UNO 项目关键点",
+                    user = "UNO 项目关键点是本地优先",
+                    assistant = "记下了：本地优先。",
+                ),
+                ConversationHit(
+                    taskId = "dup",
+                    conversationId = "window-a",
+                    sourceLabel = "task-0",
+                    user = "重复来源",
+                    assistant = "不应再出现",
+                ),
+                ConversationHit(
+                    taskId = "blank",
+                    conversationId = "window-b",
+                    sourceLabel = "   ",
+                    user = "空白来源",
+                    assistant = "省略",
+                ),
+            ),
+        ).toChatUiState()
+        val message = state.items.last() as ChatItem.AgentMessage
+        assertEquals(listOf("task-0", "工作 · UNO 项目关键点"), message.memorySources)
+
+        val past = AgentTask(
+            taskId = "past",
+            input = "UNO 项目有哪些关键点？",
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "本地优先。",
+            retrievedConversationHits = listOf(
+                ConversationHit(
+                    taskId = "old-uno",
+                    conversationId = "window-a",
+                    sourceLabel = "工作 · UNO 项目关键点",
+                    user = "UNO 项目关键点是本地优先",
+                    assistant = "记下了：本地优先。",
+                ),
+            ),
+        ).toPastChatItems().last() as ChatItem.AgentMessage
+        assertEquals(listOf("工作 · UNO 项目关键点"), past.memorySources)
+    }
+
+    @Test
     fun completedBlankFinalAnswerHasNoAgentBubble() {
         val state = AgentTask(
             taskId = "t",
@@ -169,12 +227,22 @@ class ChatUiStateTest {
     @Test
     fun streamingAndFailedMessagesOmitMemorySources() {
         val memories = listOf(fact("m1", source = "task-0"))
+        val hits = listOf(
+            ConversationHit(
+                taskId = "old-uno",
+                conversationId = "window-a",
+                sourceLabel = "工作 · UNO 项目关键点",
+                user = "UNO 项目关键点是本地优先",
+                assistant = "记下了：本地优先。",
+            ),
+        )
         val streaming = AgentTask(
             taskId = "t",
             input = "我叫什么",
             status = TaskStatus.THINKING,
             streamingText = "你叫",
             retrievedMemories = memories,
+            retrievedConversationHits = hits,
         ).toChatUiState()
         assertEquals(emptyList<String>(), (streaming.items.last() as ChatItem.AgentMessage).memorySources)
 
@@ -184,6 +252,7 @@ class ChatUiStateTest {
             status = TaskStatus.FAILED,
             lastError = UserFacingErrors.EGRESS_BLOCKED,
             retrievedMemories = memories,
+            retrievedConversationHits = hits,
         ).toChatUiState()
         assertEquals(emptyList<String>(), (failed.items.last() as ChatItem.AgentMessage).memorySources)
     }

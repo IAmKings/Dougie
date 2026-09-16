@@ -49,6 +49,12 @@ object ChatPromptAssembler {
             val facts = task.retrievedMemories.joinToString(separator = "\n") { "- ${it.content}" }
             parts += "Known facts:\n$facts"
         }
+        if (task.retrievedConversationHits.isNotEmpty()) {
+            val hits = task.retrievedConversationHits.joinToString(separator = "\n") { hit ->
+                "- ${hit.sourceLabel}\n  用户：${hit.user}\n  助手：${hit.assistant}"
+            }
+            parts += "相关历史对话：\n$hits"
+        }
         return parts.joinToString("\n\n")
     }
 

@@ -69,6 +69,7 @@ CREATE TABLE audit_log (
 
 - `TaskManager` calls `TaskStore.upsert` on every loop `emit`. JSON encode failures are skipped; the loop still runs.
 - `AgentTask.conversationId` lives in `snapshot_json` (default `"default"` when missing). `listByConversation` scans all snapshots in `updated_at ASC` and filters in memory — do not add a SQL column in v1, and do **not** impersonate the current thread with `listRecent(50)`.
+- `TaskStore.searchCompletedTurns(query, excludeTaskIds, limit=3)` scans all snapshots newest-first (`SELECT task_id, snapshot_json … ORDER BY updated_at DESC`, same full-table decode as `listByConversation`). Match `conversationSearchNeedles(query)` against `input` + `finalAnswer` only (`COMPLETED`, non-blank `finalAnswer`, `taskId` not in exclude). Needles are Latin tokens `≥2` and whole CJK runs `≥2` — **not** memory `searchNeedles` overlapping bigrams (`这个` from 「uno这个玩法」 must not pull 刘备/咖啡闲聊). Drop stopword-only runs (`这个` / `什么` / …). Empty needles / blank query → empty list. **Do not** `snapshot_json LIKE`, add FTS, or bump `dougie_tasks.db`. Hits are not written to `memory_facts`.
 - `TaskStore.deleteByConversation(id)` uses that same full-table snapshot scan (not `listRecent(50)`), collects matching `task_id`s, then `DELETE FROM agent_tasks WHERE task_id IN (?,?,…)`. Blank or `"default"` returns 0 and deletes nothing. Empty IN does not run SQL. Do **not** add a `conversation_id` column or bump `dougie_tasks.db`. Do not GC `memory_facts`, `audit_log`, or `idempotency`.
 - `AgentTask.priorTurns` is instantaneous LLM context. `TaskSnapshotCodec` **must omit** it; do not write history text into `snapshot_json`.
 - `AgentTask.startedAt` / `endedAt` (epoch ms) live in `snapshot_json` only. `TaskManager.submit` writes `startedAt`; terminal persist / `markCancelled` / `recoverInterrupted` call `stampEndedAtIfTerminal` (set `endedAt` once, never overwrite). Do **not** add SQL columns, do **not** bump `dougie_tasks.db`, and do **not** use `updated_at` as duration or completed-at. Old snapshots missing keys stay null (History omits duration and completed-at).
@@ -100,5 +101,7 @@ JVM tests use `InMemoryTaskStore` / `InMemoryIdempotencyStore` / `NoOpAuditLog`.
 - Writing calendar event bodies or clipboard text into `audit_log`.
 - Using `updated_at` as task duration or completed-at. Wall-clock duration is `endedAt - startedAt` inside `snapshot_json`; History completed-at is `formatCompletedAt(endedAt)`.
 - Silent Fake LLM on the app chat path.
-- Adding a `conversation_id` SQL column (or bumping `dougie_tasks.db`) to delete a window. Scan `snapshot_json` like `listByConversation`.
+- Adding a `conversation_id` SQL column (or bumping `dougie_tasks.db`) to delete a window or search history. Scan `snapshot_json` like `listByConversation` / `searchCompletedTurns`.
+- Using SQL `LIKE` on `snapshot_json` for Chat history search.
+- Reusing memory `searchNeedles` (CJK bigrams) for `searchCompletedTurns`. 「uno这个玩法」 must not cite 刘备/咖啡 because `这个` appears in those answers.
 - Deleting `"default"` rows, or sweeping Memory / `audit_log` / `idempotency` when a window is removed.

@@ -7,6 +7,24 @@ import org.junit.Test
 
 class AgentTaskTest {
     @Test
+    fun retrievedConversationHitsDefaultEmptyAndCopyKeepsThem() {
+        val task = AgentTask(taskId = "t", input = "hi")
+        assertTrue(task.retrievedConversationHits.isEmpty())
+        val hits = listOf(
+            ConversationHit(
+                taskId = "old",
+                conversationId = "window-a",
+                sourceLabel = "工作 · UNO 项目关键点",
+                user = "UNO 项目关键点是本地优先",
+                assistant = "记下了：本地优先。",
+            ),
+        )
+        val thinking = task.copy(status = TaskStatus.THINKING, retrievedConversationHits = hits)
+        assertEquals(hits, thinking.retrievedConversationHits)
+        assertEquals(hits, thinking.copy(streamingText = "x").retrievedConversationHits)
+    }
+
+    @Test
     fun priorTurnsDefaultEmptyAndCopyKeepsThem() {
         val task = AgentTask(taskId = "t", input = "hi")
         assertTrue(task.priorTurns.isEmpty())

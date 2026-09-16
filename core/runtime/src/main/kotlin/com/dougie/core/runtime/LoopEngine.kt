@@ -7,7 +7,10 @@ import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.CompletionPath
+import com.dougie.core.model.ConversationHit
+import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.ConversationTurn
+import com.dougie.core.model.conversationDisplayName
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LoopContext
 import com.dougie.core.model.MemoryEntry
@@ -52,6 +55,7 @@ class LoopEngine(
     private val openAppEntries: () -> List<OpenAppEntry> = { emptyList() },
     private val skipIntentShortcut: () -> Boolean = { false },
     private val taskStore: TaskStore? = null,
+    private val conversationTitles: () -> Map<String, String> = { emptyMap() },
 ) {
     private val sanitizer: ToolCallSanitizer
         get() = ToolCallSanitizer(tools.mapValues { it.value.descriptor })
@@ -97,7 +101,8 @@ class LoopEngine(
                 return@withContext shortcut
             }
 
-            task = attachPriorTurns(task)
+            val attached = attachPriorTurns(task)
+            task = retrieveConversationHits(attached.task, attached.priorTaskIds, emit)
 
             while (task.loopCount < task.maxLoops) {
                 task = task.copy(
@@ -467,24 +472,112 @@ class LoopEngine(
         data class Halt(val task: AgentTask) : ToolPass()
     }
 
-    private suspend fun attachPriorTurns(task: AgentTask): AgentTask {
-        val store = taskStore ?: return task
+    private suspend fun attachPriorTurns(task: AgentTask): PriorTurnsAttach {
+        val store = taskStore ?: return PriorTurnsAttach(task, emptySet())
         val rows = try {
             store.listByConversation(task.conversationId)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            return task
+            return PriorTurnsAttach(task, emptySet())
         }
         val turns = ArrayList<ConversationTurn>()
+        val priorTaskIds = LinkedHashSet<String>()
         for (row in rows) {
             if (row.taskId == task.taskId) continue
             if (row.status != TaskStatus.COMPLETED) continue
             val answer = row.finalAnswer?.trim().orEmpty()
             if (answer.isEmpty()) continue
             turns += ConversationTurn(user = row.input, assistant = answer)
+            priorTaskIds += row.taskId
         }
-        return task.copy(priorTurns = turns)
+        return PriorTurnsAttach(task.copy(priorTurns = turns), priorTaskIds)
+    }
+
+    private suspend fun retrieveConversationHits(
+        task: AgentTask,
+        priorTaskIds: Set<String>,
+        emit: suspend (AgentTask) -> Unit,
+    ): AgentTask {
+        val store = taskStore ?: return task.copy(retrievedConversationHits = emptyList())
+        val exclude = LinkedHashSet<String>(priorTaskIds.size + 1)
+        exclude.add(task.taskId)
+        exclude.addAll(priorTaskIds)
+        val rows = try {
+            store.searchCompletedTurns(
+                query = task.input,
+                excludeTaskIds = exclude,
+                limit = MAX_CONVERSATION_HITS,
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return task.copy(retrievedConversationHits = emptyList())
+        }
+        val titles = try {
+            conversationTitles()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyMap()
+        }
+        val hits = budgetConversationHits(rows, titles)
+        val next = task.copy(retrievedConversationHits = hits)
+        if (hits.isEmpty()) return next
+        emit(next)
+        return next
+    }
+
+    private fun budgetConversationHits(
+        rows: List<AgentTask>,
+        titles: Map<String, String>,
+    ): List<ConversationHit> {
+        val out = ArrayList<ConversationHit>(rows.size.coerceAtMost(MAX_CONVERSATION_HITS))
+        var chars = 0
+        for (row in rows.take(MAX_CONVERSATION_HITS)) {
+            val remaining = MAX_CONVERSATION_CHARS - chars
+            if (remaining <= 0) break
+            var user = row.input.trim()
+            var assistant = row.finalAnswer.orEmpty().trim()
+            val total = user.length + assistant.length
+            if (total > remaining) {
+                if (user.length >= remaining) {
+                    user = user.take(remaining)
+                    assistant = ""
+                } else {
+                    assistant = assistant.take(remaining - user.length)
+                }
+            }
+            val used = user.length + assistant.length
+            if (used <= 0) continue
+            val conversationId = row.conversationId
+            val fallback = if (conversationId == ConversationIds.DEFAULT) {
+                "默认会话"
+            } else {
+                "对话"
+            }
+            val windowName = conversationDisplayName(
+                conversationId,
+                titles[conversationId],
+                fallback,
+            )
+            val summary = row.input
+                .replace('\r', ' ')
+                .replace('\n', ' ')
+                .trim()
+                .take(HIT_SOURCE_SUMMARY_CHARS)
+                .trim()
+            val sourceLabel = if (summary.isEmpty()) windowName else "$windowName · $summary"
+            out += ConversationHit(
+                taskId = row.taskId,
+                conversationId = conversationId,
+                sourceLabel = sourceLabel,
+                user = user,
+                assistant = assistant,
+            )
+            chars += used
+        }
+        return out
     }
 
     private suspend fun retrieveMemories(
@@ -588,8 +681,16 @@ class LoopEngine(
         val streamingText: String?,
     )
 
+    private data class PriorTurnsAttach(
+        val task: AgentTask,
+        val priorTaskIds: Set<String>,
+    )
+
     companion object {
         private const val MAX_MEMORY_FACTS = 5
         private const val MAX_MEMORY_CHARS = 800
+        private const val MAX_CONVERSATION_HITS = 3
+        private const val MAX_CONVERSATION_CHARS = 800
+        private const val HIT_SOURCE_SUMMARY_CHARS = 40
     }
 }

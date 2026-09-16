@@ -5,6 +5,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.CloudLlmConfig
+import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.LlmResponse
@@ -302,6 +303,45 @@ class OpenAICompatibleProviderTest {
         assertTrue(system.contains("可用工具"))
         assertTrue(!ChatPromptAssembler.IDENTITY.contains("clipboard_read"))
         assertTrue(body.contains("我叫什么"))
+    }
+
+    @Test
+    fun requestBodyIncludesRelatedConversationHitsWithoutToolArgs() = runTest {
+        server.enqueue(MockResponse().setBody(FINAL_BODY))
+        val provider = testProvider()
+        provider.generate(
+            LoopContext(
+                AgentTask(
+                    taskId = "t-hist",
+                    input = "UNO 项目有哪些关键点？",
+                    retrievedConversationHits = listOf(
+                        ConversationHit(
+                            taskId = "old-uno",
+                            conversationId = "window-a",
+                            sourceLabel = "工作 · UNO 项目关键点",
+                            user = "UNO 项目关键点是本地优先",
+                            assistant = "记下了：本地优先。",
+                        ),
+                    ),
+                    toolTrace = listOf(
+                        ToolTraceEntry(
+                            toolCallId = "c1",
+                            toolName = "clipboard_write",
+                            argsSummary = """{"text":"tool-secret-should-not-inject"}""",
+                            resultJson = """{"ok":"tool-secret-should-not-inject"}""",
+                            status = ToolTraceStatus.SUCCESS,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val body = server.takeRequest().body.readUtf8()
+        val system = systemMessageContent(body)
+        assertTrue(system.contains("相关历史对话："))
+        assertTrue(system.contains("UNO 项目关键点是本地优先"))
+        assertTrue(system.contains("记下了：本地优先。"))
+        assertTrue(!system.contains("tool-secret-should-not-inject"))
+        assertTrue(body.contains("UNO 项目有哪些关键点？"))
     }
 
     @Test

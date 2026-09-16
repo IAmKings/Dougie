@@ -4,7 +4,7 @@
 
 ## Overview
 
-- Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
+- Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `ConversationHit`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
 - UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `IntelligenceMark` enum, `HistoryItem`, `HistorySection`, `HistoryToolStep`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
 - JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files.
 - Persistence codec is hand-written `TaskSnapshotCodec` (`ignoreUnknownKeys`). Do not switch Chat to decode `snapshot_json`.
@@ -13,7 +13,7 @@
 
 | Kind | Where | Examples |
 |------|--------|----------|
-| Domain | `:core:model` | `AgentTask`, `ConversationIds`, `TaskStatus`, `UserFacingErrors` |
+| Domain | `:core:model` | `AgentTask`, `ConversationHit`, `ConversationIds`, `TaskStatus`, `UserFacingErrors` |
 | Runtime handles | `:core:runtime` | `TaskManager`, `ConversationPointer`, `ConversationTitles`, `AuditEntry` |
 | Feature UI | `:feature:*` | `ChatUiState`, `ChatItem`, `DebugUiState` |
 | Prefs | `:data:preferences` | `ProviderSettings` |
@@ -49,4 +49,4 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 - Decoding LLM HTTP or `snapshot_json` inside `:feature:*`.
 - Treating `lastError` as free-form English and branching on `contains("timeout")`. Use `UserFacingErrors`.
 - Passing intent-classifier readiness as `localLlmReady = true`. Chat soul mark uses `ChannelHooks.localChatReady` each compose (`ChatModelLayout.isPresent` on sideload only; Play is always false). Intent GGUF/ONNX is not a chat LLM.
-- Adding `@Serializable` to UI state just to log it (Debug must not grow `input` / `resultJson` / `args` fields — `DebugUiStateTest` forbids those names).
+- Adding `@Serializable` to UI state just to log it (Debug must not grow `input` / `resultJson` / `args` / conversation-hit body fields — `DebugUiStateTest` forbids those names).
