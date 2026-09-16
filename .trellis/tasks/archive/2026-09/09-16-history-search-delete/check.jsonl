@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "searchHistory vs searchCompletedTurns; deleteByTaskId; no LIKE json"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "TaskStoreTest searchHistory and deleteByTaskId; ConversationTaskManagerTest deleteTask"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Card delete must not openConversation; confirm copy"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Busy no-op; empty extra window switches to default"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "HistoryItemTest search grouping; no Compose UI test required"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Activity listRecent snapshot refresh after deleteTask"}

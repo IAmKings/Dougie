@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "No DB bump; searchHistory full-table decode; deleteByTaskId by primary key"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log search query or deleted input"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Empty query listRecent(50); nonempty searchHistory; deleteTask busy no-op"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Card 删除 next to 展开; section 删除 still whole window"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "History search field + per-card delete"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Store + titles + Chat pointer after last extra task deleted"}
