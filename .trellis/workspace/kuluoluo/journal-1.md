@@ -1972,3 +1972,24 @@ Chat LLM 轮检索全部窗口已完成对话，注入相关历史并显示来�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 86: Chat 气泡进入动效
+
+**Date**: 2026-09-17
+**Task**: Chat 气泡进入动效
+**Branch**: `master`
+
+### Summary
+
+新插入的用户/思考/工具/助手气泡淡入上移；打开旧窗与回对话不重播。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `514a7c3` | (see git log) |
+
+### Status
+
+[OK] **Completed**
