@@ -8,6 +8,7 @@ import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -297,6 +298,104 @@ class ChatUiStateTest {
         assertEquals("你现在的手机", (state.items.last() as ChatItem.AgentMessage).text)
         assertEquals(false, state.inputEnabled)
         assertEquals(false, state.canSpeakReply)
+    }
+
+    @Test
+    fun terminalAgentMessagesShowDurationOnlyWhenBothTimestampsPresent() {
+        val completed = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "你现在的手机电量是 63%。",
+            startedAt = 0L,
+            endedAt = 3_000L,
+        ).toChatUiState()
+        val completedMessage = completed.items.last() as ChatItem.AgentMessage
+        assertEquals("3秒", completedMessage.durationLabel)
+        assertEquals("你现在的手机电量是 63%。", completedMessage.text)
+
+        val failed = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.EGRESS_BLOCKED,
+            startedAt = 1_000L,
+            endedAt = 3_000L,
+        ).toChatUiState()
+        assertEquals("2秒", (failed.items.last() as ChatItem.AgentMessage).durationLabel)
+
+        val streaming = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.THINKING,
+            streamingText = "你现在的手机",
+            startedAt = 0L,
+        ).toChatUiState()
+        assertNull((streaming.items.last() as ChatItem.AgentMessage).durationLabel)
+
+        val streamingWithEndedAt = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.THINKING,
+            streamingText = "你现在的手机",
+            startedAt = 0L,
+            endedAt = 3_000L,
+        ).toChatUiState()
+        assertNull((streamingWithEndedAt.items.last() as ChatItem.AgentMessage).durationLabel)
+
+        val missingTimestamps = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "你现在的手机电量是 63%。",
+        ).toChatUiState()
+        assertNull((missingTimestamps.items.last() as ChatItem.AgentMessage).durationLabel)
+
+        val startedOnly = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "你现在的手机电量是 63%。",
+            startedAt = 0L,
+        ).toChatUiState()
+        assertNull((startedOnly.items.last() as ChatItem.AgentMessage).durationLabel)
+
+        val endedOnly = AgentTask(
+            taskId = "t",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "你现在的手机电量是 63%。",
+            endedAt = 3_000L,
+        ).toChatUiState()
+        assertNull((endedOnly.items.last() as ChatItem.AgentMessage).durationLabel)
+
+        val pastCompleted = AgentTask(
+            taskId = "p",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "记下了。",
+            startedAt = 0L,
+            endedAt = 3_000L,
+        ).toPastChatItems().last() as ChatItem.AgentMessage
+        assertEquals("3秒", pastCompleted.durationLabel)
+
+        val pastFailed = AgentTask(
+            taskId = "p",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.INTERRUPTED,
+            startedAt = 1_000L,
+            endedAt = 3_000L,
+        ).toPastChatItems().last() as ChatItem.AgentMessage
+        assertEquals("2秒", pastFailed.durationLabel)
+
+        val pastMissing = AgentTask(
+            taskId = "p",
+            input = BATTERY_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "记下了。",
+        ).toPastChatItems().last() as ChatItem.AgentMessage
+        assertNull(pastMissing.durationLabel)
     }
 
     @Test

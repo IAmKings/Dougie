@@ -634,6 +634,7 @@ private fun ChatFeed(
                     AgentBubble(
                         text = item.text,
                         memorySources = item.memorySources,
+                        durationLabel = item.durationLabel,
                         showRetry = showRetry,
                         showSpeak = showAgentReplySpeak(isLast, canSpeakReply, ttsReady, item.text),
                         speakingReply = speakingReply,
@@ -668,6 +669,7 @@ private fun UserBubble(text: String) {
 private fun AgentBubble(
     text: String,
     memorySources: List<String> = emptyList(),
+    durationLabel: String? = null,
     showRetry: Boolean = false,
     showSpeak: Boolean = false,
     speakingReply: Boolean = false,
@@ -687,6 +689,14 @@ private fun AgentBubble(
                     .clip(RoundedCornerShape(16.dp).copy(topStart = androidx.compose.foundation.shape.CornerSize(4.dp)))
                     .background(DougieColors.SurfaceContainer)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        if (durationLabel != null) {
+            Text(
+                text = durationLabel,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
         if (memorySources.isNotEmpty()) {

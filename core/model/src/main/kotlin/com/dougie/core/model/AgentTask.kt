@@ -41,6 +41,16 @@ data class AgentTask(
     val priorTurns: List<ConversationTurn> = emptyList(),
 )
 
+fun formatTaskDuration(startedAt: Long?, endedAt: Long?): String? {
+    if (startedAt == null || endedAt == null) return null
+    val totalSeconds = (endedAt - startedAt).coerceAtLeast(0L) / 1000L
+    if (totalSeconds < 1L) return "不足1秒"
+    if (totalSeconds < 60L) return "${totalSeconds}秒"
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return if (seconds == 0L) "${minutes}分" else "${minutes}分${seconds}秒"
+}
+
 enum class CompletionPath {
     LOCAL_INTENT,
     LOCAL_LLM,

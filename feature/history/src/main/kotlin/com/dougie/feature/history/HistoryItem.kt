@@ -6,6 +6,7 @@ import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.conversationDisplayName
+import com.dougie.core.model.formatTaskDuration
 import com.dougie.core.model.normalizeConversationTitle
 import java.time.Instant
 import java.time.ZoneId
@@ -161,16 +162,6 @@ private fun ToolTraceEntry.toHistoryToolStep(): HistoryToolStep = HistoryToolSte
         else -> "进行中"
     },
 )
-
-fun formatTaskDuration(startedAt: Long?, endedAt: Long?): String? {
-    if (startedAt == null || endedAt == null) return null
-    val totalSeconds = (endedAt - startedAt).coerceAtLeast(0L) / 1000L
-    if (totalSeconds < 1L) return "不足1秒"
-    if (totalSeconds < 60L) return "${totalSeconds}秒"
-    val minutes = totalSeconds / 60L
-    val seconds = totalSeconds % 60L
-    return if (seconds == 0L) "${minutes}分" else "${minutes}分${seconds}秒"
-}
 
 fun formatCompletedAt(
     endedAt: Long?,

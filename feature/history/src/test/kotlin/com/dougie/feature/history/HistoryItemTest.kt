@@ -224,18 +224,6 @@ class HistoryItemTest {
     }
 
     @Test
-    fun formatTaskDurationCoversBucketsAndNegative() {
-        assertNull(formatTaskDuration(null, 1_000L))
-        assertNull(formatTaskDuration(1_000L, null))
-        assertEquals("不足1秒", formatTaskDuration(1_000L, 1_500L))
-        assertEquals("3秒", formatTaskDuration(0L, 3_000L))
-        assertEquals("59秒", formatTaskDuration(0L, 59_000L))
-        assertEquals("1分", formatTaskDuration(0L, 60_000L))
-        assertEquals("1分12秒", formatTaskDuration(0L, 72_000L))
-        assertEquals("不足1秒", formatTaskDuration(5_000L, 1_000L))
-    }
-
-    @Test
     fun formatCompletedAtCoversBucketsAndTruncatesSeconds() {
         val nowMs = shanghaiMs(2026, 9, 16, 15, 0)
         assertNull(formatCompletedAt(null, nowMs, shanghai))

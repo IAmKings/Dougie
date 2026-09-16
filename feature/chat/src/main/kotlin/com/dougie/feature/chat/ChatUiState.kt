@@ -4,6 +4,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
+import com.dougie.core.model.formatTaskDuration
 
 const val BATTERY_EXAMPLE = "我现在手机还有多少电？"
 const val TIME_EXAMPLE = "现在几点了？"
@@ -47,6 +48,7 @@ sealed class ChatItem {
     data class AgentMessage(
         val text: String,
         val memorySources: List<String> = emptyList(),
+        val durationLabel: String? = null,
         override val listKey: String,
     ) : ChatItem()
 }
@@ -86,11 +88,24 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         }
         val answer = finalAnswer
         if (status == TaskStatus.COMPLETED && !answer.isNullOrBlank()) {
-            add(ChatItem.AgentMessage(answer, memorySources = citationSources(), listKey = itemKey("agent")))
+            add(
+                ChatItem.AgentMessage(
+                    answer,
+                    memorySources = citationSources(),
+                    durationLabel = terminalDurationLabel(),
+                    listKey = itemKey("agent"),
+                ),
+            )
         }
         val error = lastError
         if (status == TaskStatus.FAILED && !error.isNullOrBlank()) {
-            add(ChatItem.AgentMessage("任务失败：$error", listKey = itemKey("agent")))
+            add(
+                ChatItem.AgentMessage(
+                    "任务失败：$error",
+                    durationLabel = terminalDurationLabel(),
+                    listKey = itemKey("agent"),
+                ),
+            )
         }
     }
     val busy = status != TaskStatus.COMPLETED && status != TaskStatus.FAILED && status != TaskStatus.IDLE
@@ -140,13 +155,31 @@ fun AgentTask.toPastChatItems(): List<ChatItem> {
     items.add(ChatItem.UserMessage(input, listKey = itemKey("user")))
     val answer = finalAnswer
     if (status == TaskStatus.COMPLETED && !answer.isNullOrBlank()) {
-        items.add(ChatItem.AgentMessage(answer, memorySources = citationSources(), listKey = itemKey("agent")))
+        items.add(
+            ChatItem.AgentMessage(
+                answer,
+                memorySources = citationSources(),
+                durationLabel = terminalDurationLabel(),
+                listKey = itemKey("agent"),
+            ),
+        )
     }
     val error = lastError
     if (status == TaskStatus.FAILED && !error.isNullOrBlank()) {
-        items.add(ChatItem.AgentMessage("任务失败：$error", listKey = itemKey("agent")))
+        items.add(
+            ChatItem.AgentMessage(
+                "任务失败：$error",
+                durationLabel = terminalDurationLabel(),
+                listKey = itemKey("agent"),
+            ),
+        )
     }
     return items
+}
+
+private fun AgentTask.terminalDurationLabel(): String? {
+    if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED) return null
+    return formatTaskDuration(startedAt, endedAt)
 }
 
 internal fun AgentTask.itemKey(part: String): String = "$taskId:$part"
