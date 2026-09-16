@@ -1930,3 +1930,24 @@ Chat LLM 轮检索全部窗口已完成对话，注入相关历史并显示来�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 84: 任务页搜索与删除单条
+
+**Date**: 2026-09-16
+**Task**: 任务页搜索与删除单条
+**Branch**: `master`
+
+### Summary
+
+任务页可按关键词搜完成/失败轮并删除单条；空框仍是最近50条。非默认窗口删空则切回默认。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7def91c` | (see git log) |
+
+### Status
+
+[OK] **Completed**

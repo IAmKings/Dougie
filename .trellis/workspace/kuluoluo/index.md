@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 83
+- **Total Sessions**: 84
 - **Last Active**: 2026-09-16
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1932 | Active |
+| `journal-1.md` | ~1953 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 84 | 2026-09-16 | 任务页搜索与删除单条 | `7def91c` | `master` |
 | 83 | 2026-09-16 | Chat 检索历史对话 | `3d72bc6` | `master` |
 | 82 | 2026-09-16 | 删除非默认会话窗口 | `500b706` | `master` |
 | 81 | 2026-09-16 | 任务卡展开与完成时刻 | `033b73b` | `master` |
