@@ -7,8 +7,8 @@
 ## Current Status
 
 <!-- @@@auto:current-status -->
-- **Active File**: `journal-1.md`
-- **Total Sessions**: 86
+- **Active File**: `journal-2.md`
+- **Total Sessions**: 87
 - **Last Active**: 2026-09-17
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,8 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1995 | Active |
+| `journal-2.md` | ~28 | Active |
+| `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 87 | 2026-09-17 | 思考中发送位改为终止 | `6971535` | `master` |
 | 86 | 2026-09-17 | Chat 气泡进入动效 | `514a7c3` | `master` |
 | 85 | 2026-09-16 | Chat 气泡显示耗时 | `e38fbdf` | `master` |
 | 84 | 2026-09-16 | 任务页搜索与删除单条 | `7def91c` | `master` |
