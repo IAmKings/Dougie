@@ -8,7 +8,7 @@
 
 A local-first Android agent. Chat, memory, and tool side effects stay on device until you enable cloud egress and save.
 
-当前 **v0.1.1**（`versionCode` 101）已用仓库上传密钥签名，**尚未上架任何应用商店**。若装过更早的 debug 签名包，须先卸载再装。同签名升级可覆盖安装。
+当前 **v0.1.2**（`versionCode` 102）已用仓库上传密钥签名，**尚未上架任何应用商店**。若装过更早的 debug 签名包，须先卸载再装。同签名升级可覆盖安装。
 
 <p align="center">
   <img src="screens/dougie_chat.jpg" width="220" alt="对话首页">
@@ -26,7 +26,7 @@ A local-first Android agent. Chat, memory, and tool side effects stay on device 
 
 ## 安装
 
-系统要求 **Android 8.0+**（`minSdk` 26）。从 [GitHub Releases](https://github.com/IAmKings/Dougie/releases) 下载两个渠道包之一（当前 [v0.1.1](https://github.com/IAmKings/Dougie/releases/tag/v0.1.1)）：
+系统要求 **Android 8.0+**（`minSdk` 26）。从 [GitHub Releases](https://github.com/IAmKings/Dougie/releases) 下载两个渠道包之一（当前 [v0.1.2](https://github.com/IAmKings/Dougie/releases/tag/v0.1.2)）：
 
 | 文件 | 包名 | 给谁 |
 |------|------|------|
