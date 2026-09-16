@@ -110,6 +110,10 @@ class ChatViewModel(
         taskManager.reject()
     }
 
+    fun cancel() {
+        taskManager.cancel()
+    }
+
     class Factory(
         private val taskManager: TaskManager,
     ) : ViewModelProvider.Factory {

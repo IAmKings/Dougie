@@ -12,6 +12,7 @@ const val TIME_EXAMPLE = "现在几点了？"
 data class ChatUiState(
     val items: List<ChatItem> = emptyList(),
     val inputEnabled: Boolean = true,
+    val canCancel: Boolean = false,
     val isEmpty: Boolean = true,
     val canRetry: Boolean = false,
     val canSpeakReply: Boolean = false,
@@ -55,7 +56,7 @@ sealed class ChatItem {
 
 fun AgentTask?.toChatUiState(): ChatUiState {
     if (this == null) {
-        return ChatUiState(isEmpty = true, inputEnabled = true)
+        return ChatUiState(isEmpty = true, inputEnabled = true, canCancel = false)
     }
     val items = buildList {
         add(ChatItem.UserMessage(input, listKey = itemKey("user")))
@@ -112,6 +113,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
     return ChatUiState(
         items = items,
         inputEnabled = !busy,
+        canCancel = busy,
         isEmpty = false,
         canRetry = status == TaskStatus.FAILED,
         canSpeakReply = status == TaskStatus.COMPLETED,

@@ -65,6 +65,7 @@ class ChatUiStateTest {
             state.items.map { it.kind() },
         )
         assertTrue(state.inputEnabled)
+        assertEquals(false, state.canCancel)
         assertTrue((state.items.last() as ChatItem.AgentMessage).text.contains("63"))
         assertEquals(emptyList<String>(), (state.items.last() as ChatItem.AgentMessage).memorySources)
         assertEquals(false, state.canRetry)
@@ -271,6 +272,7 @@ class ChatUiStateTest {
         val message = state.items.last() as ChatItem.AgentMessage
         assertTrue(message.text.contains(UserFacingErrors.EGRESS_BLOCKED))
         assertTrue(state.inputEnabled)
+        assertEquals(false, state.canCancel)
         assertTrue(state.canRetry)
         assertEquals(false, state.canSpeakReply)
     }
@@ -299,6 +301,7 @@ class ChatUiStateTest {
         assertEquals(listOf("user", "thinking-1", "agent"), state.items.map { it.kind() })
         assertEquals("你现在的手机", (state.items.last() as ChatItem.AgentMessage).text)
         assertEquals(false, state.inputEnabled)
+        assertEquals(true, state.canCancel)
         assertEquals(false, state.canSpeakReply)
     }
 
@@ -462,6 +465,64 @@ class ChatUiStateTest {
         assertEquals("""{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""", card.argsJson)
         assertEquals(com.dougie.core.model.RiskLevel.L2, card.riskLevel)
         assertEquals(false, state.inputEnabled)
+        assertEquals(true, state.canCancel)
+    }
+
+    @Test
+    fun canCancelMatchesBusyIncludingAwaitingConfirmation() {
+        listOf(
+            TaskStatus.PREPARING,
+            TaskStatus.THINKING,
+            TaskStatus.TOOL_PENDING,
+            TaskStatus.TOOL_EXECUTING,
+        ).forEach { status ->
+            assertEquals(
+                true,
+                AgentTask(taskId = "t", input = BATTERY_EXAMPLE, status = status)
+                    .toChatUiState().canCancel,
+            )
+        }
+        assertEquals(
+            true,
+            AgentTask(
+                taskId = "t",
+                input = "约开会",
+                status = TaskStatus.AWAITING_CONFIRMATION,
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "cal-1",
+                        toolName = "calendar_create",
+                        argsSummary = "{}",
+                        status = ToolTraceStatus.PENDING,
+                        riskLevel = RiskLevel.L2,
+                    ),
+                ),
+            ).toChatUiState().canCancel,
+        )
+        assertEquals(
+            false,
+            AgentTask(
+                taskId = "t",
+                input = BATTERY_EXAMPLE,
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好",
+            ).toChatUiState().canCancel,
+        )
+        assertEquals(
+            false,
+            AgentTask(
+                taskId = "t",
+                input = BATTERY_EXAMPLE,
+                status = TaskStatus.FAILED,
+                lastError = UserFacingErrors.CANCELLED,
+            ).toChatUiState().canCancel,
+        )
+        assertEquals(
+            false,
+            AgentTask(taskId = "t", input = BATTERY_EXAMPLE, status = TaskStatus.IDLE)
+                .toChatUiState().canCancel,
+        )
+        assertEquals(false, (null as AgentTask?).toChatUiState().canCancel)
     }
 
     @Test
@@ -595,8 +656,10 @@ class ChatUiStateTest {
         )
         assertEquals(false, merged.isEmpty)
         assertEquals(false, merged.inputEnabled)
+        assertEquals(true, merged.canCancel)
         assertEquals(false, merged.canNewConversation)
         assertEquals(true, mergeChatUiState(past, emptyList()).canNewConversation)
+        assertEquals(false, mergeChatUiState(past, emptyList()).canCancel)
     }
 
     @Test
@@ -624,6 +687,7 @@ class ChatUiStateTest {
         assertEquals(listOf("p:user", "p:agent"), merged.items.map { it.listKey })
         assertEquals(false, merged.isEmpty)
         assertEquals(true, merged.inputEnabled)
+        assertEquals(false, merged.canCancel)
         assertEquals(true, merged.canNewConversation)
         assertEquals(false, merged.canRetry)
         assertEquals(false, merged.canSpeakReply)

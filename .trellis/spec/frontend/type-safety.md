@@ -32,7 +32,7 @@ Runtime validation is **not** in the UI layer:
 - Model download: `userConfirmed`, https-only, SHA-256 bijection in `ModelInstaller` / `ModelImporter` / `OfficialModelCatalog`.
 - Empty chat submit: `TaskManager` no-op on blank trimmed input.
 
-UI may disable controls (`inputEnabled`, `canRetry`) from mapped state; it must not re-implement sanitizer rules.
+UI may disable controls (`inputEnabled`, `canCancel`, `canRetry`) from mapped state; it must not re-implement sanitizer rules.
 
 Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark` remote-failure sets). Do not substring-match English.
 

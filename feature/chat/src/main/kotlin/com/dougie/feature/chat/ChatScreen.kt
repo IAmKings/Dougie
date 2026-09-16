@@ -209,6 +209,7 @@ fun ChatRoute(
         },
         onConfirm = viewModel::confirm,
         onReject = viewModel::reject,
+        onCancel = viewModel::cancel,
         onRetry = {
             onStopReply()
             viewModel.retry()
@@ -254,6 +255,7 @@ fun ChatScreen(
     onSend: (String) -> Unit,
     onConfirm: () -> Unit = {},
     onReject: () -> Unit = {},
+    onCancel: () -> Unit = {},
     onRetry: () -> Unit = {},
     allowCloud: Boolean = false,
     intelligenceMark: IntelligenceMark = IntelligenceMark.NOOB,
@@ -343,9 +345,11 @@ fun ChatScreen(
         }
         ChatInputBar(
             enabled = uiState.inputEnabled,
+            canCancel = uiState.canCancel,
             value = composerValue,
             onValueChange = onComposerChange,
             onSend = onSend,
+            onCancel = onCancel,
             attachments = attachments,
             attachedError = attachedError,
             attaching = attaching,
@@ -1030,9 +1034,11 @@ private fun ConfirmActionButton(
 @Composable
 private fun ChatInputBar(
     enabled: Boolean,
+    canCancel: Boolean = false,
     value: TextFieldValue,
     onValueChange: (TextFieldValue) -> Unit,
     onSend: (String) -> Unit,
+    onCancel: () -> Unit = {},
     attachments: List<ChatAttachmentUi> = emptyList(),
     attachedError: String? = null,
     attaching: Boolean = false,
@@ -1270,24 +1276,37 @@ private fun ChatInputBar(
                 Spacer(Modifier.weight(1f))
                 IconButton(
                     onClick = {
-                        if (speakingReply) {
-                            onStopReply()
-                            return@IconButton
-                        }
-                        val trimmed = value.text.trim()
-                        if (trimmed.isNotEmpty()) {
-                            onSend(trimmed)
-                            onValueChange(TextFieldValue())
+                        when {
+                            canCancel -> {
+                                onCancel()
+                                if (speakingReply) onStopReply()
+                            }
+                            speakingReply -> onStopReply()
+                            else -> {
+                                val trimmed = value.text.trim()
+                                if (trimmed.isNotEmpty()) {
+                                    onSend(trimmed)
+                                    onValueChange(TextFieldValue())
+                                }
+                            }
                         }
                     },
-                    enabled = speakingReply || (enabled && value.text.isNotBlank()),
+                    enabled = canCancel || speakingReply || (enabled && value.text.isNotBlank()),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(DougieColors.Primary),
                 ) {
                     Icon(
-                        if (speakingReply) Icons.Filled.Stop else Icons.AutoMirrored.Filled.Send,
-                        contentDescription = if (speakingReply) "停止播报" else "发送",
+                        if (canCancel || speakingReply) {
+                            Icons.Filled.Stop
+                        } else {
+                            Icons.AutoMirrored.Filled.Send
+                        },
+                        contentDescription = when {
+                            canCancel -> "终止"
+                            speakingReply -> "停止播报"
+                            else -> "发送"
+                        },
                         tint = DougieColors.OnPrimary,
                     )
                 }

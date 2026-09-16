@@ -439,6 +439,53 @@ class LoopEngineTest {
     }
 
     @Test
+    fun cancelWhileAwaitingConfirmationFailsTask() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeCalendarPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "cal-1",
+                    name = CalendarCreateTool.NAME,
+                    argsJson = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val manager = TaskManager(
+            loopEngine = engine,
+            dispatcher = dispatcher,
+            scope = this,
+        )
+        manager.submit("约开会")
+        var steps = 0
+        while (manager.task.value?.status != TaskStatus.AWAITING_CONFIRMATION && steps < 64) {
+            testScheduler.runCurrent()
+            testScheduler.advanceTimeBy(1)
+            steps++
+        }
+        assertEquals(TaskStatus.AWAITING_CONFIRMATION, manager.task.value?.status)
+        assertEquals(0, port.createCalls.size)
+        manager.cancel()
+        advanceUntilIdle()
+        val task = manager.task.value
+        assertNotNull(task)
+        assertEquals(TaskStatus.FAILED, task!!.status)
+        assertEquals(UserFacingErrors.CANCELLED, task.lastError)
+        assertEquals(null, task.streamingText)
+        assertEquals(null, task.finalAnswer)
+        assertEquals(0, port.createCalls.size)
+        assertTrue(task.startedAt != null)
+        assertTrue(task.endedAt != null && task.startedAt != null && task.endedAt!! >= task.startedAt!!)
+    }
+
+    @Test
     fun searchesMemoryBeforeLlmWhenEnabled() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val store = InMemoryMemoryStore()
