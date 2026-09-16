@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "No dougie_tasks.db bump; no LIKE on snapshot_json; full-table decode filter"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No query/snapshot/hit logging"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "LoopEngineTest + TaskStoreTest + ChatPromptAssemblerTest on JDK 17"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Citations from memories and conversation hits; no 未找到 rewrite"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest citationSources; DebugUiStateTest still forbids prompt/resultJson"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Hits persist in snapshot for reopen citations; priorTurns still omitted"}
