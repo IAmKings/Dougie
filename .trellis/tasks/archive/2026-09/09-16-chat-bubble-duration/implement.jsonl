@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse formatTaskDuration; do not copy buckets into Chat"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Do not bump DB or add columns; timestamps already in snapshot_json"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Map duration in toChatUiState; AgentBubble caption above sources"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "AgentMessage.durationLabel is a preformatted nullable string"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Mapper-only; no Compose clock"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not log snapshot timestamps beyond existing rules"}

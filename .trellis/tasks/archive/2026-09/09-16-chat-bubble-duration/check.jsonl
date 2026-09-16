@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest mapping; no Compose UI test; History duration still covered"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "AgentTaskTest owns formatTaskDuration buckets after the move"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Duration caption above 来源; not inside bubble text"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Compose must not parse startedAt/endedAt"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Single formatter; History copy unchanged"}
