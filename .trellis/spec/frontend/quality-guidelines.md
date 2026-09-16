@@ -6,7 +6,7 @@
 
 UI lives in `:feature:*` (Compose BOM `2024.12.01`, Material3, `lifecycle-runtime-compose`). `:app` hosts `MainActivity` routing, DI, `DougieChatTileService`, and `TaskProgressNotifier`. Product copy is **Dougie** (never Waku) and Chinese for user-visible chrome.
 
-Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `intelligenceMark`, `toHistoryItem`, `toHistorySections`, `formatTaskDuration`, `formatCompletedAt`, `toDebugTaskSnapshot`, `OfflineModelDownloads`, `formatTaskNotice`). Screens themselves are not tested with Compose UI tests.
+Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `intelligenceMark`, `toHistoryItem`, `toHistorySections`, `formatTaskDuration`, `formatCompletedAt`, `toDebugTaskSnapshot`, `OfflineModelDownloads`, `formatTaskNotice`, `nextChatItemEnter`). Screens themselves are not tested with Compose UI tests.
 
 ## Forbidden Patterns
 
@@ -14,6 +14,7 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 - A second `mutableStateOf(TaskStatus)` in a ViewModel. Map from `AgentTask` (see `state-management.md`).
 - Chat `LazyColumn` keys that are only `"user"` / `"agent"` / `thinking-n`. Two turns in one window crash with `Key "user" was already used`. Use `ChatItem.listKey`.
 - Pinning Chat to the last bubble whenever `ChatRoute` recomposes (bottom nav). Restore `LazyListState` from `ChatViewModel`; follow only via `shouldFollowChatFeed`. A pending History `focusListKey` overrides follow-to-end.
+- Using `LazyItemScope.animateItem()` for Chat bubble enter (first paint of a thread would replay). Wrapping `ConfirmCard` in that fade+8dp enter. Resetting enter `seenKeys` when `firstKey` changes, or keeping `seenKeys` only inside `ChatFeed` (empty windows render `EmptyState`, so the first send would seed as “already seen” and skip enter).
 - Showing prompts, API keys, `resultJson`, tool args, transcripts, or `snapshot_json` on Debug. `DebugUiStateTest` asserts those field names are absent. Rule E chrome is **评测意图规则 E**; `ruleEMessage` is counts/rates + relative path (or `INTENT_*` copy), never utterance, intent labels, or 「已达标」.
 - Auto-scanning the SAF model tree when Settings opens; auto-download without confirm; treating intent ONNX as a chat LLM (`localLlmReady` must stay false until a local **chat** model exists on sideload; Play `ChannelHooks.localChatReady` is always false).
 - Using `Noob-Dougie` as the launcher or as the default Chat avatar when a provider is usable. Mapping is `intelligenceMark(...)` in `:feature:chat`.
@@ -28,12 +29,13 @@ Verification is JVM unit tests on **pure mapping functions** (`toChatUiState`, `
 - Settings form is local until **保存配置**; `memoryEnabled` and `modelTreeUri` must be copied on save so they are not reset. Tree URI is also persisted immediately on folder pick.
 - Offline model **测试** / download: disable other rows while probing; **取消** while in-flight; ASR/TTS timeout 90s, intent / chat 180s; probe on `Dispatchers.Default`.
 - Color tokens: duplicate `DougieColors` per feature until more than colors is shared (no `:core:ui` yet).
+- Chat bubble enter: `ChatScreen` remembers `seenKeys` and calls `nextChatItemEnter` even while `EmptyState` is showing; `ChatFeed` only applies `playKeys`. `ConfirmCard` is not wrapped. Duration scale 0 → fade only.
 
 ## Testing Requirements
 
 | Module | What exists | Command (JDK 17) |
 |--------|-------------|------------------|
-| `:feature:chat` | `ChatUiStateTest` (incl. unique `listKey`s across merged turns, `shouldFollowChatFeed` skip after bottom-nav return, pending focus skips follow-to-end on firstKey change, `voiceOverlayStatus` partial vs 正在录音, `insertVoiceTranscript` at selection, `citationSources` memory then conversation `sourceLabel`, streaming/FAILED omit citations, terminal/past `AgentMessage.durationLabel` from shared `formatTaskDuration` when COMPLETED/FAILED have both timestamps, streaming/missing timestamps null), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
+| `:feature:chat` | `ChatUiStateTest` (incl. unique `listKey`s across merged turns, `shouldFollowChatFeed` skip after bottom-nav return, pending focus skips follow-to-end on firstKey change, `nextChatItemEnter` first-frame seed / empty then send plays / Confirm excluded / same `{taskId}:agent` does not replay, `voiceOverlayStatus` partial vs 正在录音, `insertVoiceTranscript` at selection, `citationSources` memory then conversation `sourceLabel`, streaming/FAILED omit citations, terminal/past `AgentMessage.durationLabel` from shared `formatTaskDuration` when COMPLETED/FAILED have both timestamps, streaming/missing timestamps null; no Compose UI test for bubble enter), `IntelligenceAvailableTest` | `./gradlew :feature:chat:testDebugUnitTest` |
 | `:feature:settings` | `OfflineModelDownloadsTest` (confirm/tree/hash/probe) | `./gradlew :feature:settings:testDebugUnitTest` |
 | `:feature:history` | `HistoryItemTest` (incl. `toHistorySections` two-window grouping, 「默认会话」/「对话 2」, most-recently-active first; `canDelete` false for default / true for extra; dropping a sibling extra renumbers `currentConversationTitle`; `durationLabel` wiring to `:core:model` `formatTaskDuration` (missing either timestamp → null, FAILED 「2秒」; buckets live in `AgentTaskTest`); `providerLabel` from `completionPath?.toUserLabel()`; `formatCompletedAt` today/昨天/same-year/cross-year + seconds truncated, `completedAtLabel` from `endedAt`; `steps` from `toolTrace` including empty trace, 成功/失败/进行中, no args/`resultJson`; title-hit search merge includes all terminal cards of that window; custom title hit when window is absent from recent 50; store text hit does not pull the whole window; no Compose UI test for **展开** / section **删除** / card **删除** / search field) | `./gradlew :feature:history:testDebugUnitTest` |
 | `:feature:debug` | `DebugUiStateTest` (no prompt/`resultJson` leak; no conversation-hit body/`sourceLabel` fields; Rule E copy 评测意图规则 E, no 已达标) | `./gradlew :feature:debug:testDebugUnitTest` |
@@ -52,3 +54,4 @@ Play/Sideload asset leaks are an `:app` concern: `./gradlew :app:checkChannelLea
 - [ ] Settings download/probe/tree rules still match `directory-structure.md` “Don't: Let settings download without size confirm”
 - [ ] Icons that are actions have Chinese `contentDescription`; decorative icons may be `null` (current Chat/Settings mix)
 - [ ] QS Tile and task-progress notice stay in `:app`, open Chat only, shade copy is status-only, Play bubbles skip sideload, overlay stays sideload-only, and `checkChannelLeak` still requires Tile + forbids NotificationListener / overlay / `QUERY_ALL_PACKAGES` / `ChatLlmSpikeActivity` / `:tool:js` / quickjs on Play
+- [ ] Chat bubble enter uses `nextChatItemEnter` (Confirm excluded); `ChatScreen` keeps `seenKeys` across `EmptyState`; enter does not change `listKey` / `shouldFollowChatFeed` / `pendingFocusKey`

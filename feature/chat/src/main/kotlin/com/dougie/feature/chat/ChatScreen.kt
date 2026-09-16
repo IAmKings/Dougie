@@ -1,5 +1,7 @@
 package com.dougie.feature.chat
 
+import android.provider.Settings
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -75,6 +77,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,6 +90,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,6 +103,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.feature.chat.R as ChatR
+import kotlinx.coroutines.launch
 
 @Composable
 fun ChatRoute(
@@ -300,6 +306,11 @@ fun ChatScreen(
             conversationTitle = conversationTitle,
         )
         Box(modifier = Modifier.weight(1f)) {
+            var seenKeys by remember { mutableStateOf<Set<String>?>(null) }
+            val enter = nextChatItemEnter(uiState.items, seenKeys)
+            SideEffect {
+                seenKeys = enter.seenKeys
+            }
             if (uiState.isEmpty) {
                 EmptyState(
                     intelligenceMark = intelligenceMark,
@@ -308,6 +319,7 @@ fun ChatScreen(
             } else {
                 ChatFeed(
                     items = uiState.items,
+                    playKeys = enter.playKeys,
                     listState = listState,
                     canRetry = uiState.canRetry,
                     canSpeakReply = uiState.canSpeakReply,
@@ -602,6 +614,7 @@ private fun ExampleChip(text: String, onClick: (String) -> Unit) {
 @Composable
 private fun ChatFeed(
     items: List<ChatItem>,
+    playKeys: Set<String>,
     listState: LazyListState,
     canRetry: Boolean,
     canSpeakReply: Boolean,
@@ -623,28 +636,72 @@ private fun ChatFeed(
             items = items,
             key = { item -> item.listKey },
         ) { item ->
+            val playEnter = item.listKey in playKeys
             when (item) {
-                is ChatItem.UserMessage -> UserBubble(item.text)
-                is ChatItem.Thinking -> ThinkingChip(item.loopNumber, live = item.live)
-                is ChatItem.ToolCard -> ToolCallCard(item)
+                is ChatItem.UserMessage -> ChatItemEnterMotion(playEnter) {
+                    UserBubble(item.text)
+                }
+                is ChatItem.Thinking -> ChatItemEnterMotion(playEnter) {
+                    ThinkingChip(item.loopNumber, live = item.live)
+                }
+                is ChatItem.ToolCard -> ChatItemEnterMotion(playEnter) {
+                    ToolCallCard(item)
+                }
                 is ChatItem.ConfirmCard -> ConfirmToolCard(item, onConfirm, onReject)
                 is ChatItem.AgentMessage -> {
                     val isLast = item === items.lastOrNull()
                     val showRetry = canRetry && isLast
-                    AgentBubble(
-                        text = item.text,
-                        memorySources = item.memorySources,
-                        durationLabel = item.durationLabel,
-                        showRetry = showRetry,
-                        showSpeak = showAgentReplySpeak(isLast, canSpeakReply, ttsReady, item.text),
-                        speakingReply = speakingReply,
-                        onRetry = onRetry,
-                        onStopReply = onStopReply,
-                        onSpeakReply = onSpeakReply,
-                    )
+                    ChatItemEnterMotion(playEnter) {
+                        AgentBubble(
+                            text = item.text,
+                            memorySources = item.memorySources,
+                            durationLabel = item.durationLabel,
+                            showRetry = showRetry,
+                            showSpeak = showAgentReplySpeak(isLast, canSpeakReply, ttsReady, item.text),
+                            speakingReply = speakingReply,
+                            onRetry = onRetry,
+                            onStopReply = onStopReply,
+                            onSpeakReply = onSpeakReply,
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChatItemEnterMotion(
+    playEnter: Boolean,
+    content: @Composable () -> Unit,
+) {
+    val shouldPlay = remember { playEnter }
+    if (!shouldPlay) {
+        content()
+        return
+    }
+    val reduceMotion = Settings.Global.getFloat(
+        LocalContext.current.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    ) == 0f
+    val offsetPx = with(LocalDensity.current) { 8.dp.toPx() }
+    val alpha = remember { Animatable(0f) }
+    val translationY = remember { Animatable(if (reduceMotion) 0f else offsetPx) }
+    LaunchedEffect(Unit) {
+        val spec = tween<Float>(durationMillis = 200, easing = FastOutSlowInEasing)
+        launch { alpha.animateTo(1f, spec) }
+        if (!reduceMotion) {
+            launch { translationY.animateTo(0f, spec) }
+        }
+    }
+    Box(
+        modifier = Modifier.graphicsLayer {
+            this.alpha = alpha.value
+            this.translationY = translationY.value
+        },
+    ) {
+        content()
     }
 }
 

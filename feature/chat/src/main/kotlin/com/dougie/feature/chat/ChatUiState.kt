@@ -150,6 +150,33 @@ fun shouldFollowChatFeed(
 
 fun userMessageListKey(taskId: String): String = "$taskId:user"
 
+data class ChatItemEnter(
+    val playKeys: Set<String>,
+    val seenKeys: Set<String>,
+)
+
+fun nextChatItemEnter(
+    items: List<ChatItem>,
+    seenKeys: Set<String>?,
+): ChatItemEnter {
+    if (seenKeys == null) {
+        return ChatItemEnter(
+            playKeys = emptySet(),
+            seenKeys = items.mapTo(mutableSetOf()) { it.listKey },
+        )
+    }
+    if (items.isEmpty()) {
+        return ChatItemEnter(playKeys = emptySet(), seenKeys = emptySet())
+    }
+    val playKeys = items.mapNotNull { item ->
+        item.listKey.takeIf { it !in seenKeys && item !is ChatItem.ConfirmCard }
+    }.toSet()
+    return ChatItemEnter(
+        playKeys = playKeys,
+        seenKeys = seenKeys + items.map { it.listKey },
+    )
+}
+
 fun AgentTask.toPastChatItems(): List<ChatItem> {
     val items = ArrayList<ChatItem>(2)
     items.add(ChatItem.UserMessage(input, listKey = itemKey("user")))

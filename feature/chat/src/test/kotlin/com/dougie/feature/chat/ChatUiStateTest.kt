@@ -3,11 +3,13 @@ package com.dougie.feature.chat
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.MemoryEntry
+import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -735,6 +737,120 @@ class ChatUiStateTest {
             ),
         )
         assertEquals("t1:user", userMessageListKey("t1"))
+    }
+
+    @Test
+    fun firstFrameFullListDoesNotPlayEnter() {
+        val items = listOf(
+            ChatItem.UserMessage("现在几点了？", listKey = "t:user"),
+            ChatItem.Thinking(loopNumber = 1, live = false, listKey = "t:thinking-1"),
+            ChatItem.ToolCard(
+                entry = ToolTraceEntry(
+                    toolCallId = "time-1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = "{}",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+                listKey = "t:tool-time-1",
+            ),
+            ChatItem.ConfirmCard(
+                toolName = "js_eval",
+                argsJson = "{}",
+                riskLevel = RiskLevel.L4,
+                toolCallId = "c1",
+                listKey = "t:confirm-c1",
+            ),
+            ChatItem.AgentMessage("中午。", durationLabel = "2秒", listKey = "t:agent"),
+        )
+        val enter = nextChatItemEnter(items, seenKeys = null)
+        assertEquals(emptySet<String>(), enter.playKeys)
+        assertEquals(
+            setOf("t:user", "t:thinking-1", "t:tool-time-1", "t:confirm-c1", "t:agent"),
+            enter.seenKeys,
+        )
+    }
+
+    @Test
+    fun firstFrameEmptyThenSendPlaysEnter() {
+        val seed = nextChatItemEnter(items = emptyList(), seenKeys = null)
+        assertEquals(emptySet<String>(), seed.playKeys)
+        assertEquals(emptySet<String>(), seed.seenKeys)
+
+        val sent = nextChatItemEnter(
+            items = listOf(ChatItem.UserMessage("你好", listKey = "n:user")),
+            seenKeys = seed.seenKeys,
+        )
+        assertEquals(setOf("n:user"), sent.playKeys)
+        assertEquals(setOf("n:user"), sent.seenKeys)
+    }
+
+    @Test
+    fun emptyListClearsSeenEnterKeys() {
+        val enter = nextChatItemEnter(
+            items = emptyList(),
+            seenKeys = setOf("old:user", "old:agent"),
+        )
+        assertEquals(emptySet<String>(), enter.playKeys)
+        assertEquals(emptySet<String>(), enter.seenKeys)
+
+        val afterClear = nextChatItemEnter(
+            items = listOf(ChatItem.UserMessage("你好", listKey = "n:user")),
+            seenKeys = enter.seenKeys,
+        )
+        assertEquals(setOf("n:user"), afterClear.playKeys)
+        assertEquals(setOf("n:user"), afterClear.seenKeys)
+    }
+
+    @Test
+    fun unseenThinkingPlaysEnter() {
+        val items = listOf(
+            ChatItem.UserMessage("现在几点了？", listKey = "t:user"),
+            ChatItem.Thinking(loopNumber = 1, live = true, listKey = "t:thinking-1"),
+        )
+        val enter = nextChatItemEnter(items, seenKeys = setOf("t:user"))
+        assertEquals(setOf("t:thinking-1"), enter.playKeys)
+        assertEquals(setOf("t:user", "t:thinking-1"), enter.seenKeys)
+    }
+
+    @Test
+    fun newConfirmKeyDoesNotPlayEnter() {
+        val items = listOf(
+            ChatItem.UserMessage("运行脚本", listKey = "t:user"),
+            ChatItem.Thinking(loopNumber = 1, live = false, listKey = "t:thinking-1"),
+            ChatItem.ConfirmCard(
+                toolName = "js_eval",
+                argsJson = "{}",
+                riskLevel = RiskLevel.L4,
+                toolCallId = "c1",
+                listKey = "t:confirm-c1",
+            ),
+        )
+        val enter = nextChatItemEnter(items, seenKeys = setOf("t:user", "t:thinking-1"))
+        assertFalse(enter.playKeys.contains("t:confirm-c1"))
+        assertEquals(emptySet<String>(), enter.playKeys)
+        assertTrue(enter.seenKeys.contains("t:confirm-c1"))
+        assertEquals(setOf("t:user", "t:thinking-1", "t:confirm-c1"), enter.seenKeys)
+    }
+
+    @Test
+    fun sameAgentKeyDoesNotReplayEnter() {
+        val seen = setOf("t:user", "t:agent")
+        val streaming = listOf(
+            ChatItem.UserMessage("现在几点了？", listKey = "t:user"),
+            ChatItem.AgentMessage("你现在的", listKey = "t:agent"),
+        )
+        val streamEnter = nextChatItemEnter(streaming, seenKeys = seen)
+        assertEquals(emptySet<String>(), streamEnter.playKeys)
+        assertEquals(seen, streamEnter.seenKeys)
+
+        val completed = listOf(
+            ChatItem.UserMessage("现在几点了？", listKey = "t:user"),
+            ChatItem.AgentMessage("中午。", durationLabel = "2秒", listKey = "t:agent"),
+        )
+        val finalEnter = nextChatItemEnter(completed, seenKeys = streamEnter.seenKeys)
+        assertEquals(emptySet<String>(), finalEnter.playKeys)
+        assertEquals(seen, finalEnter.seenKeys)
     }
 
     private fun fact(id: String, source: String) = MemoryEntry(
