@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Confirm overlay over feed; buttons stay confirm/reject; scrim does not dismiss"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Do not replay confirm enter on ChatRoute remount; do not change follow/focus"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Confirm still mapped from AWAITING_CONFIRMATION; terminate is not reject"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM tests for confirm overlay helpers; no Compose UI test"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "nextConfirmEnter is a pure function; feed filters ConfirmCard"}

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest overlay extract/filter and enter play rules"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "No duplicate Confirm in LazyColumn; scrim consumes clicks with no action"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "First composition awaiting confirm does not slide"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Reject still skip-tool; cancel still whole-round"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "250ms FastOutSlowIn not bubble 200ms/8dp"}
