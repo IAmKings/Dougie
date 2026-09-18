@@ -179,6 +179,26 @@ fun nextChatItemEnter(
     )
 }
 
+fun chatConfirmCard(items: List<ChatItem>): ChatItem.ConfirmCard? =
+    items.lastOrNull { it is ChatItem.ConfirmCard } as ChatItem.ConfirmCard?
+
+fun chatFeedItemsWithoutConfirm(items: List<ChatItem>): List<ChatItem> =
+    items.filter { it !is ChatItem.ConfirmCard }
+
+data class ConfirmEnter(val play: Boolean, val initialized: Boolean, val lastKey: String?)
+
+fun nextConfirmEnter(
+    confirmKey: String?,
+    initialized: Boolean,
+    lastKey: String?,
+): ConfirmEnter {
+    if (!initialized) {
+        return ConfirmEnter(play = false, initialized = true, lastKey = confirmKey)
+    }
+    val play = confirmKey != null && confirmKey != lastKey
+    return ConfirmEnter(play = play, initialized = true, lastKey = confirmKey)
+}
+
 fun AgentTask.toPastChatItems(): List<ChatItem> {
     val items = ArrayList<ChatItem>(2)
     items.add(ChatItem.UserMessage(input, listKey = itemKey("user")))

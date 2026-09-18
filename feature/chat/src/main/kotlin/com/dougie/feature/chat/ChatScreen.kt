@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -78,6 +79,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -156,10 +158,11 @@ fun ChatRoute(
             )
         }
     }
-    val firstKey = uiState.items.firstOrNull()?.listKey
-    val lastAgent = (uiState.items.lastOrNull() as? ChatItem.AgentMessage)?.text
-    LaunchedEffect(uiState.items.size, firstKey, lastAgent, pendingFocusKey) {
-        val items = uiState.items
+    val feedItems = chatFeedItemsWithoutConfirm(uiState.items)
+    val firstKey = feedItems.firstOrNull()?.listKey
+    val lastAgent = (feedItems.lastOrNull() as? ChatItem.AgentMessage)?.text
+    LaunchedEffect(feedItems.size, firstKey, lastAgent, pendingFocusKey) {
+        val items = feedItems
         if (items.isEmpty()) return@LaunchedEffect
         val pending = pendingFocusKey
         if (!pending.isNullOrEmpty()) {
@@ -309,9 +312,19 @@ fun ChatScreen(
         )
         Box(modifier = Modifier.weight(1f)) {
             var seenKeys by remember { mutableStateOf<Set<String>?>(null) }
+            var confirmEnter by remember {
+                mutableStateOf(ConfirmEnter(play = false, initialized = false, lastKey = null))
+            }
             val enter = nextChatItemEnter(uiState.items, seenKeys)
+            val confirmCard = chatConfirmCard(uiState.items)
+            val nextConfirm = nextConfirmEnter(
+                confirmKey = confirmCard?.listKey,
+                initialized = confirmEnter.initialized,
+                lastKey = confirmEnter.lastKey,
+            )
             SideEffect {
                 seenKeys = enter.seenKeys
+                confirmEnter = nextConfirm
             }
             if (uiState.isEmpty) {
                 EmptyState(
@@ -320,19 +333,27 @@ fun ChatScreen(
                 )
             } else {
                 ChatFeed(
-                    items = uiState.items,
+                    items = chatFeedItemsWithoutConfirm(uiState.items),
                     playKeys = enter.playKeys,
                     listState = listState,
                     canRetry = uiState.canRetry,
                     canSpeakReply = uiState.canSpeakReply,
                     ttsReady = ttsReady,
                     speakingReply = speakingReply,
-                    onConfirm = onConfirm,
-                    onReject = onReject,
                     onRetry = onRetry,
                     onStopReply = onStopReply,
                     onSpeakReply = onSpeakReply,
                 )
+            }
+            if (confirmCard != null) {
+                key(confirmCard.listKey) {
+                    ConfirmCardOverlay(
+                        item = confirmCard,
+                        playEnter = nextConfirm.play,
+                        onConfirm = onConfirm,
+                        onReject = onReject,
+                    )
+                }
             }
         }
         if (!overlayShortcutHint.isNullOrBlank()) {
@@ -624,8 +645,6 @@ private fun ChatFeed(
     canSpeakReply: Boolean,
     ttsReady: Boolean,
     speakingReply: Boolean,
-    onConfirm: () -> Unit,
-    onReject: () -> Unit,
     onRetry: () -> Unit,
     onStopReply: () -> Unit,
     onSpeakReply: (String) -> Unit,
@@ -651,7 +670,7 @@ private fun ChatFeed(
                 is ChatItem.ToolCard -> ChatItemEnterMotion(playEnter) {
                     ToolCallCard(item)
                 }
-                is ChatItem.ConfirmCard -> ConfirmToolCard(item, onConfirm, onReject)
+                is ChatItem.ConfirmCard -> Unit
                 is ChatItem.AgentMessage -> {
                     val isLast = item === items.lastOrNull()
                     val showRetry = canRetry && isLast
@@ -706,6 +725,56 @@ private fun ChatItemEnterMotion(
         },
     ) {
         content()
+    }
+}
+
+@Composable
+private fun ConfirmCardOverlay(
+    item: ChatItem.ConfirmCard,
+    playEnter: Boolean,
+    onConfirm: () -> Unit,
+    onReject: () -> Unit,
+) {
+    val shouldPlay = remember { playEnter }
+    val reduceMotion = Settings.Global.getFloat(
+        LocalContext.current.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    ) == 0f
+    val alpha = remember { Animatable(if (shouldPlay) 0f else 1f) }
+    val progress = remember { Animatable(if (shouldPlay && !reduceMotion) 0f else 1f) }
+    LaunchedEffect(Unit) {
+        if (!shouldPlay) return@LaunchedEffect
+        val spec = tween<Float>(durationMillis = 250, easing = FastOutSlowInEasing)
+        launch { alpha.animateTo(1f, spec) }
+        if (!reduceMotion) {
+            launch { progress.animateTo(1f, spec) }
+        }
+    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { this.alpha = alpha.value }
+                .background(Color.Black.copy(alpha = 0.4f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                ),
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(16.dp)
+                .graphicsLayer {
+                    this.alpha = alpha.value
+                    this.translationY = (1f - progress.value) * size.height
+                },
+        ) {
+            ConfirmToolCard(item, onConfirm, onReject)
+        }
     }
 }
 
