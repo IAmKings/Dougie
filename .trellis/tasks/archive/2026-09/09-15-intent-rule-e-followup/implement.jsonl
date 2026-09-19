@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend layer index; Rule E last-read stays JVM-pure in IntentEval and Android I/O in :app"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "IntentEval vs AppIntentRuleEEval ownership; filesDir predictions path; :core:* no ORT"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Never put utterance, labels, or jsonl lines in Debug UI or Logcat"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Missing/corrupt last jsonl is empty UI, not INTENT_FAILED; run still uses INTENT_MODEL_MISSING"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend layer index for debug injection"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": ":feature:debug injects suspend lambdas only; no :core:tool / JNI"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Rule E chrome copy; DebugUiStateTest; no Compose UI tests"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "filesDir jsonl -> :app format -> debug StateFlow; do not leak pred items across the feature boundary"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse IntentEval.loadJsonl/ruleEReport/toString; one formatRuleEMessage for run and last"}

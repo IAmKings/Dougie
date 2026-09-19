@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "IntentEvalTest still skips missing repo-root predictions; do not fail CI on device jsonl"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Check Debug message and Logcat never include utterance, labels, or 已达标"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Corrupt last file must not surface as 意图分类失败"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "DebugUiStateTest Rule E copy; :feature:debug has no ORT"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Debug still implementation :core:runtime + :core:model only"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "AppIntentRuleEEval last vs run; gitignore /eval/"}
