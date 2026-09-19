@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Settings/Memory stay instant; no Predictive Back custom; sharedBounds only UserMessage and HistoryCard"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Focus scroll and bottom-nav restore must survive the 300ms transition"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Busy card tap still no-op; listKey unchanged"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JDK 17 app/chat/history unit tests; no Compose UI test"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Do not move Chat/History into a navigation graph"}

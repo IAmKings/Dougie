@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Do not add Predictive Back custom animations; Chat/History shared transition lives in MainActivity; no Nav Compose"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "MainActivity hosts AppRoute; Chat and History stay feature modules"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "requestFocus / shouldFollowChatFeed / consumeBack must not change; enter motion must not pin follow"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "UserMessage listKey stays {taskId}:user; History card tap still openConversation + requestFocus"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No Compose UI test for shared element; AppBackNavTest must still pass"}
