@@ -131,3 +131,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 93: 版本 0.1.3 发版
+
+**Date**: 2026-09-19
+**Task**: 版本 0.1.3 发版
+**Branch**: `master`
+
+### Summary
+
+默认版本升到 0.1.3（versionCode 103），打 tag v0.1.3 并推送，触发 GitHub Release。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `98ceb20` | (see git log) |
+
+### Status
+
+[OK] **Completed**
