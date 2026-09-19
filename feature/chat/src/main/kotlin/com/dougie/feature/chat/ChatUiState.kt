@@ -152,10 +152,24 @@ fun shouldFollowChatFeed(
 
 fun userMessageListKey(taskId: String): String = "$taskId:user"
 
+const val BUBBLE_ENTER_DURATION_MS = 200
+const val BUBBLE_ENTER_OFFSET_DP = 8
+const val TOOL_SWITCH_DURATION_MS = 150
+
 data class ChatItemEnter(
     val playKeys: Set<String>,
     val seenKeys: Set<String>,
 )
+
+fun ChatItem.usesBubbleEnter(): Boolean = when (this) {
+    is ChatItem.UserMessage,
+    is ChatItem.Thinking,
+    is ChatItem.AgentMessage,
+    -> true
+    is ChatItem.ToolCard,
+    is ChatItem.ConfirmCard,
+    -> false
+}
 
 fun nextChatItemEnter(
     items: List<ChatItem>,

@@ -878,6 +878,42 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun unseenToolCardPlaysEnterWithoutBubbleOffset() {
+        val user = ChatItem.UserMessage("现在几点了？", listKey = "t:user")
+        val thinking = ChatItem.Thinking(loopNumber = 1, live = false, listKey = "t:thinking-1")
+        val tool = ChatItem.ToolCard(
+            entry = ToolTraceEntry(
+                toolCallId = "time-1",
+                toolName = "time",
+                argsSummary = "{}",
+                resultJson = "{}",
+                status = ToolTraceStatus.SUCCESS,
+            ),
+            listKey = "t:tool-time-1",
+        )
+        val confirm = ChatItem.ConfirmCard(
+            toolName = "js_eval",
+            argsJson = "{}",
+            riskLevel = RiskLevel.L4,
+            toolCallId = "c1",
+            listKey = "t:confirm-c1",
+        )
+        val agent = ChatItem.AgentMessage("中午。", listKey = "t:agent")
+        val enter = nextChatItemEnter(
+            items = listOf(user, thinking, tool),
+            seenKeys = setOf("t:user", "t:thinking-1"),
+        )
+        assertEquals(setOf("t:tool-time-1"), enter.playKeys)
+        assertFalse(tool.usesBubbleEnter())
+        assertFalse(confirm.usesBubbleEnter())
+        assertTrue(user.usesBubbleEnter())
+        assertTrue(thinking.usesBubbleEnter())
+        assertTrue(agent.usesBubbleEnter())
+        assertEquals(8, BUBBLE_ENTER_OFFSET_DP)
+        assertEquals(150, TOOL_SWITCH_DURATION_MS)
+    }
+
+    @Test
     fun newConfirmKeyDoesNotPlayEnter() {
         val items = listOf(
             ChatItem.UserMessage("运行脚本", listKey = "t:user"),

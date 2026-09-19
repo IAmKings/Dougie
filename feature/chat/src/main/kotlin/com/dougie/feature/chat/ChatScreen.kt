@@ -1,13 +1,20 @@
 package com.dougie.feature.chat
 
 import android.provider.Settings
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -667,7 +674,7 @@ private fun ChatFeed(
                 is ChatItem.Thinking -> ChatItemEnterMotion(playEnter) {
                     ThinkingChip(item.loopNumber, live = item.live)
                 }
-                is ChatItem.ToolCard -> ChatItemEnterMotion(playEnter) {
+                is ChatItem.ToolCard -> ToolSwitchEnterMotion(playEnter) {
                     ToolCallCard(item)
                 }
                 is ChatItem.ConfirmCard -> Unit
@@ -708,11 +715,11 @@ private fun ChatItemEnterMotion(
         Settings.Global.ANIMATOR_DURATION_SCALE,
         1f,
     ) == 0f
-    val offsetPx = with(LocalDensity.current) { 8.dp.toPx() }
+    val offsetPx = with(LocalDensity.current) { BUBBLE_ENTER_OFFSET_DP.dp.toPx() }
     val alpha = remember { Animatable(0f) }
     val translationY = remember { Animatable(if (reduceMotion) 0f else offsetPx) }
     LaunchedEffect(Unit) {
-        val spec = tween<Float>(durationMillis = 200, easing = FastOutSlowInEasing)
+        val spec = tween<Float>(durationMillis = BUBBLE_ENTER_DURATION_MS, easing = FastOutSlowInEasing)
         launch { alpha.animateTo(1f, spec) }
         if (!reduceMotion) {
             launch { translationY.animateTo(0f, spec) }
@@ -725,6 +732,58 @@ private fun ChatItemEnterMotion(
         },
     ) {
         content()
+    }
+}
+
+@Composable
+private fun ToolSwitchEnterMotion(
+    playEnter: Boolean,
+    content: @Composable () -> Unit,
+) {
+    val shouldPlay = remember { playEnter }
+    if (!shouldPlay) {
+        content()
+        return
+    }
+    val alpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        alpha.animateTo(
+            1f,
+            tween(durationMillis = TOOL_SWITCH_DURATION_MS, easing = LinearOutSlowInEasing),
+        )
+    }
+    Box(
+        modifier = Modifier.graphicsLayer {
+            this.alpha = alpha.value
+        },
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun <S> StatusSwitchFade(
+    targetState: S,
+    label: String,
+    content: @Composable (S) -> Unit,
+) {
+    var ready by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { ready = true }
+    val spec = tween<Float>(durationMillis = TOOL_SWITCH_DURATION_MS, easing = LinearOutSlowInEasing)
+    AnimatedContent(
+        targetState = targetState,
+        transitionSpec = {
+            val enter = if (!ready) EnterTransition.None else fadeIn(spec)
+            val exit = if (!ready) ExitTransition.None else fadeOut(spec)
+            ContentTransform(
+                targetContentEnter = enter,
+                initialContentExit = exit,
+                sizeTransform = null,
+            )
+        },
+        label = label,
+    ) { state ->
+        content(state)
     }
 }
 
@@ -873,6 +932,13 @@ private fun AgentBubble(
 
 @Composable
 private fun ThinkingChip(loopNumber: Int, live: Boolean) {
+    StatusSwitchFade(targetState = live, label = "thinkingSwitch") { isLive ->
+        ThinkingChipContent(loopNumber = loopNumber, live = isLive)
+    }
+}
+
+@Composable
+private fun ThinkingChipContent(loopNumber: Int, live: Boolean) {
     val label = if (live) "思考中… [循环 $loopNumber]" else "循环 $loopNumber"
     if (!live) {
         Row(
@@ -966,12 +1032,14 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
         Column(modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Filled.Build, contentDescription = null, tint = barColor, modifier = Modifier.size(18.dp))
-                Text(
-                    text = label,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
-                    color = DougieColors.OnSurface,
-                )
+                StatusSwitchFade(targetState = label, label = "toolLabelSwitch") { text ->
+                    Text(
+                        text = text,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        color = DougieColors.OnSurface,
+                    )
+                }
             }
             val resultJson = entry.resultJson
             Text(

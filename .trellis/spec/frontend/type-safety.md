@@ -18,7 +18,7 @@
 | Feature UI | `:feature:*` | `ChatUiState`, `ChatItem`, `ChatItemEnter`, `ConfirmEnter`, `DebugUiState` |
 | Prefs | `:data:preferences` | `ProviderSettings` |
 
-Sealed UI lists: `ChatItem` is `UserMessage | Thinking | ToolCard | ConfirmCard | AgentMessage`. Exhaustive `when` in Chat composables.
+Sealed UI lists: `ChatItem` is `UserMessage | Thinking | ToolCard | ConfirmCard | AgentMessage`. Exhaustive `when` in Chat composables. Keep `Thinking` and `ToolCard` as separate types and feed rows; do not merge them into one `ChatItem`.
 
 Enums over stringly status in UI models: `HistoryItem.status: TaskStatus` plus a Chinese `statusLabel`. `durationLabel` / `providerLabel` / `completedAtLabel` are preformatted nullable strings (omit the meta line when all three are null). `ChatItem.AgentMessage.durationLabel` is the same preformatted nullable string from `:core:model` `formatTaskDuration` (terminal Chat only; streaming omits). Compose does not parse epoch or subtract `startedAt`/`endedAt`; `formatCompletedAt(endedAt, nowMs, zone)` owns today/昨天/date copy. `HistoryItem.steps` is `List<HistoryToolStep>` (`toolCallId`, raw `toolName`, `statusLabel` 成功/失败/进行中) mapped from `toolTrace` — never `argsSummary` / `resultJson` / risk. Debug snapshot stores `status.name` (`"FAILED"`) because it is a display string, not a second state machine. Debug Provider copy is `completionPath?.toUserLabel() ?: "无"`.
 
@@ -38,7 +38,7 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 
 ## Common Patterns
 
-- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun formatTaskDuration()` (in `:core:model`, shared by Chat and History), `fun formatCompletedAt()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`, `fun nextChatItemEnter()`, `fun chatConfirmCard()`, `fun chatFeedItemsWithoutConfirm()`, `fun nextConfirmEnter()`. Do not pass `firstKey` into `nextChatItemEnter` — empty-window send would skip enter.
+- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun formatTaskDuration()` (in `:core:model`, shared by Chat and History), `fun formatCompletedAt()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`, `fun nextChatItemEnter()`, `fun ChatItem.usesBubbleEnter()`, `fun chatConfirmCard()`, `fun chatFeedItemsWithoutConfirm()`, `fun nextConfirmEnter()`. Do not pass `firstKey` into `nextChatItemEnter` — empty-window send would skip enter. Do not merge `Thinking` and `ToolCard`.
 - `StateFlow` + `map` / `combine` + `stateIn(viewModelScope, WhileSubscribed(5_000), initial)`.
 - `ViewModelProvider.Factory` unchecked cast is the existing DI style (no Hilt/Anvil in the project).
 - `IntelligenceMark` is computed in `:app` from prefs + `task.lastError`, then passed into `ChatRoute` — Chat does not read EncryptedSharedPreferences.
@@ -50,4 +50,4 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 - Treating `lastError` as free-form English and branching on `contains("timeout")`. Use `UserFacingErrors`.
 - Passing intent-classifier readiness as `localLlmReady = true`. Chat soul mark uses `ChannelHooks.localChatReady` each compose (`ChatModelLayout.isPresent` on sideload only; Play is always false). Intent GGUF/ONNX is not a chat LLM.
 - Adding `@Serializable` to UI state just to log it (Debug must not grow `input` / `resultJson` / `args` / conversation-hit body fields — `DebugUiStateTest` forbids those names).
-- Keying Chat bubble enter off `firstKey` or `LazyItemScope.animateItem()`. Use `nextChatItemEnter` + `listKey`; Confirm is seeded into `seenKeys` but never `playKeys`. Confirm overlay uses `nextConfirmEnter`; do not key it off `firstKey` or replay on `ChatRoute` remount.
+- Keying Chat bubble enter off `firstKey` or `LazyItemScope.animateItem()`. Use `nextChatItemEnter` + `listKey`; Confirm is seeded into `seenKeys` but never `playKeys`. `ToolCard` stays in `playKeys` but `usesBubbleEnter()` is false (150ms fade, not 8dp). Confirm overlay uses `nextConfirmEnter`; do not key it off `firstKey` or replay on `ChatRoute` remount. Do not merge `ChatItem.Thinking` and `ChatItem.ToolCard`.
