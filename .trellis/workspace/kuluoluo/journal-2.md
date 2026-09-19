@@ -194,3 +194,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 96: 规则 E 评测续作
+
+**Date**: 2026-09-19
+**Task**: 规则 E 评测续作
+**Branch**: `master`
+
+### Summary
+
+开发者页打开从 filesDir jsonl 只读复看规则 E counts，并给出当前包名的 adb 取出命令；缺/坏文件保持空白，不泄露 utterance。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `982178b` | (see git log) |
+
+### Status
+
+[OK] **Completed**
