@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "snapshot_json ignoreUnknownKeys; adding confirmDeadlineAt is not a SQLite bump"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "LoopEngine timeout still CONFIRM_REJECTED; deadline set on AWAITING_CONFIRMATION"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "ConfirmCard reads deadline from AgentTask; UI must not reject on its own"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Countdown copy on Confirm overlay above buttons; remount must not reset"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM tests for remaining seconds and mapping; no Compose UI test"}

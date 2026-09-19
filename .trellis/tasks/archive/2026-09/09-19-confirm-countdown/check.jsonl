@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "UI must not call reject when N hits 0; TaskManager still owns timeout"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Scrim still no-op; enter/exit motion unchanged; countdown is text not a second overlay"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Timeout still CONFIRM_REJECTED not CANCELLED"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "No SQLite ALTER; codec optional field only"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JDK 17 core + chat unit tests; no Compose UI test"}
