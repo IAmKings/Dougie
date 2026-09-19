@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Indeterminate bar only while PENDING/EXECUTING; Confirm overlay must not draw it; no step-name row"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "listKey and Confirm overlay unchanged; completed ToolCards have no bar"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JDK 17 :feature:chat unit tests; no Compose UI test for the bar"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Do not add stepName to ToolTraceEntry or bump DB"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Bar must not pin follow or replay enter"}

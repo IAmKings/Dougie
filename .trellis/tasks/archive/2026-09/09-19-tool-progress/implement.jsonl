@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ToolCallCard indeterminate LinearProgressIndicator between title and result; do not copy Settings determinate download bar; no extra step row"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "PENDING/EXECUTING show progress; SUCCESS/FAILED do not; Confirm overlay is not a ToolCard"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM test showsToolProgress; no Compose UI test"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Progress is ToolTraceStatus, not a new ChatItem or DB field"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Progress must not change follow/focus/listKey"}
