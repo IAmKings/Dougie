@@ -173,3 +173,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 95: 版本 0.1.4 发版
+
+**Date**: 2026-09-19
+**Task**: 版本 0.1.4 发版
+**Branch**: `master`
+
+### Summary
+
+默认版本升到 0.1.4（versionCode 104），打 tag v0.1.4 并推送，把确认卡倒计时打进 GitHub Release。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `87dde0f` | (see git log) |
+
+### Status
+
+[OK] **Completed**
