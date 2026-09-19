@@ -1039,6 +1039,105 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun firstConfirmExitDoesNotPlay() {
+        val empty = nextConfirmExit(
+            confirmKey = null,
+            initialized = false,
+            lastKey = null,
+        )
+        assertFalse(empty.play)
+        assertFalse(empty.keepLast)
+
+        val existing = nextConfirmExit(
+            confirmKey = "t:confirm-c1",
+            initialized = false,
+            lastKey = null,
+        )
+        assertFalse(existing.play)
+        assertFalse(existing.keepLast)
+
+        val leftoverLastKey = nextConfirmExit(
+            confirmKey = null,
+            initialized = false,
+            lastKey = "t:confirm-c1",
+        )
+        assertFalse(leftoverLastKey.play)
+        assertFalse(leftoverLastKey.keepLast)
+        assertEquals(250, CONFIRM_OVERLAY_DURATION_MS)
+    }
+
+    @Test
+    fun confirmPresentToAbsentPlaysExitAndKeepsLast() {
+        val seeded = nextConfirmEnter(
+            confirmKey = "t:confirm-c1",
+            initialized = false,
+            lastKey = null,
+        )
+        val exit = nextConfirmExit(
+            confirmKey = null,
+            initialized = seeded.initialized,
+            lastKey = seeded.lastKey,
+        )
+        assertTrue(exit.play)
+        assertTrue(exit.keepLast)
+    }
+
+    @Test
+    fun sameConfirmKeyStillPresentDoesNotPlayExit() {
+        val seeded = nextConfirmEnter(
+            confirmKey = "t:confirm-c1",
+            initialized = false,
+            lastKey = null,
+        )
+        val exit = nextConfirmExit(
+            confirmKey = "t:confirm-c1",
+            initialized = seeded.initialized,
+            lastKey = seeded.lastKey,
+        )
+        assertFalse(exit.play)
+        assertFalse(exit.keepLast)
+    }
+
+    @Test
+    fun nullAfterLastKeyAlreadyNullDoesNotPlayExit() {
+        val seeded = nextConfirmEnter(
+            confirmKey = "t:confirm-c1",
+            initialized = false,
+            lastKey = null,
+        )
+        val cleared = nextConfirmEnter(
+            confirmKey = null,
+            initialized = seeded.initialized,
+            lastKey = seeded.lastKey,
+        )
+        val exit = nextConfirmExit(
+            confirmKey = null,
+            initialized = cleared.initialized,
+            lastKey = cleared.lastKey,
+        )
+        assertFalse(exit.play)
+        assertFalse(exit.keepLast)
+    }
+
+    @Test
+    fun nullThenNewConfirmKeyIsEnterNotExit() {
+        val seeded = nextConfirmEnter(confirmKey = null, initialized = false, lastKey = null)
+        val enter = nextConfirmEnter(
+            confirmKey = "t:confirm-c1",
+            initialized = seeded.initialized,
+            lastKey = seeded.lastKey,
+        )
+        assertTrue(enter.play)
+        val exit = nextConfirmExit(
+            confirmKey = "t:confirm-c1",
+            initialized = seeded.initialized,
+            lastKey = seeded.lastKey,
+        )
+        assertFalse(exit.play)
+        assertFalse(exit.keepLast)
+    }
+
+    @Test
     fun sameAgentKeyDoesNotReplayEnter() {
         val seen = setOf("t:user", "t:agent")
         val streaming = listOf(

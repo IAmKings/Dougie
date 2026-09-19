@@ -158,6 +158,7 @@ fun userBubbleSharedKey(listKey: String): String = listKey.removeSuffix(":user")
 const val BUBBLE_ENTER_DURATION_MS = 200
 const val BUBBLE_ENTER_OFFSET_DP = 8
 const val TOOL_SWITCH_DURATION_MS = 150
+const val CONFIRM_OVERLAY_DURATION_MS = 250
 
 data class ChatItemEnter(
     val playKeys: Set<String>,
@@ -207,6 +208,8 @@ fun chatFeedItemsWithoutConfirm(items: List<ChatItem>): List<ChatItem> =
 
 data class ConfirmEnter(val play: Boolean, val initialized: Boolean, val lastKey: String?)
 
+data class ConfirmExit(val play: Boolean, val keepLast: Boolean)
+
 fun nextConfirmEnter(
     confirmKey: String?,
     initialized: Boolean,
@@ -217,6 +220,20 @@ fun nextConfirmEnter(
     }
     val play = confirmKey != null && confirmKey != lastKey
     return ConfirmEnter(play = play, initialized = true, lastKey = confirmKey)
+}
+
+fun nextConfirmExit(
+    confirmKey: String?,
+    initialized: Boolean,
+    lastKey: String?,
+): ConfirmExit {
+    if (!initialized) {
+        return ConfirmExit(play = false, keepLast = false)
+    }
+    if (lastKey != null && confirmKey == null) {
+        return ConfirmExit(play = true, keepLast = true)
+    }
+    return ConfirmExit(play = false, keepLast = false)
 }
 
 fun AgentTask.toPastChatItems(): List<ChatItem> {

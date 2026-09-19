@@ -113,6 +113,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.feature.chat.R as ChatR
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -326,6 +327,8 @@ fun ChatScreen(
             var confirmEnter by remember {
                 mutableStateOf(ConfirmEnter(play = false, initialized = false, lastKey = null))
             }
+            var lastConfirmCard by remember { mutableStateOf<ChatItem.ConfirmCard?>(null) }
+            var exitingCard by remember { mutableStateOf<ChatItem.ConfirmCard?>(null) }
             val enter = nextChatItemEnter(uiState.items, seenKeys)
             val confirmCard = chatConfirmCard(uiState.items)
             val nextConfirm = nextConfirmEnter(
@@ -333,9 +336,25 @@ fun ChatScreen(
                 initialized = confirmEnter.initialized,
                 lastKey = confirmEnter.lastKey,
             )
+            val nextExit = nextConfirmExit(
+                confirmKey = confirmCard?.listKey,
+                initialized = confirmEnter.initialized,
+                lastKey = confirmEnter.lastKey,
+            )
+            val overlayCard = when {
+                confirmCard != null -> confirmCard
+                nextExit.keepLast -> lastConfirmCard
+                else -> exitingCard
+            }
             SideEffect {
                 seenKeys = enter.seenKeys
                 confirmEnter = nextConfirm
+                if (confirmCard != null) {
+                    lastConfirmCard = confirmCard
+                    exitingCard = null
+                } else if (nextExit.keepLast) {
+                    exitingCard = lastConfirmCard
+                }
             }
             if (uiState.isEmpty) {
                 EmptyState(
@@ -357,11 +376,16 @@ fun ChatScreen(
                     sharedBoundsFor = sharedBoundsFor,
                 )
             }
-            if (confirmCard != null) {
-                key(confirmCard.listKey) {
+            if (overlayCard != null) {
+                key(overlayCard.listKey) {
                     ConfirmCardOverlay(
-                        item = confirmCard,
-                        playEnter = nextConfirm.play,
+                        item = overlayCard,
+                        playEnter = confirmCard != null && nextConfirm.play,
+                        playExit = confirmCard == null,
+                        onExitFinished = {
+                            exitingCard = null
+                            lastConfirmCard = null
+                        },
                         onConfirm = onConfirm,
                         onReject = onReject,
                     )
@@ -800,6 +824,8 @@ private fun <S> StatusSwitchFade(
 private fun ConfirmCardOverlay(
     item: ChatItem.ConfirmCard,
     playEnter: Boolean,
+    playExit: Boolean,
+    onExitFinished: () -> Unit,
     onConfirm: () -> Unit,
     onReject: () -> Unit,
 ) {
@@ -813,11 +839,22 @@ private fun ConfirmCardOverlay(
     val progress = remember { Animatable(if (shouldPlay && !reduceMotion) 0f else 1f) }
     LaunchedEffect(Unit) {
         if (!shouldPlay) return@LaunchedEffect
-        val spec = tween<Float>(durationMillis = 250, easing = FastOutSlowInEasing)
+        val spec = tween<Float>(durationMillis = CONFIRM_OVERLAY_DURATION_MS, easing = FastOutSlowInEasing)
         launch { alpha.animateTo(1f, spec) }
         if (!reduceMotion) {
             launch { progress.animateTo(1f, spec) }
         }
+    }
+    LaunchedEffect(playExit) {
+        if (!playExit) return@LaunchedEffect
+        val spec = tween<Float>(durationMillis = CONFIRM_OVERLAY_DURATION_MS, easing = FastOutSlowInEasing)
+        coroutineScope {
+            launch { alpha.animateTo(0f, spec) }
+            if (!reduceMotion) {
+                launch { progress.animateTo(0f, spec) }
+            }
+        }
+        onExitFinished()
     }
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
