@@ -53,6 +53,7 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | Intent engine not wired | `UnwiredIntentEngine` / `isEngineReady() == false`. Debug Rule E eval uses the same copy and does not write predictions jsonl. | `离线意图引擎尚未接入，无法分类。` |
 | Intent low confidence | `confidence < 0.5` | `意图不够明确，请补充说明或改用云端模型。` |
 | Intent infer failed | Native logits empty or ORT session fail | `离线意图推理失败，请稍后重试。` Probe still succeeds on low confidence. |
+| Debug Rule E last missing/empty/corrupt | `AppIntentRuleEEval.last` cannot parse at least one jsonl row under `filesDir/eval/intent/predictions.jsonl` | leave `ruleEMessage` empty (`null`). Do not map to `INTENT_FAILED` / `意图分类失败`, and do not dump file text. `run` still uses existing `INTENT_*` copy when the pack/engine is missing. |
 | Model download not confirmed / not https | `userConfirmed=false` or non-https URL | `未确认下载，已跳过获取离线模型。` |
 | Model hash mismatch | SHA-256 of payload ≠ spec (download or import) | `离线模型校验失败，已删除不完整文件。` |
 | Model download failed | HTTP/IO error | `离线模型下载失败，请检查网络后重试。` |

@@ -134,10 +134,15 @@ class DebugUiStateTest {
         val state = DebugUiState(
             ruleEBusy = false,
             ruleEMessage = "intent nLabeled=88 nScored=88 nUnscored=0 nClasses=11 " +
-                "accuracy=1.0 p95Ms=10 latencyApplied=true ruleEPassed=true",
+                "accuracy=1.0 p95Ms=10 latencyApplied=true ruleEPassed=true\n" +
+                "eval/intent/predictions.jsonl\n" +
+                "adb exec-out run-as com.dougie.app cat files/eval/intent/predictions.jsonl",
         )
         assertFalse(state.toString().contains("已达标"))
         assertFalse(state.ruleEMessage!!.contains("已达标"))
+        assertTrue(state.ruleEMessage!!.contains("run-as com.dougie.app"))
+        assertFalse(state.ruleEMessage!!.contains("现在几点"))
+        assertFalse(state.ruleEMessage!!.contains("query_time"))
         assertNull(DebugUiState().ruleEMessage)
         assertFalse(DebugUiState().ruleEBusy)
     }

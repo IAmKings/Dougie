@@ -422,6 +422,7 @@ class MainActivity : ComponentActivity() {
                                 app.taskManager,
                                 app.taskStores.auditLog,
                                 runRuleEEval = { AppIntentRuleEEval.run(app) },
+                                loadLastRuleE = { AppIntentRuleEEval.last(app) },
                             ),
                         )
                         DebugRoute(

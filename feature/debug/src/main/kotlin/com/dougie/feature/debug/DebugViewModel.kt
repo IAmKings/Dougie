@@ -19,6 +19,7 @@ class DebugViewModel(
     private val taskManager: TaskManager,
     private val auditLog: AuditLog,
     private val runRuleEEval: suspend () -> String,
+    private val loadLastRuleE: suspend () -> String?,
 ) : ViewModel() {
     private val auditRows = MutableStateFlow<List<DebugAuditRow>>(emptyList())
     private val ruleEBusy = MutableStateFlow(false)
@@ -40,6 +41,17 @@ class DebugViewModel(
 
     init {
         refresh()
+        viewModelScope.launch {
+            val last = try {
+                loadLastRuleE()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            } ?: return@launch
+            if (ruleEBusy.value) return@launch
+            ruleEMessage.compareAndSet(null, last)
+        }
     }
 
     fun refresh() {
@@ -70,10 +82,11 @@ class DebugViewModel(
         private val taskManager: TaskManager,
         private val auditLog: AuditLog,
         private val runRuleEEval: suspend () -> String,
+        private val loadLastRuleE: suspend () -> String?,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return DebugViewModel(taskManager, auditLog, runRuleEEval) as T
+            return DebugViewModel(taskManager, auditLog, runRuleEEval, loadLastRuleE) as T
         }
     }
 }
