@@ -110,3 +110,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 92: Confirm 卡离场动效
+
+**Date**: 2026-09-19
+**Task**: Confirm 卡离场动效
+**Branch**: `master`
+
+### Summary
+
+确认、拒绝、终止后覆盖层 250ms 下滑收起并淡出压暗；不推迟 TaskManager。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ed94759` | (see git log) |
+
+### Status
+
+[OK] **Completed**

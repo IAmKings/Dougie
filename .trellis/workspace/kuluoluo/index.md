@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 91
+- **Total Sessions**: 92
 - **Last Active**: 2026-09-19
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~112 | Active |
+| `journal-2.md` | ~133 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 92 | 2026-09-19 | Confirm 卡离场动效 | `ed94759` | `master` |
 | 91 | 2026-09-19 | Chat↔任务页共享元素转场 | `139c750` | `master` |
 | 90 | 2026-09-19 | 工具不确定进度条 | `eb131b6` | `master` |
 | 89 | 2026-09-19 | 思考→工具卡状态切换 | `372b81b` | `master` |
