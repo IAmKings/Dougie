@@ -68,3 +68,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 90: 工具不确定进度条
+
+**Date**: 2026-09-19
+**Task**: 工具不确定进度条
+**Branch**: `master`
+
+### Summary
+
+准备/正在调用的工具卡显示不确定进度条，完成后消失；确认覆盖层不画。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eb131b6` | (see git log) |
+
+### Status
+
+[OK] **Completed**
