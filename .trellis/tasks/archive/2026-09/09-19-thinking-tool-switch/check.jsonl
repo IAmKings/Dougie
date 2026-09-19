@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ToolCard must not use 200ms 8dp bubble enter; Confirm overlay unchanged"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Switch motion must not pin follow or replay on remount"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "listKey and toChatUiState item order stay; terminate/confirm semantics stay"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JDK 17 :feature:chat unit tests; no Compose UI test"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Do not replace sealed ChatItem with a merged thinking-tool type"}

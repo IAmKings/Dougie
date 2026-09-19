@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ToolCard uses 150ms LinearOutSlowIn fade, not bubble enter; ThinkingChip and tool label AnimatedContent"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Do not change follow/focus/listKey; first ChatRoute composition must not replay switch"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Keep thinking then ToolCard mapping; Confirm overlay still not a feed row"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM unit tests only; no Compose UI test"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ChatItem sealed types unchanged; ToolCard still ToolTraceEntry"}
