@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Confirm overlay enter already specified; add matching 250ms exit slide down; scrim still does not dismiss"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "First ChatRoute composition must not play exit; leaving Chat unmounts without exit"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Do not delay TaskManager confirm/reject/cancel for motion; keep last ConfirmCard only for overlay exit"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM test nextConfirmExit; no Compose UI test"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ConfirmExit mapper beside ConfirmEnter; do not merge Confirm into feed rows"}

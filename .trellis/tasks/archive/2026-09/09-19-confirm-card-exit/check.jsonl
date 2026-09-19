@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Exit is reverse of enter; overlay still covers only the feed Box; scrim still no-op"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "Exit must not pin follow or replay on remount"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "confirm/reject/cancel still TaskManager; timeout reject already engine-side"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JDK 17 :feature:chat unit tests; no Compose UI test for overlay exit"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Do not put Confirm back in LazyColumn to animate exit"}
