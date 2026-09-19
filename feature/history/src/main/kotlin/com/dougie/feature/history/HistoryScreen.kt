@@ -58,6 +58,7 @@ fun HistoryRoute(
     onOpenConversation: (String, String) -> Unit,
     onDelete: (String) -> Unit,
     onDeleteTask: (String) -> Unit,
+    sharedBoundsFor: @Composable (String) -> Modifier = { Modifier },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { viewModel.refresh() }
@@ -71,6 +72,7 @@ fun HistoryRoute(
         onRename = viewModel::setTitle,
         onDelete = onDelete,
         onDeleteTask = onDeleteTask,
+        sharedBoundsFor = sharedBoundsFor,
     )
 }
 
@@ -86,6 +88,7 @@ fun HistoryScreen(
     onRename: (String, String) -> Unit = { _, _ -> },
     onDelete: (String) -> Unit = {},
     onDeleteTask: (String) -> Unit = {},
+    sharedBoundsFor: @Composable (String) -> Modifier = { Modifier },
 ) {
     var renaming by remember { mutableStateOf<HistorySection?>(null) }
     var deleting by remember { mutableStateOf<HistorySection?>(null) }
@@ -189,6 +192,7 @@ fun HistoryScreen(
                             item,
                             onOpen = { onOpenConversation(item.conversationId, item.taskId) },
                             onDelete = { deletingTask = item },
+                            sharedBounds = sharedBoundsFor(item.taskId),
                         )
                     }
                 }
@@ -277,7 +281,12 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit, onDelete: () -> Unit) {
+private fun HistoryCard(
+    item: HistoryItem,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+    sharedBounds: Modifier = Modifier,
+) {
     val badgeColor = when (item.status) {
         TaskStatus.COMPLETED -> DougieColors.StatusCompleted
         TaskStatus.FAILED -> DougieColors.Error
@@ -286,6 +295,7 @@ private fun HistoryCard(item: HistoryItem, onOpen: () -> Unit, onDelete: () -> U
     var expanded by remember(item.taskId) { mutableStateOf(false) }
     Column(
         modifier = Modifier
+            .then(sharedBounds)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))

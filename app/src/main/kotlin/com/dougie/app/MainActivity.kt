@@ -142,6 +142,7 @@ class MainActivity : ComponentActivity() {
                 var speakingReply by speakingReplyState
                 var asrReady by asrReadyState
                 var ttsReady by ttsReadyState
+                var sharedHistoryTaskId by remember { mutableStateOf<String?>(null) }
                 val prefs by app.preferenceStore.settings.collectAsStateWithLifecycle()
                 val titles by app.preferenceStore.conversationTitles.collectAsStateWithLifecycle()
                 val task by app.taskManager.task.collectAsStateWithLifecycle()
@@ -187,6 +188,9 @@ class MainActivity : ComponentActivity() {
                 val backTarget = consumeBack(AppNavState(route, previewImage != null))
                 BackHandler(enabled = backTarget != null) {
                     val next = consumeBack(AppNavState(route, previewImage != null)) ?: return@BackHandler
+                    if (route == AppRoute.History && next.route == AppRoute.Chat) {
+                        sharedHistoryTaskId = null
+                    }
                     route = next.route
                     if (!next.previewOpen) previewImage = null
                 }
@@ -202,7 +206,11 @@ class MainActivity : ComponentActivity() {
                     factory = ChatViewModel.Factory(app.taskManager),
                 )
                 when (route) {
-                    AppRoute.Chat -> {
+                    AppRoute.Chat, AppRoute.History -> {
+                        ChatHistoryTransition(
+                            route = route,
+                            sharedTaskId = sharedHistoryTaskId,
+                            chat = { sharedBoundsFor ->
                         ChatRoute(
                             viewModel = chatViewModel,
                             allowCloud = prefs.allowCloud,
@@ -259,10 +267,93 @@ class MainActivity : ComponentActivity() {
                             },
                             overlayShortcutHint = ChannelHooks.screenShortcutHint(this@MainActivity, task),
                             conversationTitle = conversationTitle,
-                            onOpenSettings = { route = AppRoute.Settings },
-                            onOpenMemory = { route = AppRoute.Memory },
-                            onOpenPermissions = { route = AppRoute.Permissions },
-                            onOpenHistory = { route = AppRoute.History },
+                            onOpenSettings = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.Settings
+                            },
+                            onOpenMemory = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.Memory
+                            },
+                            onOpenPermissions = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.Permissions
+                            },
+                            onOpenHistory = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.History
+                            },
+                            sharedBoundsFor = sharedBoundsFor,
+                        )
+                            },
+                            history = { sharedBoundsFor ->
+                        val viewModel: HistoryViewModel = viewModel(
+                            factory = HistoryViewModel.Factory(
+                                app.taskStores.taskStore,
+                                app.conversationTitles,
+                            ),
+                        )
+                        HistoryRoute(
+                            viewModel = viewModel,
+                            onOpenChat = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.Chat
+                            },
+                            onOpenMemory = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.Memory
+                            },
+                            onOpenSettings = {
+                                sharedHistoryTaskId = null
+                                route = AppRoute.Settings
+                            },
+                            onOpenConversation = { conversationId, taskId ->
+                                val current = app.taskManager.task.value
+                                val busy = current != null &&
+                                    current.status != TaskStatus.COMPLETED &&
+                                    current.status != TaskStatus.FAILED
+                                if (!busy) {
+                                    sharedHistoryTaskId = taskId
+                                    app.taskManager.openConversation(conversationId)
+                                    chatViewModel.requestFocus(taskId)
+                                    route = AppRoute.Chat
+                                }
+                            },
+                            onDelete = { conversationId ->
+                                val current = app.taskManager.task.value
+                                val busy = current != null &&
+                                    current.status != TaskStatus.COMPLETED &&
+                                    current.status != TaskStatus.FAILED
+                                if (!busy) {
+                                    lifecycleScope.launch {
+                                        app.taskManager.deleteConversation(conversationId)?.join()
+                                        recentHistoryItems = withContext(Dispatchers.Default) {
+                                            app.taskStores.taskStore.listRecent(50)
+                                                .map { it.toHistoryItem() }
+                                        }
+                                        viewModel.refresh()
+                                    }
+                                }
+                            },
+                            onDeleteTask = { taskId ->
+                                val current = app.taskManager.task.value
+                                val busy = current != null &&
+                                    current.status != TaskStatus.COMPLETED &&
+                                    current.status != TaskStatus.FAILED
+                                if (!busy) {
+                                    lifecycleScope.launch {
+                                        app.taskManager.deleteTask(taskId)?.join()
+                                        recentHistoryItems = withContext(Dispatchers.Default) {
+                                            app.taskStores.taskStore.listRecent(50)
+                                                .map { it.toHistoryItem() }
+                                        }
+                                        viewModel.refresh()
+                                    }
+                                }
+                            },
+                            sharedBoundsFor = sharedBoundsFor,
+                        )
+                            },
                         )
                     }
                     AppRoute.Settings -> {
@@ -347,63 +438,6 @@ class MainActivity : ComponentActivity() {
                             onOpenChat = { route = AppRoute.Chat },
                             onOpenSettings = { route = AppRoute.Settings },
                             onOpenHistory = { route = AppRoute.History },
-                        )
-                    }
-                    AppRoute.History -> {
-                        val viewModel: HistoryViewModel = viewModel(
-                            factory = HistoryViewModel.Factory(
-                                app.taskStores.taskStore,
-                                app.conversationTitles,
-                            ),
-                        )
-                        HistoryRoute(
-                            viewModel = viewModel,
-                            onOpenChat = { route = AppRoute.Chat },
-                            onOpenMemory = { route = AppRoute.Memory },
-                            onOpenSettings = { route = AppRoute.Settings },
-                            onOpenConversation = { conversationId, taskId ->
-                                val current = app.taskManager.task.value
-                                val busy = current != null &&
-                                    current.status != TaskStatus.COMPLETED &&
-                                    current.status != TaskStatus.FAILED
-                                if (!busy) {
-                                    app.taskManager.openConversation(conversationId)
-                                    chatViewModel.requestFocus(taskId)
-                                    route = AppRoute.Chat
-                                }
-                            },
-                            onDelete = { conversationId ->
-                                val current = app.taskManager.task.value
-                                val busy = current != null &&
-                                    current.status != TaskStatus.COMPLETED &&
-                                    current.status != TaskStatus.FAILED
-                                if (!busy) {
-                                    lifecycleScope.launch {
-                                        app.taskManager.deleteConversation(conversationId)?.join()
-                                        recentHistoryItems = withContext(Dispatchers.Default) {
-                                            app.taskStores.taskStore.listRecent(50)
-                                                .map { it.toHistoryItem() }
-                                        }
-                                        viewModel.refresh()
-                                    }
-                                }
-                            },
-                            onDeleteTask = { taskId ->
-                                val current = app.taskManager.task.value
-                                val busy = current != null &&
-                                    current.status != TaskStatus.COMPLETED &&
-                                    current.status != TaskStatus.FAILED
-                                if (!busy) {
-                                    lifecycleScope.launch {
-                                        app.taskManager.deleteTask(taskId)?.join()
-                                        recentHistoryItems = withContext(Dispatchers.Default) {
-                                            app.taskStores.taskStore.listRecent(50)
-                                                .map { it.toHistoryItem() }
-                                        }
-                                        viewModel.refresh()
-                                    }
-                                }
-                            },
                         )
                     }
                     AppRoute.Permissions -> {

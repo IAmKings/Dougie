@@ -151,6 +151,7 @@ fun ChatRoute(
     onSpeakReplyConsumed: () -> Unit = {},
     overlayShortcutHint: String? = null,
     conversationTitle: String = "默认会话",
+    sharedBoundsFor: @Composable (String) -> Modifier = { Modifier },
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val pendingFocusKey by viewModel.pendingFocusKey.collectAsStateWithLifecycle()
@@ -256,6 +257,7 @@ fun ChatRoute(
         overlayShortcutHint = overlayShortcutHint,
         onNewConversation = viewModel::newConversation,
         conversationTitle = conversationTitle,
+        sharedBoundsFor = sharedBoundsFor,
     )
 }
 
@@ -299,6 +301,7 @@ fun ChatScreen(
     overlayShortcutHint: String? = null,
     onNewConversation: () -> Unit = {},
     conversationTitle: String = "默认会话",
+    sharedBoundsFor: @Composable (String) -> Modifier = { Modifier },
 ) {
     var confirmNewConversation by remember { mutableStateOf(false) }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -351,6 +354,7 @@ fun ChatScreen(
                     onRetry = onRetry,
                     onStopReply = onStopReply,
                     onSpeakReply = onSpeakReply,
+                    sharedBoundsFor = sharedBoundsFor,
                 )
             }
             if (confirmCard != null) {
@@ -656,6 +660,7 @@ private fun ChatFeed(
     onRetry: () -> Unit,
     onStopReply: () -> Unit,
     onSpeakReply: (String) -> Unit,
+    sharedBoundsFor: @Composable (String) -> Modifier,
 ) {
     LazyColumn(
         state = listState,
@@ -670,7 +675,10 @@ private fun ChatFeed(
             val playEnter = item.listKey in playKeys
             when (item) {
                 is ChatItem.UserMessage -> ChatItemEnterMotion(playEnter) {
-                    UserBubble(item.text)
+                    UserBubble(
+                        text = item.text,
+                        modifier = sharedBoundsFor(userBubbleSharedKey(item.listKey)),
+                    )
                 }
                 is ChatItem.Thinking -> ChatItemEnterMotion(playEnter) {
                     ThinkingChip(item.loopNumber, live = item.live)
@@ -839,13 +847,13 @@ private fun ConfirmCardOverlay(
 }
 
 @Composable
-private fun UserBubble(text: String) {
+private fun UserBubble(text: String, modifier: Modifier = Modifier) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Text(
             text = text,
             color = DougieColors.OnSurface,
             fontSize = 16.sp,
-            modifier = Modifier
+            modifier = modifier
                 .widthIn(max = 320.dp)
                 .clip(RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))
                 .border(1.dp, DougieColors.Primary, RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))

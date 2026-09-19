@@ -153,6 +153,8 @@ fun shouldFollowChatFeed(
 
 fun userMessageListKey(taskId: String): String = "$taskId:user"
 
+fun userBubbleSharedKey(listKey: String): String = listKey.removeSuffix(":user")
+
 const val BUBBLE_ENTER_DURATION_MS = 200
 const val BUBBLE_ENTER_OFFSET_DP = 8
 const val TOOL_SWITCH_DURATION_MS = 150

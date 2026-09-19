@@ -812,6 +812,12 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun userBubbleSharedKeyStripsUserSuffix() {
+        assertEquals("t1", userBubbleSharedKey(userMessageListKey("t1")))
+        assertEquals("t1:thinking-1", userBubbleSharedKey("t1:thinking-1"))
+    }
+
+    @Test
     fun firstFrameFullListDoesNotPlayEnter() {
         val items = listOf(
             ChatItem.UserMessage("现在几点了？", listKey = "t:user"),
