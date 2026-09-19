@@ -211,6 +211,7 @@ class TaskManager(
             status = TaskStatus.FAILED,
             lastError = UserFacingErrors.CANCELLED,
             streamingText = null,
+            confirmDeadlineAt = null,
         ).stampEndedAtIfTerminal()
         _task.value = failed
         persist(failed)

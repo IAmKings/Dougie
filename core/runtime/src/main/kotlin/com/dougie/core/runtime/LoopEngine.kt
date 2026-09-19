@@ -5,6 +5,7 @@ import com.dougie.core.memory.MemoryGate
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.CONFIRM_TIMEOUT_MS
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.ConversationHit
@@ -49,7 +50,7 @@ class LoopEngine(
     private val memoryStore: MemoryStore? = null,
     private val memoryEnabled: () -> Boolean = { true },
     private val policyEngine: PolicyEngine = PolicyEngine(),
-    private val confirmTimeoutMs: Long = 60_000L,
+    private val confirmTimeoutMs: Long = CONFIRM_TIMEOUT_MS,
     private val auditLog: AuditLog = NoOpAuditLog,
     private val intentPort: IntentPort? = null,
     private val openAppEntries: () -> List<OpenAppEntry> = { emptyList() },
@@ -79,6 +80,7 @@ class LoopEngine(
                 lastError = null,
                 finalAnswer = null,
                 streamingText = null,
+                confirmDeadlineAt = null,
             )
             emit(task)
             task = retrieveMemories(task, emit)
@@ -645,7 +647,12 @@ class LoopEngine(
         message: String,
         emit: suspend (AgentTask) -> Unit,
     ): AgentTask {
-        val failed = task.copy(status = TaskStatus.FAILED, lastError = message, streamingText = null)
+        val failed = task.copy(
+            status = TaskStatus.FAILED,
+            lastError = message,
+            streamingText = null,
+            confirmDeadlineAt = null,
+        )
         emit(failed)
         return failed
     }
@@ -659,7 +666,15 @@ class LoopEngine(
         if (trace.isNotEmpty()) {
             trace[trace.lastIndex] = transform(trace.last())
         }
-        return task.copy(status = status, toolTrace = trace)
+        return task.copy(
+            status = status,
+            toolTrace = trace,
+            confirmDeadlineAt = if (status == TaskStatus.AWAITING_CONFIRMATION) {
+                System.currentTimeMillis() + confirmTimeoutMs
+            } else {
+                null
+            },
+        )
     }
 
     private fun recordAudit(taskId: String, toolName: String, outcome: String) {

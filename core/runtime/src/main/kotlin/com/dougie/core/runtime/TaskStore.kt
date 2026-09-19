@@ -133,6 +133,7 @@ suspend fun recoverInterrupted(store: TaskStore): AgentTask? {
         status = TaskStatus.FAILED,
         lastError = UserFacingErrors.INTERRUPTED,
         streamingText = null,
+        confirmDeadlineAt = null,
     ).stampEndedAtIfTerminal()
     store.upsert(failed)
     return failed

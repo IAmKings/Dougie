@@ -457,6 +457,7 @@ class ChatUiStateTest {
             taskId = "t",
             input = "帮我约明天下午开会",
             status = TaskStatus.AWAITING_CONFIRMATION,
+            confirmDeadlineAt = 1_700_000_060_000L,
             toolTrace = listOf(
                 ToolTraceEntry(
                     toolCallId = "cal-1",
@@ -472,6 +473,7 @@ class ChatUiStateTest {
         assertEquals("calendar_create", card.toolName)
         assertEquals("""{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""", card.argsJson)
         assertEquals(com.dougie.core.model.RiskLevel.L2, card.riskLevel)
+        assertEquals(1_700_000_060_000L, card.confirmDeadlineAt)
         assertEquals(false, state.inputEnabled)
         assertEquals(true, state.canCancel)
     }

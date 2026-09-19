@@ -110,10 +110,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dougie.core.model.confirmCountdownCopy
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.feature.chat.R as ChatR
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -1183,6 +1185,21 @@ private fun ConfirmToolCard(
                 .background(DougieColors.TerminalBg)
                 .padding(8.dp),
         )
+        val deadlineAt = item.confirmDeadlineAt
+        if (deadlineAt != null) {
+            var nowMs by remember(deadlineAt) { mutableStateOf(System.currentTimeMillis()) }
+            LaunchedEffect(deadlineAt) {
+                while (true) {
+                    nowMs = System.currentTimeMillis()
+                    delay(1_000)
+                }
+            }
+            Text(
+                text = confirmCountdownCopy(deadlineAt, nowMs),
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 13.sp,
+            )
+        }
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

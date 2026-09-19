@@ -58,6 +58,36 @@ class AgentTaskTest {
     }
 
     @Test
+    fun confirmDeadlineAtDefaultNullAndCopyKeepsIt() {
+        val task = AgentTask(taskId = "t", input = "hi")
+        assertNull(task.confirmDeadlineAt)
+        val awaiting = task.copy(
+            status = TaskStatus.AWAITING_CONFIRMATION,
+            confirmDeadlineAt = 1_700_000_060_000L,
+        )
+        assertEquals(1_700_000_060_000L, awaiting.confirmDeadlineAt)
+        assertEquals(1_700_000_060_000L, awaiting.copy(streamingText = "x").confirmDeadlineAt)
+    }
+
+    @Test
+    fun confirmRemainingSecondsCeilsWholeSecondsAndFloorsAtZero() {
+        assertEquals(60, confirmRemainingSeconds(60_000L, 0L))
+        assertEquals(60, confirmRemainingSeconds(59_001L, 0L))
+        assertEquals(59, confirmRemainingSeconds(59_000L, 0L))
+        assertEquals(1, confirmRemainingSeconds(1L, 0L))
+        assertEquals(0, confirmRemainingSeconds(0L, 0L))
+        assertEquals(0, confirmRemainingSeconds(0L, 1L))
+    }
+
+    @Test
+    fun confirmCountdownCopyUsesRemainingSecondsThenImminentReject() {
+        assertEquals("未操作将在 60 秒后视为拒绝", confirmCountdownCopy(60_000L, 0L))
+        assertEquals("未操作将在 1 秒后视为拒绝", confirmCountdownCopy(1L, 0L))
+        assertEquals("未操作即将视为拒绝", confirmCountdownCopy(0L, 0L))
+        assertEquals("未操作即将视为拒绝", confirmCountdownCopy(0L, 50L))
+    }
+
+    @Test
     fun formatTaskDurationCoversBucketsAndNegative() {
         assertNull(formatTaskDuration(null, 1_000L))
         assertNull(formatTaskDuration(1_000L, null))

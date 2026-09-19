@@ -39,7 +39,21 @@ data class AgentTask(
     val endedAt: Long? = null,
     val conversationId: String = ConversationIds.DEFAULT,
     val priorTurns: List<ConversationTurn> = emptyList(),
+    val confirmDeadlineAt: Long? = null,
 )
+
+const val CONFIRM_TIMEOUT_MS = 60_000L
+
+fun confirmRemainingSeconds(deadlineAt: Long, nowMs: Long): Int {
+    val remainingMs = deadlineAt - nowMs
+    if (remainingMs <= 0L) return 0
+    return kotlin.math.ceil(remainingMs / 1000.0).toInt()
+}
+
+fun confirmCountdownCopy(deadlineAt: Long, nowMs: Long): String {
+    val n = confirmRemainingSeconds(deadlineAt, nowMs)
+    return if (n <= 0) "未操作即将视为拒绝" else "未操作将在 $n 秒后视为拒绝"
+}
 
 fun formatTaskDuration(startedAt: Long?, endedAt: Long?): String? {
     if (startedAt == null || endedAt == null) return null

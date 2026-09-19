@@ -45,6 +45,7 @@ sealed class ChatItem {
         val riskLevel: RiskLevel,
         val toolCallId: String,
         override val listKey: String,
+        val confirmDeadlineAt: Long? = null,
     ) : ChatItem()
 
     data class AgentMessage(
@@ -73,6 +74,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
                         riskLevel = entry.riskLevel,
                         toolCallId = entry.toolCallId,
                         listKey = itemKey("confirm-${entry.toolCallId}"),
+                        confirmDeadlineAt = confirmDeadlineAt,
                     ),
                 )
             } else {

@@ -6,6 +6,7 @@ import com.dougie.core.memory.InMemoryMemoryStore
 import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
+import com.dougie.core.model.CONFIRM_TIMEOUT_MS
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.core.model.AttachmentMeta
@@ -66,6 +67,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -471,6 +473,11 @@ class LoopEngineTest {
             steps++
         }
         assertEquals(TaskStatus.AWAITING_CONFIRMATION, manager.task.value?.status)
+        val deadline = manager.task.value?.confirmDeadlineAt
+        assertNotNull(deadline)
+        val remaining = deadline!! - System.currentTimeMillis()
+        assertTrue(remaining > 0L)
+        assertTrue(remaining <= CONFIRM_TIMEOUT_MS + 1_000L)
         assertEquals(0, port.createCalls.size)
         manager.cancel()
         advanceUntilIdle()
@@ -480,6 +487,7 @@ class LoopEngineTest {
         assertEquals(UserFacingErrors.CANCELLED, task.lastError)
         assertEquals(null, task.streamingText)
         assertEquals(null, task.finalAnswer)
+        assertNull(task.confirmDeadlineAt)
         assertEquals(0, port.createCalls.size)
         assertTrue(task.startedAt != null)
         assertTrue(task.endedAt != null && task.startedAt != null && task.endedAt!! >= task.startedAt!!)
@@ -621,6 +629,7 @@ class LoopEngineTest {
         }
         assertEquals(TaskStatus.COMPLETED, confirmed.status)
         assertEquals(1, port.createCalls.size)
+        assertNull(confirmed.confirmDeadlineAt)
 
         val rejectedPort = FakeCalendarPort()
         val rejectEngine = LoopEngine(
@@ -635,6 +644,45 @@ class LoopEngineTest {
         assertEquals(TaskStatus.FAILED, rejected.status)
         assertEquals(UserFacingErrors.CONFIRM_REJECTED, rejected.lastError)
         assertEquals(0, rejectedPort.createCalls.size)
+        assertNull(rejected.confirmDeadlineAt)
+    }
+
+    @Test
+    fun awaitingConfirmationSetsDeadlineAndTimeoutStillRejects() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val port = FakeCalendarPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.ToolCall(
+                    id = "cal-1",
+                    name = CalendarCreateTool.NAME,
+                    argsJson = """{"title":"开会","startIso":"2026-08-18T15:00:00+08:00"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(CalendarCreateTool.NAME to CalendarCreateTool(port)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        var awaitingDeadline: Long? = null
+        var awaitingSkew = Long.MAX_VALUE
+        val result = engine.run(AgentTask(taskId = "c-timeout", input = "约开会")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION && awaitingDeadline == null) {
+                val now = System.currentTimeMillis()
+                awaitingDeadline = snapshot.confirmDeadlineAt
+                awaitingSkew = snapshot.confirmDeadlineAt!! - now
+            }
+        }
+        assertNotNull(awaitingDeadline)
+        assertTrue(awaitingSkew >= CONFIRM_TIMEOUT_MS - 1_000L)
+        assertTrue(awaitingSkew <= CONFIRM_TIMEOUT_MS + 1_000L)
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.CONFIRM_REJECTED, result.lastError)
+        assertNull(result.confirmDeadlineAt)
+        assertEquals(0, port.createCalls.size)
     }
 
     @Test

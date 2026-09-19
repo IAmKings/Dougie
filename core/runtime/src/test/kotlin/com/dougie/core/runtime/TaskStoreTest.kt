@@ -49,10 +49,11 @@ class TaskStoreTest {
             AgentTask(
                 taskId = "live",
                 input = "查电量",
-                status = TaskStatus.THINKING,
+                status = TaskStatus.AWAITING_CONFIRMATION,
                 loopCount = 1,
                 startedAt = 1_000L,
                 conversationId = "other-thread",
+                confirmDeadlineAt = 1_700_000_060_000L,
             ),
         )
         val recovered = recoverInterrupted(store)
@@ -62,6 +63,7 @@ class TaskStoreTest {
         assertEquals(UserFacingErrors.INTERRUPTED, recovered.lastError)
         assertEquals("other-thread", recovered.conversationId)
         assertEquals(1_000L, recovered.startedAt)
+        assertNull(recovered.confirmDeadlineAt)
         val recoveredEnded = recovered.endedAt
         assertTrue(recoveredEnded != null && recoveredEnded >= 1_000L)
         assertEquals(TaskStatus.FAILED, store.listRecent(1).single().status)
@@ -396,9 +398,33 @@ class TaskStoreTest {
         )
         assertNull(restored.startedAt)
         assertNull(restored.endedAt)
+        assertNull(restored.confirmDeadlineAt)
         val encoded = TaskSnapshotCodec.encode(AgentTask(taskId = "old", input = "查电量"))
         assertTrue(!encoded.contains("startedAt"))
         assertTrue(!encoded.contains("endedAt"))
+        assertTrue(!encoded.contains("confirmDeadlineAt"))
+    }
+
+    @Test
+    fun snapshotRoundTripPreservesConfirmDeadlineAt() {
+        val original = AgentTask(
+            taskId = "awaiting",
+            input = "打开微信",
+            status = TaskStatus.AWAITING_CONFIRMATION,
+            confirmDeadlineAt = 1_700_000_060_000L,
+        )
+        val restored = TaskSnapshotCodec.decode(TaskSnapshotCodec.encode(original))
+        assertEquals(1_700_000_060_000L, restored.confirmDeadlineAt)
+        val encoded = TaskSnapshotCodec.encode(original)
+        assertTrue(encoded.contains("confirmDeadlineAt"))
+    }
+
+    @Test
+    fun snapshotDecodeWithoutConfirmDeadlineStaysNull() {
+        val restored = TaskSnapshotCodec.decode(
+            """{"taskId":"old","input":"查电量","status":"AWAITING_CONFIRMATION","loopCount":0,"maxLoops":8,"toolTrace":[],"finalAnswer":null,"lastError":null,"streamingText":null,"retrievedMemories":[],"attachments":[]}""",
+        )
+        assertNull(restored.confirmDeadlineAt)
     }
 
     @Test
