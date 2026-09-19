@@ -1,0 +1,1 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Do not mix play/sideload applicationIds; versionCode is 主*10000+次*100+补丁"}
