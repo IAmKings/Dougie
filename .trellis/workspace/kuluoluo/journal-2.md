@@ -47,3 +47,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 89: 思考→工具卡状态切换
+
+**Date**: 2026-09-19
+**Task**: 思考→工具卡状态切换
+**Branch**: `master`
+
+### Summary
+
+思考芯片收成循环标记、新工具卡只淡入不位移；同一张卡从正在调用切到已调用也是 150ms LinearOutSlowIn。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `372b81b` | (see git log) |
+
+### Status
+
+[OK] **Completed**
