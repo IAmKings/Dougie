@@ -89,3 +89,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 91: Chat↔任务页共享元素转场
+
+**Date**: 2026-09-19
+**Task**: Chat↔任务页共享元素转场
+**Branch**: `master`
+
+### Summary
+
+点任务卡时卡接到该轮用户气泡 300ms；底栏和返回淡入；其它页仍立刻切。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `139c750` | (see git log) |
+
+### Status
+
+[OK] **Completed**
