@@ -77,6 +77,7 @@ import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -1040,6 +1041,14 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
                         color = DougieColors.OnSurface,
                     )
                 }
+            }
+            if (entry.status.showsToolProgress()) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    color = DougieColors.StatusExecuting,
+                )
             }
             val resultJson = entry.resultJson
             Text(

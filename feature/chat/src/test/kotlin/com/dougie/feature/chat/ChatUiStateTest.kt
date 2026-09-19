@@ -404,6 +404,14 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun showsToolProgressOnlyWhilePendingOrExecuting() {
+        assertTrue(ToolTraceStatus.PENDING.showsToolProgress())
+        assertTrue(ToolTraceStatus.EXECUTING.showsToolProgress())
+        assertFalse(ToolTraceStatus.SUCCESS.showsToolProgress())
+        assertFalse(ToolTraceStatus.FAILED.showsToolProgress())
+    }
+
+    @Test
     fun toolCardsUseGenericNamesInsteadOfHardcodedBattery() {
         assertEquals("电池工具", toolDisplayName("battery"))
         assertEquals("时间工具", toolDisplayName("time"))

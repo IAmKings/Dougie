@@ -4,6 +4,7 @@ import com.dougie.core.model.AgentTask
 import com.dougie.core.model.RiskLevel
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
+import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.formatTaskDuration
 
 const val BATTERY_EXAMPLE = "我现在手机还有多少电？"
@@ -160,6 +161,9 @@ data class ChatItemEnter(
     val playKeys: Set<String>,
     val seenKeys: Set<String>,
 )
+
+fun ToolTraceStatus.showsToolProgress(): Boolean =
+    this == ToolTraceStatus.PENDING || this == ToolTraceStatus.EXECUTING
 
 fun ChatItem.usesBubbleEnter(): Boolean = when (this) {
     is ChatItem.UserMessage,
