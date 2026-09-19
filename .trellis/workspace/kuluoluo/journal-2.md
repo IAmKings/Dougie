@@ -152,3 +152,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 94: 确认卡倒计时
+
+**Date**: 2026-09-19
+**Task**: 确认卡倒计时
+**Branch**: `master`
+
+### Summary
+
+等确认时卡上显示剩余秒数，截止时刻写在任务上所以回对话不重置；到点仍由引擎拒绝。真机验收通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ce4f0b5` | (see git log) |
+
+### Status
+
+[OK] **Completed**
