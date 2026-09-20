@@ -7,7 +7,7 @@
 | 整合策略 | V2.0 主干 + 吸收可行性评审全部修正；V1.0 仅作背景与演进记录 |
 | 日期 | 2026-08-21 |
 | 状态 | 执行验收基线 |
-| 平台 | Android 10+，首期重点适配 Android 13–16 |
+| 平台 | Android 8.0+（`minSdk` 26），首期重点适配 Android 13–16 |
 | 产品形态 | Android 原生 App + Agent Runtime |
 | 核心理念 | Local-first / Permission-first / Tool-driven / Recoverable |
 | 首期目标 | 完成一个可稳定运行的本地优先移动 Agent MVP |
@@ -117,6 +117,10 @@
 
 V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking/non-thinking、Q8 ≈639MB / Q4 ≈420–470MB）。真机上 llama.cpp Vulkan 无法稳定逐 token 生成，CPU 自回归达不到规则 E 的 P95 ≤ 500ms；该路径与「本 Tool 是路由器、MVP 不做完整端侧 LLM 产品化」冲突。**V2.1.11 起以 ONNX 编码器分类为主路径**（上表）。Qwen3-0.6B GGUF、Qwen2.5-0.5B GGUF、llama.cpp JNI 均降为历史方案，不再作为实现与验收依据。
 
+### V2.1 现状对齐（v0.1.4，不 bump 功能版本）
+
+2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。不把打字机、M3 双主题、Compose UI 五态测试、商店上架标成完成。
+
 ### V2.1 追加决策（1 项：关键用户流程 / UI 规范 / 技术方案补全）
 
 | # | 决策 | 说明 | 影响章节 |
@@ -185,7 +189,7 @@ Dougie 是一个运行在 Android 手机上的 Local-first Agent Runtime，使 A
 
 - Conversation Memory
 - FTS5
-- Semantic Memory 接口（MVP 实现为 FTS5 全文检索 + 关键词匹配；向量语义检索进入 Beta，见 §7.2）
+- Semantic Memory 接口（已交付向量语义检索；embedding 未就绪时 FTS 降级，见 §7.2）
 - Memory Gate
 - Fact 写入
 - Fact 删除
@@ -218,7 +222,7 @@ SMS、Call、Accessibility 自动化（含屏幕点击/滑动操作，见 §6.7�
 - Error/Retry
 - Debug/Developer 页面
 
-> 说明：手机端"终端风/黑客风"主题用 Compose UI 自绘实现（等宽字体、ANSI 配色模拟、打字机动画），属于 `:feature:chat` 的 UI 主题工作；开发期终端控制台由独立的 `:cli` 模块承担（见 §17.3）。mosaic（JVM-only + JLine 3）无法运行在 Android，不得用于 App 内主题功能。
+> 说明：手机端"终端风/黑客风"主题用 Compose UI 自绘实现（等宽字体、ANSI 配色模拟、打字机动画），属于 `:feature:chat` 的 UI 主题工作；**现网未做打字机 / M3 双主题**。开发期终端控制台由独立的 `:cli` 模块承担（见 §17.3）。mosaic（JVM-only + JLine 3）无法运行在 Android，不得用于 App 内主题功能。
 
 ## 3.2 明确非目标
 
@@ -236,7 +240,6 @@ MVP 不做：
 - 完整端侧 LLM 产品化
 - 无限上下文
 - 自动获得 Android 敏感权限
-- 向量语义检索（MVP 阶段用 FTS5 + 关键词替代，Beta 引入）
 - 桌面端（长期规划，优先级后置于 Android 端与 `:cli` 稳定发布之后，见 §15）
 
 这些能力可以作为后续版本，但不能成为 MVP 交付条件。
@@ -255,7 +258,7 @@ MVP 不做：
 
 1. 本地搜索历史 Conversation。
 2. FTS 找到候选。
-3. Semantic Memory（MVP 实现为 FTS5 检索，Beta 升级为向量检索）找到相关事实。
+3. Semantic Memory（已交付向量语义检索；embedding 未就绪时 FTS 降级）找到相关事实。
 4. LLM 生成答案。
 5. 不发送云端则不产生数据出境。
 
@@ -867,11 +870,13 @@ updated_at
 expires_at
 ```
 
-**MVP 实现策略（评审修正 #5、建议 #2）：**
+**现网（v0.1.4）**：向量语义检索已交付；embedding 未就绪时走 FTS 降级。下列仍为 MVP 当时的降级策略（评审修正 #5），不是「尚未做向量」。
 
-- MVP 阶段 Semantic Memory 不需要完整的 embedding + vector search：先用 **FTS5 全文检索 + 关键词匹配** 实现"找到历史事实"。
-- `embedding` 字段保留于数据模型（`nullable`），Beta 阶段再引入向量语义检索。
-- 若 Beta 阶段实现向量检索，优先考虑 ONNX Runtime 本地跑 embedding 模型 + 暴力余弦相似度（事实量 < 1K 时性能可接受），避免引入额外 Vector DB 依赖；事实数量 > 5K 时再考虑索引优化。
+**MVP 实现策略（评审修正 #5、建议 #2；以下为当时降级，不是现网 TODO）：**
+
+- 当时 MVP：Semantic Memory 不需要完整的 embedding + vector search，先用 **FTS5 全文检索 + 关键词匹配** 实现"找到历史事实"。
+- `embedding` 字段当时保留于数据模型（`nullable`），计划 Beta 再引入向量；**现网已引入**（见上）。
+- 向量实现优先 ONNX Runtime 本地 embedding + 暴力余弦相似度（事实量 < 1K），避免额外 Vector DB；事实数量 > 5K 时再考虑索引优化。
 - 不引入 sqlite-vec（Android 需 NDK 编译、性能未经验证）与 ObjectBox（增加包体积与学习成本）作为 MVP 依赖。
 
 ## 7.3 Memory 必须可追溯
@@ -1187,7 +1192,7 @@ Final Answer
 
 ## 11.4 设计令牌（Design Tokens，Material Design 3）
 
-基于 Jetpack Compose + Material Design 3（§17.1）。令牌命名对齐 M3，明暗双主题。
+基于 Jetpack Compose + Material Design 3（§17.1）。令牌命名对齐 M3，明暗双主题（**设计规格**；现网未做暗色主题 / 打字机）。
 
 | 类别 | 令牌 | 值（亮色 / 暗色） | 用途 |
 |---|---|---|---|
@@ -1211,9 +1216,9 @@ Final Answer
 
 | 状态 | 容器 | 内容 | 验收点 |
 |---|---|---|---|
-| User | primary 容器，右对齐 | 用户文本 / 语音转写 | 语音消息显示来源标注 |
+| User | primary 容器，右对齐 | 用户文本 / 语音转写 | 语音消息显示来源标注「语音转写」 |
 | Thinking | surface-container，左对齐 | 状态文字(Thinking/Calling X) | 对应 §11.1 流转图，非"正在思考…" |
-| Tool | surface-container + 图标 | Tool 名 + 参数摘要 + 结果 | 可展开查看结构化 Tool Result |
+| Tool | surface-container + 图标 | Tool 名 + 风险等级；默认收起 | 点展开查看结构化 Tool Result；不要常驻 dump 参数 / JSON |
 | Confirm | **Confirm Card**（见下） | 高风险 Tool 待确认 | 必须用户显式确认/拒绝 |
 | Final | surface-container，左对齐 | Final Answer + 来源引用 | 引用 Memory 时显示来源(US-001) |
 
@@ -1279,7 +1284,7 @@ Final Answer
 
 ### Task History 屏（§11.3）
 
-- 列表按时间倒序；每项可展开查看完整 Loop 链与 Tool Result；失败项 error 色状态徽标 + 错误码。
+- 列表按时间倒序；每项可展开查看 Tool 名 + 成功/失败/进行中（不要 dump 参数 / `resultJson`）；失败项 error 色状态徽标 + 错误码。
 
 ---
 
@@ -1458,7 +1463,7 @@ error_code
 
 - FTS5
 - Memory Gate
-- Semantic Memory Interface（MVP 实现为 FTS5 + 关键词匹配，见 §7.2）
+- Semantic Memory Interface（当时 MVP 为 FTS5 + 关键词匹配；现网向量见 Phase 5 / §7.2）
 - Memory UI
 - Memory Delete
 - Source Tracking
@@ -1506,17 +1511,19 @@ error_code
 
 ## Phase 5：Advanced（Beta）
 
-- Accessibility（含 FGA 式屏幕点击/滑动自动化 `TapSwipeTool`，侧载变体，§6.7/§10.2）
-- 离线中文 ASR（语音输入，sherpa-onnx，Paraformer-zh 主选 / SenseVoiceSmall 备选，§6.8）
-- 离线 TTS（语音输出，sherpa-onnx VITS 系为主 / 系统 TTS 降级，§6.9）
-- 本地意图理解（`IntentClassifierTool`，ONNX 中文编码器，离线意图路由，§6.10）
-- Local LLM
-- Notification
-- Quick Settings
-- Floating Widget
-- Scheduled Agent
-- Multi-modal Context
-- 向量语义检索（Semantic Memory 升级）
+曾标 Beta。下列为 **v0.1.4 现网**对照（渠道/边界写在条目上；测量门见 §16.2，交付 ≠ 规则 D / Kokoro 过门）：
+
+- Accessibility（含 FGA 式屏幕点击/滑动自动化 `TapSwipeTool`，侧载变体，§6.7/§10.2）— **已交付，仅 sideload**；Play 包不含无障碍 / `TapSwipeTool`
+- 离线中文 ASR（语音输入，sherpa-onnx，Paraformer-zh 主选 / SenseVoiceSmall 备选，§6.8）— **已交付**，可选下载
+- 离线 TTS（语音输出，sherpa-onnx VITS 系为主 / 系统 TTS 降级，§6.9）— **已交付**，现网为 VITS（`vits-zh-hf-fanchen-C`），**不是 Kokoro**
+- 本地意图理解（`IntentClassifierTool`，ONNX 中文编码器，离线意图路由，§6.10）— **已交付**；规则 E 真机已过门
+- Local LLM — **已交付，仅 sideload**：设置中下载并激活后启用；Play 不含端侧对话权重
+- Notification — **未做**自动读通知（不是 NotificationListener）。任务进度 / 定时提醒 shade 已有，不计入本项
+- Quick Settings — **已交付**：快捷设置磁贴打开 Chat，不 `submit`
+- Floating Widget — **已交付，仅 sideload** 悬浮球
+- Scheduled Agent — **已交付**：到点通知 + 预填草稿，不自动 `submit`
+- Multi-modal Context — **未做**完整多模态 / 端侧视觉 LLM；截屏与相册附件已有（像素不进云端 prompt）
+- 向量语义检索（Semantic Memory 升级）— **已交付**；embedding 未就绪时走 FTS 降级
 
 ## 长期规划：桌面端（决策 #18）
 
@@ -1585,7 +1592,7 @@ Process Death 任务恢复（UF-05）→ 执行中杀进程后重开，提示继
 | Phase 2 | 用户能够让 Agent 从历史对话中找回至少一个相关事实 |
 | Phase 3 | 所有 Tool 均经过权限、Policy、Schema 验证 |
 | Phase 4 | 在 Tool 执行前后杀进程，不产生重复副作用；Task 可重新提交或返回明确错误状态 |
-| Phase 5（Beta，非 MVP 阻塞） | ASR 达标（CER ≤ 5% + 端到端成功率 ≥ 95%，规则 D）；TTS 按规则 A/B/C 定标（包体预算 ≤ 400MB、Kokoro 门槛、降级边界）；`TapSwipeTool` 侧载包 onboarding 与 L3 确认链完整（§6.7–§6.9、§10.2） |
+| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS，**未**以 Kokoro 过规则 B。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。完整多模态、自动读通知、打字机 / M3 双主题、Compose UI 五态测试、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
 
 ## 16.3 Definition of Done
 
@@ -1649,7 +1656,7 @@ Memory Gate
  ↓
 Fact
  ↓
-Persist（MVP 无 Embedding，Beta 加 Embedding）
+Persist（现网向量检索；embedding 未就绪时 FTS）
  ↓
 Local Memory
  ↓
@@ -1698,16 +1705,16 @@ Process Death Recovery 的边界明确为：
 | Async | Coroutines + Flow |
 | DI | Hilt |
 | DB | Room + SQLite FTS5 |
-| Vector | 抽象 VectorStore 接口；MVP 不引入 Vector DB，事实量 < 1K 时用暴力余弦相似度，> 5K 再考虑索引优化（评审修正 #5） |
+| Vector | 现网 ONNX embedding + 余弦；embedding 未就绪走 FTS。不引入独立 Vector DB（评审修正 #5） |
 | Network | Ktor Client |
 | Serialization | Kotlinx Serialization |
 | Background | WorkManager |
 | Secure Storage | Android Keystore |
-| Local LLM | 完整端侧对话 LLM 仍为 Beta 后置（不在本 Tool）；可选栈另议 |
+| Local LLM | **已交付，仅 sideload**：设置下载 LiteRT-LM 后启用；Play 不含对话权重。完整「端侧 LLM 产品化」仍非 MVP 目标（§3.2） |
 | 屏幕感知 | MediaProjection + OpenCV 模板匹配（MVP，Phase 3 验证包体积，见 §6.7） |
-| 离线 ASR | sherpa-onnx + Paraformer-zh int8（主选）/ SenseVoiceSmall int8（备选），Beta，见 §6.8 |
-| 离线 TTS | sherpa-onnx VITS 系（`vits-zh-hf-fanchen-C` 主选）/ Kokoro（备选）；Android 原生 TTS 仅降级，Beta，见 §6.9 |
-| 本地意图理解 | 中文编码器 ONNX + 分类头（MiniRBT 量级，复用 ONNX Runtime），Beta，独立可选下载约 10–20MB，见 §6.10 |
+| 离线 ASR | **已交付**（可选下载）：sherpa-onnx + Paraformer-zh int8（主选）/ SenseVoiceSmall int8（备选），见 §6.8。规则 D 500 条真机集未闭合 |
+| 离线 TTS | **已交付**：现网 sherpa-onnx VITS（`vits-zh-hf-fanchen-C`）；系统 TTS 仅降级。**不是 Kokoro**（规则 B 未过门），见 §6.9 |
+| 本地意图理解 | **已交付**：中文编码器 ONNX + 分类头（MiniRBT 量级，复用 ONNX Runtime），独立可选下载约 10–20MB，见 §6.10。规则 E 真机已过门 |
 | Testing | JUnit + AndroidX Test |
 | CLI（开发工具） | mosaic + kotlinx-cli（JVM-only，不进 APK，见 §17.3） |
 
@@ -1855,7 +1862,7 @@ sealed interface PolicyDecision {
 ```kotlin
 /** Memory 读写 + 治理。写入必经 Memory Gate(§7.4);所有记忆可追溯(§7.3)。 */
 sealed interface MemoryStore {
-    /** 检索。MVP 用 FTS5, Beta 升级向量(决策 #6, ADR 0006)。 */
+    /** 检索。现网向量语义检索；embedding 未就绪时 FTS 降级（§7.2）。 */
     suspend fun search(query: String, limit: Int): List<MemoryEntry>
     /** 写入。经 Gate 判定 worthRemembering/conflict/敏感过滤(§7.4/§7.5)。 */
     suspend fun store(candidate: MemoryCandidate): GateResult
@@ -2002,8 +2009,8 @@ sequenceDiagram
 | Accessibility 不稳定 | 高 | Beta 能力；Play 审核要求提前知悉（§9.5） |
 | Prompt Injection | 高 | Policy + Untrusted Data + ToolCallSanitizer |
 | Cloud Privacy | 高 | Explicit Egress |
-| Local LLM 性能 | 高 | MVP 后置 |
-| Vector DB 兼容性 | 中 | MVP 用 FTS5 替代，VectorStore 抽象留接口（评审修正 #5） |
+| Local LLM 性能 | 高 | MVP 不阻塞于此；sideload 已交付 LiteRT-LM（Play 无对话权重） |
+| Vector DB 兼容性 | 中 | 不引入独立 Vector DB；现网 ONNX embedding + 余弦，未就绪走 FTS（评审修正 #5） |
 | Tool 重复执行 | 高 | Idempotency（Phase 1 起实现） |
 | Memory 错误事实 | 中 | Confidence + Source |
 | Context 超限 | 中 | Budget + Ranking + 本地 Token 估算 |
