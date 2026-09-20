@@ -215,3 +215,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 97: Chat 工具卡展开
+
+**Date**: 2026-09-20
+**Task**: Chat 工具卡展开
+**Branch**: `master`
+
+### Summary
+
+对话工具卡默认收起，有 resultJson 才展开看缩进结果；电量成功仍保留短摘要。确认卡和任务页展开未改。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `013dee0` | (see git log) |
+
+### Status
+
+[OK] **Completed**
