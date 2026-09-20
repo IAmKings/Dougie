@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend layer index for Chat UserBubble"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "ChatItem.UserMessage fields; speakReply already on AgentTask; listKey must stay {taskId}:user"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Agent duration/citation 12sp pattern; sharedBounds on user bubble text only"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM ChatUiStateTest; no Compose UI test"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "speakReply already snapshotted; do not bump SQLite for optional JSON fields"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse speakReply instead of a second voice-origin column"}

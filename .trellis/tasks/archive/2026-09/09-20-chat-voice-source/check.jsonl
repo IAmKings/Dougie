@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest mapping; no Compose UI test for the caption"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Caption outside bubble; sharedBounds must not wrap 语音转写"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "sourceLabel from speakReply only; listKey unchanged"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Caption is fixed copy, never the transcript"}
