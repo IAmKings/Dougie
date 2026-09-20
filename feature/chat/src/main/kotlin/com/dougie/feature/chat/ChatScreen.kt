@@ -1,5 +1,6 @@
 package com.dougie.feature.chat
 
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
@@ -328,12 +329,22 @@ fun ChatScreen(
         )
         Box(modifier = Modifier.weight(1f)) {
             var seenKeys by remember { mutableStateOf<Set<String>?>(null) }
+            var typewriterSnapKeys by remember { mutableStateOf<Set<String>?>(null) }
+            var typewriterFeedFirstKey by remember { mutableStateOf<String?>(null) }
             var confirmEnter by remember {
                 mutableStateOf(ConfirmEnter(play = false, initialized = false, lastKey = null))
             }
             var lastConfirmCard by remember { mutableStateOf<ChatItem.ConfirmCard?>(null) }
             var exitingCard by remember { mutableStateOf<ChatItem.ConfirmCard?>(null) }
             val enter = nextChatItemEnter(uiState.items, seenKeys)
+            val feedItems = chatFeedItemsWithoutConfirm(uiState.items)
+            val feedFirstKey = feedItems.firstOrNull()?.listKey
+            val snapKeys = nextTypewriterSnapKeys(
+                items = uiState.items,
+                seeded = typewriterSnapKeys,
+                previousFirstKey = typewriterFeedFirstKey,
+                firstKey = feedFirstKey,
+            )
             val confirmCard = chatConfirmCard(uiState.items)
             val nextConfirm = nextConfirmEnter(
                 confirmKey = confirmCard?.listKey,
@@ -352,6 +363,8 @@ fun ChatScreen(
             }
             SideEffect {
                 seenKeys = enter.seenKeys
+                typewriterSnapKeys = snapKeys
+                typewriterFeedFirstKey = feedFirstKey
                 confirmEnter = nextConfirm
                 if (confirmCard != null) {
                     lastConfirmCard = confirmCard
@@ -367,13 +380,14 @@ fun ChatScreen(
                 )
             } else {
                 ChatFeed(
-                    items = chatFeedItemsWithoutConfirm(uiState.items),
+                    items = feedItems,
                     playKeys = enter.playKeys,
                     listState = listState,
                     canRetry = uiState.canRetry,
                     canSpeakReply = uiState.canSpeakReply,
                     ttsReady = ttsReady,
                     speakingReply = speakingReply,
+                    typewriterSnapKeys = snapKeys,
                     onRetry = onRetry,
                     onStopReply = onStopReply,
                     onSpeakReply = onSpeakReply,
@@ -685,6 +699,7 @@ private fun ChatFeed(
     canSpeakReply: Boolean,
     ttsReady: Boolean,
     speakingReply: Boolean,
+    typewriterSnapKeys: Set<String>,
     onRetry: () -> Unit,
     onStopReply: () -> Unit,
     onSpeakReply: (String) -> Unit,
@@ -722,6 +737,8 @@ private fun ChatFeed(
                     ChatItemEnterMotion(playEnter) {
                         AgentBubble(
                             text = item.text,
+                            listKey = item.listKey,
+                            typewriterSnap = item.listKey in typewriterSnapKeys,
                             memorySources = item.memorySources,
                             durationLabel = item.durationLabel,
                             showRetry = showRetry,
@@ -916,6 +933,8 @@ private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modi
 @Composable
 private fun AgentBubble(
     text: String,
+    listKey: String,
+    typewriterSnap: Boolean = false,
     memorySources: List<String> = emptyList(),
     durationLabel: String? = null,
     showRetry: Boolean = false,
@@ -925,10 +944,45 @@ private fun AgentBubble(
     onStopReply: () -> Unit = {},
     onSpeakReply: (String) -> Unit = {},
 ) {
+    val reduceMotion = Settings.Global.getFloat(
+        LocalContext.current.contentResolver,
+        Settings.Global.ANIMATOR_DURATION_SCALE,
+        1f,
+    ) == 0f
+    val snap = typewriterSnap || reduceMotion || snapsAgentTypewriter(text)
+    var displayed by remember(listKey) {
+        mutableStateOf(
+            nextTypewriterShown(
+                shown = "",
+                target = text,
+                firstFrame = snap,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+    }
+    LaunchedEffect(listKey, text, snap) {
+        val origin = displayed
+        if (origin == text) return@LaunchedEffect
+        val startedAt = SystemClock.elapsedRealtime()
+        while (true) {
+            val elapsed = SystemClock.elapsedRealtime() - startedAt
+            val next = nextTypewriterShown(
+                shown = origin,
+                target = text,
+                firstFrame = snap,
+                reduceMotion = false,
+                elapsedMs = elapsed,
+            )
+            displayed = next
+            if (next == text) break
+            delay(TYPEWRITER_TICK_MS)
+        }
+    }
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
             Text(
-                text = text,
+                text = displayed,
                 color = DougieColors.OnSurface,
                 fontSize = 16.sp,
                 modifier = Modifier

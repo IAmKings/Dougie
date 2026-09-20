@@ -1283,6 +1283,340 @@ class ChatUiStateTest {
         assertEquals(seen, finalEnter.seenKeys)
     }
 
+    @Test
+    fun firstFrameAndReduceMotionSnapTypewriterToTarget() {
+        val target = "你现在的手机电量是 63%。"
+        assertEquals(
+            target,
+            nextTypewriterShown(
+                shown = "",
+                target = target,
+                firstFrame = true,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+        assertEquals(
+            target,
+            nextTypewriterShown(
+                shown = "",
+                target = target,
+                firstFrame = false,
+                reduceMotion = true,
+                elapsedMs = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun typewriterNoopsWhenShownEqualsTarget() {
+        val text = "中午。"
+        assertEquals(
+            text,
+            nextTypewriterShown(
+                shown = text,
+                target = text,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun smallPrefixExtensionSnapsImmediately() {
+        val shown = "你现在的"
+        val target = "你现在的手机"
+        assertTrue(target.codePointCount(shown.length, target.length) <= TYPEWRITER_SSE_MAX_CODE_POINTS)
+        assertEquals(
+            target,
+            nextTypewriterShown(
+                shown = shown,
+                target = target,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+        val eight = "abcdefgh"
+        assertEquals(TYPEWRITER_SSE_MAX_CODE_POINTS, eight.codePointCount(0, eight.length))
+        assertEquals(
+            eight,
+            nextTypewriterShown(
+                shown = "",
+                target = eight,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun largePrefixJumpRevealsByElapsedAndCapsAt800ms() {
+        val nine = "一二三四五六七八九"
+        assertEquals(9, nine.codePointCount(0, nine.length))
+        assertEquals(
+            "",
+            nextTypewriterShown(
+                shown = "",
+                target = nine,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+        assertEquals(
+            "一",
+            nextTypewriterShown(
+                shown = "",
+                target = nine,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = TYPEWRITER_TICK_MS,
+            ),
+        )
+        assertEquals(
+            nine,
+            nextTypewriterShown(
+                shown = "",
+                target = nine,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = 9 * TYPEWRITER_TICK_MS,
+            ),
+        )
+
+        val dumped = "a".repeat(40)
+        val half = nextTypewriterShown(
+            shown = "",
+            target = dumped,
+            firstFrame = false,
+            reduceMotion = false,
+            elapsedMs = TYPEWRITER_MAX_MS / 2,
+        )
+        assertEquals(20, half.codePointCount(0, half.length))
+        assertEquals(
+            dumped,
+            nextTypewriterShown(
+                shown = "",
+                target = dumped,
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = TYPEWRITER_MAX_MS,
+            ),
+        )
+    }
+
+    @Test
+    fun streamedPrefixThenDumpTypesOnlyTheRemainder() {
+        val shown = "你现在的"
+        val target = "你现在的手机电量是百分之六十三左右。"
+        val remaining = target.codePointCount(shown.length, target.length)
+        assertTrue(remaining > TYPEWRITER_SSE_MAX_CODE_POINTS)
+        val stepped = nextTypewriterShown(
+            shown = shown,
+            target = target,
+            firstFrame = false,
+            reduceMotion = false,
+            elapsedMs = TYPEWRITER_TICK_MS,
+        )
+        assertTrue(stepped.startsWith(shown))
+        assertTrue(target.startsWith(stepped))
+        assertTrue(stepped.length > shown.length)
+    }
+
+    @Test
+    fun nonPrefixReplacementSnapsToTarget() {
+        assertEquals(
+            "任务失败：超时",
+            nextTypewriterShown(
+                shown = "你现在的",
+                target = "任务失败：超时",
+                firstFrame = false,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun typewriterStepsByUnicodeScalarsNotUtf16Surrogates() {
+        val thumbs = "\uD83D\uDC4D"
+        val target = "01234567" + thumbs + "9ABCDEF"
+        assertEquals(16, target.codePointCount(0, target.length))
+        val naturalMs = 16 * TYPEWRITER_TICK_MS
+        val elapsedForNine = 9 * naturalMs / 16
+        val shown = nextTypewriterShown(
+            shown = "",
+            target = target,
+            firstFrame = false,
+            reduceMotion = false,
+            elapsedMs = elapsedForNine,
+        )
+        assertEquals(9, shown.codePointCount(0, shown.length))
+        assertTrue(shown.endsWith(thumbs))
+        assertFalse(shown.endsWith("\uD83D"))
+    }
+
+    @Test
+    fun failedAgentCopySnapsTypewriter() {
+        assertTrue(snapsAgentTypewriter("任务失败：${UserFacingErrors.LLM_EMPTY_REPLY}"))
+        assertFalse(snapsAgentTypewriter("你现在的手机电量是 63%。"))
+        val failed = AgentTask(
+            taskId = "t",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.LLM_EMPTY_REPLY,
+        ).toChatUiState().items.last() as ChatItem.AgentMessage
+        assertTrue(snapsAgentTypewriter(failed.text))
+    }
+
+    @Test
+    fun firstFrameTypewriterSnapSeedsOffscreenAgentKeys() {
+        val items = listOf(
+            ChatItem.UserMessage("旧问", listKey = "old:user"),
+            ChatItem.AgentMessage("旧答一整段。", listKey = "old:agent"),
+            ChatItem.UserMessage("现在几点了？", listKey = "t:user"),
+            ChatItem.Thinking(1, live = false, listKey = "t:thinking-1"),
+            ChatItem.ToolCard(
+                ToolTraceEntry(
+                    toolCallId = "time-1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+                listKey = "t:tool-time-1",
+            ),
+            ChatItem.ConfirmCard(
+                toolName = "js_eval",
+                argsJson = "{}",
+                riskLevel = RiskLevel.L4,
+                toolCallId = "c1",
+                listKey = "t:confirm-c1",
+            ),
+            ChatItem.AgentMessage("中午。", durationLabel = "2秒", listKey = "t:agent"),
+        )
+        val seeded = nextTypewriterSnapKeys(items, seeded = null)
+        assertEquals(setOf("old:agent", "t:agent"), seeded)
+        assertFalse("t:user" in seeded)
+        assertFalse("t:thinking-1" in seeded)
+        assertFalse("t:tool-time-1" in seeded)
+        assertFalse("t:confirm-c1" in seeded)
+        assertEquals(
+            "旧答一整段。",
+            nextTypewriterShown(
+                shown = "",
+                target = "旧答一整段。",
+                firstFrame = "old:agent" in seeded,
+                reduceMotion = false,
+                elapsedMs = 0L,
+            ),
+        )
+    }
+
+    @Test
+    fun emptyThenSendDoesNotSnapNewAgentTypewriter() {
+        val seed = nextTypewriterSnapKeys(items = emptyList(), seeded = null)
+        assertEquals(emptySet<String>(), seed)
+
+        val userFirstKey = "n:user"
+        val afterUser = nextTypewriterSnapKeys(
+            items = listOf(ChatItem.UserMessage("你好", listKey = userFirstKey)),
+            seeded = seed,
+            previousFirstKey = null,
+            firstKey = userFirstKey,
+        )
+        assertEquals(emptySet<String>(), afterUser)
+
+        val dumped = nextTypewriterSnapKeys(
+            items = listOf(
+                ChatItem.UserMessage("你好", listKey = userFirstKey),
+                ChatItem.AgentMessage("你现在的手机电量是 63%。", listKey = "n:agent"),
+            ),
+            seeded = afterUser,
+            previousFirstKey = userFirstKey,
+            firstKey = userFirstKey,
+        )
+        assertEquals(emptySet<String>(), dumped)
+        assertFalse("n:agent" in dumped)
+    }
+
+    @Test
+    fun emptyListClearsTypewriterSnapKeys() {
+        val cleared = nextTypewriterSnapKeys(
+            items = emptyList(),
+            seeded = setOf("old:agent"),
+            previousFirstKey = "old:user",
+            firstKey = null,
+        )
+        assertEquals(emptySet<String>(), cleared)
+    }
+
+    @Test
+    fun emptyThenLoadedWindowSnapsPastAgentKeys() {
+        val empty = nextTypewriterSnapKeys(
+            items = emptyList(),
+            seeded = emptySet(),
+            previousFirstKey = null,
+            firstKey = null,
+        )
+        assertEquals(emptySet<String>(), empty)
+        val loaded = nextTypewriterSnapKeys(
+            items = listOf(
+                ChatItem.UserMessage("B问", listKey = "b:user"),
+                ChatItem.AgentMessage("B答一整段。", listKey = "b:agent"),
+            ),
+            seeded = empty,
+            previousFirstKey = null,
+            firstKey = "b:user",
+        )
+        assertEquals(setOf("b:agent"), loaded)
+    }
+
+    @Test
+    fun firstKeyChangeReseedsTypewriterSnapKeys() {
+        val windowA = listOf(
+            ChatItem.UserMessage("A问", listKey = "a:user"),
+            ChatItem.AgentMessage("A答一整段。", listKey = "a:agent"),
+        )
+        val seededA = nextTypewriterSnapKeys(windowA, seeded = null, firstKey = "a:user")
+        assertEquals(setOf("a:agent"), seededA)
+
+        val windowB = listOf(
+            ChatItem.UserMessage("B问", listKey = "b:user"),
+            ChatItem.AgentMessage("B答一整段。", listKey = "b:agent"),
+        )
+        val seededB = nextTypewriterSnapKeys(
+            items = windowB,
+            seeded = seededA,
+            previousFirstKey = "a:user",
+            firstKey = "b:user",
+        )
+        assertEquals(setOf("b:agent"), seededB)
+        assertFalse("a:agent" in seededB)
+    }
+
+    @Test
+    fun sameWindowNewAgentDoesNotJoinTypewriterSnapKeys() {
+        val past = listOf(
+            ChatItem.UserMessage("旧问", listKey = "old:user"),
+            ChatItem.AgentMessage("旧答一整段。", listKey = "old:agent"),
+        )
+        val seeded = nextTypewriterSnapKeys(past, seeded = null, firstKey = "old:user")
+        val liveDump = nextTypewriterSnapKeys(
+            items = past + listOf(
+                ChatItem.UserMessage("新问", listKey = "n:user"),
+                ChatItem.AgentMessage("你现在的手机电量是 63%。", listKey = "n:agent"),
+            ),
+            seeded = seeded,
+            previousFirstKey = "old:user",
+            firstKey = "old:user",
+        )
+        assertEquals(setOf("old:agent"), liveDump)
+        assertFalse("n:agent" in liveDump)
+    }
+
     private fun fact(id: String, source: String) = MemoryEntry(
         id = id,
         content = "我叫小明，住在上海",

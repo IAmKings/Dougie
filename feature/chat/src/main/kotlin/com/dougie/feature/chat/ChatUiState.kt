@@ -115,7 +115,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         if (status == TaskStatus.FAILED && !error.isNullOrBlank()) {
             add(
                 ChatItem.AgentMessage(
-                    "任务失败：$error",
+                    "$AGENT_FAILURE_PREFIX$error",
                     durationLabel = terminalDurationLabel(),
                     listKey = itemKey("agent"),
                 ),
@@ -171,6 +171,60 @@ const val BUBBLE_ENTER_DURATION_MS = 200
 const val BUBBLE_ENTER_OFFSET_DP = 8
 const val TOOL_SWITCH_DURATION_MS = 150
 const val CONFIRM_OVERLAY_DURATION_MS = 250
+const val TYPEWRITER_TICK_MS = 24L
+const val TYPEWRITER_MAX_MS = 800L
+const val TYPEWRITER_SSE_MAX_CODE_POINTS = 8
+private const val AGENT_FAILURE_PREFIX = "任务失败："
+
+fun snapsAgentTypewriter(text: String): Boolean = text.startsWith(AGENT_FAILURE_PREFIX)
+
+fun nextTypewriterSnapKeys(
+    items: List<ChatItem>,
+    seeded: Set<String>?,
+    previousFirstKey: String? = null,
+    firstKey: String? = null,
+): Set<String> {
+    val current = items.mapNotNull { item ->
+        (item as? ChatItem.AgentMessage)?.listKey
+    }.toSet()
+    if (seeded == null) return current
+    if (items.isEmpty()) return emptySet()
+    if (previousFirstKey != null && firstKey != null && firstKey != previousFirstKey) {
+        return current
+    }
+    if (previousFirstKey == null && current.isNotEmpty()) {
+        return current
+    }
+    return seeded
+}
+
+fun nextTypewriterShown(
+    shown: String,
+    target: String,
+    firstFrame: Boolean,
+    reduceMotion: Boolean,
+    elapsedMs: Long,
+): String {
+    if (firstFrame || reduceMotion) return target
+    if (target == shown) return shown
+    if (!target.startsWith(shown)) return target
+    val remaining = target.codePointCount(shown.length, target.length)
+    if (remaining <= TYPEWRITER_SSE_MAX_CODE_POINTS) return target
+    val elapsed = elapsedMs.coerceAtLeast(0L)
+    if (elapsed >= TYPEWRITER_MAX_MS) return target
+    val extra = typewriterRevealCount(remaining, elapsed)
+    if (extra >= remaining) return target
+    val end = target.offsetByCodePoints(shown.length, extra)
+    return target.substring(0, end)
+}
+
+internal fun typewriterRevealCount(remainingScalars: Int, elapsedMs: Long): Int {
+    if (remainingScalars <= 0 || elapsedMs <= 0L) return 0
+    val naturalMs = remainingScalars.toLong() * TYPEWRITER_TICK_MS
+    val durationMs = minOf(TYPEWRITER_MAX_MS, naturalMs)
+    if (elapsedMs >= durationMs) return remainingScalars
+    return ((elapsedMs * remainingScalars) / durationMs).toInt()
+}
 
 data class ChatItemEnter(
     val playKeys: Set<String>,
@@ -266,7 +320,7 @@ fun AgentTask.toPastChatItems(): List<ChatItem> {
     if (status == TaskStatus.FAILED && !error.isNullOrBlank()) {
         items.add(
             ChatItem.AgentMessage(
-                "任务失败：$error",
+                "$AGENT_FAILURE_PREFIX$error",
                 durationLabel = terminalDurationLabel(),
                 listKey = itemKey("agent"),
             ),
