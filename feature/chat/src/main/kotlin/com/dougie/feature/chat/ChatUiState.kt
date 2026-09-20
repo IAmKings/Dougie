@@ -6,9 +6,18 @@ import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
 import com.dougie.core.model.formatTaskDuration
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 const val BATTERY_EXAMPLE = "我现在手机还有多少电？"
 const val TIME_EXAMPLE = "现在几点了？"
+
+@OptIn(ExperimentalSerializationApi::class)
+private val toolResultJson = Json {
+    prettyPrint = true
+    prettyPrintIndent = "  "
+}
 
 data class ChatUiState(
     val items: List<ChatItem> = emptyList(),
@@ -288,3 +297,27 @@ internal fun AgentTask.citationSources(): List<String> {
     }
     return seen.toList()
 }
+
+internal fun prettyToolResult(resultJson: String): String = try {
+    toolResultJson.encodeToString(toolResultJson.parseToJsonElement(resultJson))
+} catch (_: Exception) {
+    resultJson
+}
+
+internal fun collapsedToolResultSummary(toolName: String, resultJson: String?): String? {
+    if (resultJson == null || toolName != "battery") return null
+    return toolResultSummary(toolName, resultJson)
+}
+
+internal fun toolResultSummary(toolName: String, resultJson: String): String {
+    if (toolName != "battery") return resultJson
+    val percent = Regex(""""battery_percent"\s*:\s*(\d+)""").find(resultJson)?.groupValues?.get(1)
+    val charging = Regex(""""charging"\s*:\s*(true|false)""").find(resultJson)?.groupValues?.get(1)
+    return if (percent != null && charging != null) {
+        "$percent%, charging: $charging"
+    } else {
+        resultJson
+    }
+}
+
+internal fun batterySummary(resultJson: String): String = toolResultSummary("battery", resultJson)

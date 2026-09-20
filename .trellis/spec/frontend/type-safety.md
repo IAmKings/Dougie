@@ -6,7 +6,7 @@
 
 - Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `ConversationHit`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
 - UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `ChatItemEnter`, `ConfirmEnter`, `ConfirmExit`, `IntelligenceMark` enum, `HistoryItem`, `HistorySection`, `HistoryToolStep`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
-- JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files.
+- JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files. Chat `prettyToolResult` in `ChatUiState.kt` pretty-prints `ToolTraceEntry.resultJson` for the ToolCallCard expand block (two-space indent, illegal JSON unchanged); it must not decode `snapshot_json` or copy `argsSummary`.
 - Persistence codec is hand-written `TaskSnapshotCodec` (`ignoreUnknownKeys`). Do not switch Chat to decode `snapshot_json`.
 
 ## Type Organization
@@ -38,7 +38,7 @@ Compare user-facing errors to `UserFacingErrors.*` constants (`intelligenceMark`
 
 ## Common Patterns
 
-- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun formatTaskDuration()` (in `:core:model`, shared by Chat and History), `fun formatCompletedAt()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`, `fun nextChatItemEnter()`, `fun ChatItem.usesBubbleEnter()`, `fun ToolTraceStatus.showsToolProgress()`, `fun chatConfirmCard()`, `fun chatFeedItemsWithoutConfirm()`, `fun nextConfirmEnter()`, `fun nextConfirmExit()`, `fun userBubbleSharedKey()`. Do not pass `firstKey` into `nextChatItemEnter` — empty-window send would skip enter. Do not merge `Thinking` and `ToolCard`. Do not add `stepName` to `ToolTraceEntry`; High Risk step name is `toolDisplayName` in the ToolCard title.
+- Mapper functions as top-level Kotlin: `fun AgentTask?.toChatUiState()`, `fun AgentTask.toHistoryItem()`, `fun formatTaskDuration()` (in `:core:model`, shared by Chat and History), `fun formatCompletedAt()`, `fun toHistorySections()`, `fun conversationDisplayName()`, `fun currentConversationTitle()`, `fun AgentTask.toDebugTaskSnapshot()`, `fun nextChatItemEnter()`, `fun ChatItem.usesBubbleEnter()`, `fun ToolTraceStatus.showsToolProgress()`, `fun chatConfirmCard()`, `fun chatFeedItemsWithoutConfirm()`, `fun nextConfirmEnter()`, `fun nextConfirmExit()`, `fun userBubbleSharedKey()`, `fun prettyToolResult()`, `fun collapsedToolResultSummary()`. Do not pass `firstKey` into `nextChatItemEnter` — empty-window send would skip enter. Do not merge `Thinking` and `ToolCard`. Do not add `stepName` to `ToolTraceEntry`; High Risk step name is `toolDisplayName` in the ToolCard title.
 - `StateFlow` + `map` / `combine` + `stateIn(viewModelScope, WhileSubscribed(5_000), initial)`.
 - `ViewModelProvider.Factory` unchecked cast is the existing DI style (no Hilt/Anvil in the project).
 - `IntelligenceMark` is computed in `:app` from prefs + `task.lastError`, then passed into `ChatRoute` — Chat does not read EncryptedSharedPreferences.

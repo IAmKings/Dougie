@@ -412,6 +412,62 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun prettyToolResultIndentsObject() {
+        val pretty = prettyToolResult("""{"battery_percent":63,"charging":true}""")
+        assertEquals(
+            """
+            {
+              "battery_percent": 63,
+              "charging": true
+            }
+            """.trimIndent(),
+            pretty,
+        )
+    }
+
+    @Test
+    fun prettyToolResultIndentsArray() {
+        val pretty = prettyToolResult("""[{"ok":true},{"ok":false}]""")
+        assertEquals(
+            """
+            [
+              {
+                "ok": true
+              },
+              {
+                "ok": false
+              }
+            ]
+            """.trimIndent(),
+            pretty,
+        )
+    }
+
+    @Test
+    fun prettyToolResultLeavesInvalidJsonUnchanged() {
+        val raw = """{not-json, "oops""""
+        assertEquals(raw, prettyToolResult(raw))
+    }
+
+    @Test
+    fun collapsedBatterySummaryStaysShort() {
+        assertEquals(
+            "63%, charging: true",
+            collapsedToolResultSummary("battery", """{"battery_percent":63,"charging":true}"""),
+        )
+        assertEquals(
+            "63%, charging: true",
+            batterySummary("""{"battery_percent":63,"charging":true}"""),
+        )
+    }
+
+    @Test
+    fun collapsedNonBatteryOmitsDump() {
+        assertNull(collapsedToolResultSummary("time", """{"iso_local":"2026-08-29T12:00:00+08:00"}"""))
+        assertNull(collapsedToolResultSummary("battery", null))
+    }
+
+    @Test
     fun toolCardsUseGenericNamesInsteadOfHardcodedBattery() {
         assertEquals("电池工具", toolDisplayName("battery"))
         assertEquals("时间工具", toolDisplayName("time"))

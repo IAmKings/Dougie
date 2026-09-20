@@ -103,6 +103,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
@@ -1049,6 +1051,7 @@ private fun ThinkingChipContent(loopNumber: Int, live: Boolean) {
 @Composable
 private fun ToolCallCard(item: ChatItem.ToolCard) {
     val entry = item.entry
+    var expanded by remember(entry.toolCallId) { mutableStateOf(false) }
     val barColor = when (entry.status) {
         ToolTraceStatus.SUCCESS -> DougieColors.StatusCompleted
         ToolTraceStatus.EXECUTING, ToolTraceStatus.PENDING -> DougieColors.StatusExecuting
@@ -1061,6 +1064,12 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
         ToolTraceStatus.EXECUTING -> "正在调用 $toolLabel ($risk)"
         ToolTraceStatus.PENDING -> "准备调用 $toolLabel ($risk)"
         ToolTraceStatus.FAILED -> "$toolLabel 失败 ($risk)"
+    }
+    val resultJson = entry.resultJson
+    val collapsedSummary = if (entry.status == ToolTraceStatus.SUCCESS) {
+        collapsedToolResultSummary(entry.toolName, resultJson)
+    } else {
+        null
     }
     Row(
         modifier = Modifier
@@ -1097,21 +1106,9 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
                     color = DougieColors.StatusExecuting,
                 )
             }
-            val resultJson = entry.resultJson
-            Text(
-                text = "> 正在执行 ${entry.toolName}...\nresult: ${resultJson ?: "..."}",
-                fontFamily = FontFamily.Monospace,
-                fontSize = 13.sp,
-                color = DougieColors.SecondaryFixed,
-                modifier = Modifier
-                    .padding(start = 8.dp, top = 8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(DougieColors.TerminalBg)
-                    .padding(8.dp),
-            )
-            if (entry.status == ToolTraceStatus.SUCCESS && resultJson != null) {
+            if (collapsedSummary != null) {
                 Row(
-                    modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+                    modifier = Modifier.padding(start = 8.dp, top = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
@@ -1122,12 +1119,34 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
                         modifier = Modifier.size(14.dp),
                     )
                     Text(
-                        text = toolResultSummary(entry.toolName, resultJson),
+                        text = collapsedSummary,
                         color = DougieColors.StatusCompleted,
                         fontFamily = FontFamily.Monospace,
                         fontSize = 12.sp,
                     )
                 }
+            }
+            if (resultJson != null) {
+                val expandLabel = if (expanded) "收起" else "展开"
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.semantics { contentDescription = expandLabel },
+                ) {
+                    Text(expandLabel, color = DougieColors.Primary, fontSize = 13.sp)
+                }
+            }
+            if (expanded && resultJson != null) {
+                Text(
+                    text = prettyToolResult(resultJson),
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 13.sp,
+                    color = DougieColors.SecondaryFixed,
+                    modifier = Modifier
+                        .padding(start = 8.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(DougieColors.TerminalBg)
+                        .padding(8.dp),
+                )
             }
         }
     }
@@ -1594,19 +1613,6 @@ internal fun confirmToolBody(toolName: String, riskLevel: RiskLevel = RiskLevel.
         "可用沙箱文件处理数据，不能上网或读应用外文件。确认后才会执行；拒绝则跳过。"
     else -> "该操作会写入设备数据。确认后才会执行；拒绝则跳过。"
 }
-
-internal fun toolResultSummary(toolName: String, resultJson: String): String {
-    if (toolName != "battery") return resultJson
-    val percent = Regex(""""battery_percent"\s*:\s*(\d+)""").find(resultJson)?.groupValues?.get(1)
-    val charging = Regex(""""charging"\s*:\s*(true|false)""").find(resultJson)?.groupValues?.get(1)
-    return if (percent != null && charging != null) {
-        "$percent%, charging: $charging"
-    } else {
-        resultJson
-    }
-}
-
-internal fun batterySummary(resultJson: String): String = toolResultSummary("battery", resultJson)
 
 @Composable
 private fun VoiceRecordOverlay(

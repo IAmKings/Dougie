@@ -106,7 +106,7 @@ app/src/sideload/assets/models/tts/
 
 **Context**: PRD §11.1 forbids a lone “正在思考”.
 
-**Decision**: `toChatUiState` inserts `Thinking(loopNumber, live=false)` before each tool card, plus a **live** Thinking chip while `PREPARING`/`THINKING`. After a tool has run, that loop’s chip is not live (no “思考中”, no pulse). Copy is `思考中… [循环 n]` while live, `循环 n` after. Never “KISS”. Tool cards show `resultJson` when present. `FAILED` + `lastError` becomes `AgentMessage("任务失败：$lastError")`.
+**Decision**: `toChatUiState` inserts `Thinking(loopNumber, live=false)` before each tool card, plus a **live** Thinking chip while `PREPARING`/`THINKING`. After a tool has run, that loop’s chip is not live (no “思考中”, no pulse). Copy is `思考中… [循环 n]` while live, `循环 n` after. Never “KISS”. Tool cards stay collapsed: `PENDING` / `EXECUTING` show title + indeterminate bar; `resultJson` is behind **展开** (`prettyToolResult`, two-space indent, illegal JSON unchanged); `battery` SUCCESS still shows the short `toolResultSummary`; other tools do not dump JSON while collapsed. Confirm overlay and History **展开** stay unchanged. Past turns still omit tool cards. `FAILED` + `lastError` becomes `AgentMessage("任务失败：$lastError")`.
 
 ## Don't: Run LoopEngine on Main
 
