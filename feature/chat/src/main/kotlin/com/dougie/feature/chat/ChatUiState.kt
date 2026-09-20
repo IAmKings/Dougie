@@ -35,6 +35,7 @@ sealed class ChatItem {
     data class UserMessage(
         val text: String,
         override val listKey: String,
+        val sourceLabel: String? = null,
     ) : ChatItem()
 
     data class Thinking(
@@ -70,7 +71,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
         return ChatUiState(isEmpty = true, inputEnabled = true, canCancel = false)
     }
     val items = buildList {
-        add(ChatItem.UserMessage(input, listKey = itemKey("user")))
+        add(ChatItem.UserMessage(input, listKey = itemKey("user"), sourceLabel = voiceSourceLabel()))
         toolTrace.forEachIndexed { index, entry ->
             val loop = index + 1
             add(ChatItem.Thinking(loopNumber = loop, live = false, listKey = itemKey("thinking-$loop")))
@@ -249,7 +250,7 @@ fun nextConfirmExit(
 
 fun AgentTask.toPastChatItems(): List<ChatItem> {
     val items = ArrayList<ChatItem>(2)
-    items.add(ChatItem.UserMessage(input, listKey = itemKey("user")))
+    items.add(ChatItem.UserMessage(input, listKey = itemKey("user"), sourceLabel = voiceSourceLabel()))
     val answer = finalAnswer
     if (status == TaskStatus.COMPLETED && !answer.isNullOrBlank()) {
         items.add(
@@ -273,6 +274,8 @@ fun AgentTask.toPastChatItems(): List<ChatItem> {
     }
     return items
 }
+
+private fun AgentTask.voiceSourceLabel(): String? = if (speakReply) "语音转写" else null
 
 private fun AgentTask.terminalDurationLabel(): String? {
     if (status != TaskStatus.COMPLETED && status != TaskStatus.FAILED) return null

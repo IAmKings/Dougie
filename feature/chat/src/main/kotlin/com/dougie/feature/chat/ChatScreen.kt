@@ -705,6 +705,7 @@ private fun ChatFeed(
                 is ChatItem.UserMessage -> ChatItemEnterMotion(playEnter) {
                     UserBubble(
                         text = item.text,
+                        sourceLabel = item.sourceLabel,
                         modifier = sharedBoundsFor(userBubbleSharedKey(item.listKey)),
                     )
                 }
@@ -888,8 +889,8 @@ private fun ConfirmCardOverlay(
 }
 
 @Composable
-private fun UserBubble(text: String, modifier: Modifier = Modifier) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modifier = Modifier) {
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
         Text(
             text = text,
             color = DougieColors.OnSurface,
@@ -901,6 +902,14 @@ private fun UserBubble(text: String, modifier: Modifier = Modifier) {
                 .background(DougieColors.SurfaceContainerLowest)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         )
+        if (sourceLabel != null) {
+            Text(
+                text = sourceLabel,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 

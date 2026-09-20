@@ -306,6 +306,74 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun userMessageMapsVoiceSourceLabelFromSpeakReply() {
+        val liveVoice = AgentTask(
+            taskId = "t",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.THINKING,
+            speakReply = true,
+        ).toChatUiState()
+        val liveUser = liveVoice.items.first() as ChatItem.UserMessage
+        assertEquals("语音转写", liveUser.sourceLabel)
+        assertEquals(TIME_EXAMPLE, liveUser.text)
+        assertEquals("t:user", liveUser.listKey)
+        assertFalse(liveUser.text.contains("语音转写"))
+        assertFalse(liveUser.listKey.contains("语音转写"))
+
+        val liveTyped = AgentTask(
+            taskId = "t",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.THINKING,
+            speakReply = false,
+        ).toChatUiState()
+        assertNull((liveTyped.items.first() as ChatItem.UserMessage).sourceLabel)
+
+        val pastVoice = AgentTask(
+            taskId = "p",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "中午。",
+            speakReply = true,
+        ).toPastChatItems().first() as ChatItem.UserMessage
+        assertEquals("语音转写", pastVoice.sourceLabel)
+        assertEquals(TIME_EXAMPLE, pastVoice.text)
+        assertEquals("p:user", pastVoice.listKey)
+        assertFalse(pastVoice.text.contains("语音转写"))
+        assertFalse(pastVoice.listKey.contains("语音转写"))
+
+        val pastTyped = AgentTask(
+            taskId = "p",
+            input = TIME_EXAMPLE,
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "中午。",
+            speakReply = false,
+        ).toPastChatItems().first() as ChatItem.UserMessage
+        assertNull(pastTyped.sourceLabel)
+
+        val merged = mergeChatUiState(
+            live = AgentTask(
+                taskId = "r",
+                input = TIME_EXAMPLE,
+                status = TaskStatus.THINKING,
+                speakReply = true,
+            ),
+            past = listOf(
+                AgentTask(
+                    taskId = "p",
+                    input = TIME_EXAMPLE,
+                    status = TaskStatus.COMPLETED,
+                    finalAnswer = "中午。",
+                    speakReply = true,
+                ),
+            ),
+        )
+        val users = merged.items.filterIsInstance<ChatItem.UserMessage>()
+        assertEquals(listOf("p:user", "r:user"), users.map { it.listKey })
+        assertEquals(listOf("语音转写", "语音转写"), users.map { it.sourceLabel })
+        assertTrue(users.none { "语音转写" in it.text })
+    }
+
+    @Test
     fun terminalAgentMessagesShowDurationOnlyWhenBothTimestampsPresent() {
         val completed = AgentTask(
             taskId = "t",
