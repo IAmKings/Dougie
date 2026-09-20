@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend layer index for Chat ToolCallCard"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ToolCallCard dump vs expand; Confirm overlay out of scope; History expand is name+status only"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Tool cards show resultJson today; collapsed/expand must not change TaskStatus mapping"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM mapping tests only; no Compose UI test for Chat expand"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse History 展开/收起 copy and toolResultSummary battery path; do not copy History steps mapper"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "resultJson stays on ToolTraceEntry; Chat formats for display; History must not start dumping JSON"}

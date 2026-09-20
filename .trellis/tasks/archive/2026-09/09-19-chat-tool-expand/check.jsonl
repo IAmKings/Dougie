@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest for pretty/collapsed; no Compose UI test"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ToolCallCard must not keep always-on result dump; Confirm and History expand unchanged"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "argsSummary must not appear in Chat tool expand"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Past turns still omit tool cards; live ToolCard still uses resultJson"}
