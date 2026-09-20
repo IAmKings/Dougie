@@ -257,3 +257,24 @@ speakReply 的用户气泡下方标注「语音转写」；键盘发送不加；
 ### Status
 
 [OK] **Completed**
+
+
+## Session 99: PRD 与现状对齐
+
+**Date**: 2026-09-20
+**Task**: PRD 与现状对齐
+**Branch**: `master`
+
+### Summary
+
+对照 v0.1.4 标明 Phase 5 已交付与未做；平台与 minSdk 26 对齐；向量记忆不再写进 MVP 非目标。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `340854b` | (see git log) |
+
+### Status
+
+[OK] **Completed**
