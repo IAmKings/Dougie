@@ -236,3 +236,24 @@ Confirm 卡从对话列表拿出来盖在列表上，250ms FastOutSlowIn 底部�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 98: 用户气泡语音来源标注
+
+**Date**: 2026-09-20
+**Task**: 用户气泡语音来源标注
+**Branch**: `master`
+
+### Summary
+
+speakReply 的用户气泡下方标注「语音转写」；键盘发送不加；sharedBounds 仍只包气泡正文。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c2e26b2` | (see git log) |
+
+### Status
+
+[OK] **Completed**

@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 97
+- **Total Sessions**: 98
 - **Last Active**: 2026-09-20
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~238 | Active |
+| `journal-2.md` | ~259 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 98 | 2026-09-20 | 用户气泡语音来源标注 | `c2e26b2` | `master` |
 | 97 | 2026-09-20 | Chat 工具卡展开 | `013dee0` | `master` |
 | 96 | 2026-09-19 | 规则 E 评测续作 | `982178b` | `master` |
 | 95 | 2026-09-19 | 版本 0.1.4 发版 | `87dde0f` | `master` |
