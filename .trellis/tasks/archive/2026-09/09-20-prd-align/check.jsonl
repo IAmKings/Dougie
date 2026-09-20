@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Rule E passed on device is not Rule D; missing eval jsonl still skips CI"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Compose UI tests still absent; do not check §16.3 UI component tests as done"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Play must not be described as having overlay or TapSwipe"}
