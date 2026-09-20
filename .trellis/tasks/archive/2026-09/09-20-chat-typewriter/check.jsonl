@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ChatUiStateTest for nextTypewriterShown; no Compose UI test"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Do not replay typewriter on first composition of a completed window"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "TTS still uses full item.text; typewriter is display-only"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Do not Logcat streamingText or finalAnswer"}

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend layer for AgentBubble"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ANIMATOR_DURATION_SCALE 0 skips translation; same key streaming to final does not replay enter"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "streamingText vs finalAnswer same listKey; durationLabel only on terminal"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM mapping tests; no Compose UI test for typewriter"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse duration-scale read pattern from ChatItemEnterMotion"}
