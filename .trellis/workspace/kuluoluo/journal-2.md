@@ -278,3 +278,24 @@ speakReply 的用户气泡下方标注「语音转写」；键盘发送不加；
 ### Status
 
 [OK] **Completed**
+
+
+## Session 100: Chat 终答打字机
+
+**Date**: 2026-09-20
+**Task**: Chat 终答打字机
+**Branch**: `master`
+
+### Summary
+
+一次性终答按字打出（≤800ms）；SSE 前缀立即跟上；历史轮、失败、动画缩放 0 直接全文。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1d78193` | (see git log) |
+
+### Status
+
+[OK] **Completed**
