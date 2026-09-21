@@ -320,3 +320,24 @@ speakReply 的用户气泡下方标注「语音转写」；键盘发送不加；
 ### Status
 
 [OK] **Completed**
+
+
+## Session 102: Chat 终端风
+
+**Date**: 2026-09-21
+**Task**: Chat 终端风
+**Branch**: `master`
+
+### Summary
+
+设置终端风开关默认关，只换对话页；顶栏头像叠主色以免深底看不清。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fbb59572747ade3deecc0fcd99f37beb1116b260` | (see git log) |
+
+### Status
+
+[OK] **Completed**
