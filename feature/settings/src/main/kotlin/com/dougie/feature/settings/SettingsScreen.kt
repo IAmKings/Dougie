@@ -78,6 +78,7 @@ fun SettingsRoute(
     val models by viewModel.models.collectAsStateWithLifecycle()
     val ttsSpeakerId by viewModel.ttsSpeakerId.collectAsStateWithLifecycle()
     val themePreference by viewModel.themePreference.collectAsStateWithLifecycle()
+    val terminalTheme by viewModel.terminalTheme.collectAsStateWithLifecycle()
     SettingsScreen(
         form = form,
         models = models,
@@ -86,6 +87,8 @@ fun SettingsRoute(
         onTtsSpeakerChange = viewModel::setTtsSpeakerId,
         themePreference = themePreference,
         onThemePreferenceChange = onThemePreferenceChange,
+        terminalTheme = terminalTheme,
+        onTerminalThemeChange = viewModel::setTerminalTheme,
         onBack = onBack,
         onAllowCloudChange = viewModel::setAllowCloud,
         onVendorChange = viewModel::setVendor,
@@ -118,6 +121,8 @@ fun SettingsScreen(
     onTtsSpeakerChange: (Int) -> Unit = {},
     themePreference: ThemePreference = ThemePreference.SYSTEM,
     onThemePreferenceChange: (ThemePreference) -> Unit = {},
+    terminalTheme: Boolean = false,
+    onTerminalThemeChange: (Boolean) -> Unit = {},
     onBack: () -> Unit,
     onAllowCloudChange: (Boolean) -> Unit,
     onVendorChange: (String) -> Unit,
@@ -292,6 +297,10 @@ fun SettingsScreen(
             ThemeSection(
                 preference = themePreference,
                 onPreferenceChange = onThemePreferenceChange,
+            )
+            TerminalThemeSection(
+                enabled = terminalTheme,
+                onEnabledChange = onTerminalThemeChange,
             )
             TtsVoiceSection(
                 speakerId = ttsSpeakerId,
@@ -628,6 +637,45 @@ private fun ThemeSection(
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+@Composable
+private fun TerminalThemeSection(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "终端风",
+                color = DougieColors.OnSurface,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "只改变对话页。立即生效，不必保存配置。",
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 14.sp,
+            )
+        }
+        Switch(
+            checked = enabled,
+            onCheckedChange = onEnabledChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = DougieColors.OnPrimary,
+                checkedTrackColor = DougieColors.Primary,
+            ),
+        )
     }
 }
 

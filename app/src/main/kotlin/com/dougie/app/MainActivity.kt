@@ -261,6 +261,7 @@ class MainActivity : ComponentActivity() {
                         ChatRoute(
                             viewModel = chatViewModel,
                             allowCloud = prefs.allowCloud,
+                            terminalTheme = prefs.terminalTheme,
                             intelligenceMark = intelligenceMark(
                                 allowCloud = prefs.allowCloud,
                                 apiKeyConfigured = prefs.apiKey.isNotBlank(),

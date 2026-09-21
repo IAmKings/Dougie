@@ -119,7 +119,7 @@ V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking
 
 ### V2.1 现状对齐（v0.1.4，不 bump 功能版本）
 
-2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；明暗双主题已跟随系统（stitch 紫蓝，非 §11.4 青绿表）。不把终端风/ANSI 换肤、Compose UI 五态测试、商店上架标成完成。
+2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；明暗双主题已跟随系统（stitch 紫蓝，非 §11.4 青绿表）；Chat **终端风** 开关已做（默认关，只改对话页）。不把 Compose UI 五态测试、商店上架标成完成。
 
 ### V2.1 追加决策（1 项：关键用户流程 / UI 规范 / 技术方案补全）
 
@@ -222,7 +222,7 @@ SMS、Call、Accessibility 自动化（含屏幕点击/滑动操作，见 §6.7�
 - Error/Retry
 - Debug/Developer 页面
 
-> 说明：手机端"终端风/黑客风"主题用 Compose UI 自绘实现（等宽字体、ANSI 配色模拟、打字机动画），属于 `:feature:chat` 的 UI 主题工作；**现网已做终答按字打出与跟随系统的明暗双主题（stitch 紫蓝，非青绿）；未做终端风等宽/ANSI 换肤**。开发期终端控制台由独立的 `:cli` 模块承担（见 §17.3）。mosaic（JVM-only + JLine 3）无法运行在 Android，不得用于 App 内主题功能。
+> 说明：手机端"终端风/黑客风"主题用 Compose UI 自绘实现（等宽字体、ANSI 配色模拟、打字机动画），属于 `:feature:chat` 的 UI 主题工作；**现网已做终答按字打出、跟随系统的明暗双主题（stitch 紫蓝，非青绿）、以及 Chat 终端风开关（默认关，等宽 + ANSI 角色色模拟，不解析 escape）**。开发期终端控制台由独立的 `:cli` 模块承担（见 §17.3）。mosaic（JVM-only + JLine 3）无法运行在 Android，不得用于 App 内主题功能。
 
 ## 3.2 明确非目标
 
@@ -1192,7 +1192,7 @@ Final Answer
 
 ## 11.4 设计令牌（Design Tokens，Material Design 3）
 
-基于 Jetpack Compose + Material Design 3（§17.1）。令牌命名对齐 M3，明暗双主题（**设计规格**为青绿；现网双主题已做，色板仍是 stitch 紫蓝 `#3D5198` / `#B4C5FF`，非青绿；终答打字机已做，非终端风换肤）。
+基于 Jetpack Compose + Material Design 3（§17.1）。令牌命名对齐 M3，明暗双主题（**设计规格**为青绿；现网双主题已做，色板仍是 stitch 紫蓝 `#3D5198` / `#B4C5FF`，非青绿；终答打字机已做；Chat 终端风开关已做，默认关）。
 
 | 类别 | 令牌 | 值（亮色 / 暗色） | 用途 |
 |---|---|---|---|

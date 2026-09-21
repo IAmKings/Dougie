@@ -67,6 +67,9 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.zIndex
 import com.dougie.core.model.AttachmentMeta
@@ -79,12 +82,14 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -125,6 +130,7 @@ import kotlinx.coroutines.launch
 fun ChatRoute(
     viewModel: ChatViewModel,
     allowCloud: Boolean = false,
+    terminalTheme: Boolean = false,
     intelligenceMark: IntelligenceMark = IntelligenceMark.NOOB,
     composerValue: TextFieldValue = TextFieldValue(),
     onComposerChange: (TextFieldValue) -> Unit = {},
@@ -212,6 +218,7 @@ fun ChatRoute(
         }
         viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
     }
+    ChatTerminalSkin(enabled = terminalTheme) {
     ChatScreen(
         uiState = uiState,
         listState = listState,
@@ -265,6 +272,33 @@ fun ChatRoute(
         conversationTitle = conversationTitle,
         sharedBoundsFor = sharedBoundsFor,
     )
+    }
+}
+
+@Composable
+private fun ChatTerminalSkin(enabled: Boolean, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalTerminalTheme provides enabled) {
+        if (enabled) {
+            val skin = DougieColors.TerminalSkin
+            MaterialTheme(
+                colorScheme = darkColorScheme(
+                    primary = skin.User,
+                    onPrimary = skin.Bg,
+                    primaryContainer = skin.Bubble,
+                    onPrimaryContainer = skin.User,
+                    surface = skin.Bg,
+                    onSurface = skin.Assistant,
+                    onSurfaceVariant = skin.Muted,
+                    error = skin.Fail,
+                    outline = skin.Muted,
+                    outlineVariant = skin.Muted,
+                ),
+                content = content,
+            )
+        } else {
+            content()
+        }
+    }
 }
 
 @Composable
@@ -628,6 +662,7 @@ private fun DougieAvatar(
         painter = painterResource(res),
         contentDescription = description,
         contentScale = ContentScale.Fit,
+        colorFilter = ColorFilter.tint(DougieColors.Primary),
         modifier = modifier,
     )
 }
@@ -907,11 +942,13 @@ private fun ConfirmCardOverlay(
 
 @Composable
 private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modifier = Modifier) {
+    val terminal = LocalTerminalTheme.current
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
         Text(
             text = text,
-            color = DougieColors.OnSurface,
+            color = if (terminal) DougieColors.TerminalSkin.User else DougieColors.OnSurface,
             fontSize = 16.sp,
+            fontFamily = chatBodyFontFamily(terminal),
             modifier = modifier
                 .widthIn(max = 320.dp)
                 .clip(RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))
@@ -924,6 +961,7 @@ private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modi
                 text = sourceLabel,
                 color = DougieColors.OnSurfaceVariant,
                 fontSize = 12.sp,
+                fontFamily = FontFamily.Default,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
@@ -980,11 +1018,17 @@ private fun AgentBubble(
         }
     }
     Column(modifier = Modifier.fillMaxWidth()) {
+        val terminal = LocalTerminalTheme.current
+        val bubbleColor = when {
+            terminal && snapsAgentTypewriter(text) -> DougieColors.Error
+            else -> DougieColors.OnSurface
+        }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
             Text(
                 text = displayed,
-                color = DougieColors.OnSurface,
+                color = bubbleColor,
                 fontSize = 16.sp,
+                fontFamily = chatBodyFontFamily(terminal),
                 modifier = Modifier
                     .widthIn(max = 320.dp)
                     .padding(start = 16.dp)
@@ -998,6 +1042,7 @@ private fun AgentBubble(
                 text = durationLabel,
                 color = DougieColors.OnSurfaceVariant,
                 fontSize = 12.sp,
+                fontFamily = FontFamily.Default,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
@@ -1439,6 +1484,10 @@ private fun ChatInputBar(
                 enabled = enabled,
                 placeholder = { Text("给 Dougie 发消息...") },
                 modifier = Modifier.fillMaxWidth(),
+                textStyle = LocalTextStyle.current.copy(
+                    fontFamily = chatBodyFontFamily(LocalTerminalTheme.current),
+                    color = DougieColors.OnSurface,
+                ),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -1446,6 +1495,13 @@ private fun ChatInputBar(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
+                    focusedTextColor = DougieColors.OnSurface,
+                    unfocusedTextColor = DougieColors.OnSurface,
+                    disabledTextColor = DougieColors.OnSurfaceVariant,
+                    cursorColor = DougieColors.Primary,
+                    focusedPlaceholderColor = DougieColors.OnSurfaceVariant,
+                    unfocusedPlaceholderColor = DougieColors.OnSurfaceVariant,
+                    disabledPlaceholderColor = DougieColors.OnSurfaceVariant,
                 ),
             )
             Row(

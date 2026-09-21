@@ -2,7 +2,14 @@ package com.dougie.feature.chat
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+
+internal val LocalTerminalTheme = staticCompositionLocalOf { false }
+
+internal fun chatBodyFontFamily(terminalTheme: Boolean): FontFamily =
+    if (terminalTheme) FontFamily.Monospace else FontFamily.Default
 
 object DougieColors {
     object Light {
@@ -51,37 +58,54 @@ object DougieColors {
         val TertiaryContainer = Color(0xFFA4C8D8)
     }
 
-    val Primary: Color @Composable get() = if (isSystemInDarkTheme()) Dark.Primary else Light.Primary
+    object TerminalSkin {
+        val Bg = Color(0xFF0D0F0F)
+        val Bubble = Color(0xFF1A1C1C)
+        val User = Color(0xFF6EF7F6)
+        val Assistant = Color(0xFF00C853)
+        val Thinking = Color(0xFFFFB300)
+        val Fail = Color(0xFFFF5555)
+        val Muted = Color(0xFF8E909C)
+    }
+
+    val Primary: Color @Composable get() = token(Light.Primary, Dark.Primary, TerminalSkin.User)
     val PrimaryContainer: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.PrimaryContainer else Light.PrimaryContainer
-    val OnPrimary: Color @Composable get() = if (isSystemInDarkTheme()) Dark.OnPrimary else Light.OnPrimary
+        token(Light.PrimaryContainer, Dark.PrimaryContainer, TerminalSkin.Bubble)
+    val OnPrimary: Color @Composable get() = token(Light.OnPrimary, Dark.OnPrimary, TerminalSkin.Bg)
     val OnPrimaryContainer: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.OnPrimaryContainer else Light.OnPrimaryContainer
-    val Surface: Color @Composable get() = if (isSystemInDarkTheme()) Dark.Surface else Light.Surface
+        token(Light.OnPrimaryContainer, Dark.OnPrimaryContainer, TerminalSkin.User)
+    val Surface: Color @Composable get() = token(Light.Surface, Dark.Surface, TerminalSkin.Bg)
     val SurfaceContainer: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.SurfaceContainer else Light.SurfaceContainer
+        token(Light.SurfaceContainer, Dark.SurfaceContainer, TerminalSkin.Bubble)
     val SurfaceContainerLow: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.SurfaceContainerLow else Light.SurfaceContainerLow
+        token(Light.SurfaceContainerLow, Dark.SurfaceContainerLow, TerminalSkin.Bubble)
     val SurfaceContainerLowest: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.SurfaceContainerLowest else Light.SurfaceContainerLowest
+        token(Light.SurfaceContainerLowest, Dark.SurfaceContainerLowest, TerminalSkin.Bubble)
     val SurfaceContainerHigh: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.SurfaceContainerHigh else Light.SurfaceContainerHigh
-    val OnSurface: Color @Composable get() = if (isSystemInDarkTheme()) Dark.OnSurface else Light.OnSurface
+        token(Light.SurfaceContainerHigh, Dark.SurfaceContainerHigh, TerminalSkin.Bubble)
+    val OnSurface: Color @Composable get() = token(Light.OnSurface, Dark.OnSurface, TerminalSkin.Assistant)
     val OnSurfaceVariant: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.OnSurfaceVariant else Light.OnSurfaceVariant
+        token(Light.OnSurfaceVariant, Dark.OnSurfaceVariant, TerminalSkin.Muted)
     val OutlineVariant: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.OutlineVariant else Light.OutlineVariant
-    val Outline: Color @Composable get() = if (isSystemInDarkTheme()) Dark.Outline else Light.Outline
-    val Error: Color @Composable get() = if (isSystemInDarkTheme()) Dark.Error else Light.Error
+        token(Light.OutlineVariant, Dark.OutlineVariant, TerminalSkin.Muted)
+    val Outline: Color @Composable get() = token(Light.Outline, Dark.Outline, TerminalSkin.Muted)
+    val Error: Color @Composable get() = token(Light.Error, Dark.Error, TerminalSkin.Fail)
     val StatusThinking: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.StatusThinking else Light.StatusThinking
+        token(Light.StatusThinking, Dark.StatusThinking, TerminalSkin.Thinking)
     val StatusCompleted: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.StatusCompleted else Light.StatusCompleted
+        token(Light.StatusCompleted, Dark.StatusCompleted, TerminalSkin.Assistant)
     val StatusExecuting: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.StatusExecuting else Light.StatusExecuting
-    val TerminalBg: Color @Composable get() = if (isSystemInDarkTheme()) Dark.TerminalBg else Light.TerminalBg
+        token(Light.StatusExecuting, Dark.StatusExecuting, TerminalSkin.Thinking)
+    val TerminalBg: Color @Composable get() = token(Light.TerminalBg, Dark.TerminalBg, TerminalSkin.Bg)
     val SecondaryFixed: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.SecondaryFixed else Light.SecondaryFixed
+        token(Light.SecondaryFixed, Dark.SecondaryFixed, TerminalSkin.User)
     val TertiaryContainer: Color @Composable get() =
-        if (isSystemInDarkTheme()) Dark.TertiaryContainer else Light.TertiaryContainer
+        token(Light.TertiaryContainer, Dark.TertiaryContainer, TerminalSkin.Muted)
+}
+
+@Composable
+private fun token(light: Color, dark: Color, terminal: Color): Color = when {
+    LocalTerminalTheme.current -> terminal
+    isSystemInDarkTheme() -> dark
+    else -> light
 }

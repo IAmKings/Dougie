@@ -102,6 +102,13 @@ class SettingsViewModel(
             SharingStarted.WhileSubscribed(5_000),
             store.settings.value.themePreference,
         )
+    val terminalTheme: StateFlow<Boolean> = store.settings
+        .map { it.terminalTheme }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            store.settings.value.terminalTheme,
+        )
 
     fun requestModel(id: String) = downloads.request(id)
 
@@ -133,6 +140,11 @@ class SettingsViewModel(
     fun setThemePreference(mode: ThemePreference) {
         if (store.settings.value.themePreference == mode) return
         store.setThemePreference(mode)
+    }
+
+    fun setTerminalTheme(enabled: Boolean) {
+        if (store.settings.value.terminalTheme == enabled) return
+        store.setTerminalTheme(enabled)
     }
 
     fun setAllowCloud(value: Boolean) {
@@ -199,6 +211,7 @@ class SettingsViewModel(
                 modelTreeUri = store.settings.value.modelTreeUri,
                 ttsSpeakerId = store.settings.value.ttsSpeakerId,
                 themePreference = store.settings.value.themePreference,
+                terminalTheme = store.settings.value.terminalTheme,
             ),
         )
         _form.update { store.settings.value.toForm().copy(saved = true) }

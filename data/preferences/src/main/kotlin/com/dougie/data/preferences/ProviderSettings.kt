@@ -15,6 +15,7 @@ data class ProviderSettings(
     val modelTreeUri: String = "",
     val ttsSpeakerId: Int = 0,
     val themePreference: ThemePreference = ThemePreference.SYSTEM,
+    val terminalTheme: Boolean = false,
 ) {
     companion object {
         val DEFAULT_VENDOR_ID = LlmVendors.OPENAI.id

@@ -66,6 +66,7 @@ class PreferenceStore(context: Context) {
             .putString(KEY_MODEL_TREE_URI, stored.modelTreeUri)
             .putInt(KEY_TTS_SPEAKER_ID, stored.ttsSpeakerId)
             .putString(KEY_THEME_PREFERENCE, stored.themePreference.stored)
+            .putBoolean(KEY_TERMINAL_THEME, stored.terminalTheme)
             .apply {
                 if (stored.egressConsentAt != null) {
                     putLong(KEY_CONSENT_AT, stored.egressConsentAt)
@@ -91,6 +92,10 @@ class PreferenceStore(context: Context) {
 
     fun setThemePreference(mode: ThemePreference) {
         save(settings.value.copy(themePreference = mode))
+    }
+
+    fun setTerminalTheme(enabled: Boolean) {
+        save(settings.value.copy(terminalTheme = enabled))
     }
 
     fun setOpenAppsJson(json: String) {
@@ -176,6 +181,7 @@ class PreferenceStore(context: Context) {
             modelTreeUri = prefs.getString(KEY_MODEL_TREE_URI, "").orEmpty(),
             ttsSpeakerId = prefs.getInt(KEY_TTS_SPEAKER_ID, 0),
             themePreference = ThemePreference.fromStored(prefs.getString(KEY_THEME_PREFERENCE, null)),
+            terminalTheme = prefs.getBoolean(KEY_TERMINAL_THEME, false),
         )
     }
 
@@ -192,6 +198,7 @@ class PreferenceStore(context: Context) {
         const val KEY_MODEL_TREE_URI = "model_tree_uri"
         const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
         const val KEY_THEME_PREFERENCE = "theme_preference"
+        const val KEY_TERMINAL_THEME = "terminal_theme"
         const val KEY_OPEN_APPS = "open_app_allowlist"
         const val KEY_ACTIVE_CHAT_SKU = "active_chat_sku"
         const val KEY_CURRENT_CONVERSATION = "current_conversation_id"
