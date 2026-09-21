@@ -341,3 +341,24 @@ speakReply 的用户气泡下方标注「语音转写」；键盘发送不加；
 ### Status
 
 [OK] **Completed**
+
+
+## Session 103: Compose UI 五态测试
+
+**Date**: 2026-09-21
+**Task**: Compose UI 五态测试
+**Branch**: `master`
+
+### Summary
+
+Chat User/Thinking/Tool/Confirm/Final/FAILED 用 Robolectric Compose 语义断言；产品交互未改。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `47030c2` | (see git log) |
+
+### Status
+
+[OK] **Completed**
