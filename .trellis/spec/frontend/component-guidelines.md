@@ -42,7 +42,7 @@ Follows system light/dark; not WCAG-audited:
 - Confirm Card is visible buttons (confirm / reject), not a system permission dialog.
 - Do not dump API keys into TalkBack: the key field is a password `TextField`; toggle visibility does not log the value.
 
-Do not add a Compose semantics test suite unless the task asks for it — none exists.
+Chat five-state + Confirm overlay have JVM Compose UI tests (`ChatScreenFiveStateTest`). Do not add more Compose semantics suites unless the task asks for them.
 
 ## Common Mistakes
 

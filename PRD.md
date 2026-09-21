@@ -119,7 +119,7 @@ V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking
 
 ### V2.1 现状对齐（v0.1.4，不 bump 功能版本）
 
-2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；明暗双主题已跟随系统（stitch 紫蓝，非 §11.4 青绿表）；Chat **终端风** 开关已做（默认关，只改对话页）。不把 Compose UI 五态测试、商店上架标成完成。
+2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；明暗双主题已跟随系统（stitch 紫蓝，非 §11.4 青绿表）；Chat **终端风** 开关已做（默认关，只改对话页）。Compose UI 五态测试已用 JVM 语义断言钉住。不把商店上架标成完成。
 
 ### V2.1 追加决策（1 项：关键用户流程 / UI 规范 / 技术方案补全）
 
@@ -1592,7 +1592,7 @@ Process Death 任务恢复（UF-05）→ 执行中杀进程后重开，提示继
 | Phase 2 | 用户能够让 Agent 从历史对话中找回至少一个相关事实 |
 | Phase 3 | 所有 Tool 均经过权限、Policy、Schema 验证 |
 | Phase 4 | 在 Tool 执行前后杀进程，不产生重复副作用；Task 可重新提交或返回明确错误状态 |
-| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS，**未**以 Kokoro 过规则 B。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。完整多模态、自动读通知、Compose UI 五态测试、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
+| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS，**未**以 Kokoro 过规则 B。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。Compose UI 五态测试已做（`:feature:chat` Robolectric 语义断言）。完整多模态、自动读通知、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
 
 ## 16.3 Definition of Done
 
@@ -1609,7 +1609,7 @@ Process Death 任务恢复（UF-05）→ 执行中杀进程后重开，提示继
 - [ ] UI Empty State
 - [ ] UI Error State
 - [ ] Process Death Review
-- [ ] UI 组件状态测试（覆盖 Chat Bubble 5 状态 + Confirm Card，§11.5）
+- [x] UI 组件状态测试（覆盖 Chat Bubble 5 状态 + Confirm Card，§11.5）
 - [ ] 核心接口契约含 KDoc + 异常 + 线程约束（LlmProvider/Tool/PolicyEngine/MemoryStore/ContextBuilder，§20.1）
 - [ ] 文档更新
 

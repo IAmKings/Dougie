@@ -43,7 +43,7 @@
 | Play/Sideload leak, Tile, notice, overlay, or model assets | `checkChannelLeak` (Tile both flavors; Play has no Accessibility / TapSwipe / NotificationListener / overlay permission or `DougieOverlayService`; sideload has overlay). Shade copy: `TaskNoticeTest`. Play settings copy: `PlayShortcutCopyTest`. Rule E last/adb: `AppIntentRuleEEvalTest` | `./gradlew :app:testPlayDebugUnitTest` and `./gradlew :app:checkChannelLeak`. Same leak task runs on GitHub Actions CI / Release. |
 | `:cli` Agent Console | `FakeBatteryLoopTest` (3-loop fake battery + `--log-only` flag) | `./gradlew :cli:test` and `./gradlew :cli:run --args='--log-only'` |
 
-There are no Compose UI / Espresso tests and no jacoco threshold. Do not add a CI lint job as a substitute for the module tests above.
+There are no Espresso tests and no jacoco threshold. Chat five-state Compose UI tests live in `:feature:chat` (`ChatScreenFiveStateTest`, JVM Robolectric); other screens still have none. Do not add a CI lint job as a substitute for the module tests above.
 
 Full-eval ASR (`eval/asr/*.wav` + `manifest.jsonl`) is gitignored. `FullEvalSet.isPresent()` is wav presence (skip when missing); `labeledCount` is manifest rows. `AsrEval.report` `ruleDPassed` needs nLabeled≥500 ∧ nScored≥500 ∧ meanCer≤0.05 ∧ successRate≥0.95 ∧ vadApplied; missing VAD cannot pass. Do not call sherpa/ORT from this JVM path. Fixture `passed` / `asr-manifest-sample.jsonl` is not Rule D done (`AsrEvalTest`, `FullEvalSetTest`).
 
