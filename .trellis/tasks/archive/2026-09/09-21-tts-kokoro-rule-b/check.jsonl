@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Catalog stays VITS; eval dir must not overwrite models/tts"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Missing repo-root jsonl still passes :core:tool:test"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "No utterance in Debug message or Logcat"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": ":feature:debug still implementation runtime+model only"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Rule B copy parallel to Rule E; no 已达标"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Settings list must not grow a Kokoro offer"}

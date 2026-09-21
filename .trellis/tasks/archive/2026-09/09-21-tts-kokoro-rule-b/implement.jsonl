@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Do not add Kokoro catalog, change VITS threads, or call sherpa from JVM KokoroEval"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Rule B JSONL gate; sample is not Rule B; gitignore kokoro-rtf.jsonl"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Report toString counts only; never utterance or PCM"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "UserFacingErrors Chinese; missing eval pack must not crash"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Debug injects suspend callbacks; no :core:tool or JNI"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Debug chrome never shows 已达标 or gold text"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "filesDir jsonl vs catalog models/tts vs Debug string"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Mirror AppIntentRuleEEval + ModelInstaller; do not fork a second TTS product path"}
