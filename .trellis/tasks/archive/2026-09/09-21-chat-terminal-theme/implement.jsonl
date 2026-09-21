@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Compose Chat screen conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Chat bubbles, TerminalBg, monospace tool dumps, typewriter display-only"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Immediate prefs + save() copy-back like ttsSpeakerId and themePreference"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM mapping tests; no Compose UI test for skins"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Do not parse ANSI; reuse TerminalBg and existing monospace tool block"}

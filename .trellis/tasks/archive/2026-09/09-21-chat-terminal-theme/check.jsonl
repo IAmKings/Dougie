@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Compose screen conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Chat-only chrome; durationLabel and 语音转写 stay not in bubble text"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "terminalTheme immediate persist; save() must copy"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No Compose UI test for terminal skin; ChatUiStateTest must still pass"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Do not invent ANSI parser or :core:ui"}
