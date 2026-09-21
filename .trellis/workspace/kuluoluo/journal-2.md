@@ -299,3 +299,24 @@ speakReply 的用户气泡下方标注「语音转写」；键盘发送不加；
 ### Status
 
 [OK] **Completed**
+
+
+## Session 101: 明暗双主题
+
+**Date**: 2026-09-21
+**Task**: 明暗双主题
+**Branch**: `master`
+
+### Summary
+
+跟随系统或设置里浅色/深色；色板仍是 stitch 紫蓝。立即生效，保存配置不冲掉。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c3d76ef` | (see git log) |
+
+### Status
+
+[OK] **Completed**
