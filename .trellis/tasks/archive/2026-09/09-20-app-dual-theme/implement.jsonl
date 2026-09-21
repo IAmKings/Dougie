@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Compose features; no :core:ui yet"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "DougieColors stitch tokens copied per feature"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Extract :core:ui only if more than colors is shared"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Duplicate DougieColors; overlay stays #3D5198; JVM tests not Compose UI"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Keep per-feature copies; do not invent :core:ui for colors only"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Immediate prefs like ttsSpeakerId; save() must copy so LLM save does not reset"}

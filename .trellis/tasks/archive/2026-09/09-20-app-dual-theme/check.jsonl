@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Compose screen conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Stitch DougieColors; no theme object today"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Per-feature color copies until :core:ui"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "JVM mapping tests; overlay brand hex; no Compose UI tests"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Duplicated palettes must stay in lockstep with chat"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "themePreference immediate persist; save() copy-back like ttsSpeakerId"}
