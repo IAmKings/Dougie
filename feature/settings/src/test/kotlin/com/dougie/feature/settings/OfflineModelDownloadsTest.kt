@@ -50,6 +50,15 @@ class OfflineModelDownloadsTest {
     }
 
     @Test
+    fun standardCatalogDoesNotOfferKokoro() {
+        val offers = OfficialModelCatalog.standard()
+        assertFalse(offers.any { it.id.contains("kokoro", ignoreCase = true) })
+        assertFalse(offers.any { it.title.contains("Kokoro", ignoreCase = true) })
+        assertFalse(offers.any { it.pack.relativeDir.contains("kokoro", ignoreCase = true) })
+        assertEquals("语音合成", offers[1].title)
+    }
+
+    @Test
     fun requestWithoutTreeDoesNotConfirm() = runTest {
         var fetches = 0
         val installer = ModelInstaller { _, dest, _ ->

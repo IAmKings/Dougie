@@ -32,6 +32,9 @@ class AppOfflineModelsTest {
             assertFalse(ids.contains(ChatModelLayout.MINICPM1B_ID))
             assertFalse(ids.contains(ChatModelLayout.MINICPM2B_ID))
         }
+        assertFalse(ids.any { it.contains("kokoro", ignoreCase = true) })
+        assertFalse(AppOfflineModels.offers.any { it.title.contains("Kokoro", ignoreCase = true) })
+        assertFalse(AppOfflineModels.offers.any { it.pack.relativeDir == "eval/tts/kokoro" })
     }
 
     @Test

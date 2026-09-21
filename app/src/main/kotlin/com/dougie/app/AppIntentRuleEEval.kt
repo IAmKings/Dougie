@@ -13,8 +13,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.coroutines.cancellation.CancellationException
 
-fun adbPullHint(packageName: String): String =
-    "adb exec-out run-as $packageName cat files/${IntentEval.PREDICTIONS_RELATIVE}"
+fun adbPullHint(packageName: String, relative: String = IntentEval.PREDICTIONS_RELATIVE): String =
+    "adb exec-out run-as $packageName cat files/$relative"
 
 fun formatRuleEMessage(packageName: String, report: IntentRuleEReport): String =
     report.toString() + "\n" + IntentEval.PREDICTIONS_RELATIVE + "\n" + adbPullHint(packageName)

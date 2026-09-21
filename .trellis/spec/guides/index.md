@@ -38,6 +38,7 @@ These guides help you **ask the right questions before coding**.
 - [ ] Feature uses Accessibility `dispatchGesture` or overlay while Chat shows ConfirmCard → the Activity in front will receive the tap; third-party automation needs the target still visible
 - [ ] Isolated JS (`js_eval`) must not gain file/net/Android host APIs this slice; L4 switch changes wrap (function body vs program / last expression) only — still no fetch/files/Android; do not teach 0.6B
 - [ ] Isolated Python (`py_eval`) is sideload + 脚本特权 only; relative files under `filesDir/py_sandbox` (32MiB); no net/external storage; do not teach 0.6B; Play must not ship Chaquopy
+- [ ] Kokoro Rule B eval pack lives under `filesDir/eval/tts/kokoro/`, never `models/tts`; `OfficialModelCatalog.standard()` and Settings must not grow a Kokoro offer; VITS `numThreads` stays 2–4; Debug shows counts/`run-as` only — not 「Kokoro 已达标」
 
 → Read [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md)
 

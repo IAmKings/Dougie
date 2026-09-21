@@ -119,6 +119,7 @@ V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking
 
 ### V2.1 现状对齐（v0.1.4，不 bump 功能版本）
 
+2026-09-21：Kokoro 规则 B 真机 runner 已接到开发者页；测量 `p95Rtf=2.2515`，未过门，默认 TTS 仍为 VITS。不把「能测」写成「已启用 Kokoro」。
 2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；明暗双主题已跟随系统（stitch 紫蓝，非 §11.4 青绿表）；Chat **终端风** 开关已做（默认关，只改对话页）。Compose UI 五态测试已用 JVM 语义断言钉住。不把商店上架标成完成。
 
 ### V2.1 追加决策（1 项：关键用户流程 / UI 规范 / 技术方案补全）
@@ -835,7 +836,7 @@ AgentTask 路由 → 匹配 Tool / 决定是否调用 Cloud LLM
 以下待定项已规则化，不再悬置，Phase 5 按规则定标：
 
 - **规则 A — 包体预算与量化**：sideload 包语音模型总内置预算 **≤ 400MB**（ASR Paraformer-zh ≤ 230MB + TTS VITS 系 ≤ 120MB + VAD ~2MB ≈ 352MB，达标）。优先使用官方量化版本（int8 若有）；VITS 默认 fp32（116MB）在预算内；超预算时优先裁减备选模型或降为 `vits-zh-ll`（115MB）。备选模型（SenseVoice、Kokoro）一律按需下载，不计入内置预算。
-- **规则 B — Kokoro 启用门槛**：Kokoro 仅当目标机型**实机单线程 RTF ≤ 1.0** 且音色自然度评审通过时启用；默认不内置（按需下载）；不达标则维持 VITS 系。
+- **规则 B — Kokoro 启用门槛**：Kokoro 仅当目标机型**实机单线程 RTF ≤ 1.0** 且音色自然度评审通过时启用；默认不内置（按需下载）；不达标则维持 VITS 系。2026-09-21 真机单线程 int8：`p95Rtf=2.2515`（>1.0），**未过门**；开发者页可复测，产品路径仍为 VITS，设置无 Kokoro 行。
 - **规则 C — 系统 TTS 降级边界**：降级仅限 play 包 TTS 模型未就绪/加载失败时，且**仅用于短提示类播报**；Agent 正式回复**不得静默降级**（应提示"语音回复暂不可用"）；sideload 包不启用系统 TTS 降级（模型内置，必须本地合成）。
 
 ---
@@ -1592,7 +1593,7 @@ Process Death 任务恢复（UF-05）→ 执行中杀进程后重开，提示继
 | Phase 2 | 用户能够让 Agent 从历史对话中找回至少一个相关事实 |
 | Phase 3 | 所有 Tool 均经过权限、Policy、Schema 验证 |
 | Phase 4 | 在 Tool 执行前后杀进程，不产生重复副作用；Task 可重新提交或返回明确错误状态 |
-| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS，**未**以 Kokoro 过规则 B。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。Compose UI 五态测试已做（`:feature:chat` Robolectric 语义断言）。完整多模态、自动读通知、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
+| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS。Kokoro 规则 B **已测未过**（2026-09-21 真机单线程 int8 `p95Rtf=2.2515`），开发者页可复测，不得标 Kokoro 已启用。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。Compose UI 五态测试已做（`:feature:chat` Robolectric 语义断言）。完整多模态、自动读通知、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
 
 ## 16.3 Definition of Done
 
@@ -1713,7 +1714,7 @@ Process Death Recovery 的边界明确为：
 | Local LLM | **已交付，仅 sideload**：设置下载 LiteRT-LM 后启用；Play 不含对话权重。完整「端侧 LLM 产品化」仍非 MVP 目标（§3.2） |
 | 屏幕感知 | MediaProjection + OpenCV 模板匹配（MVP，Phase 3 验证包体积，见 §6.7） |
 | 离线 ASR | **已交付**（可选下载）：sherpa-onnx + Paraformer-zh int8（主选）/ SenseVoiceSmall int8（备选），见 §6.8。规则 D 500 条真机集未闭合 |
-| 离线 TTS | **已交付**：现网 sherpa-onnx VITS（`vits-zh-hf-fanchen-C`）；系统 TTS 仅降级。**不是 Kokoro**（规则 B 未过门），见 §6.9 |
+| 离线 TTS | **已交付**：现网 sherpa-onnx VITS（`vits-zh-hf-fanchen-C`）；系统 TTS 仅降级。**不是 Kokoro**（规则 B 2026-09-21 真机 `p95Rtf=2.2515`，未过门），见 §6.9 |
 | 本地意图理解 | **已交付**：中文编码器 ONNX + 分类头（MiniRBT 量级，复用 ONNX Runtime），独立可选下载约 10–20MB，见 §6.10。规则 E 真机已过门 |
 | Testing | JUnit + AndroidX Test |
 | CLI（开发工具） | mosaic + kotlinx-cli（JVM-only，不进 APK，见 §17.3） |

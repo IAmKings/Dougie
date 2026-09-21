@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,6 +48,8 @@ fun DebugRoute(
         uiState = uiState,
         onBack = onBack,
         onRunRuleE = viewModel::runRuleE,
+        onRunRuleB = viewModel::runRuleB,
+        onMarkKokoroNaturalness = viewModel::markKokoroNaturalness,
     )
 }
 
@@ -55,6 +58,8 @@ fun DebugScreen(
     uiState: DebugUiState,
     onBack: () -> Unit,
     onRunRuleE: () -> Unit,
+    onRunRuleB: () -> Unit,
+    onMarkKokoroNaturalness: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -91,27 +96,52 @@ fun DebugScreen(
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    val evalBusy = uiState.ruleEBusy || uiState.ruleBBusy
                     TextButton(
                         onClick = onRunRuleE,
-                        enabled = !uiState.ruleEBusy,
+                        enabled = !evalBusy,
                         colors = ButtonDefaults.textButtonColors(contentColor = DougieColors.Primary),
                     ) {
                         Text(RULE_E_ACTION_LABEL)
                     }
-                    val message = uiState.ruleEMessage
-                    if (message != null) {
-                        Text(
-                            text = message,
-                            color = DougieColors.OnSurfaceVariant,
-                            fontSize = 13.sp,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
-                                .background(DougieColors.SurfaceContainerLowest)
-                                .padding(16.dp),
-                        )
+                    val ruleEMessage = uiState.ruleEMessage
+                    if (ruleEMessage != null) {
+                        EvalMessage(ruleEMessage)
+                    }
+                    TextButton(
+                        onClick = onRunRuleB,
+                        enabled = !evalBusy,
+                        colors = ButtonDefaults.textButtonColors(contentColor = DougieColors.Primary),
+                    ) {
+                        Text(RULE_B_ACTION_LABEL)
+                    }
+                    if (uiState.ruleBBusy) {
+                        val total = uiState.ruleBTotal
+                        if (total > 0L) {
+                            LinearProgressIndicator(
+                                progress = {
+                                    (uiState.ruleBDownloaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                color = DougieColors.Primary,
+                            )
+                        } else {
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = DougieColors.Primary,
+                            )
+                        }
+                    }
+                    TextButton(
+                        onClick = onMarkKokoroNaturalness,
+                        enabled = !evalBusy && canMarkKokoroNaturalness(uiState.ruleBMessage),
+                        colors = ButtonDefaults.textButtonColors(contentColor = DougieColors.Primary),
+                    ) {
+                        Text(RULE_B_NATURALNESS_LABEL)
+                    }
+                    val ruleBMessage = uiState.ruleBMessage
+                    if (ruleBMessage != null) {
+                        EvalMessage(ruleBMessage)
                     }
                 }
             }
@@ -152,6 +182,22 @@ fun DebugScreen(
             }
         }
     }
+}
+
+@Composable
+private fun EvalMessage(text: String) {
+    Text(
+        text = text,
+        color = DougieColors.OnSurfaceVariant,
+        fontSize = 13.sp,
+        fontFamily = FontFamily.Monospace,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLowest)
+            .padding(16.dp),
+    )
 }
 
 @Composable

@@ -6,6 +6,8 @@ import android.media.AudioTrack
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AsrModelLayout
+import com.dougie.core.tool.KokoroEvalLayout
+import com.dougie.core.tool.KokoroSynthTiming
 import com.dougie.core.tool.SpeechUtterance
 import com.dougie.core.tool.TtsModelLayout
 import com.dougie.core.tool.TtsOutcome
@@ -18,6 +20,7 @@ import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsKokoroModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import java.io.File
 import kotlin.math.max
@@ -30,6 +33,8 @@ object SherpaJni {
     private var asr: OfflineRecognizer? = null
     private var ttsKey: String? = null
     private var tts: OfflineTts? = null
+    private var kokoroKey: String? = null
+    private var kokoro: OfflineTts? = null
     private val providers = listOf("nnapi", "xnnpack", "cpu")
 
     fun isAvailable(): Boolean {
@@ -59,6 +64,49 @@ object SherpaJni {
             } finally {
                 stream.release()
             }
+        }
+    }
+
+    fun generateKokoro(modelDir: File, text: String): KokoroSynthTiming {
+        if (!isAvailable()) {
+            throw AgentException(UserFacingErrors.KOKORO_EVAL_MODEL_MISSING)
+        }
+        synchronized(lock) {
+            try {
+                val engine = kokoroEngine(modelDir)
+                val startNs = System.nanoTime()
+                val audio = engine.generate(text, sid = 0, speed = 1.0f)
+                val synthMs = (System.nanoTime() - startNs) / 1_000_000L
+                val rate = audio.sampleRate
+                val durationMs =
+                    if (rate <= 0 || audio.samples.isEmpty()) {
+                        0L
+                    } else {
+                        audio.samples.size * 1000L / rate.toLong()
+                    }
+                return KokoroSynthTiming(synthMs = synthMs, audioDurationMs = durationMs, numThreads = 1)
+            } catch (e: AgentException) {
+                throw e
+            } catch (_: Throwable) {
+                throw AgentException(UserFacingErrors.TTS_FAILED)
+            }
+        }
+    }
+
+    fun ensureKokoro(modelDir: File) {
+        if (!isAvailable()) {
+            throw AgentException(UserFacingErrors.KOKORO_EVAL_MODEL_MISSING)
+        }
+        synchronized(lock) {
+            kokoroEngine(modelDir)
+        }
+    }
+
+    fun releaseKokoro() {
+        synchronized(lock) {
+            kokoro?.release()
+            kokoro = null
+            kokoroKey = null
         }
     }
 
@@ -192,6 +240,42 @@ object SherpaJni {
             }
         }
         throw last ?: AgentException(UserFacingErrors.TTS_FAILED)
+    }
+
+    private fun kokoroEngine(modelDir: File): OfflineTts {
+        val root = KokoroEvalLayout.resolvedDir(modelDir)
+        val key = root.absolutePath
+        val cached = kokoro
+        if (cached != null && kokoroKey == key) return cached
+        kokoro?.release()
+        kokoro = null
+        kokoroKey = null
+        val dict = File(root, KokoroEvalLayout.DICT_DIR)
+        val data = File(root, KokoroEvalLayout.DATA_DIR)
+        try {
+            val engine = OfflineTts(
+                config = OfflineTtsConfig(
+                    model = OfflineTtsModelConfig(
+                        kokoro = OfflineTtsKokoroModelConfig(
+                            model = File(root, KokoroEvalLayout.MODEL_FILE).absolutePath,
+                            voices = File(root, KokoroEvalLayout.VOICES_FILE).absolutePath,
+                            tokens = File(root, KokoroEvalLayout.TOKENS_FILE).absolutePath,
+                            dataDir = if (data.isDirectory) data.absolutePath else "",
+                            lexicon = KokoroEvalLayout.lexicon(root),
+                            dictDir = if (dict.isDirectory) dict.absolutePath else "",
+                        ),
+                        numThreads = 1,
+                        debug = false,
+                        provider = "cpu",
+                    ),
+                ),
+            )
+            kokoro = engine
+            kokoroKey = key
+            return engine
+        } catch (_: Throwable) {
+            throw AgentException(UserFacingErrors.KOKORO_EVAL_MODEL_MISSING)
+        }
     }
 
     private fun threadCount(): Int =

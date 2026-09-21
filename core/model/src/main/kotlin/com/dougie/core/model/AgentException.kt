@@ -37,6 +37,7 @@ object UserFacingErrors {
     const val TTS_TOO_LONG = "离线语音未就绪，只能播报短提示。"
     const val TTS_NETWORK = "系统语音需要联网，已拒绝播报。"
     const val TTS_FAILED = "语音播报失败，请稍后重试。"
+    const val KOKORO_EVAL_MODEL_MISSING = "评测用合成模型尚未就绪"
     const val TTS_REPLY_UNAVAILABLE = "语音回复暂不可用"
     const val GO_DOWNLOAD_MODELS = "去下载"
     const val INTENT_MODEL_MISSING = "离线意图模型尚未就绪，无法分类。"

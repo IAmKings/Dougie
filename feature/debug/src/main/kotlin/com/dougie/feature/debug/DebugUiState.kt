@@ -19,13 +19,25 @@ data class DebugAuditRow(
 )
 
 const val RULE_E_ACTION_LABEL = "评测意图规则 E"
+const val RULE_B_ACTION_LABEL = "评测 Kokoro 规则 B"
+const val RULE_B_NATURALNESS_LABEL = "本批自然度通过"
 
 data class DebugUiState(
     val task: DebugTaskSnapshot? = null,
     val auditRows: List<DebugAuditRow> = emptyList(),
     val ruleEBusy: Boolean = false,
     val ruleEMessage: String? = null,
+    val ruleBBusy: Boolean = false,
+    val ruleBMessage: String? = null,
+    val ruleBDownloaded: Long = 0L,
+    val ruleBTotal: Long = -1L,
 )
+
+fun canMarkKokoroNaturalness(message: String?): Boolean {
+    val n = Regex("""(?:^|\s)nScored=(\d+)""").find(message.orEmpty())
+        ?.groupValues?.get(1)?.toIntOrNull() ?: return false
+    return n >= 5
+}
 
 fun AgentTask.toDebugTaskSnapshot(): DebugTaskSnapshot = DebugTaskSnapshot(
     taskId = taskId,

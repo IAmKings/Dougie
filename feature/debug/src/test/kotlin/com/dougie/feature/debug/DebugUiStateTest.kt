@@ -5,6 +5,7 @@ import com.dougie.core.model.CompletionPath
 import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.TaskStatus
 import com.dougie.core.model.ToolTraceEntry
+import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.runtime.AuditEntry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -125,6 +126,10 @@ class DebugUiStateTest {
         val fields = DebugUiState::class.java.declaredFields.map { it.name }
         assertTrue(fields.any { it == "ruleEMessage" })
         assertTrue(fields.any { it == "ruleEBusy" })
+        assertTrue(fields.any { it == "ruleBMessage" })
+        assertTrue(fields.any { it == "ruleBBusy" })
+        assertFalse(names.any { it.contains("utterance", ignoreCase = true) })
+        assertFalse(names.any { it.contains("pcm", ignoreCase = true) })
     }
 
     @Test
@@ -145,5 +150,36 @@ class DebugUiStateTest {
         assertFalse(state.ruleEMessage!!.contains("query_time"))
         assertNull(DebugUiState().ruleEMessage)
         assertFalse(DebugUiState().ruleEBusy)
+    }
+
+    @Test
+    fun ruleBCopyNeverClaimsPassedOrLeaksUtterance() {
+        assertEquals("评测 Kokoro 规则 B", RULE_B_ACTION_LABEL)
+        assertEquals("本批自然度通过", RULE_B_NATURALNESS_LABEL)
+        assertFalse(RULE_B_ACTION_LABEL.contains("已达标"))
+        assertFalse(RULE_B_NATURALNESS_LABEL.contains("已达标"))
+        val state = DebugUiState(
+            ruleBBusy = false,
+            ruleBMessage = "kokoro nLabeled=5 nScored=5 nUnscored=0 p95Rtf=0.5 " +
+                "threadsApplied=true naturalnessApplied=false ruleBPassed=false\n" +
+                "eval/tts/kokoro-rtf.jsonl\n" +
+                "adb exec-out run-as com.dougie.app cat files/eval/tts/kokoro-rtf.jsonl",
+        )
+        assertFalse(state.toString().contains("已达标"))
+        assertFalse(state.ruleBMessage!!.contains("已达标"))
+        assertTrue(state.ruleBMessage!!.contains("run-as com.dougie.app"))
+        assertFalse(state.ruleBMessage!!.contains("请把灯打开"))
+        assertFalse(state.ruleBMessage!!.contains("PCM"))
+        assertTrue(canMarkKokoroNaturalness(state.ruleBMessage))
+        assertFalse(canMarkKokoroNaturalness(null))
+        assertFalse(canMarkKokoroNaturalness(UserFacingErrors.KOKORO_EVAL_MODEL_MISSING))
+        assertFalse(
+            canMarkKokoroNaturalness(
+                "kokoro nLabeled=4 nScored=4 nUnscored=0 p95Rtf=0.5 " +
+                    "threadsApplied=true naturalnessApplied=false ruleBPassed=false",
+            ),
+        )
+        assertNull(DebugUiState().ruleBMessage)
+        assertFalse(DebugUiState().ruleBBusy)
     }
 }

@@ -89,7 +89,8 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   CharacterErrorRate.kt
   AsrEval.kt
   IntentEval.kt (loadItems/report parser; loadJsonl/ruleEReport/timedClassify; loadHeldout/runForward/writeJsonl)
-  KokoroEval.kt (loadJsonl/report/rtf; ruleBPassed; no sherpa)
+  KokoroEval.kt (loadJsonl/report/rtf; loadGold/runForward/writeJsonl/markNaturalnessOk; ruleBPassed; no sherpa)
+  KokoroEvalLayout.kt (eval/tts/kokoro pack + tar.bz2 extract; not OfficialModelCatalog)
   FullEvalSet.kt
   ScreenFrame.kt
   ScreenCapturePort.kt
@@ -104,6 +105,8 @@ core/tool/src/main/kotlin/com/dougie/core/tool/
   FakeJsEvalPort.kt
 core/tool/src/main/resources/intent-corpus/
   heldout.jsonl
+core/tool/src/main/resources/eval/
+  kokoro-gold.jsonl
 core/tool/src/test/resources/eval/
   asr-gold.json
   asr-manifest-sample.jsonl
@@ -285,7 +288,7 @@ A token in `ScreenCaptureConsentStore` is enough for `hasProjectionConsent()` be
 
 **Problem**: System voices with `isNetworkConnectionRequired` egress text. Checking in VITS (~116MB) belongs in a later slice, not this contract.
 
-**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. App default offline is `SherpaTtsEngine` on `filesDir/models/tts/{model.onnx,tokens.txt,lexicon.txt}` plus `SherpaJni.isAvailable()`. Do not class-load `OfflineTts` until the library loads (no companion `loadLibrary`). Trimmed `Tts.kt` is Apache-2.0 from sherpa-onnx v1.13.4. VITS ONNX stays out of git. Success JSON is `ok` + `backend` only. Official catalog `tts` stays `vits-zh-hf-fanchen-C`; do not add a Kokoro offer, change `SherpaJni` VITS `numThreads` (2–4, not 1), or show 「Kokoro 已达标」. Rule B is `KokoroEval` JSONL, not product TTS.
+**Instead**: `SpeechOutputTool` talks to `PreferOfflineTtsPort`. If offline `TtsEngine.isReady()`, speak offline only. Else system TTS via `AndroidSystemTtsEngine`, max 80 chars, reject network voices. App default offline is `SherpaTtsEngine` on `filesDir/models/tts/{model.onnx,tokens.txt,lexicon.txt}` plus `SherpaJni.isAvailable()`. Do not class-load `OfflineTts` until the library loads (no companion `loadLibrary`). Trimmed `Tts.kt` is Apache-2.0 from sherpa-onnx v1.13.4. VITS ONNX stays out of git. Success JSON is `ok` + `backend` only. Official catalog `tts` stays `vits-zh-hf-fanchen-C`; do not add a Kokoro offer, change `SherpaJni` VITS `numThreads` (2–4, not 1), or show 「Kokoro 已达标」. Rule B device synth is `SherpaJni.generateKokoro` / `ensureKokoro` / `releaseKokoro` with `numThreads=1` on `filesDir/eval/tts/kokoro/` (`KokoroEvalLayout`), never `models/tts`. Product `ttsEngine` / `threadCount()` stay VITS 2–4.
 
 ## Don't: Commit GGUF or silent-cloud intent
 
@@ -364,7 +367,50 @@ Idle Default backfill; ALTER v2; Fake vectors for synonym AC; Xenova BGE int8 + 
 
 **Problem**: Rule B wants target-device single-thread Kokoro RTF ≤ 1.0 plus naturalness review. Checking in ~310MB ONNX, treating the 3-line sample as done, filling `numThreads` from live VITS 2–4 threads, or calling sherpa from `:core:tool` hides a missing measurement.
 
-**Instead**: `KokoroEval.loadJsonl` / `report` / `rtf` on JSONL. JVM must not call sherpa/ORT or read PCM. Tests must not read repo-root `eval/tts/kokoro-rtf.jsonl`. Missing file skips CI (`:core:tool:test` still passes). `ruleBPassed` = nLabeled≥5 ∧ nScored≥5 ∧ p95Rtf≤1.0 ∧ threadsApplied ∧ naturalnessApplied (nearest-rank `sorted[ceil(0.95 * n) - 1]`). scored = `synthMs!=null && audioDurationMs!=null && audioDurationMs>0 && synthMs>=0`; rtf = synthMs/audioDurationMs. Missing `numThreads` or `numThreads!=1` → `threadsApplied=false`. Missing or false `naturalnessOk` → `naturalnessApplied=false`. Testdata `kokoro-rtf-sample.jsonl` is a few lines — not Rule B. `OfficialModelCatalog` stays VITS (`tts` = vits-zh-hf-fanchen-C). Do not change `SherpaJni` VITS wiring/thread count, `speech_output`, or settings 「Kokoro 已达标」. `FullEvalSet` stays ASR-only.
+**Instead**: `KokoroEval.loadJsonl` / `report` / `rtf` on JSONL, plus device collection `loadGold` / `runForward` / `writeJsonl` / `markNaturalnessOk`. Gold lives in `:core:tool` **main** `eval/kokoro-gold.jsonl` (≥5 Chinese lines). JVM must not call sherpa/ORT or read PCM; tests inject Fake `synth`. `runForward` always writes `naturalnessOk=null` on scored rows. Device path is `:app` `AppKokoroRuleBEval` on `Dispatchers.Default`: extract/install `KokoroEvalLayout.pack()` into `filesDir/eval/tts/kokoro/` (GitHub `kokoro-int8-multi-lang-v1_1.tar.bz2`, SHA pinned; extract is eval-only — catalog `ModelInstaller` still fetches the archive file only), then `SherpaJni.generateKokoro` (`numThreads=1`, no playback), write `filesDir/eval/tts/kokoro-rtf.jsonl`, `releaseKokoro` in `finally`. Missing pack/engine returns `KOKORO_EVAL_MODEL_MISSING` (`评测用合成模型尚未就绪`). `last` is read-only (`loadJsonl` + `report`); missing/empty/corrupt jsonl returns null. `markNaturalnessOk` no-ops unless `nScored≥MIN_N`. Debug injects run/last/mark plus download progress and shows `formatRuleBMessage` (`KokoroEvalReport.toString()` + relative path + `adb exec-out run-as <packageName> cat files/eval/tts/kokoro-rtf.jsonl`) — never utterance, PCM, or 「已达标」. Tests must not read repo-root `eval/tts/kokoro-rtf.jsonl`. Missing file skips CI (`:core:tool:test` still passes). `ruleBPassed` = nLabeled≥5 ∧ nScored≥5 ∧ p95Rtf≤1.0 ∧ threadsApplied ∧ naturalnessApplied (nearest-rank `sorted[ceil(0.95 * n) - 1]`). scored = `synthMs!=null && audioDurationMs!=null && audioDurationMs>0 && synthMs>=0`; rtf = synthMs/audioDurationMs. Missing `numThreads` or `numThreads!=1` → `threadsApplied=false`. Missing or false `naturalnessOk` → `naturalnessApplied=false`. Testdata `kokoro-rtf-sample.jsonl` is a few lines — not Rule B. 2026-09-21 device (int8, `numThreads=1`) measured `p95Rtf=2.2515` — **not a pass**; keep VITS and do not add a Settings offer. `OfficialModelCatalog.standard()` stays VITS (`tts` = vits-zh-hf-fanchen-C); `KokoroEvalLayout.DIR` ≠ `TtsModelLayout.DIR`. `KokoroEvalLayout.ARCHIVE_SHA256` is the 147031220-byte GitHub tarball (`…aae9a78…`, not `…9e78…`). Do not change `SherpaJni` VITS wiring/`threadCount()`, `speech_output`, or settings 「Kokoro 已达标」. `FullEvalSet` stays ASR-only.
+
+## Scenario: Kokoro Rule B device eval
+
+### 1. Scope / Trigger
+- Trigger: Rule B needs on-device single-thread RTF plus a human naturalness mark. Product TTS and Settings catalog must stay VITS.
+
+### 2. Signatures
+- `KokoroEval.loadGold()` / `runForward(items, synth)` / `writeJsonl(file, items)` / `markNaturalnessOk(items)` / `report(items)`
+- `KokoroEvalLayout.pack()` / `isPresent` / `extractArchive` / `resolvedDir`
+- `SherpaJni.ensureKokoro` / `generateKokoro` / `releaseKokoro` (`numThreads=1`)
+- `AppKokoroRuleBEval.run` / `last` / `markNaturalnessOk`
+
+### 3. Contracts
+- Gold: `id` + `text` only in `/eval/kokoro-gold.jsonl`
+- Device jsonl: optional `synthMs` / `audioDurationMs` / `numThreads` / `naturalnessOk`; synth path forces `naturalnessOk` missing
+- Pack dir: `eval/tts/kokoro` (`model.int8.onnx`, `voices.bin`, `tokens.txt`, both lexicons, `espeak-ng-data/`, `dict/`)
+- Debug: `ruleBMessage` = counts + `eval/tts/kokoro-rtf.jsonl` + `run-as` line; `canMarkKokoroNaturalness` parses `nScored≥5`
+
+### 4. Validation & Error Matrix
+- Missing/corrupt last jsonl → `null` (do not invent 已达标)
+- Pack missing after install/extract → `评测用合成模型尚未就绪`
+- Download hash fail → `MODEL_HASH_MISMATCH`
+- `nScored<5` on mark → leave jsonl unchanged, return existing message
+- VITS `ttsEngine` still `threadCount().coerceIn(2, 4)`
+
+### 5. Good/Base/Bad Cases
+- Good: Fake 5 scored + mark → `naturalnessApplied=true`; p95≤1.0 + threads=1 → `ruleBPassed=true`
+- Base: 2026-09-21 device `p95Rtf=2.2515` → `ruleBPassed=false` even if naturalness is later marked
+- Bad: sample jsonl / catalog Kokoro offer / writing into `models/tts` / auto `naturalnessOk=true` / treating a measured fail as license to ship Kokoro
+
+### 6. Tests Required
+- `KokoroEvalTest`: gold ≥5; Fake `runForward` null naturalness; mark flips; sample is not Rule B; missing repo-root jsonl still passes
+- `KokoroEvalLayoutTest`: extract does not touch `models/tts`; `isPresent` needs `dict/`
+- `OfficialModelCatalogTest`: `standard()` has no kokoro id / `KokoroEvalLayout.DIR`
+- `AppKokoroRuleBEvalTest`: last empty/bad → null; format has `run-as`, no utterance/已达标; mark requires `nScored≥5`
+- `DebugUiStateTest`: 评测 Kokoro 规则 B / 本批自然度通过; no 已达标 / gold text
+
+### 7. Wrong vs Correct
+#### Wrong
+Add Kokoro to `OfficialModelCatalog.standard()`; set VITS `numThreads=1`; play PCM while timing; auto-check naturalness; extract into `models/tts`.
+
+#### Correct
+Eval pack under `eval/tts/kokoro`; `generateKokoro` times `generate` only; Debug batch mark after listen; catalog stays VITS.
 
 ## Don't: AgentTool with attacker-controlled download URL
 

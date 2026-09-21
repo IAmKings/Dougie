@@ -477,6 +477,11 @@ class MainActivity : ComponentActivity() {
                                 app.taskStores.auditLog,
                                 runRuleEEval = { AppIntentRuleEEval.run(app) },
                                 loadLastRuleE = { AppIntentRuleEEval.last(app) },
+                                runKokoroRuleB = { onProgress ->
+                                    AppKokoroRuleBEval.run(app, app.modelInstaller, onProgress)
+                                },
+                                loadLastKokoroRuleB = { AppKokoroRuleBEval.last(app) },
+                                markKokoroNaturalnessOk = { AppKokoroRuleBEval.markNaturalnessOk(app) },
                             ),
                         )
                         DebugRoute(

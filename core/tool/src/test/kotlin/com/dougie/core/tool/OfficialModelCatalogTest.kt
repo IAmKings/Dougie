@@ -93,6 +93,12 @@ class OfficialModelCatalogTest {
         assertEquals(UserFacingErrors.CHAT_ENGINE_NOT_READY, "离线对话引擎尚未接入，无法闲聊。")
         assertEquals(UserFacingErrors.MODEL_PROBE_EMBED_OK, "语义记忆测试通过。")
         assertEquals(UserFacingErrors.EMBED_MODEL_MISSING, "离线语义记忆模型尚未就绪。")
+        assertEquals(UserFacingErrors.KOKORO_EVAL_MODEL_MISSING, "评测用合成模型尚未就绪")
+        assertFalse(offers.any { it.id.contains("kokoro", ignoreCase = true) })
+        assertFalse(offers.any { it.title.contains("Kokoro", ignoreCase = true) })
+        assertFalse(offers.any { it.pack.relativeDir == KokoroEvalLayout.DIR })
+        assertEquals(TtsModelLayout.DIR, offers[1].pack.relativeDir)
+        assertFalse(KokoroEvalLayout.DIR == TtsModelLayout.DIR)
     }
 
     @Test

@@ -1,10 +1,14 @@
 package com.dougie.core.tool
 
+import com.dougie.core.model.AgentException
+import com.dougie.core.model.UserFacingErrors
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class KokoroEvalTest {
     @Test
@@ -186,6 +190,111 @@ class KokoroEvalTest {
         assertTrue(report.threadsApplied)
         assertFalse(report.naturalnessApplied)
         assertFalse(report.ruleBPassed)
+    }
+
+    @Test
+    fun loadGoldHasFiveChineseLinesWithoutTimings() {
+        val gold = KokoroEval.loadGold()
+        assertTrue(gold.size >= KokoroEval.MIN_N)
+        assertEquals(gold.size, gold.map { it.id }.toSet().size)
+        assertTrue(gold.all { it.text.isNotBlank() })
+        assertTrue(gold.all { item -> item.text.any { ch -> ch in '\u4e00'..'\u9fff' } })
+        assertTrue(gold.all { it.synthMs == null && it.audioDurationMs == null })
+        assertTrue(gold.all { it.numThreads == null && it.naturalnessOk == null })
+        gold.forEach { item ->
+            assertFalse(item.text.contains("@"))
+            assertFalse(item.text.contains("http"))
+        }
+    }
+
+    @Test
+    fun fakeRunForwardWritesJsonlWithoutNaturalnessAndDoesNotPass() = runTest {
+        val gold = KokoroEval.loadGold()
+        val (items, report) = KokoroEval.runForward(gold) { _ ->
+            KokoroSynthTiming(synthMs = 500L, audioDurationMs = 1000L, numThreads = 1)
+        }
+        assertEquals(gold.size, items.size)
+        assertEquals(gold.size, report.nScored)
+        assertEquals(0, report.nUnscored)
+        assertTrue(report.threadsApplied)
+        assertFalse(report.naturalnessApplied)
+        assertFalse(report.ruleBPassed)
+        assertTrue(items.all { it.numThreads == 1 && it.naturalnessOk == null })
+        val tmp = File.createTempFile("kokoro-rtf", ".jsonl")
+        tmp.deleteOnExit()
+        KokoroEval.writeJsonl(tmp, items)
+        val raw = tmp.readText()
+        assertFalse(raw.contains("naturalnessOk"))
+        assertEquals(items, KokoroEval.loadJsonl(raw))
+        gold.forEach { item -> assertFalse(report.toString().contains(item.text)) }
+    }
+
+    @Test
+    fun fakeRunForwardLeavesFailuresUnscored() = runTest {
+        val gold = KokoroEval.loadGold()
+        val (items, report) = KokoroEval.runForward(gold) { _ ->
+            throw AgentException(UserFacingErrors.TTS_FAILED)
+        }
+        assertEquals(gold.size, report.nLabeled)
+        assertEquals(0, report.nScored)
+        assertEquals(gold.size, report.nUnscored)
+        assertTrue(items.all { it.synthMs == null && it.audioDurationMs == null })
+        assertFalse(report.ruleBPassed)
+        gold.forEach { item -> assertFalse(report.toString().contains(item.text)) }
+    }
+
+    @Test
+    fun markNaturalnessOkFlipsOnlyScoredRows() = runTest {
+        val gold = KokoroEval.loadGold()
+        val (items, before) = KokoroEval.runForward(gold) { _ ->
+            KokoroSynthTiming(synthMs = 500L, audioDurationMs = 1000L, numThreads = 1)
+        }
+        assertFalse(before.naturalnessApplied)
+        assertFalse(before.ruleBPassed)
+        val marked = KokoroEval.markNaturalnessOk(items)
+        val after = KokoroEval.report(marked)
+        assertTrue(after.naturalnessApplied)
+        assertTrue(after.threadsApplied)
+        assertEquals(0.5, after.p95Rtf, 1e-9)
+        assertTrue(after.ruleBPassed)
+        assertTrue(marked.all { it.naturalnessOk == true })
+
+        val slow = items.mapIndexed { i, item ->
+            if (i == items.lastIndex) item.copy(synthMs = 2000L) else item
+        }
+        val slowMarked = KokoroEval.report(KokoroEval.markNaturalnessOk(slow))
+        assertTrue(slowMarked.naturalnessApplied)
+        assertTrue(slowMarked.p95Rtf > KokoroEval.RTF_LIMIT)
+        assertFalse(slowMarked.ruleBPassed)
+
+        val mixed = items.mapIndexed { i, item ->
+            if (i == 0) item.copy(synthMs = null, audioDurationMs = null, numThreads = null) else item
+        }
+        val mixedMarked = KokoroEval.markNaturalnessOk(mixed)
+        assertNull(mixedMarked[0].naturalnessOk)
+        assertTrue(mixedMarked.drop(1).all { it.naturalnessOk == true })
+        val mixedReport = KokoroEval.report(mixedMarked)
+        assertEquals(4, mixedReport.nScored)
+        assertTrue(mixedReport.naturalnessApplied)
+        assertFalse(mixedReport.ruleBPassed)
+    }
+
+    @Test
+    fun writeJsonlOmitsUnscoredFieldsAndRoundtrips() {
+        val items = listOf(
+            KokoroEvalItem("g001", "请把灯打开", 500L, 1000L, 1, null),
+            KokoroEvalItem("g002", "明天上午有会吗"),
+        )
+        val tmp = File.createTempFile("kokoro-unscored", ".jsonl")
+        tmp.deleteOnExit()
+        KokoroEval.writeJsonl(tmp, items)
+        val raw = tmp.readText()
+        val second = raw.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()[1]
+        assertFalse(second.contains("synthMs"))
+        assertFalse(second.contains("audioDurationMs"))
+        assertFalse(second.contains("numThreads"))
+        assertFalse(second.contains("naturalnessOk"))
+        assertEquals(items, KokoroEval.loadJsonl(raw))
     }
 
     private fun perfect(n: Int): List<KokoroEvalItem> =
