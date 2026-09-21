@@ -6,6 +6,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.ThemePreference
 import com.dougie.core.model.normalizeConversationTitle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +65,7 @@ class PreferenceStore(context: Context) {
             .putBoolean(KEY_MEMORY_ENABLED, stored.memoryEnabled)
             .putString(KEY_MODEL_TREE_URI, stored.modelTreeUri)
             .putInt(KEY_TTS_SPEAKER_ID, stored.ttsSpeakerId)
+            .putString(KEY_THEME_PREFERENCE, stored.themePreference.stored)
             .apply {
                 if (stored.egressConsentAt != null) {
                     putLong(KEY_CONSENT_AT, stored.egressConsentAt)
@@ -85,6 +87,10 @@ class PreferenceStore(context: Context) {
 
     fun setTtsSpeakerId(sid: Int) {
         save(settings.value.copy(ttsSpeakerId = sid))
+    }
+
+    fun setThemePreference(mode: ThemePreference) {
+        save(settings.value.copy(themePreference = mode))
     }
 
     fun setOpenAppsJson(json: String) {
@@ -169,6 +175,7 @@ class PreferenceStore(context: Context) {
             memoryEnabled = prefs.getBoolean(KEY_MEMORY_ENABLED, true),
             modelTreeUri = prefs.getString(KEY_MODEL_TREE_URI, "").orEmpty(),
             ttsSpeakerId = prefs.getInt(KEY_TTS_SPEAKER_ID, 0),
+            themePreference = ThemePreference.fromStored(prefs.getString(KEY_THEME_PREFERENCE, null)),
         )
     }
 
@@ -184,6 +191,7 @@ class PreferenceStore(context: Context) {
         const val KEY_MEMORY_ENABLED = "memory_enabled"
         const val KEY_MODEL_TREE_URI = "model_tree_uri"
         const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
+        const val KEY_THEME_PREFERENCE = "theme_preference"
         const val KEY_OPEN_APPS = "open_app_allowlist"
         const val KEY_ACTIVE_CHAT_SKU = "active_chat_sku"
         const val KEY_CURRENT_CONVERSATION = "current_conversation_id"

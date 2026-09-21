@@ -4,7 +4,7 @@
 
 ## Overview
 
-- Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `ConversationHit`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `UserFacingErrors`, `AndroidPermissions`).
+- Shared domain: `:core:model` (`AgentTask`, `ConversationIds`, `ConversationHit`, `TaskStatus`, `ToolTraceEntry`, `RiskLevel`, `MemoryEntry`, `LlmVendors`, `ThemePreference`, `UserFacingErrors`, `AndroidPermissions`).
 - UI-only types live next to the screen (`ChatItem` sealed class in `ChatUiState.kt`, `ChatItemEnter`, `ConfirmEnter`, `ConfirmExit`, `IntelligenceMark` enum, `HistoryItem`, `HistorySection`, `HistoryToolStep`, `DebugTaskSnapshot`, `SettingsFormState`, `PermissionItem`).
 - JSON at the wire/tool boundary is `kotlinx.serialization.json` (`JsonObject` / `buildJsonObject`) in `:core:runtime` / `:core:tool`, not in Compose files. Chat `prettyToolResult` in `ChatUiState.kt` pretty-prints `ToolTraceEntry.resultJson` for the ToolCallCard expand block (two-space indent, illegal JSON unchanged); it must not decode `snapshot_json` or copy `argsSummary`.
 - Persistence codec is hand-written `TaskSnapshotCodec` (`ignoreUnknownKeys`). Do not switch Chat to decode `snapshot_json`.
@@ -13,7 +13,7 @@
 
 | Kind | Where | Examples |
 |------|--------|----------|
-| Domain | `:core:model` | `AgentTask`, `ConversationHit`, `ConversationIds`, `TaskStatus`, `UserFacingErrors` |
+| Domain | `:core:model` | `AgentTask`, `ConversationHit`, `ConversationIds`, `TaskStatus`, `UserFacingErrors`, `ThemePreference` |
 | Runtime handles | `:core:runtime` | `TaskManager`, `ConversationPointer`, `ConversationTitles`, `AuditEntry` |
 | Feature UI | `:feature:*` | `ChatUiState`, `ChatItem`, `ChatItemEnter`, `ConfirmEnter`, `ConfirmExit`, `DebugUiState` |
 | Prefs | `:data:preferences` | `ProviderSettings` |

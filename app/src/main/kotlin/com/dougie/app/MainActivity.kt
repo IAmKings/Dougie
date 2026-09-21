@@ -23,8 +23,12 @@ import com.dougie.core.model.AttachmentLimits
 import com.dougie.feature.chat.ChatAttachmentUi
 import com.dougie.feature.chat.toUi
 import java.io.File
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,11 +37,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dougie.core.model.AndroidPermissions
-import androidx.lifecycle.lifecycleScope
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.TaskStatus
+import com.dougie.core.model.ThemePreference
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.feature.chat.ChatRoute
 import com.dougie.feature.debug.DebugRoute
@@ -112,6 +117,12 @@ class MainActivity : ComponentActivity() {
         if (!granted) attachErrorState.value = UserFacingErrors.PERMISSION_DENIED
     }
 
+    override fun attachBaseContext(newBase: Context) {
+        val app = newBase.applicationContext as? DougieApplication
+        val mode = app?.themePreference() ?: ThemePreference.SYSTEM
+        super.attachBaseContext(wrapThemeContext(newBase, mode))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         savedInstanceState?.getString(KEY_CHAT_DRAFT)?.let { chatDraftState.value = draftAtEnd(it) }
@@ -119,11 +130,47 @@ class MainActivity : ComponentActivity() {
             savedInstanceState?.getBoolean(KEY_VOICE_USED_THIS_DRAFT, false) == true
         if (savedInstanceState == null) {
             applyChatIntent(intent)
+        } else {
+            savedInstanceState.getString(KEY_ROUTE)?.let { raw ->
+                runCatching { AppRoute.valueOf(raw) }.getOrNull()?.let { routeState.value = it }
+            }
         }
         enableEdgeToEdge()
         val app = application as DougieApplication
         refreshVoicePacks()
         setContent {
+            val dark = isSystemInDarkTheme()
+            MaterialTheme(
+                colorScheme = if (dark) {
+                    val p = DougieColors.Dark
+                    darkColorScheme(
+                        primary = p.Primary,
+                        onPrimary = p.OnPrimary,
+                        primaryContainer = p.PrimaryContainer,
+                        onPrimaryContainer = p.OnPrimaryContainer,
+                        surface = p.Surface,
+                        onSurface = p.OnSurface,
+                        onSurfaceVariant = p.OnSurfaceVariant,
+                        error = p.Error,
+                        outline = p.Outline,
+                        outlineVariant = p.OutlineVariant,
+                    )
+                } else {
+                    val p = DougieColors.Light
+                    lightColorScheme(
+                        primary = p.Primary,
+                        onPrimary = p.OnPrimary,
+                        primaryContainer = p.PrimaryContainer,
+                        onPrimaryContainer = p.OnPrimaryContainer,
+                        surface = p.Surface,
+                        onSurface = p.OnSurface,
+                        onSurfaceVariant = p.OnSurfaceVariant,
+                        error = p.Error,
+                        outline = p.Outline,
+                        outlineVariant = p.OutlineVariant,
+                    )
+                },
+            ) {
             ChannelHooks.Root {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -400,6 +447,12 @@ class MainActivity : ComponentActivity() {
                             onOpenDebug = { route = AppRoute.Debug },
                             onOpenOpenApps = { route = AppRoute.OpenApps },
                             onPickModelTree = { treePicker.launch(null) },
+                            onThemePreferenceChange = { mode ->
+                                if (app.preferenceStore.settings.value.themePreference != mode) {
+                                    viewModel.setThemePreference(mode)
+                                    recreate()
+                                }
+                            },
                             shortcutLayer = { ChannelHooks.ShortcutLayerSettings() },
                             scheduleLayer = { ScheduleSettings() },
                         )
@@ -471,6 +524,7 @@ class MainActivity : ComponentActivity() {
                 }
                 }
             }
+            }
         }
     }
 
@@ -478,6 +532,7 @@ class MainActivity : ComponentActivity() {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_CHAT_DRAFT, chatDraftState.value.text)
         outState.putBoolean(KEY_VOICE_USED_THIS_DRAFT, voiceUsedThisDraftState.value)
+        outState.putString(KEY_ROUTE, routeState.value.name)
     }
 
     override fun onStop() {
@@ -871,6 +926,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val KEY_CHAT_DRAFT = "dougie.chat.draft"
         private const val KEY_VOICE_USED_THIS_DRAFT = "dougie.chat.voiceUsedThisDraft"
+        private const val KEY_ROUTE = "dougie.app.route"
         private const val PARTIAL_ASR_MS = 400L
     }
 }

@@ -119,7 +119,7 @@ V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking
 
 ### V2.1 现状对齐（v0.1.4，不 bump 功能版本）
 
-2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；不把终端风/ANSI 换肤、M3 双主题、Compose UI 五态测试、商店上架标成完成。
+2026-09-20：对照现网 **v0.1.4** 修订执行清单，不宣称新能力。文头平台与 `minSdk` 26 / Android 8.0+ 对齐。MVP 曾按评审修正 #5 将向量检索降为 FTS；Beta 已交付向量语义检索，embedding 未就绪时仍走 FTS。§15 Phase 5 与 §16.2 标明已交付（含渠道边界）或未做；规则 D 500 条真机集与 Kokoro 门槛仍未闭合。终答按字打出已在 Chat 落地；明暗双主题已跟随系统（stitch 紫蓝，非 §11.4 青绿表）。不把终端风/ANSI 换肤、Compose UI 五态测试、商店上架标成完成。
 
 ### V2.1 追加决策（1 项：关键用户流程 / UI 规范 / 技术方案补全）
 
@@ -222,7 +222,7 @@ SMS、Call、Accessibility 自动化（含屏幕点击/滑动操作，见 §6.7�
 - Error/Retry
 - Debug/Developer 页面
 
-> 说明：手机端"终端风/黑客风"主题用 Compose UI 自绘实现（等宽字体、ANSI 配色模拟、打字机动画），属于 `:feature:chat` 的 UI 主题工作；**现网已做终答按字打出，未做终端风等宽/ANSI 换肤 / M3 双主题**。开发期终端控制台由独立的 `:cli` 模块承担（见 §17.3）。mosaic（JVM-only + JLine 3）无法运行在 Android，不得用于 App 内主题功能。
+> 说明：手机端"终端风/黑客风"主题用 Compose UI 自绘实现（等宽字体、ANSI 配色模拟、打字机动画），属于 `:feature:chat` 的 UI 主题工作；**现网已做终答按字打出与跟随系统的明暗双主题（stitch 紫蓝，非青绿）；未做终端风等宽/ANSI 换肤**。开发期终端控制台由独立的 `:cli` 模块承担（见 §17.3）。mosaic（JVM-only + JLine 3）无法运行在 Android，不得用于 App 内主题功能。
 
 ## 3.2 明确非目标
 
@@ -1192,7 +1192,7 @@ Final Answer
 
 ## 11.4 设计令牌（Design Tokens，Material Design 3）
 
-基于 Jetpack Compose + Material Design 3（§17.1）。令牌命名对齐 M3，明暗双主题（**设计规格**；现网未做暗色主题；终答打字机已做，非终端风换肤）。
+基于 Jetpack Compose + Material Design 3（§17.1）。令牌命名对齐 M3，明暗双主题（**设计规格**为青绿；现网双主题已做，色板仍是 stitch 紫蓝 `#3D5198` / `#B4C5FF`，非青绿；终答打字机已做，非终端风换肤）。
 
 | 类别 | 令牌 | 值（亮色 / 暗色） | 用途 |
 |---|---|---|---|
@@ -1592,7 +1592,7 @@ Process Death 任务恢复（UF-05）→ 执行中杀进程后重开，提示继
 | Phase 2 | 用户能够让 Agent 从历史对话中找回至少一个相关事实 |
 | Phase 3 | 所有 Tool 均经过权限、Policy、Schema 验证 |
 | Phase 4 | 在 Tool 执行前后杀进程，不产生重复副作用；Task 可重新提交或返回明确错误状态 |
-| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS，**未**以 Kokoro 过规则 B。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。完整多模态、自动读通知、M3 双主题、Compose UI 五态测试、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
+| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS，**未**以 Kokoro 过规则 B。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。完整多模态、自动读通知、Compose UI 五态测试、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
 
 ## 16.3 Definition of Done
 

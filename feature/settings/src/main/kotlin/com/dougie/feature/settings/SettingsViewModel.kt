@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.ThemePreference
 import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.ModelImporter
 import com.dougie.core.tool.ModelInstaller
@@ -94,6 +95,13 @@ class SettingsViewModel(
             SharingStarted.WhileSubscribed(5_000),
             TtsVoices.clamp(store.settings.value.ttsSpeakerId),
         )
+    val themePreference: StateFlow<ThemePreference> = store.settings
+        .map { it.themePreference }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            store.settings.value.themePreference,
+        )
 
     fun requestModel(id: String) = downloads.request(id)
 
@@ -120,6 +128,11 @@ class SettingsViewModel(
 
     fun setTtsSpeakerId(sid: Int) {
         store.setTtsSpeakerId(TtsVoices.clamp(sid))
+    }
+
+    fun setThemePreference(mode: ThemePreference) {
+        if (store.settings.value.themePreference == mode) return
+        store.setThemePreference(mode)
     }
 
     fun setAllowCloud(value: Boolean) {
@@ -185,6 +198,7 @@ class SettingsViewModel(
                 memoryEnabled = store.settings.value.memoryEnabled,
                 modelTreeUri = store.settings.value.modelTreeUri,
                 ttsSpeakerId = store.settings.value.ttsSpeakerId,
+                themePreference = store.settings.value.themePreference,
             ),
         )
         _form.update { store.settings.value.toForm().copy(saved = true) }

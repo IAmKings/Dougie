@@ -1118,7 +1118,7 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
     val barColor = when (entry.status) {
         ToolTraceStatus.SUCCESS -> DougieColors.StatusCompleted
         ToolTraceStatus.EXECUTING, ToolTraceStatus.PENDING -> DougieColors.StatusExecuting
-        ToolTraceStatus.FAILED -> Color(0xFFD32F2F)
+        ToolTraceStatus.FAILED -> DougieColors.Error
     }
     val toolLabel = toolDisplayName(entry.toolName)
     val risk = entry.riskLevel.name

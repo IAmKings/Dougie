@@ -1,6 +1,7 @@
 package com.dougie.data.preferences
 
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.ThemePreference
 
 data class ProviderSettings(
     val allowCloud: Boolean = false,
@@ -13,6 +14,7 @@ data class ProviderSettings(
     val memoryEnabled: Boolean = true,
     val modelTreeUri: String = "",
     val ttsSpeakerId: Int = 0,
+    val themePreference: ThemePreference = ThemePreference.SYSTEM,
 ) {
     companion object {
         val DEFAULT_VENDOR_ID = LlmVendors.OPENAI.id

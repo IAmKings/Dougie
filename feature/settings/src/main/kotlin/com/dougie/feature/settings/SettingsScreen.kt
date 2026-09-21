@@ -6,8 +6,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.ThemePreference
 import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.TtsVoices
 
@@ -67,18 +70,22 @@ fun SettingsRoute(
     onOpenDebug: () -> Unit,
     onOpenOpenApps: () -> Unit,
     onPickModelTree: () -> Unit,
+    onThemePreferenceChange: (ThemePreference) -> Unit = {},
     shortcutLayer: @Composable () -> Unit = {},
     scheduleLayer: @Composable () -> Unit = {},
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val models by viewModel.models.collectAsStateWithLifecycle()
     val ttsSpeakerId by viewModel.ttsSpeakerId.collectAsStateWithLifecycle()
+    val themePreference by viewModel.themePreference.collectAsStateWithLifecycle()
     SettingsScreen(
         form = form,
         models = models,
         ttsSpeakerId = ttsSpeakerId,
         ttsVoiceEnabled = models.rows.any { it.id == "tts" && it.installed },
         onTtsSpeakerChange = viewModel::setTtsSpeakerId,
+        themePreference = themePreference,
+        onThemePreferenceChange = onThemePreferenceChange,
         onBack = onBack,
         onAllowCloudChange = viewModel::setAllowCloud,
         onVendorChange = viewModel::setVendor,
@@ -109,6 +116,8 @@ fun SettingsScreen(
     ttsSpeakerId: Int = 0,
     ttsVoiceEnabled: Boolean = false,
     onTtsSpeakerChange: (Int) -> Unit = {},
+    themePreference: ThemePreference = ThemePreference.SYSTEM,
+    onThemePreferenceChange: (ThemePreference) -> Unit = {},
     onBack: () -> Unit,
     onAllowCloudChange: (Boolean) -> Unit,
     onVendorChange: (String) -> Unit,
@@ -279,6 +288,10 @@ fun SettingsScreen(
                 onCancelModel = onCancelModel,
                 onProbeModel = onProbeModel,
                 onActivateChatSku = onActivateChatSku,
+            )
+            ThemeSection(
+                preference = themePreference,
+                onPreferenceChange = onThemePreferenceChange,
             )
             TtsVoiceSection(
                 speakerId = ttsSpeakerId,
@@ -562,6 +575,81 @@ private fun OfflineModelRow(
                 fontSize = 12.sp,
             )
         }
+    }
+}
+
+@Composable
+private fun ThemeSection(
+    preference: ThemePreference,
+    onPreferenceChange: (ThemePreference) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "主题",
+            color = DougieColors.OnSurface,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        Text(
+            text = "立即生效，不必保存配置。",
+            color = DougieColors.OnSurfaceVariant,
+            fontSize = 14.sp,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ThemeChoice(
+                label = "跟随系统",
+                mode = ThemePreference.SYSTEM,
+                selected = preference,
+                onSelect = onPreferenceChange,
+                modifier = Modifier.weight(1f),
+            )
+            ThemeChoice(
+                label = "浅色",
+                mode = ThemePreference.LIGHT,
+                selected = preference,
+                onSelect = onPreferenceChange,
+                modifier = Modifier.weight(1f),
+            )
+            ThemeChoice(
+                label = "深色",
+                mode = ThemePreference.DARK,
+                selected = preference,
+                onSelect = onPreferenceChange,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeChoice(
+    label: String,
+    mode: ThemePreference,
+    selected: ThemePreference,
+    onSelect: (ThemePreference) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isSelected = mode == selected
+    Button(
+        onClick = { onSelect(mode) },
+        modifier = modifier.defaultMinSize(minWidth = 0.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) DougieColors.Primary else DougieColors.SurfaceContainerLow,
+            contentColor = if (isSelected) DougieColors.OnPrimary else DougieColors.OnSurfaceVariant,
+        ),
+    ) {
+        Text(text = label, fontSize = 13.sp, maxLines = 1)
     }
 }
 

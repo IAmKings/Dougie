@@ -49,6 +49,7 @@ feature/debug/src/main/kotlin/com/dougie/feature/debug/
 app/src/main/kotlin/com/dougie/app/
   DougieApplication.kt
   MainActivity.kt
+  ThemeContext.kt
   AppBackNav.kt
   ChatLaunch.kt
   ChatHistoryTransition.kt
@@ -67,6 +68,7 @@ app/src/main/kotlin/com/dougie/app/
   ReplyPlayback.kt
   LauncherApps.kt
 app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+app/src/main/res/values-night/themes.xml
 app/src/play/kotlin/com/dougie/app/
   ChannelHooks.kt
 app/src/play/res/values/strings.xml
@@ -99,7 +101,7 @@ app/src/sideload/assets/models/tts/
 - Screens: `ChatScreen` / `ChatRoute`, `SettingsScreen` / `SettingsRoute`, `MemoryScreen` / `MemoryRoute`, `PermissionsScreen` / `PermissionsRoute`, `HistoryScreen` / `HistoryRoute`, `DebugScreen` / `DebugRoute`
 - Mapping: `AgentTask?.toChatUiState()` in `ChatUiState.kt`
 - Product copy: **Dougie**, never Waku
-- Chat colors: Stitch tokens `primary #3D5198`, `primaryContainer #566AB2`, `surface #F8FAF9` (`DougieColors`)
+- Chat colors: stitch Light `primary #3D5198` / Dark `#B4C5FF` (`DougieColors.Light` / `.Dark`); `@Composable` getters follow system dark. Overlay disc stays `#3D5198`.
 - Egress consent (fixed): `本次请求可能将输入、必要上下文和 Tool Result 发送至第三方 LLM 服务。`
 
 ## Design Decision: Chat status chain

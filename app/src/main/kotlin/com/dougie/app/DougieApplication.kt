@@ -12,6 +12,7 @@ import com.dougie.core.memory.MemoryStore
 import com.dougie.core.model.CloudLlmConfig
 import com.dougie.core.model.EgressPolicy
 import com.dougie.core.model.AndroidPermissions
+import com.dougie.core.model.ThemePreference
 import com.dougie.core.runtime.ConversationPointer
 import com.dougie.core.runtime.ConversationTitles
 import com.dougie.core.runtime.EgressGateway
@@ -110,6 +111,11 @@ class DougieApplication : Application() {
     private val foregroundTracker = AppForegroundTracker()
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var tools: LinkedHashMap<String, AgentTool>
+
+    fun themePreference(): ThemePreference {
+        if (!::preferenceStore.isInitialized) return ThemePreference.SYSTEM
+        return preferenceStore.settings.value.themePreference
+    }
 
     override fun onCreate() {
         super.onCreate()
