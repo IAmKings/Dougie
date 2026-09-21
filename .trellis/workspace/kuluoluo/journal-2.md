@@ -383,3 +383,28 @@ Chat User/Thinking/Tool/Confirm/Final/FAILED 用 Robolectric Compose 语义断�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 105: 版本 0.1.5 发版
+
+**Date**: 2026-09-21
+**Task**: 版本 0.1.5 发版
+**Branch**: `master`
+
+### Summary
+
+默认版本升到 0.1.5（versionCode 105），打 tag v0.1.5 并推送，触发 GitHub Release。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `aa5588c` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 待 Actions 出 APK；不自动开规则 D / 商店 / 多模态
