@@ -31,8 +31,8 @@ android {
         applicationId = "com.dougie.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = (findProperty("dougieVersionCode") as String?)?.toIntOrNull() ?: 104
-        versionName = (findProperty("dougieVersionName") as String?) ?: "0.1.4"
+        versionCode = (findProperty("dougieVersionCode") as String?)?.toIntOrNull() ?: 105
+        versionName = (findProperty("dougieVersionName") as String?) ?: "0.1.5"
         // Optional HTTPS + SHA-256 in local.properties (gitignored). Blank → OfficialModelCatalog.standard() defaults.
         listOf(
             "ASR_MODEL_URL" to "dougie.model.asr.url",
