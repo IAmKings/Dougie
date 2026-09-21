@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 103
+- **Total Sessions**: 104
 - **Last Active**: 2026-09-21
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~364 | Active |
+| `journal-2.md` | ~385 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 104 | 2026-09-21 | Kokoro 规则 B 真机评测 | `f9850a6` | `master` |
 | 103 | 2026-09-21 | Compose UI 五态测试 | `47030c2` | `master` |
 | 102 | 2026-09-21 | Chat 终端风 | `fbb59572747ade3deecc0fcd99f37beb1116b260` | `master` |
 | 101 | 2026-09-21 | 明暗双主题 | `c3d76ef` | `master` |

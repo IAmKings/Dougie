@@ -362,3 +362,24 @@ Chat User/Thinking/Tool/Confirm/Final/FAILED 用 Robolectric Compose 语义断�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 104: Kokoro 规则 B 真机评测
+
+**Date**: 2026-09-21
+**Task**: Kokoro 规则 B 真机评测
+**Branch**: `master`
+
+### Summary
+
+开发者页可测单线程 Kokoro RTF；真机 p95Rtf=2.2515 未过门，产品 TTS 仍为 VITS。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f9850a6` | (see git log) |
+
+### Status
+
+[OK] **Completed**
