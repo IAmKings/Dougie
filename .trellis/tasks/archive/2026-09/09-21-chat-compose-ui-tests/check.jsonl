@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Compose screen conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Five bubble states and Confirm overlay copy"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "No screenshot CI; ChatUiStateTest must still pass"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Confirm is overlay; 语音转写 not in bubble text"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Do not invent a second ChatScreen for tests"}

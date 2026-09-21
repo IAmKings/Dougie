@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Compose feature conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Chat 5 bubble states; Confirm overlay not a feed row"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Today JVM mapping only; this task adds Chat Compose UI tests"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "ChatUiState items to inject into ChatScreen"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse ChatUiState fixtures; do not duplicate mappers in the UI test"}
