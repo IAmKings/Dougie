@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JVM tests for assembler; no new Android types in :core:llm"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Rule text stays out of logs"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "保存配置 must not clear immediate standing-rule writes"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Settings card matches existing Compose patterns"}

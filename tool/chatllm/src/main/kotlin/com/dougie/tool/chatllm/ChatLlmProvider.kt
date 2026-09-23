@@ -35,6 +35,7 @@ class ChatLlmProvider private constructor(
     private val cacheDir: File,
     private val toolDescriptors: () -> List<ToolDescriptor>,
     private val activeSku: () -> String?,
+    private var standingRules: () -> String,
 ) : LlmProvider {
     override val isLocal: Boolean = true
 
@@ -65,7 +66,7 @@ class ChatLlmProvider private constructor(
         }
         val descriptors = toolDescriptors()
         conversation.sendMessageAsync(
-            promptFor(context.task, descriptors),
+            promptFor(context.task, descriptors, standingRules()),
             object : MessageCallback {
                 private val buffer = StringBuilder()
 
@@ -189,15 +190,20 @@ class ChatLlmProvider private constructor(
             context: Context,
             toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
             activeSku: () -> String? = { null },
+            standingRules: () -> String = { "" },
         ): ChatLlmProvider {
-            instance?.let { return it }
+            instance?.let { existing ->
+                existing.standingRules = standingRules
+                return existing
+            }
             return synchronized(this) {
-                instance ?: ChatLlmProvider(
+                instance?.also { it.standingRules = standingRules } ?: ChatLlmProvider(
                     filesDir = context.applicationContext.filesDir,
                     extraRoot = context.applicationContext.getExternalFilesDir(null),
                     cacheDir = context.applicationContext.cacheDir,
                     toolDescriptors = toolDescriptors,
                     activeSku = activeSku,
+                    standingRules = standingRules,
                 ).also { instance = it }
             }
         }
@@ -207,4 +213,5 @@ class ChatLlmProvider private constructor(
 internal fun promptFor(
     task: AgentTask,
     descriptors: List<ToolDescriptor> = emptyList(),
-): String = ChatPromptAssembler.localPrompt(task, descriptors)
+    standingRules: String = "",
+): String = ChatPromptAssembler.localPrompt(task, descriptors, standingRules)

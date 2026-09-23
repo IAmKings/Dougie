@@ -1,0 +1,31 @@
+{
+  "id": "v3-daily-assistant",
+  "name": "v3-daily-assistant",
+  "title": "V3 日常助手",
+  "description": "把现有运行时收成每天用得上的手机助手：封卷、常驻规则、端侧工具契约、晨间简报。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "kuluoluo",
+  "assignee": "kuluoluo",
+  "createdAt": "2026-09-23",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "09-23-v3-seal",
+    "09-23-soul-rules",
+    "09-23-local-tool-contract",
+    "09-23-morning-brief"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

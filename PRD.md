@@ -1,4 +1,4 @@
-# Dougie 产品需求文档（PRD）— 执行验收基线
+# Dougie 产品需求文档（PRD）— 已关闭的执行基线
 
 | 项目 | 内容 |
 |---|---|
@@ -6,7 +6,7 @@
 | 来源文档 | `source/Waku-Android_Local-First-Agent_PRD_v2.0.md`（V2.0.0 主干）+ `source/Waku-Android_PRD_V2.0_Feasibility_Review.md`（可行性评审修正）+ `source/prd.md`（V1.0.0，仅作背景） |
 | 整合策略 | V2.0 主干 + 吸收可行性评审全部修正；V1.0 仅作背景与演进记录 |
 | 日期 | 2026-08-21 |
-| 状态 | 执行验收基线 |
+| 状态 | 已关闭的执行基线（v0.1.5，2026-09-21 GitHub Release） |
 | 平台 | Android 8.0+（`minSdk` 26），首期重点适配 Android 13–16 |
 | 产品形态 | Android 原生 App + Agent Runtime |
 | 核心理念 | Local-first / Permission-first / Tool-driven / Recoverable |
@@ -127,6 +127,10 @@ V2.1.10 将意图主路径定为 Qwen3-0.6B-Instruct GGUF + llama.cpp（thinking
 | # | 决策 | 说明 | 影响章节 |
 |---|---|---|---|
 | 22 | 补全关键用户流程、UI 规范与技术方案 | 在既有架构之上补全三块可执行文档：①**关键用户流程**（§4.4，6 个端到端流程 UF-01–UF-06，Mermaid 图，映射 E2E Case）；②**UI 规范**（§11.4–§11.8，Material Design 3 完整设计规范——设计令牌/组件/交互/动效/布局）；③**技术方案**（§20，接口契约级——5 个核心接口 Kotlin 契约、模块依赖图、错误映射表、4 个数据流图）。配套新增 Case 13/14（E2E 共 14 个）与 2 项 DoD；技术方案遵循 :core:* JVM 纯净与 §17.2 模块红线 | §4.4、§11.4–§11.8、§16、§20 |
+
+### V3（基线关闭之后）
+
+V2.1.11 已随 **v0.1.5** 关闭，不再作为当前迭代的执行清单。下一章写在 `.trellis/tasks/09-23-v3-daily-assistant/prd.md`：常驻规则、端侧工具契约、晨间简报。规则 D 的 500 条真机集、Kokoro、自动读通知、完整多模态、商店上架留在卷外。
 
 ---
 
@@ -1593,7 +1597,7 @@ Process Death 任务恢复（UF-05）→ 执行中杀进程后重开，提示继
 | Phase 2 | 用户能够让 Agent 从历史对话中找回至少一个相关事实 |
 | Phase 3 | 所有 Tool 均经过权限、Policy、Schema 验证 |
 | Phase 4 | 在 Tool 执行前后杀进程，不产生重复副作用；Task 可重新提交或返回明确错误状态 |
-| Phase 5（Beta，非 MVP 阻塞） | **v0.1.4 现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS。Kokoro 规则 B **已测未过**（2026-09-21 真机单线程 int8 `p95Rtf=2.2515`），开发者页可复测，不得标 Kokoro 已启用。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。Compose UI 五态测试已做（`:feature:chat` Robolectric 语义断言）。完整多模态、自动读通知、商店上架均未做。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
+| Phase 5（Beta，非 MVP 阻塞） | **v0.1.5 关闭时的现状**：规则 E 真机已过门；`TapSwipeTool` 侧载 onboarding 与 L3 确认链已落地（Play 无此能力）。离线 TTS 现网为 VITS。Kokoro 规则 B **已测未过**（2026-09-21 真机单线程 int8 `p95Rtf=2.2515`），开发者页可复测，不得标 Kokoro 已启用。规则 D runner 已在仓库，**500 条真机 CER 集未闭合**，不得标 ASR 测量门达标。终答打字机已做。明暗双主题已跟随系统（stitch，非青绿）。Compose UI 五态测试已做（`:feature:chat` Robolectric 语义断言）。完整多模态、自动读通知、商店上架均未做，并与规则 D、Kokoro 一起留在 V3 卷外（见 §1.4）。历史测量目标仍为：ASR CER ≤ 5% + 端到端成功率 ≥ 95%（规则 D）；TTS 规则 A/B/C（包体 ≤ 400MB、Kokoro 门槛、降级边界）；§6.7–§6.9、§10.2 |
 
 ## 16.3 Definition of Done
 

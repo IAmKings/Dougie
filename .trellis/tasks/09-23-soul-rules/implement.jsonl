@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "JVM core stays free of android.* when clamping and injecting standing rules"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Standing-rule text must not enter Logcat, AuditLog, or prompts dumps"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Settings card lives in :feature:settings"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Immediate persist plus 保存配置 must copy standing rules like theme"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Settings copy, Switch, and Chinese content descriptions"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Prefs, assembler, and both LLM providers must share one string"}

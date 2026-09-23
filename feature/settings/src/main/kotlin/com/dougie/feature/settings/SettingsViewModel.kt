@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ThemePreference
 import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.ModelImporter
@@ -109,6 +110,20 @@ class SettingsViewModel(
             SharingStarted.WhileSubscribed(5_000),
             store.settings.value.terminalTheme,
         )
+    val standingRulesEnabled: StateFlow<Boolean> = store.settings
+        .map { it.standingRulesEnabled }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            store.settings.value.standingRulesEnabled,
+        )
+    val standingRules: StateFlow<String> = store.settings
+        .map { it.standingRules }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            store.settings.value.standingRules,
+        )
 
     fun requestModel(id: String) = downloads.request(id)
 
@@ -145,6 +160,23 @@ class SettingsViewModel(
     fun setTerminalTheme(enabled: Boolean) {
         if (store.settings.value.terminalTheme == enabled) return
         store.setTerminalTheme(enabled)
+    }
+
+    fun setStandingRulesEnabled(enabled: Boolean) {
+        val current = store.settings.value
+        if (current.standingRulesEnabled == enabled) return
+        store.setStandingRules(enabled, current.standingRules)
+    }
+
+    fun setStandingRulesText(text: String) {
+        val current = store.settings.value
+        val limited = StandingRules.limit(text)
+        if (current.standingRules == limited) return
+        store.setStandingRules(current.standingRulesEnabled, limited)
+    }
+
+    fun restoreStandingRules() {
+        store.setStandingRules(false, "")
     }
 
     fun setAllowCloud(value: Boolean) {
@@ -212,6 +244,8 @@ class SettingsViewModel(
                 ttsSpeakerId = store.settings.value.ttsSpeakerId,
                 themePreference = store.settings.value.themePreference,
                 terminalTheme = store.settings.value.terminalTheme,
+                standingRulesEnabled = store.settings.value.standingRulesEnabled,
+                standingRules = store.settings.value.standingRules,
             ),
         )
         _form.update { store.settings.value.toForm().copy(saved = true) }

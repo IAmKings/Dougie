@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "Scorer and frozen set stay in :core:llm"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Eval report is counts only; utterances stay off Logcat and the debug screen"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "CI runs JVM scorer tests and checkChannelLeak, not LiteRT"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Debug page and Play/sideload split for the runner button"}

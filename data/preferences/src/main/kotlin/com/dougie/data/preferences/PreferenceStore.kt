@@ -6,6 +6,7 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.dougie.core.model.ConversationIds
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ThemePreference
 import com.dougie.core.model.normalizeConversationTitle
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,6 +55,7 @@ class PreferenceStore(context: Context) {
         val stored = next.copy(
             egressConsentAt = consent,
             maxTokens = LlmVendors.clampMaxTokens(next.maxTokens),
+            standingRules = StandingRules.limit(next.standingRules),
         )
         prefs.edit()
             .putBoolean(KEY_ALLOW_CLOUD, stored.allowCloud)
@@ -67,6 +69,8 @@ class PreferenceStore(context: Context) {
             .putInt(KEY_TTS_SPEAKER_ID, stored.ttsSpeakerId)
             .putString(KEY_THEME_PREFERENCE, stored.themePreference.stored)
             .putBoolean(KEY_TERMINAL_THEME, stored.terminalTheme)
+            .putBoolean(KEY_STANDING_RULES_ENABLED, stored.standingRulesEnabled)
+            .putString(KEY_STANDING_RULES, stored.standingRules)
             .apply {
                 if (stored.egressConsentAt != null) {
                     putLong(KEY_CONSENT_AT, stored.egressConsentAt)
@@ -96,6 +100,15 @@ class PreferenceStore(context: Context) {
 
     fun setTerminalTheme(enabled: Boolean) {
         save(settings.value.copy(terminalTheme = enabled))
+    }
+
+    fun setStandingRules(enabled: Boolean, text: String) {
+        save(
+            settings.value.copy(
+                standingRulesEnabled = enabled,
+                standingRules = StandingRules.limit(text),
+            ),
+        )
     }
 
     fun setOpenAppsJson(json: String) {
@@ -182,6 +195,8 @@ class PreferenceStore(context: Context) {
             ttsSpeakerId = prefs.getInt(KEY_TTS_SPEAKER_ID, 0),
             themePreference = ThemePreference.fromStored(prefs.getString(KEY_THEME_PREFERENCE, null)),
             terminalTheme = prefs.getBoolean(KEY_TERMINAL_THEME, false),
+            standingRulesEnabled = prefs.getBoolean(KEY_STANDING_RULES_ENABLED, false),
+            standingRules = StandingRules.limit(prefs.getString(KEY_STANDING_RULES, "").orEmpty()),
         )
     }
 
@@ -199,6 +214,8 @@ class PreferenceStore(context: Context) {
         const val KEY_TTS_SPEAKER_ID = "tts_speaker_id"
         const val KEY_THEME_PREFERENCE = "theme_preference"
         const val KEY_TERMINAL_THEME = "terminal_theme"
+        const val KEY_STANDING_RULES_ENABLED = "standing_rules_enabled"
+        const val KEY_STANDING_RULES = "standing_rules"
         const val KEY_OPEN_APPS = "open_app_allowlist"
         const val KEY_ACTIVE_CHAT_SKU = "active_chat_sku"
         const val KEY_CURRENT_CONVERSATION = "current_conversation_id"

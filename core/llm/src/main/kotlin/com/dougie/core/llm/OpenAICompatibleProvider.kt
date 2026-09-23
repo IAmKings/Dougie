@@ -50,6 +50,7 @@ class OpenAICompatibleProvider(
     private val config: () -> CloudLlmConfig,
     private val allowCloud: () -> Boolean = { false },
     private val attachmentJpeg: (String) -> ByteArray? = { null },
+    private val standingRules: () -> String = { "" },
 ) : LlmProvider {
     override val isLocal: Boolean = false
 
@@ -173,7 +174,7 @@ class OpenAICompatibleProvider(
             add(
                 buildJsonObject {
                     put("role", "system")
-                    put("content", ChatPromptAssembler.systemPrefix(task, toolDescriptors()))
+                    put("content", ChatPromptAssembler.systemPrefix(task, toolDescriptors(), standingRules()))
                 },
             )
             for (turn in history) {

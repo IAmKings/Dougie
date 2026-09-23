@@ -3,6 +3,7 @@ package com.dougie.core.llm
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.ConversationTurn
+import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ToolDescriptor
 import kotlin.math.ceil
 
@@ -20,8 +21,13 @@ object ChatPromptAssembler {
     fun systemPrefix(
         task: AgentTask,
         descriptors: List<ToolDescriptor> = emptyList(),
+        standingRules: String = "",
     ): String {
         val parts = mutableListOf(IDENTITY)
+        val rules = StandingRules.clamp(standingRules)
+        if (rules.isNotEmpty()) {
+            parts += "常驻规则：\n$rules"
+        }
         if (descriptors.isNotEmpty()) {
             parts += toolsInventory(descriptors)
         }
@@ -81,6 +87,7 @@ object ChatPromptAssembler {
     fun localPrompt(
         task: AgentTask,
         descriptors: List<ToolDescriptor> = emptyList(),
+        standingRules: String = "",
     ): String {
         val taught = localTeachable(descriptors)
         val traces = task.toolTrace.mapNotNull { trace ->
@@ -93,7 +100,11 @@ object ChatPromptAssembler {
             else -> task.input + "\n" + traces.joinToString("\n")
         }
         val protocolActive = localToolProtocolActive(task, descriptors)
-        val prefix = systemPrefix(task, if (protocolActive) taught else emptyList())
+        val prefix = systemPrefix(
+            task,
+            if (protocolActive) taught else emptyList(),
+            standingRules,
+        )
         val followUp = when {
             protocolActive -> prefix + "\n\n" + localToolProtocol(taught)
             traces.isNotEmpty() && taught.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS

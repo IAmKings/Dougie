@@ -30,6 +30,37 @@ class ChatPromptAssemblerTest {
         assertTrue(!ChatPromptAssembler.IDENTITY.contains("不要自称"))
         assertTrue(!prefix.contains("data:image"))
         assertTrue(!prefix.contains("base64"))
+        assertTrue(!prefix.contains("常驻规则"))
+    }
+
+    @Test
+    fun standingRulesFollowIdentityOnCloudAndLocal() {
+        val rules = "回答先给结论"
+        val task = AgentTask(taskId = "t-rules", input = "现在几点了")
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+        )
+        val prefix = ChatPromptAssembler.systemPrefix(task, descriptors, rules)
+        assertTrue(prefix.startsWith(ChatPromptAssembler.IDENTITY))
+        assertTrue(prefix.contains("常驻规则：\n回答先给结论"))
+        assertTrue(prefix.indexOf("常驻规则：") < prefix.indexOf("可用工具"))
+        val local = ChatPromptAssembler.localPrompt(task, descriptors, rules)
+        assertTrue(local.contains("常驻规则：\n回答先给结论"))
+        assertTrue(local.indexOf("回答先给结论") < local.indexOf("一行 JSON"))
+        val off = ChatPromptAssembler.systemPrefix(task, standingRules = "   ")
+        assertEquals(ChatPromptAssembler.IDENTITY, off)
+        assertTrue(!off.contains("常驻规则"))
+    }
+
+    @Test
+    fun standingRulesClampBeforeInjection() {
+        val raw = "答".repeat(241)
+        val prefix = ChatPromptAssembler.systemPrefix(
+            AgentTask(taskId = "t-cap", input = "你好"),
+            standingRules = raw,
+        )
+        assertTrue(prefix.contains("答".repeat(240)))
+        assertTrue(!prefix.contains(raw))
     }
 
     @Test

@@ -249,6 +249,10 @@ class DougieApplication : Application() {
             toolDescriptors = toolDescriptors,
             allowCloud = { preferenceStore.settings.value.allowCloud },
             attachmentJpeg = { attachmentSession.jpeg(it) },
+            standingRules = {
+                val prefs = preferenceStore.settings.value
+                if (prefs.standingRulesEnabled) prefs.standingRules else ""
+            },
         )
         val provider = SelectingLlmProvider(
             cloud = cloud,

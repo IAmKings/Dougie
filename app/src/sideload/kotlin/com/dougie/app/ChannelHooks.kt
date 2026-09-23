@@ -71,13 +71,21 @@ object ChannelHooks {
         toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
     ): LlmProvider? {
         val app = context.applicationContext
-        return ChatLlmProvider.get(context, toolDescriptors) {
-            val stored = (app as? DougieApplication)?.preferenceStore?.activeChatSku?.value
-            ChatModelLayout.resolveActiveSku(
-                stored,
-                ChatModelLayout.chatDirs(app.filesDir, app.getExternalFilesDir(null)),
-            )
-        }
+        return ChatLlmProvider.get(
+            context,
+            toolDescriptors,
+            activeSku = {
+                val stored = (app as? DougieApplication)?.preferenceStore?.activeChatSku?.value
+                ChatModelLayout.resolveActiveSku(
+                    stored,
+                    ChatModelLayout.chatDirs(app.filesDir, app.getExternalFilesDir(null)),
+                )
+            },
+            standingRules = {
+                val prefs = (app as? DougieApplication)?.preferenceStore?.settings?.value
+                if (prefs != null && prefs.standingRulesEnabled) prefs.standingRules else ""
+            },
+        )
     }
 
     fun localChatReady(

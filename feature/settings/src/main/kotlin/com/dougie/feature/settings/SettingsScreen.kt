@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dougie.core.model.LlmVendors
+import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ThemePreference
 import com.dougie.core.tool.ChatModelLayout
 import com.dougie.core.tool.TtsVoices
@@ -79,6 +80,8 @@ fun SettingsRoute(
     val ttsSpeakerId by viewModel.ttsSpeakerId.collectAsStateWithLifecycle()
     val themePreference by viewModel.themePreference.collectAsStateWithLifecycle()
     val terminalTheme by viewModel.terminalTheme.collectAsStateWithLifecycle()
+    val standingRulesEnabled by viewModel.standingRulesEnabled.collectAsStateWithLifecycle()
+    val standingRules by viewModel.standingRules.collectAsStateWithLifecycle()
     SettingsScreen(
         form = form,
         models = models,
@@ -89,6 +92,11 @@ fun SettingsRoute(
         onThemePreferenceChange = onThemePreferenceChange,
         terminalTheme = terminalTheme,
         onTerminalThemeChange = viewModel::setTerminalTheme,
+        standingRulesEnabled = standingRulesEnabled,
+        standingRules = standingRules,
+        onStandingRulesEnabledChange = viewModel::setStandingRulesEnabled,
+        onStandingRulesChange = viewModel::setStandingRulesText,
+        onRestoreStandingRules = viewModel::restoreStandingRules,
         onBack = onBack,
         onAllowCloudChange = viewModel::setAllowCloud,
         onVendorChange = viewModel::setVendor,
@@ -123,6 +131,11 @@ fun SettingsScreen(
     onThemePreferenceChange: (ThemePreference) -> Unit = {},
     terminalTheme: Boolean = false,
     onTerminalThemeChange: (Boolean) -> Unit = {},
+    standingRulesEnabled: Boolean = false,
+    standingRules: String = "",
+    onStandingRulesEnabledChange: (Boolean) -> Unit = {},
+    onStandingRulesChange: (String) -> Unit = {},
+    onRestoreStandingRules: () -> Unit = {},
     onBack: () -> Unit,
     onAllowCloudChange: (Boolean) -> Unit,
     onVendorChange: (String) -> Unit,
@@ -180,6 +193,13 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            StandingRulesSection(
+                enabled = standingRulesEnabled,
+                text = standingRules,
+                onEnabledChange = onStandingRulesEnabledChange,
+                onTextChange = onStandingRulesChange,
+                onRestore = onRestoreStandingRules,
+            )
             Text(
                 text = "提供商设置",
                 color = DougieColors.OnSurface,
@@ -636,6 +656,75 @@ private fun ThemeSection(
                 onSelect = onPreferenceChange,
                 modifier = Modifier.weight(1f),
             )
+        }
+    }
+}
+
+@Composable
+private fun StandingRulesSection(
+    enabled: Boolean,
+    text: String,
+    onEnabledChange: (Boolean) -> Unit,
+    onTextChange: (String) -> Unit,
+    onRestore: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "常驻规则",
+                    color = DougieColors.OnSurface,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "关闭或空白时仍用默认身份。立即生效，不必保存配置。",
+                    color = DougieColors.OnSurfaceVariant,
+                    fontSize = 14.sp,
+                )
+            }
+            Switch(
+                checked = enabled,
+                onCheckedChange = onEnabledChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = DougieColors.OnPrimary,
+                    checkedTrackColor = DougieColors.Primary,
+                ),
+            )
+        }
+        OutlinedTextField(
+            value = text,
+            onValueChange = onTextChange,
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3,
+            placeholder = { Text("我是谁、回答风格、不许做什么、常用流程") },
+            colors = fieldColors(),
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "${text.codePointCount(0, text.length)}/${StandingRules.MAX_CODE_POINTS}",
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 14.sp,
+            )
+            TextButton(onClick = onRestore) {
+                Text("恢复默认")
+            }
         }
     }
 }

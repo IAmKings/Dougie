@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Schedule draft fills the composer and does not submit"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Preset button sits on the existing schedule form in :app"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Notification body stays 定时提醒 · HH:mm and must not include the draft"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Receiver, store, and composer already share ScheduleItem.draft"}

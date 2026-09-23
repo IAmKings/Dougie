@@ -16,6 +16,8 @@ data class ProviderSettings(
     val ttsSpeakerId: Int = 0,
     val themePreference: ThemePreference = ThemePreference.SYSTEM,
     val terminalTheme: Boolean = false,
+    val standingRulesEnabled: Boolean = false,
+    val standingRules: String = "",
 ) {
     companion object {
         val DEFAULT_VENDOR_ID = LlmVendors.OPENAI.id
