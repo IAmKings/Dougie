@@ -483,6 +483,7 @@ class ChatPromptAssemblerTest {
         assertTrue(local.contains("\"startIso\""))
         assertTrue(local.contains("package:com.example.app"))
         assertTrue(local.contains("不要把应用中文名"))
+        assertTrue(!local.contains("不要调用 time"))
         assertTrue(!local.contains("https://example.com"))
         assertTrue(!local.contains("tap_swipe"))
         assertTrue(!local.contains("js_eval"))
@@ -494,6 +495,31 @@ class ChatPromptAssemblerTest {
         IDENTITY_TOOL_NAMES.forEach { name ->
             assertTrue(!ChatPromptAssembler.IDENTITY.contains(name))
         }
+    }
+
+    @Test
+    fun openAppUtteranceLeadsWithAppIntentNotTime() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("app_intent", description = "Open an allowed app."),
+        )
+        listOf("打开微信", "打开设置").forEach { input ->
+            val task = AgentTask(taskId = "t-open", input = input)
+            assertTrue(ChatPromptAssembler.localToolProtocolActive(task, descriptors))
+            val prompt = ChatPromptAssembler.localPrompt(task, descriptors)
+            val appAt = prompt.indexOf("{\"name\":\"app_intent\"")
+            val timeAt = prompt.indexOf("{\"name\":\"time\"")
+            assertTrue(appAt >= 0 && timeAt > appAt)
+            assertTrue(prompt.contains("不要调用 time"))
+            assertTrue(prompt.contains("不要把应用中文名"))
+            assertTrue(prompt.contains(input))
+        }
+        val clock = ChatPromptAssembler.localPrompt(
+            AgentTask(taskId = "t-clock", input = "现在几点了"),
+            descriptors,
+        )
+        assertTrue(clock.indexOf("{\"name\":\"time\"") < clock.indexOf("{\"name\":\"app_intent\""))
+        assertTrue(!clock.contains("不要调用 time"))
     }
 
     @Test

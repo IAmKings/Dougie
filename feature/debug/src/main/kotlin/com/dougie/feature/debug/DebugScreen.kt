@@ -50,6 +50,7 @@ fun DebugRoute(
         onRunRuleE = viewModel::runRuleE,
         onRunRuleB = viewModel::runRuleB,
         onMarkKokoroNaturalness = viewModel::markKokoroNaturalness,
+        onRunLocalToolContract = viewModel::runLocalToolContract,
     )
 }
 
@@ -60,6 +61,7 @@ fun DebugScreen(
     onRunRuleE: () -> Unit,
     onRunRuleB: () -> Unit,
     onMarkKokoroNaturalness: () -> Unit,
+    onRunLocalToolContract: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -96,7 +98,7 @@ fun DebugScreen(
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val evalBusy = uiState.ruleEBusy || uiState.ruleBBusy
+                    val evalBusy = uiState.ruleEBusy || uiState.ruleBBusy || uiState.contractBusy
                     TextButton(
                         onClick = onRunRuleE,
                         enabled = !evalBusy,
@@ -142,6 +144,30 @@ fun DebugScreen(
                     val ruleBMessage = uiState.ruleBMessage
                     if (ruleBMessage != null) {
                         EvalMessage(ruleBMessage)
+                    }
+                    TextButton(
+                        onClick = onRunLocalToolContract,
+                        enabled = !evalBusy && uiState.contractReady,
+                        colors = ButtonDefaults.textButtonColors(contentColor = DougieColors.Primary),
+                    ) {
+                        Text(LOCAL_TOOL_CONTRACT_LABEL)
+                    }
+                    if (!uiState.contractReady) {
+                        Text(
+                            text = LOCAL_TOOL_CONTRACT_HINT,
+                            color = DougieColors.OnSurfaceVariant,
+                            fontSize = 13.sp,
+                        )
+                    }
+                    if (uiState.contractBusy) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = DougieColors.Primary,
+                        )
+                    }
+                    val contractMessage = uiState.contractMessage
+                    if (contractMessage != null) {
+                        EvalMessage(contractMessage)
                     }
                 }
             }

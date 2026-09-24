@@ -106,7 +106,7 @@ object ChatPromptAssembler {
             standingRules,
         )
         val followUp = when {
-            protocolActive -> prefix + "\n\n" + localToolProtocol(taught)
+            protocolActive -> prefix + "\n\n" + localToolProtocol(taught, task.input)
             traces.isNotEmpty() && taught.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS
             traces.isNotEmpty() -> prefix
             else -> prefix + "\n\n" + LOCAL_IDLE_SUFFIX
@@ -249,8 +249,14 @@ object ChatPromptAssembler {
         return "可用工具:\n$lines"
     }
 
-    private fun localToolProtocol(taught: List<ToolDescriptor>): String {
-        val examples = taught.joinToString("。") { descriptor ->
+    private fun localToolProtocol(taught: List<ToolDescriptor>, input: String): String {
+        val openApp = input.contains("打开") && taught.any { it.name == "app_intent" }
+        val ordered = if (openApp) {
+            taught.sortedBy { if (it.name == "app_intent") 0 else 1 }
+        } else {
+            taught
+        }
+        val examples = ordered.joinToString("。") { descriptor ->
             val label = when (descriptor.name) {
                 "time" -> "时间"
                 "battery" -> "电量"
@@ -273,6 +279,11 @@ object ChatPromptAssembler {
             "。同一工具不要连续调用。得到结果后必须用中文回答用户。" +
             "建日历仅当用户给了日期或钟点；startIso 按用户说的时间改写，不要照抄示例。" +
             "打开应用只用 package:包名，不要把应用中文名或 intent 当 uri。" +
+            (if (openApp) {
+                "用户说打开微信、打开设置或打开某个应用时，整段只能是打开应用那一行 JSON，不要调用 time，不要改用中文。"
+            } else {
+                ""
+            }) +
             "用户说念出来、读出来或播报时只用念出来 JSON，不要建日历。"
     }
 

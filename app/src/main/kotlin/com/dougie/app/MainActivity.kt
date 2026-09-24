@@ -482,6 +482,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 loadLastKokoroRuleB = { AppKokoroRuleBEval.last(app) },
                                 markKokoroNaturalnessOk = { AppKokoroRuleBEval.markNaturalnessOk(app) },
+                                contractReady = { AppLocalToolContractEval.ready(app) },
+                                runContractEval = { AppLocalToolContractEval.run(app) },
+                                loadLastLocalToolContract = { AppLocalToolContractEval.last(app) },
                             ),
                         )
                         DebugRoute(

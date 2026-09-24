@@ -112,6 +112,9 @@ class DougieApplication : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var tools: LinkedHashMap<String, AgentTool>
 
+    fun registeredToolDescriptors(): List<com.dougie.core.model.ToolDescriptor> =
+        if (::tools.isInitialized) tools.values.map { it.descriptor } else emptyList()
+
     fun themePreference(): ThemePreference {
         if (!::preferenceStore.isInitialized) return ThemePreference.SYSTEM
         return preferenceStore.settings.value.themePreference

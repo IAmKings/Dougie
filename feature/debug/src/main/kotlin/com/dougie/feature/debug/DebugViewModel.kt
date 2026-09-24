@@ -23,6 +23,12 @@ private data class RuleBDebugState(
     val total: Long = -1L,
 )
 
+private data class ContractDebugState(
+    val busy: Boolean = false,
+    val message: String? = null,
+    val ready: Boolean = false,
+)
+
 class DebugViewModel(
     private val taskManager: TaskManager,
     private val auditLog: AuditLog,
@@ -31,19 +37,24 @@ class DebugViewModel(
     private val runKokoroRuleB: suspend (onProgress: (Long, Long) -> Unit) -> String,
     private val loadLastKokoroRuleB: suspend () -> String?,
     private val markKokoroNaturalnessOk: suspend () -> String,
+    private val contractReady: () -> Boolean,
+    private val runContractEval: suspend () -> String,
+    private val loadLastLocalToolContract: suspend () -> String?,
 ) : ViewModel() {
     private val auditRows = MutableStateFlow<List<DebugAuditRow>>(emptyList())
     private val ruleEBusy = MutableStateFlow(false)
     private val ruleEMessage = MutableStateFlow<String?>(null)
     private val ruleB = MutableStateFlow(RuleBDebugState())
+    private val contract = MutableStateFlow(ContractDebugState())
 
     val uiState: StateFlow<DebugUiState> = combine(
         taskManager.task,
         auditRows,
         ruleEBusy,
         ruleEMessage,
-        ruleB,
-    ) { task, rows, eBusy, eMessage, b ->
+        combine(ruleB, contract) { b, c -> b to c },
+    ) { task, rows, eBusy, eMessage, pair ->
+        val (b, c) = pair
         DebugUiState(
             task = task?.toDebugTaskSnapshot(),
             auditRows = rows,
@@ -53,6 +64,9 @@ class DebugViewModel(
             ruleBMessage = b.message,
             ruleBDownloaded = b.downloaded,
             ruleBTotal = b.total,
+            contractBusy = c.busy,
+            contractMessage = c.message,
+            contractReady = c.ready,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DebugUiState())
 
@@ -81,16 +95,29 @@ class DebugViewModel(
                 if (current.busy || current.message != null) current else current.copy(message = last)
             }
         }
+        viewModelScope.launch {
+            val last = try {
+                loadLastLocalToolContract()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+            contract.update { current ->
+                if (current.busy || current.message != null || last == null) current else current.copy(message = last)
+            }
+        }
     }
 
     fun refresh() {
+        contract.update { it.copy(ready = contractReady()) }
         viewModelScope.launch {
             auditRows.value = auditLog.listRecent(50).map { it.toDebugAuditRow() }
         }
     }
 
     fun runRuleE() {
-        if (ruleB.value.busy) return
+        if (ruleB.value.busy || contract.value.busy) return
         if (!ruleEBusy.compareAndSet(false, true)) return
         viewModelScope.launch {
             ruleEMessage.value = null
@@ -108,8 +135,30 @@ class DebugViewModel(
         }
     }
 
+    fun runLocalToolContract() {
+        if (ruleEBusy.value || ruleB.value.busy) return
+        if (!contract.value.ready) return
+        val current = contract.value
+        if (current.busy) return
+        if (!contract.compareAndSet(current, current.copy(busy = true, message = null))) return
+        viewModelScope.launch {
+            try {
+                val message = runContractEval()
+                contract.update { it.copy(message = message, ready = contractReady()) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: AgentException) {
+                contract.update { it.copy(message = e.userMessage) }
+            } catch (_: Exception) {
+                contract.update { it.copy(message = UserFacingErrors.CHAT_ENGINE_NOT_READY) }
+            } finally {
+                contract.update { it.copy(busy = false, ready = contractReady()) }
+            }
+        }
+    }
+
     fun runRuleB() {
-        if (ruleEBusy.value) return
+        if (ruleEBusy.value || contract.value.busy) return
         val current = ruleB.value
         if (current.busy) return
         if (!ruleB.compareAndSet(current, current.copy(busy = true, downloaded = 0L, total = -1L, message = null))) {
@@ -134,7 +183,7 @@ class DebugViewModel(
     }
 
     fun markKokoroNaturalness() {
-        if (ruleEBusy.value || ruleB.value.busy) return
+        if (ruleEBusy.value || ruleB.value.busy || contract.value.busy) return
         if (!canMarkKokoroNaturalness(ruleB.value.message)) return
         val current = ruleB.value
         if (!ruleB.compareAndSet(current, current.copy(busy = true))) return
@@ -162,6 +211,9 @@ class DebugViewModel(
         private val runKokoroRuleB: suspend (onProgress: (Long, Long) -> Unit) -> String,
         private val loadLastKokoroRuleB: suspend () -> String?,
         private val markKokoroNaturalnessOk: suspend () -> String,
+        private val contractReady: () -> Boolean,
+        private val runContractEval: suspend () -> String,
+        private val loadLastLocalToolContract: suspend () -> String?,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -173,6 +225,9 @@ class DebugViewModel(
                 runKokoroRuleB,
                 loadLastKokoroRuleB,
                 markKokoroNaturalnessOk,
+                contractReady,
+                runContractEval,
+                loadLastLocalToolContract,
             ) as T
         }
     }

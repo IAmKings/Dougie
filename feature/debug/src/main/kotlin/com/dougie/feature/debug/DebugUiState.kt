@@ -21,6 +21,8 @@ data class DebugAuditRow(
 const val RULE_E_ACTION_LABEL = "评测意图规则 E"
 const val RULE_B_ACTION_LABEL = "评测 Kokoro 规则 B"
 const val RULE_B_NATURALNESS_LABEL = "本批自然度通过"
+const val LOCAL_TOOL_CONTRACT_LABEL = "测最小档工具契约"
+const val LOCAL_TOOL_CONTRACT_HINT = "只认已启用的最小档对话模型。"
 
 data class DebugUiState(
     val task: DebugTaskSnapshot? = null,
@@ -31,6 +33,9 @@ data class DebugUiState(
     val ruleBMessage: String? = null,
     val ruleBDownloaded: Long = 0L,
     val ruleBTotal: Long = -1L,
+    val contractBusy: Boolean = false,
+    val contractMessage: String? = null,
+    val contractReady: Boolean = false,
 )
 
 fun canMarkKokoroNaturalness(message: String?): Boolean {

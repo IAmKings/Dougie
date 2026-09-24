@@ -1,0 +1,14 @@
+{"id":"time-1","text":"现在几点","expectTool":"time"}
+{"id":"time-2","text":"现在几点了","expectTool":"time"}
+{"id":"battery-1","text":"电量还有多少","expectTool":"battery"}
+{"id":"battery-2","text":"电池剩多少","expectTool":"battery"}
+{"id":"calendar-1","text":"今天的日历","expectTool":"calendar_query"}
+{"id":"calendar-2","text":"看看日历","expectTool":"calendar_query"}
+{"id":"location-1","text":"我的定位","expectTool":"location"}
+{"id":"location-2","text":"帮我定位","expectTool":"location"}
+{"id":"clip-1","text":"读一下剪贴板","expectTool":"clipboard_read"}
+{"id":"clip-2","text":"剪贴板里是什么","expectTool":"clipboard_read"}
+{"id":"app-1","text":"打开微信","expectTool":"app_intent"}
+{"id":"app-2","text":"打开设置","expectTool":"app_intent"}
+{"id":"chat-1","text":"你好","expectTool":null}
+{"id":"chat-2","text":"你是谁","expectTool":null}
