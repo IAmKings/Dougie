@@ -24,7 +24,7 @@ A local-first Android agent. Chat, memory, and tool side effects stay on device 
   <img src="screens/dougie_setting.jpg" width="220" alt="设置">
 </p>
 
-界面截图来自 v0.1.5，还没有拍进常驻规则、晨间简报和「隐私」卡片。
+设置截图已包含常驻规则、「隐私」和晨间简报。其余界面截图仍来自 v0.1.5。
 
 ## 安装
 
