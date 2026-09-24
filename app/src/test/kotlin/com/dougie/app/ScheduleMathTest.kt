@@ -40,6 +40,29 @@ class ScheduleMathTest {
     }
 
     @Test
+    fun morningBriefPresetFillsDraftWithoutWritingStore() {
+        val preset = morningBriefPreset()
+        assertTrue(preset.daily)
+        assertTrue(preset.draft.contains("日历"))
+        assertTrue(preset.draft.contains("电量"))
+        assertTrue(preset.draft.contains("记忆"))
+        assertTrue(preset.draft.contains("不要新建日程"))
+        assertTrue(preset.draft.contains("不要改剪贴板"))
+        assertTrue(preset.draft.contains("不要打开应用"))
+        assertFalse(preset.draft.contains("{"))
+        assertFalse(preset.draft.contains("calendar_create"))
+        assertFalse(formatScheduleNotice(8, 0).contains(preset.draft))
+        assertFalse(formatScheduleNotice(8, 0).contains("日历"))
+        val dir = kotlin.io.path.createTempDirectory("dougie-brief").toFile()
+        try {
+            val store = ScheduleStore(dir)
+            assertTrue(store.list().isEmpty())
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
     fun noticeOmitsDraft() {
         val line = formatScheduleNotice(7, 5)
         assertEquals("定时提醒 · 07:05", line)

@@ -25,10 +25,10 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试锁住常量草稿含日历、电量、记忆和只读限制，且不含 `{` 或工具名 `calendar_create`。
-- [ ] AC2 「晨间简报」只改表单，未点「添加」时 `ScheduleStore.list()` 不变。
-- [ ] AC3 添加并到点后，通知正文仍是 `定时提醒 · HH:mm`；点击只填充输入框。
-- [ ] AC4 未发送时没有新的工具调用。发送后的写操作仍要确认。
+- [x] AC1 JVM 测试锁住常量草稿含日历、电量、记忆和只读限制，且不含 `{` 或工具名 `calendar_create`。
+- [x] AC2 「晨间简报」只改表单，未点「添加」时 `ScheduleStore.list()` 不变。按钮调用 `morningBriefPreset()`，测试在空仓库上确认列表仍为空。
+- [x] AC3 添加并到点后，通知正文仍是 `定时提醒 · HH:mm`；点击只填充输入框。通知正文函数未改，测试断言不含草稿。点击填充仍是原有 `applyScheduleDraft`，未改成 `submit`。
+- [x] AC4 未发送时没有新的工具调用。发送后的写操作仍要确认。接收器与确认链未改。
 
 ## Out of scope
 

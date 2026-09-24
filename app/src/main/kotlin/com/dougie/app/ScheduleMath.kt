@@ -3,6 +3,17 @@ package com.dougie.app
 import java.time.Instant
 import java.time.ZoneId
 
+const val MORNING_BRIEF_DRAFT =
+    "请用中文做一份晨间简报：今天的日历、当前电量，以及一条相关记忆。只读，不要新建日程、不要改剪贴板、不要打开应用。"
+
+data class ScheduleFormPreset(
+    val draft: String,
+    val daily: Boolean,
+)
+
+fun morningBriefPreset(): ScheduleFormPreset =
+    ScheduleFormPreset(draft = MORNING_BRIEF_DRAFT, daily = true)
+
 data class ScheduleItem(
     val id: String,
     val hour: Int,

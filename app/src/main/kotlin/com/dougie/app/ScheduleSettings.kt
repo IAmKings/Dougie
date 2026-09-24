@@ -120,6 +120,16 @@ fun ScheduleSettings() {
             )
             Switch(checked = daily, onCheckedChange = { daily = it })
         }
+        TextButton(
+            onClick = {
+                val preset = morningBriefPreset()
+                draft = preset.draft
+                daily = preset.daily
+                error = null
+            },
+        ) {
+            Text("晨间简报")
+        }
         error?.let {
             Text(text = it, color = DougieColors.Error, fontSize = 13.sp)
         }
