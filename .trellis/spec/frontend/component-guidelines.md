@@ -41,6 +41,7 @@ Follows system light/dark; not WCAG-audited:
 - Decorative / branded images often use `contentDescription = null` (Chat avatar, some status icons).
 - Confirm Card is visible buttons (confirm / reject), not a system permission dialog.
 - Do not dump API keys into TalkBack: the key field is a password `TextField`; toggle visibility does not log the value.
+- Settings **隐私** (`PRIVACY_PARAGRAPHS`) is static copy on both flavors: default no egress until the switch is saved, screenshot pixels stay on device, microphone audio is transcribed locally, the key stays in encrypted storage. Do not rewrite it to say audio or screenshot pixels are uploaded, or that data never leaves the device.
 
 Chat five-state + Confirm overlay have JVM Compose UI tests (`ChatScreenFiveStateTest`). Do not add more Compose semantics suites unless the task asks for them.
 

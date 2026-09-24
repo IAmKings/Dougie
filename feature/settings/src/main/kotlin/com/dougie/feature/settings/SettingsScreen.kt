@@ -64,6 +64,15 @@ import com.dougie.core.tool.TtsVoices
 
 const val EGRESS_CONSENT_COPY = "本次请求可能将输入、必要上下文和 Tool Result 发送至第三方 LLM 服务。"
 
+const val PRIVACY_TITLE = "隐私"
+
+val PRIVACY_PARAGRAPHS = listOf(
+    "默认不把对话发到云端。只有打开「允许显式数据出站」并点保存之后，请求才会发到你填写的地址。",
+    "发出去的是你的输入、组装后的上下文、工具结果，以及非截屏图片。截屏像素留在本机，云端只看到这张截屏的说明。",
+    "用麦克风说话时，录音只在本机转成文字，音频不会上传。",
+    "密钥存在本机的加密存储里，不会写进日志。",
+)
+
 @Composable
 fun SettingsRoute(
     viewModel: SettingsViewModel,
@@ -211,6 +220,7 @@ fun SettingsScreen(
                 color = DougieColors.OnSurfaceVariant,
                 fontSize = 14.sp,
             )
+            PrivacySection()
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -655,6 +665,32 @@ private fun ThemeSection(
                 selected = preference,
                 onSelect = onPreferenceChange,
                 modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrivacySection() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(12.dp))
+            .background(DougieColors.SurfaceContainerLow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = PRIVACY_TITLE,
+            color = DougieColors.OnSurface,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Medium,
+        )
+        PRIVACY_PARAGRAPHS.forEach { paragraph ->
+            Text(
+                text = paragraph,
+                color = DougieColors.OnSurfaceVariant,
+                fontSize = 14.sp,
             )
         }
     }
