@@ -1,0 +1,29 @@
+{
+  "id": "v4-ship-daily",
+  "name": "v4-ship-daily",
+  "title": "V4 交到已发布的包里",
+  "description": "把 master 上已验收的日常能力发成版本，并让打开应用落空时告诉用户去加允许列表。",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "kuluoluo",
+  "assignee": "kuluoluo",
+  "createdAt": "2026-09-24",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "09-24-release-0-1-6",
+    "09-24-open-app-miss"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
