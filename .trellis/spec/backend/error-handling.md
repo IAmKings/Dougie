@@ -33,6 +33,7 @@ Core failures become `AgentTask.status = FAILED` and `lastError` set to a **user
 | App `package:` / extra `package` not on user list | `AppIntentAllowlist` + settings 可打开的应用 | `该应用未加入可打开名单。` |
 | App intent while background | `AppIntentTool` foreground check | `应用不在前台，无法打开应用或链接。` |
 | App intent resolve/start fail | No matching activity / launch exception | `无法打开该应用或链接。` |
+| Action executed but effect unconfirmed | Verification layer: `ForegroundVerifier` budget out while the probe (sideload accessibility) never reports the expected package. Non-fatal observation `{"ok":false,"verified":false}`: the loop feeds it back to the LLM (task `FAILED` when the trace counts 2 verify failures) and the shortcut path retries once with a fresh toolCallId before failing. Audit records `FAILED`. | `已执行操作，但未能确认是否成功。` |
 | SMS compose / dial while background | `SmsComposeTool` / `PhoneDialTool` foreground check | `应用不在前台，无法打开应用或链接。` |
 | SMS compose / dial no handler | `ACTION_SENDTO` / `ACTION_DIAL` resolve or start fail | `无法打开系统短信或拨号。` |
 | SMS / dial number invalid or SMS body empty / over 1000 UTF-16 chars | `PhoneNumber.canonical` / `sms_compose` body | `工具参数无效，已拒绝执行。` |

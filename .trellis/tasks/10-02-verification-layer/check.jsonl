@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check that new tests follow the Fake-port conventions and gradle validation matrix"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check that VERIFY_FAILED copy is registered and asserted via the constant"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Check that core modules stay android-free and Play does not import sideload types"}

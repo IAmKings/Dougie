@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "JVM/core conventions and module rules that the verification contract must follow"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Where ForegroundProbePort/Verifier belong and the Play/sideload isolation rules for wiring"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "UserFacingErrors Chinese-copy convention for the new VERIFY_FAILED constant"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JUnit4 + Fake-port test conventions and required gradle commands per change type"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Audit/logging red lines that the verify-fail path must respect"}
