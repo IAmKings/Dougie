@@ -105,6 +105,7 @@ data class ToolTraceEntry(
     val resultJson: String? = null,
     val status: ToolTraceStatus = ToolTraceStatus.PENDING,
     val riskLevel: RiskLevel = RiskLevel.L0,
+    val verified: Boolean? = null,
 )
 
 enum class ToolTraceStatus {
@@ -173,4 +174,5 @@ data class ToolResult(
     val json: String,
     val isFatal: Boolean = false,
     val error: String? = null,
+    val verified: Boolean? = null,
 )
