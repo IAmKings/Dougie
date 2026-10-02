@@ -164,6 +164,11 @@ class LoopEngine(
                     is ToolPass.Halt -> return@withContext pass.task
                     is ToolPass.Success -> {
                         task = pass.task.copy(loopCount = pass.task.loopCount + 1)
+                        if (pass.verified == false &&
+                            task.toolTrace.count { it.verified == false } >= MAX_VERIFY_FAILURES
+                        ) {
+                            return@withContext fail(task, UserFacingErrors.VERIFY_FAILED, emit)
+                        }
                         emit(task)
                     }
                 }
@@ -302,30 +307,78 @@ class LoopEngine(
         emit: suspend (AgentTask) -> Unit,
     ): AgentTask {
         val entries = openAppEntries()
+        val first = runConfirmedShortcut(start, toolName, argsJson, "intent-route-1", emit)
+        if (first.halted) return first.task
+        val settled = if (first.verified == false) {
+            // Shortcut path has no LLM to replan: re-run the confirmed action once with a
+            // fresh toolCallId, then admit VERIFY_FAILED if it still did not take effect.
+            val retry = runConfirmedShortcut(
+                start = first.task,
+                toolName = toolName,
+                argsJson = argsJson,
+                toolCallId = "intent-route-retry-1",
+                emit = emit,
+                skipConfirmation = true,
+            )
+            if (retry.halted) return retry.task
+            retry
+        } else {
+            first
+        }
+        if (settled.verified == false) {
+            return fail(settled.task, UserFacingErrors.VERIFY_FAILED, emit)
+        }
+        val answer = IntentRouteAnswers.formatFinalAnswer(toolName, settled.resultJson, entries)
+            ?: return fail(settled.task, UserFacingErrors.TOOL_FAILED, emit)
+        val done = settled.task.copy(
+            status = TaskStatus.COMPLETED,
+            finalAnswer = answer,
+            streamingText = null,
+            loopCount = settled.task.loopCount + 1,
+        )
+        ingestMemory(done)
+        emit(done)
+        return done
+    }
+
+    private data class ShortcutPass(
+        val halted: Boolean,
+        val task: AgentTask,
+        val resultJson: String,
+        val verified: Boolean?,
+    )
+
+    private suspend fun runConfirmedShortcut(
+        start: AgentTask,
+        toolName: String,
+        argsJson: String,
+        toolCallId: String,
+        emit: suspend (AgentTask) -> Unit,
+        skipConfirmation: Boolean = false,
+    ): ShortcutPass {
         val routed = start.copy(completionPath = CompletionPath.LOCAL_INTENT)
         return when (
             val pass = executeToolPass(
                 task = routed,
                 toolName = toolName,
                 argsJson = argsJson,
-                toolCallId = "intent-route-1",
+                toolCallId = toolCallId,
                 emit = emit,
+                skipConfirmation = skipConfirmation,
             )
         ) {
-            is ToolPass.Halt -> pass.task
-            is ToolPass.Success -> {
-                val answer = IntentRouteAnswers.formatFinalAnswer(toolName, pass.resultJson, entries)
-                    ?: return fail(pass.task, UserFacingErrors.TOOL_FAILED, emit)
-                val done = pass.task.copy(
-                    status = TaskStatus.COMPLETED,
-                    finalAnswer = answer,
-                    streamingText = null,
-                    loopCount = pass.task.loopCount + 1,
-                )
-                ingestMemory(done)
-                emit(done)
-                done
-            }
+            is ToolPass.Halt -> ShortcutPass(
+                halted = true,
+                task = pass.task,
+                resultJson = "",
+                verified = null,
+            )
+            is ToolPass.Success -> ShortcutPass(
+                halted = false,
+                task = pass.task,
+                resultJson = pass.resultJson,
+                verified = pass.verified,
+            )
         }
     }
 
@@ -351,6 +404,7 @@ class LoopEngine(
         argsJson: String,
         toolCallId: String,
         emit: suspend (AgentTask) -> Unit,
+        skipConfirmation: Boolean = false,
     ): ToolPass {
         val registered = tools[toolName]
         var next = task.copy(
@@ -410,22 +464,26 @@ class LoopEngine(
                 return ToolPass.Halt(fail(next, UserFacingErrors.PERMISSION_DENIED, emit))
             }
             PolicyDecision.NeedsConfirmation -> {
-                val gate = CompletableDeferred<Boolean>()
-                confirmGate = gate
-                next = updateLastTrace(next, TaskStatus.AWAITING_CONFIRMATION) { it }
-                emit(next)
-                val confirmed = try {
-                    withTimeout(confirmTimeoutMs) { gate.await() }
-                } catch (e: TimeoutCancellationException) {
-                    false
-                } finally {
-                    if (confirmGate === gate) confirmGate = null
-                }
-                if (!confirmed) {
-                    next = updateLastTrace(next, TaskStatus.FAILED) {
-                        it.copy(status = ToolTraceStatus.FAILED)
+                if (skipConfirmation) {
+                    // Retry of an already-confirmed action: re-verify its effect, do not ask twice.
+                } else {
+                    val gate = CompletableDeferred<Boolean>()
+                    confirmGate = gate
+                    next = updateLastTrace(next, TaskStatus.AWAITING_CONFIRMATION) { it }
+                    emit(next)
+                    val confirmed = try {
+                        withTimeout(confirmTimeoutMs) { gate.await() }
+                    } catch (e: TimeoutCancellationException) {
+                        false
+                    } finally {
+                        if (confirmGate === gate) confirmGate = null
                     }
-                    return ToolPass.Halt(fail(next, UserFacingErrors.CONFIRM_REJECTED, emit))
+                    if (!confirmed) {
+                        next = updateLastTrace(next, TaskStatus.FAILED) {
+                            it.copy(status = ToolTraceStatus.FAILED)
+                        }
+                        return ToolPass.Halt(fail(next, UserFacingErrors.CONFIRM_REJECTED, emit))
+                    }
                 }
             }
             PolicyDecision.Allow -> Unit
@@ -477,15 +535,19 @@ class LoopEngine(
 
         recordAudit(next.taskId, tool.name, "SUCCESS")
         next = updateLastTrace(next, TaskStatus.TOOL_RESULT) {
-            it.copy(status = ToolTraceStatus.SUCCESS, resultJson = result.json)
+            it.copy(status = ToolTraceStatus.SUCCESS, resultJson = result.json, verified = result.verified)
         }
         emit(next)
         stepDelay()
-        return ToolPass.Success(next, result.json)
+        return ToolPass.Success(next, result.json, result.verified)
     }
 
     private sealed class ToolPass {
-        data class Success(val task: AgentTask, val resultJson: String) : ToolPass()
+        data class Success(
+            val task: AgentTask,
+            val resultJson: String,
+            val verified: Boolean? = null,
+        ) : ToolPass()
         data class Halt(val task: AgentTask) : ToolPass()
     }
 
@@ -722,5 +784,6 @@ class LoopEngine(
         private const val MAX_CONVERSATION_HITS = 3
         private const val MAX_CONVERSATION_CHARS = 800
         private const val HIT_SOURCE_SUMMARY_CHARS = 40
+        private const val MAX_VERIFY_FAILURES = 2
     }
 }

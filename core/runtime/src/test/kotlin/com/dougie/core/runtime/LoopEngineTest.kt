@@ -41,6 +41,7 @@ import com.dougie.core.tool.FakeBatteryTool
 import com.dougie.core.tool.FakeCalendarPort
 import com.dougie.core.tool.FakeClipboardPort
 import com.dougie.core.tool.FakeIntentPort
+import com.dougie.core.tool.FakeForegroundProbe
 import com.dougie.core.tool.FakeLocationPort
 import com.dougie.core.tool.FakeScreenCapturePort
 import com.dougie.core.tool.InMemoryScreenFrameStore
@@ -1339,6 +1340,175 @@ class LoopEngineTest {
         assertEquals("已打开微信。", result.finalAnswer)
         assertEquals("package:com.example.wechat", port.launches.single().uri)
         assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+    }
+
+    @Test
+    fun shortcutOpenAppRetriesOnceAndCompletesWhenVerifyRecovers() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val apps = listOf(OpenAppEntry("微信", "com.example.wechat"))
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = null).apply { enqueue(null, "com.example.wechat") }
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                    foregroundProbe = probe,
+                    verifyTimeoutMs = 0,
+                    verifyPollMs = 100,
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            openAppEntries = { apps },
+        )
+        var awaitingCount = 0
+        val result = engine.run(AgentTask(taskId = "t-open-verify", input = "打开微信")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) {
+                awaitingCount++
+                engine.confirm()
+            }
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("已打开微信。", result.finalAnswer)
+        assertEquals(0, spy.streamCount)
+        assertEquals(2, port.launchCount)
+        assertEquals(2, probe.callCount)
+        assertEquals(1, awaitingCount)
+        assertEquals(
+            listOf("intent-route-1", "intent-route-retry-1"),
+            result.toolTrace.map { it.toolCallId },
+        )
+    }
+
+    @Test
+    fun shortcutOpenAppFailsWithVerifyFailedAfterRetryStillUnverified() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val apps = listOf(OpenAppEntry("微信", "com.example.wechat"))
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = null)
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                    foregroundProbe = probe,
+                    verifyTimeoutMs = 0,
+                    verifyPollMs = 100,
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            openAppEntries = { apps },
+        )
+        var awaitingCount = 0
+        val result = engine.run(AgentTask(taskId = "t-open-verify-fail", input = "打开微信")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) {
+                awaitingCount++
+                engine.confirm()
+            }
+        }
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.VERIFY_FAILED, result.lastError)
+        assertEquals(0, spy.streamCount)
+        assertEquals(2, port.launchCount)
+        assertEquals(1, awaitingCount)
+        assertTrue(result.toolTrace.all { it.verified != true })
+    }
+
+    @Test
+    fun verifyFailureFeedsBackToLlmWhichAnswersHonestly() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val apps = listOf(OpenAppEntry("微信", "com.example.wechat"))
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = null)
+        var seenResultJson: String? = null
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                val last = context.task.toolTrace.lastOrNull()
+                if (last?.resultJson == null) {
+                    return LlmResponse.ToolCall(
+                        id = "verify-1",
+                        name = AppIntentTool.NAME,
+                        argsJson = """{"uri":"package:com.example.wechat"}""",
+                    )
+                }
+                seenResultJson = last.resultJson
+                return LlmResponse.FinalAnswer("没能确认打开成功。")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                    foregroundProbe = probe,
+                    verifyTimeoutMs = 0,
+                    verifyPollMs = 100,
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-verify-llm", input = "把微信打开")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("没能确认打开成功。", result.finalAnswer)
+        requireNotNull(seenResultJson)
+        assertTrue(seenResultJson!!.contains("\"verified\":false"))
+        assertTrue(seenResultJson!!.contains(UserFacingErrors.VERIFY_FAILED))
+        assertEquals(1, port.launchCount)
+        assertEquals(ToolTraceStatus.SUCCESS, result.toolTrace.single().status)
+        assertEquals(false, result.toolTrace.single().verified)
+    }
+
+    @Test
+    fun secondVerifyFailureFailsTaskWithVerifyFailed() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val apps = listOf(OpenAppEntry("微信", "com.example.wechat"))
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = null)
+        var calls = 0
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                calls++
+                return LlmResponse.ToolCall(
+                    id = "verify-${context.task.toolTrace.size + 1}",
+                    name = AppIntentTool.NAME,
+                    argsJson = """{"uri":"package:com.example.wechat"}""",
+                )
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(
+                AppIntentTool.NAME to AppIntentTool(
+                    port,
+                    allowedPackages = { OpenAppEntries.packages(apps) },
+                    foregroundProbe = probe,
+                    verifyTimeoutMs = 0,
+                    verifyPollMs = 100,
+                ),
+            ),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-verify-budget", input = "把微信打开")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.FAILED, result.status)
+        assertEquals(UserFacingErrors.VERIFY_FAILED, result.lastError)
+        assertEquals(2, port.launchCount)
+        assertEquals(2, calls)
+        assertEquals(2, result.toolTrace.count { it.verified == false })
     }
 
     @Test
