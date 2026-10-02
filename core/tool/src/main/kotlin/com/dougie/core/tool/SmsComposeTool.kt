@@ -9,6 +9,8 @@ import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -17,6 +19,14 @@ import kotlinx.serialization.json.jsonPrimitive
 class SmsComposeTool(
     private val port: TelecomPort,
     private val idempotencyStore: IdempotencyStore = InMemoryIdempotencyStore(),
+    /**
+     * Per-call tree observer for the verification layer. Channels without an observer
+     * return null here, which keeps every result at verified=null. The snapshot never
+     * leaves the tool call stack: verification yields only the verified boolean.
+     */
+    private val treeProbe: () -> TreeSnapshotPort? = { null },
+    private val verifyTimeoutMs: Long = TreeVerifier.DEFAULT_TIMEOUT_MS,
+    private val verifyPollMs: Long = TreeVerifier.DEFAULT_POLL_INTERVAL_MS,
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
@@ -35,7 +45,9 @@ class SmsComposeTool(
                 error = UserFacingErrors.APP_INTENT_NOT_FOREGROUND,
             )
         }
-        idempotencyStore.get(context.idempotencyKey)?.let { return ToolResult(json = it) }
+        idempotencyStore.get(context.idempotencyKey)?.let {
+            return ToolResult(json = it, verified = verifiedFromJson(it))
+        }
         val json = port.composeSms(parsed.to, parsed.body)
         if (!isOk(json)) {
             return ToolResult(
@@ -44,9 +56,49 @@ class SmsComposeTool(
                 error = UserFacingErrors.TELECOM_LAUNCH_FAILED,
             )
         }
-        idempotencyStore.put(context.idempotencyKey, json)
-        val stored = idempotencyStore.get(context.idempotencyKey) ?: json
-        return ToolResult(json = stored)
+        val probe = treeProbe()
+        val verified = if (probe == null) {
+            null
+        } else {
+            TreeVerifier.awaitContains(
+                port = probe,
+                needle = parsed.body,
+                timeoutMs = verifyTimeoutMs,
+                pollIntervalMs = verifyPollMs,
+            )
+        }
+        if (verified == false) {
+            // Verification failure is an observation for replan, not a fatal error — and it
+            // must not enter the idempotency store so a retry really re-composes. The SMS
+            // body never appears in any result JSON.
+            return ToolResult(
+                json = """{"ok":false,"error":"${UserFacingErrors.VERIFY_FAILED}","verified":false}""",
+                isFatal = false,
+                error = UserFacingErrors.VERIFY_FAILED,
+                verified = false,
+            )
+        }
+        val resultJson = if (verified == null) json else withVerified(json, verified)
+        idempotencyStore.put(context.idempotencyKey, resultJson)
+        val stored = idempotencyStore.get(context.idempotencyKey) ?: resultJson
+        return ToolResult(json = stored, verified = verified)
+    }
+
+    private fun withVerified(json: String, verified: Boolean): String {
+        val obj = try {
+            Json.parseToJsonElement(json).jsonObject
+        } catch (_: Exception) {
+            return json
+        }
+        return JsonObject(obj + ("verified" to JsonPrimitive(verified))).toString()
+    }
+
+    private fun verifiedFromJson(json: String): Boolean? {
+        return try {
+            Json.parseToJsonElement(json).jsonObject["verified"]?.jsonPrimitive?.booleanOrNull
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun parseArgs(argumentsJson: String): Parsed {

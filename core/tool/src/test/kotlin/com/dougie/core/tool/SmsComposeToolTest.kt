@@ -115,6 +115,73 @@ class SmsComposeToolTest {
         assertEquals(0, port.composeCount)
     }
 
+    @Test
+    fun treeSnapshotContainingBodyConfirmsVerifiedTrue() = runTest {
+        val port = FakeTelecomPort()
+        val probe = FakeTreeSnapshotPort(
+            current = TreeSnapshot(listOf("收件人", "草稿：今 晚 见", "发送")),
+        )
+        val tool = SmsComposeTool(port, treeProbe = { probe })
+        val result = tool.execute(
+            """{"to":"13800138000","body":"今晚见"}""",
+            ToolContext("t", "v"),
+        )
+        assertEquals(true, result.verified)
+        assertTrue(result.json.contains("\"verified\":true"))
+        assertEquals(1, port.composeCount)
+    }
+
+    @Test
+    fun treeVerifyFailureIsNonFatalNotCachedAndLeakFree() = runTest {
+        val port = FakeTelecomPort()
+        val probe = FakeTreeSnapshotPort(current = TreeSnapshot(emptyList()))
+        val store = InMemoryIdempotencyStore()
+        val tool = SmsComposeTool(
+            port,
+            idempotencyStore = store,
+            treeProbe = { probe },
+            verifyTimeoutMs = 300,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute(
+            """{"to":"13800138000","body":"今晚见"}""",
+            ToolContext("t", "x"),
+        )
+        assertEquals(false, result.verified)
+        assertEquals(false, result.isFatal)
+        assertEquals(UserFacingErrors.VERIFY_FAILED, result.error)
+        assertTrue(result.json.contains("\"verified\":false"))
+        assertTrue(!result.json.contains("今晚见"))
+        assertTrue(!result.json.contains("13800138000"))
+        assertEquals(null, store.get("tx"))
+        assertEquals(1, port.composeCount)
+    }
+
+    @Test
+    fun withoutTreeProbeResultStaysByteIdentical() = runTest {
+        val port = FakeTelecomPort()
+        val tool = SmsComposeTool(port)
+        val result = tool.execute(
+            """{"to":"13800138000","body":"hi"}""",
+            ToolContext("t", "n"),
+        )
+        assertEquals(null, result.verified)
+        assertEquals("""{"ok":true}""", result.json)
+    }
+
+    @Test
+    fun treeReplayKeepsVerifiedFlag() = runTest {
+        val port = FakeTelecomPort()
+        val probe = FakeTreeSnapshotPort(current = TreeSnapshot(listOf("今晚见")))
+        val tool = SmsComposeTool(port, treeProbe = { probe })
+        val context = ToolContext("t", "r")
+        val first = tool.execute("""{"to":"13800138000","body":"今晚见"}""", context)
+        val second = tool.execute("""{"to":"13800138000","body":"今晚见"}""", context)
+        assertEquals(true, second.verified)
+        assertEquals(first.json, second.json)
+        assertEquals(1, port.composeCount)
+    }
+
     private fun assertInvalidArgs(tool: SmsComposeTool, args: String, port: FakeTelecomPort) {
         try {
             tool.validateArguments(args)
