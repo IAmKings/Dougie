@@ -223,7 +223,7 @@ class DougieApplication : Application() {
                 allowedPackages = {
                     OpenAppEntries.packages(OpenAppEntries.parse(preferenceStore.openAppsJson.value))
                 },
-                foregroundProbe = { ForegroundProbeBridge.provider?.currentForegroundPackage() },
+                foregroundProbe = { ForegroundProbeBridge.provider },
             ),
             SmsComposeTool.NAME to SmsComposeTool(telecomPort, taskStores.idempotencyStore),
             PhoneDialTool.NAME to PhoneDialTool(telecomPort, taskStores.idempotencyStore),

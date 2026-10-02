@@ -127,6 +127,7 @@ object TaskSnapshotCodec {
         putNullable("resultJson", entry.resultJson)
         put("status", entry.status.name)
         put("riskLevel", entry.riskLevel.name)
+        putNullableBoolean("verified", entry.verified)
     }
 
     private fun decodeTrace(obj: JsonObject): ToolTraceEntry = ToolTraceEntry(
@@ -138,6 +139,7 @@ object TaskSnapshotCodec {
         riskLevel = obj["riskLevel"]?.jsonPrimitive?.contentOrNull
             ?.let { runCatching { RiskLevel.valueOf(it) }.getOrNull() }
             ?: RiskLevel.L0,
+        verified = obj.nullableBoolean("verified"),
     )
 
     private fun encodeHit(hit: ConversationHit): JsonObject = buildJsonObject {
@@ -194,6 +196,16 @@ object TaskSnapshotCodec {
         val value = this[key] ?: return false
         if (value is JsonNull) return false
         return value.jsonPrimitive.booleanOrNull ?: false
+    }
+
+    private fun JsonObject.nullableBoolean(key: String): Boolean? {
+        val value = this[key] ?: return null
+        if (value is JsonNull) return null
+        return value.jsonPrimitive.booleanOrNull
+    }
+
+    private fun kotlinx.serialization.json.JsonObjectBuilder.putNullableBoolean(key: String, value: Boolean?) {
+        if (value == null) put(key, JsonNull) else put(key, value)
     }
 
     private fun kotlinx.serialization.json.JsonObjectBuilder.putNullable(key: String, value: String?) {

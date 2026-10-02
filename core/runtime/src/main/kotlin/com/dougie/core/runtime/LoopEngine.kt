@@ -533,7 +533,7 @@ class LoopEngine(
             return ToolPass.Halt(next)
         }
 
-        recordAudit(next.taskId, tool.name, "SUCCESS")
+        recordAudit(next.taskId, tool.name, if (result.verified == false) "FAILED" else "SUCCESS")
         next = updateLastTrace(next, TaskStatus.TOOL_RESULT) {
             it.copy(status = ToolTraceStatus.SUCCESS, resultJson = result.json, verified = result.verified)
         }

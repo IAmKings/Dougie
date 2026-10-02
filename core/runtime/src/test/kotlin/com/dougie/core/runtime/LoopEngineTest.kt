@@ -1355,7 +1355,7 @@ class LoopEngineTest {
                 AppIntentTool.NAME to AppIntentTool(
                     port,
                     allowedPackages = { OpenAppEntries.packages(apps) },
-                    foregroundProbe = probe,
+                    foregroundProbe = { probe },
                     verifyTimeoutMs = 0,
                     verifyPollMs = 100,
                 ),
@@ -1396,7 +1396,7 @@ class LoopEngineTest {
                 AppIntentTool.NAME to AppIntentTool(
                     port,
                     allowedPackages = { OpenAppEntries.packages(apps) },
-                    foregroundProbe = probe,
+                    foregroundProbe = { probe },
                     verifyTimeoutMs = 0,
                     verifyPollMs = 100,
                 ),
@@ -1448,7 +1448,7 @@ class LoopEngineTest {
                 AppIntentTool.NAME to AppIntentTool(
                     port,
                     allowedPackages = { OpenAppEntries.packages(apps) },
-                    foregroundProbe = probe,
+                    foregroundProbe = { probe },
                     verifyTimeoutMs = 0,
                     verifyPollMs = 100,
                 ),
@@ -1493,7 +1493,7 @@ class LoopEngineTest {
                 AppIntentTool.NAME to AppIntentTool(
                     port,
                     allowedPackages = { OpenAppEntries.packages(apps) },
-                    foregroundProbe = probe,
+                    foregroundProbe = { probe },
                     verifyTimeoutMs = 0,
                     verifyPollMs = 100,
                 ),

@@ -20,7 +20,12 @@ class AppIntentTool(
     private val port: AppIntentPort,
     private val idempotencyStore: IdempotencyStore = InMemoryIdempotencyStore(),
     private val allowedPackages: () -> Set<String> = { emptySet() },
-    private val foregroundProbe: ForegroundProbePort? = null,
+    /**
+     * Per-call foreground observer for the verification layer. Channels without an observer
+     * (e.g. Play, or accessibility not wired yet) return null here, which keeps every result
+     * at verified=null instead of reporting unverifiable failures.
+     */
+    private val foregroundProbe: () -> ForegroundProbePort? = { null },
     private val verifyTimeoutMs: Long = ForegroundVerifier.DEFAULT_TIMEOUT_MS,
     private val verifyPollMs: Long = ForegroundVerifier.DEFAULT_POLL_INTERVAL_MS,
 ) : AgentTool {
@@ -55,12 +60,13 @@ class AppIntentTool(
             )
         }
         val expectedPackage = expectedPackageOf(canonical, parsed.packageName)
-        val verified = if (expectedPackage == null || foregroundProbe == null) {
+        val probe = if (expectedPackage == null) null else foregroundProbe()
+        val verified = if (expectedPackage == null || probe == null) {
             null
         } else {
             ForegroundVerifier.awaitForeground(
                 expectedPackage = expectedPackage,
-                probe = foregroundProbe,
+                probe = probe,
                 timeoutMs = verifyTimeoutMs,
                 pollIntervalMs = verifyPollMs,
             )

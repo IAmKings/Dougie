@@ -130,7 +130,7 @@ class AppIntentToolTest {
         val tool = AppIntentTool(
             port,
             allowedPackages = { setOf("com.android.settings") },
-            foregroundProbe = probe,
+            foregroundProbe = { probe },
         )
         val result = tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "v"))
         assertEquals(true, result.verified)
@@ -147,7 +147,7 @@ class AppIntentToolTest {
             port,
             idempotencyStore = store,
             allowedPackages = { setOf("com.android.settings") },
-            foregroundProbe = probe,
+            foregroundProbe = { probe },
             verifyTimeoutMs = 500,
             verifyPollMs = 100,
         )
@@ -173,7 +173,7 @@ class AppIntentToolTest {
     fun httpUriWithProbeSkipsForegroundVerification() = runTest {
         val port = FakeAppIntentPort()
         val probe = FakeForegroundProbe(current = null)
-        val tool = AppIntentTool(port, foregroundProbe = probe)
+        val tool = AppIntentTool(port, foregroundProbe = { probe })
         val result = tool.execute("""{"uri":"https://example.com"}""", ToolContext("t", "h"))
         assertEquals(null, result.verified)
         assertEquals(0, probe.callCount)
@@ -186,7 +186,7 @@ class AppIntentToolTest {
         val tool = AppIntentTool(
             port,
             allowedPackages = { setOf("com.android.chrome") },
-            foregroundProbe = probe,
+            foregroundProbe = { probe },
         )
         val result = tool.execute(
             """{"uri":"https://example.com","package":"com.android.chrome"}""",
@@ -202,7 +202,7 @@ class AppIntentToolTest {
         val tool = AppIntentTool(
             port,
             allowedPackages = { setOf("com.android.settings") },
-            foregroundProbe = probe,
+            foregroundProbe = { probe },
         )
         val context = ToolContext("t", "r")
         val first = tool.execute("""{"uri":"package:com.android.settings"}""", context)
@@ -210,6 +210,36 @@ class AppIntentToolTest {
         assertEquals(true, second.verified)
         assertEquals(first.json, second.json)
         assertEquals(1, port.launchCount)
+    }
+
+    @Test
+    fun probeProviderWithoutObserverKeepsResultUnverified() = runTest {
+        val port = FakeAppIntentPort()
+        val tool = AppIntentTool(
+            port,
+            allowedPackages = { setOf("com.android.settings") },
+            foregroundProbe = { null },
+        )
+        val result = tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "b"))
+        assertEquals(null, result.verified)
+        assertEquals("""{"ok":true,"launched":"package:com.android.settings"}""", result.json)
+        assertEquals(1, port.launchCount)
+    }
+
+    @Test
+    fun probePresentButBlindReportsVerifyFailed() = runTest {
+        val port = FakeAppIntentPort()
+        val tool = AppIntentTool(
+            port,
+            allowedPackages = { setOf("com.android.settings") },
+            foregroundProbe = { FakeForegroundProbe(current = null) },
+            verifyTimeoutMs = 300,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "x"))
+        assertEquals(false, result.verified)
+        assertEquals(UserFacingErrors.VERIFY_FAILED, result.error)
+        assertEquals(false, result.isFatal)
     }
 }
 
