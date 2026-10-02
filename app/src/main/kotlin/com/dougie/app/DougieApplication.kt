@@ -225,7 +225,11 @@ class DougieApplication : Application() {
                 },
                 foregroundProbe = { ForegroundProbeBridge.provider },
             ),
-            SmsComposeTool.NAME to SmsComposeTool(telecomPort, taskStores.idempotencyStore),
+            SmsComposeTool.NAME to SmsComposeTool(
+                telecomPort,
+                taskStores.idempotencyStore,
+                treeProbe = { TreeProbeBridge.provider },
+            ),
             PhoneDialTool.NAME to PhoneDialTool(telecomPort, taskStores.idempotencyStore),
             SpeechInputTool.NAME to SpeechInputTool(speechPort),
             SpeechOutputTool.NAME to SpeechOutputTool(ttsPort),

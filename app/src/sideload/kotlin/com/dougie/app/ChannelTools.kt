@@ -6,7 +6,9 @@ import com.dougie.core.tool.IdempotencyStore
 import com.dougie.core.tool.JsEvalTool
 import com.dougie.core.tool.PyEvalTool
 import com.dougie.tool.accessibility.AccessibilityForegroundProbe
+import com.dougie.tool.accessibility.AccessibilityTreeSnapshotPort
 import com.dougie.tool.accessibility.AndroidGesturePort
+import com.dougie.tool.accessibility.DougieAccessibilityService
 import com.dougie.tool.accessibility.TapSwipeTool
 import com.dougie.tool.js.AndroidJsEvalPort
 import com.dougie.tool.py.AndroidPyEvalPort
@@ -35,6 +37,7 @@ object ChannelTools {
         }
         val gesturePort = AndroidGesturePort()
         ForegroundProbeBridge.provider = AccessibilityForegroundProbe(gesturePort)
+        TreeProbeBridge.provider = AccessibilityTreeSnapshotPort { DougieAccessibilityService.instance }
         tools[TapSwipeTool.NAME] = TapSwipeTool(
             consentGranted = consentGranted,
             port = gesturePort,
