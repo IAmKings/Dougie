@@ -22,6 +22,11 @@ class OpenAppEntriesTest {
         )
         assertTrue(OpenAppEntries.startsWithOpenPrefix("打开24点大作战"))
         assertTrue(!OpenAppEntries.startsWithOpenPrefix("24点大作战"))
+        assertEquals("微信", OpenAppEntries.bareOpenName("打开微信"))
+        assertEquals("设置", OpenAppEntries.bareOpenName("请打开设置"))
+        assertNull(OpenAppEntries.bareOpenName("打开今天的日历"))
+        assertNull(OpenAppEntries.bareOpenName("打开微信看看"))
+        assertNull(OpenAppEntries.bareOpenName("打开一下微信"))
     }
 
     @Test

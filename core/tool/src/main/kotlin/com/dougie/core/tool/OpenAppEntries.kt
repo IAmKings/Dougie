@@ -71,6 +71,15 @@ object OpenAppEntries {
         return entries.firstOrNull { it.alias == key }
     }
 
+    /** Prefix plus one alias, with no extra words such as 「的」 or 「看看」. */
+    fun bareOpenName(input: String): String? {
+        val name = stripOpenPrefix(input.trim())
+        if (name.isEmpty() || name.length > ALIAS_MAX) return null
+        if (name.any { it.isWhitespace() || it == '的' }) return null
+        if (name.contains("看看") || name.contains("一下")) return null
+        return name
+    }
+
     fun startsWithOpenPrefix(input: String): Boolean {
         val s = input.trim()
         return OPEN_PREFIXES.any { s.startsWith(it) && s.length > it.length }

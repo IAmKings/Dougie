@@ -709,7 +709,7 @@ class LoopEngineTest {
             dispatcher = dispatcher,
             stepDelayMs = 0,
         )
-        val confirmed = engine.run(AgentTask(taskId = "i1", input = "打开网页")) { snapshot ->
+        val confirmed = engine.run(AgentTask(taskId = "i1", input = "访问 example.com")) { snapshot ->
             if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
         }
         assertEquals(TaskStatus.COMPLETED, confirmed.status)
@@ -722,7 +722,7 @@ class LoopEngineTest {
             dispatcher = dispatcher,
             stepDelayMs = 0,
         )
-        val rejected = rejectEngine.run(AgentTask(taskId = "i2", input = "打开网页")) { snapshot ->
+        val rejected = rejectEngine.run(AgentTask(taskId = "i2", input = "访问 example.com")) { snapshot ->
             if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) rejectEngine.reject()
         }
         assertEquals(TaskStatus.FAILED, rejected.status)
@@ -1356,10 +1356,26 @@ class LoopEngineTest {
             ),
         )
         val result = engine.run(AgentTask(taskId = "t-open-llm", input = "打开微信")) {}
+        assertEquals(0, spy.streamCount)
+        assertEquals("「微信」还不在可打开的应用里。请到设置里添加后再说「打开微信」。", result.finalAnswer)
+        assertEquals(0, port.launchCount)
+        assertEquals(CompletionPath.LOCAL_INTENT, result.completionPath)
+        assertEquals(TaskStatus.COMPLETED, result.status)
+    }
+
+    @Test
+    fun openAppCalendarPhraseStillUsesLlm() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val spy = SpyLocalLlm()
+        val engine = LoopEngine(
+            llm = spy,
+            tools = mapOf(AppIntentTool.NAME to AppIntentTool(FakeAppIntentPort())),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-open-cal", input = "打开今天的日历")) {}
         assertEquals(1, spy.streamCount)
         assertEquals("走了云端", result.finalAnswer)
-        assertEquals(0, port.launchCount)
-        assertEquals(CompletionPath.LOCAL_LLM, result.completionPath)
     }
 
     @Test
@@ -1465,7 +1481,7 @@ class LoopEngineTest {
             dispatcher = dispatcher,
             stepDelayMs = 0,
         )
-        val result = engine.run(AgentTask(taskId = "t-pkg-deny", input = "打开微信")) {}
+        val result = engine.run(AgentTask(taskId = "t-pkg-deny", input = "把微信打开")) {}
         assertEquals(TaskStatus.FAILED, result.status)
         assertEquals(UserFacingErrors.APP_INTENT_NOT_ALLOWED, result.lastError)
         assertEquals(0, port.launchCount)

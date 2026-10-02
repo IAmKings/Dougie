@@ -245,14 +245,29 @@ class LoopEngine(
     ): AgentTask? {
         if (!tools.containsKey(AppIntentTool.NAME)) return null
         val entries = openAppEntries()
-        if (entries.isEmpty()) return null
-        val argsJson = IntentRouteAnswers.classifyTexts(start.input)
-            .firstNotNullOfOrNull { text ->
-                val normalized = IntentRouteAnswers.normalize(text).ifEmpty { text }
-                if (!OpenAppEntries.startsWithOpenPrefix(normalized)) return@firstNotNullOfOrNull null
-                IntentRouteAnswers.parseShortcutArgs(AppIntentTool.NAME, normalized, entries)
-            } ?: return null
-        return completeFromNamedShortcut(start, AppIntentTool.NAME, argsJson, emit)
+        var missedName: String? = null
+        for (text in IntentRouteAnswers.classifyTexts(start.input)) {
+            val normalized = IntentRouteAnswers.normalize(text).ifEmpty { text }
+            if (!OpenAppEntries.startsWithOpenPrefix(normalized)) continue
+            val argsJson = IntentRouteAnswers.parseShortcutArgs(AppIntentTool.NAME, normalized, entries)
+            if (argsJson != null) {
+                return completeFromNamedShortcut(start, AppIntentTool.NAME, argsJson, emit)
+            }
+            if (missedName == null) {
+                val bare = OpenAppEntries.bareOpenName(normalized)
+                if (bare != null && entries.none { it.alias == bare }) missedName = bare
+            }
+        }
+        val name = missedName ?: return null
+        val done = start.copy(
+            status = TaskStatus.COMPLETED,
+            finalAnswer = "「$name」还不在可打开的应用里。请到设置里添加后再说「打开$name」。",
+            streamingText = null,
+            completionPath = CompletionPath.LOCAL_INTENT,
+            loopCount = start.loopCount + 1,
+        )
+        emit(done)
+        return done
     }
 
     private suspend fun completeFromIntentIfMatched(
