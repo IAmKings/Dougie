@@ -122,6 +122,95 @@ class AppIntentToolTest {
         )
         assertEquals("com.android.chrome", port.launches.single().packageName)
     }
+
+    @Test
+    fun packageUriWithProbeConfirmsVerifiedTrue() = runTest {
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = "com.android.settings")
+        val tool = AppIntentTool(
+            port,
+            allowedPackages = { setOf("com.android.settings") },
+            foregroundProbe = probe,
+        )
+        val result = tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "v"))
+        assertEquals(true, result.verified)
+        assertTrue(result.json.contains("\"verified\":true"))
+        assertEquals(1, port.launchCount)
+    }
+
+    @Test
+    fun verifyFailureIsNonFatalAndNotCached() = runTest {
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = "com.other.app")
+        val store = InMemoryIdempotencyStore()
+        val tool = AppIntentTool(
+            port,
+            idempotencyStore = store,
+            allowedPackages = { setOf("com.android.settings") },
+            foregroundProbe = probe,
+            verifyTimeoutMs = 500,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "v"))
+        assertEquals(false, result.verified)
+        assertEquals(false, result.isFatal)
+        assertEquals(UserFacingErrors.VERIFY_FAILED, result.error)
+        assertTrue(result.json.contains("\"verified\":false"))
+        assertEquals(null, store.get("tv"))
+        assertEquals(1, port.launchCount)
+    }
+
+    @Test
+    fun withoutProbeResultJsonStaysByteIdentical() = runTest {
+        val port = FakeAppIntentPort()
+        val tool = AppIntentTool(port, allowedPackages = { setOf("com.android.settings") })
+        val result = tool.execute("""{"uri":"package:com.android.settings"}""", ToolContext("t", "n"))
+        assertEquals(null, result.verified)
+        assertEquals("""{"ok":true,"launched":"package:com.android.settings"}""", result.json)
+    }
+
+    @Test
+    fun httpUriWithProbeSkipsForegroundVerification() = runTest {
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = null)
+        val tool = AppIntentTool(port, foregroundProbe = probe)
+        val result = tool.execute("""{"uri":"https://example.com"}""", ToolContext("t", "h"))
+        assertEquals(null, result.verified)
+        assertEquals(0, probe.callCount)
+    }
+
+    @Test
+    fun explicitPackageArgIsVerifiedAgainstForeground() = runTest {
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = "com.android.chrome")
+        val tool = AppIntentTool(
+            port,
+            allowedPackages = { setOf("com.android.chrome") },
+            foregroundProbe = probe,
+        )
+        val result = tool.execute(
+            """{"uri":"https://example.com","package":"com.android.chrome"}""",
+            ToolContext("t", "e"),
+        )
+        assertEquals(true, result.verified)
+    }
+
+    @Test
+    fun idempotentReplayKeepsVerifiedFlag() = runTest {
+        val port = FakeAppIntentPort()
+        val probe = FakeForegroundProbe(current = "com.android.settings")
+        val tool = AppIntentTool(
+            port,
+            allowedPackages = { setOf("com.android.settings") },
+            foregroundProbe = probe,
+        )
+        val context = ToolContext("t", "r")
+        val first = tool.execute("""{"uri":"package:com.android.settings"}""", context)
+        val second = tool.execute("""{"uri":"package:com.android.settings"}""", context)
+        assertEquals(true, second.verified)
+        assertEquals(first.json, second.json)
+        assertEquals(1, port.launchCount)
+    }
 }
 
 class AppIntentAllowlistTest {
