@@ -408,3 +408,24 @@ Chat User/Thinking/Tool/Confirm/Final/FAILED 用 Robolectric Compose 语义断�
 ### Next Steps
 
 - 待 Actions 出 APK；不自动开规则 D / 商店 / 多模态
+
+
+## Session 106: 动作验证层（Verification Layer）落地
+
+**Date**: 2026-10-02
+**Task**: 动作验证层（Verification Layer）落地
+**Branch**: `master`
+
+### Summary
+
+建立 verified 三态契约（ToolResult/ToolTraceEntry）、前台观察原语 ForegroundProbePort/ForegroundVerifier、app_intent 打开后验证（失败非致命回灌 LLM、捷径确定性重试一次）、TaskSnapshotCodec 持久化 verified；检查发现并修复探针 SAM 非 null 导致无观察渠道假报验证失败的高危问题。四批 work commits（39c4f0c/1732e2e/cc36ee9/77b013a/91669c4），全量 659 项测试 + checkChannelLeak 绿，14 条冻结契约未动。后续任务：tap_swipe 截屏差分验证、无障碍树状态提取器、sms_compose 树包含性检查。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `91669c4` | (see git log) |
+
+### Status
+
+[OK] **Completed**

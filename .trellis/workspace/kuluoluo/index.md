@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 105
-- **Last Active**: 2026-09-21
+- **Total Sessions**: 106
+- **Last Active**: 2026-10-02
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~410 | Active |
+| `journal-2.md` | ~431 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 106 | 2026-10-02 | 动作验证层（Verification Layer）落地 | `91669c4` | `master` |
 | 105 | 2026-09-21 | 版本 0.1.5 发版 | `aa5588c` | `master` |
 | 104 | 2026-09-21 | Kokoro 规则 B 真机评测 | `f9850a6` | `master` |
 | 103 | 2026-09-21 | Compose UI 五态测试 | `47030c2` | `master` |
