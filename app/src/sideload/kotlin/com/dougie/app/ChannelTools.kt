@@ -5,6 +5,7 @@ import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.IdempotencyStore
 import com.dougie.core.tool.JsEvalTool
 import com.dougie.core.tool.PyEvalTool
+import com.dougie.tool.accessibility.AccessibilityForegroundProbe
 import com.dougie.tool.accessibility.AndroidGesturePort
 import com.dougie.tool.accessibility.TapSwipeTool
 import com.dougie.tool.js.AndroidJsEvalPort
@@ -32,9 +33,11 @@ object ChannelTools {
             tools.remove(TapSwipeTool.NAME)
             return
         }
+        val gesturePort = AndroidGesturePort()
+        ForegroundProbeBridge.provider = AccessibilityForegroundProbe(gesturePort)
         tools[TapSwipeTool.NAME] = TapSwipeTool(
             consentGranted = consentGranted,
-            port = AndroidGesturePort(),
+            port = gesturePort,
             idempotencyStore = idempotencyStore,
         )
     }
