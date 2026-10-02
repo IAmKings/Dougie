@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "JVM/core conventions and module rules for the new tree snapshot port"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Module ownership for TreeSnapshotPort/TreeVerifier and Play/sideload wiring isolation"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify-failure copy row and Chinese UserFacingErrors convention (reuse VERIFY_FAILED)"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JUnit4 + Fake-port test conventions and gradle validation matrix"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Hard red line: SMS content must never reach logs/audit/trace"}
