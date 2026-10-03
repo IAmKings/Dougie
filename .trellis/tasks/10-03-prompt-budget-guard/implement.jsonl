@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "JVM/core conventions for the llm module change"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Test conventions for core/llm (MockWebServer, contains-style prompt assertions)"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Prompt content must never be logged"}
