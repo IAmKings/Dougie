@@ -124,19 +124,26 @@ fun AgentTask.matchesHistoryNeedles(needles: List<String>): Boolean {
     return needles.any { needle -> haystack.contains(needle, ignoreCase = true) }
 }
 
-suspend fun recoverInterrupted(store: TaskStore): AgentTask? {
-    val latest = store.listRecent(1).firstOrNull() ?: return null
-    if (latest.status == TaskStatus.COMPLETED || latest.status == TaskStatus.FAILED) {
-        return null
+/**
+ * Flip every non-terminal persisted row to FAILED(INTERRUPTED) and return them, most
+ * recent first. Recovery used to inspect only the newest row, so a zombie row pushed
+ * down by newer tasks stayed non-terminal forever.
+ */
+suspend fun recoverInterrupted(store: TaskStore): List<AgentTask> {
+    val stale = store.listRecent(Int.MAX_VALUE)
+        .filter { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.FAILED }
+    val recovered = stale.map { row ->
+        row.copy(
+            status = TaskStatus.FAILED,
+            lastError = UserFacingErrors.INTERRUPTED,
+            streamingText = null,
+            confirmDeadlineAt = null,
+        ).stampEndedAtIfTerminal()
     }
-    val failed = latest.copy(
-        status = TaskStatus.FAILED,
-        lastError = UserFacingErrors.INTERRUPTED,
-        streamingText = null,
-        confirmDeadlineAt = null,
-    ).stampEndedAtIfTerminal()
-    store.upsert(failed)
-    return failed
+    for (row in recovered) {
+        store.upsert(row)
+    }
+    return recovered
 }
 
 internal fun AgentTask.stampEndedAtIfTerminal(

@@ -314,11 +314,8 @@ class DougieApplication : Application() {
         )
         runBlocking {
             val recovered = recoverInterrupted(taskStores.taskStore)
-            if (recovered != null &&
-                recovered.conversationId == preferenceStore.currentConversationId()
-            ) {
-                taskManager.seed(recovered)
-            }
+            recovered.lastOrNull { it.conversationId == preferenceStore.currentConversationId() }
+                ?.let { taskManager.seed(it) }
             taskManager.reloadTranscript()
         }
         TaskProgressNotifier(this).also { taskProgressNotifier = it }

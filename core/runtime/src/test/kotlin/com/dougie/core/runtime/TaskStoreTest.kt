@@ -56,8 +56,7 @@ class TaskStoreTest {
                 confirmDeadlineAt = 1_700_000_060_000L,
             ),
         )
-        val recovered = recoverInterrupted(store)
-        requireNotNull(recovered)
+        val recovered = recoverInterrupted(store).single()
         assertEquals("live", recovered.taskId)
         assertEquals(TaskStatus.FAILED, recovered.status)
         assertEquals(UserFacingErrors.INTERRUPTED, recovered.lastError)
@@ -68,7 +67,53 @@ class TaskStoreTest {
         assertTrue(recoveredEnded != null && recoveredEnded >= 1_000L)
         assertEquals(TaskStatus.FAILED, store.listRecent(1).single().status)
         assertEquals(recoveredEnded, store.listRecent(1).single().endedAt)
-        assertNull(recoverInterrupted(store))
+        assertTrue(recoverInterrupted(store).isEmpty())
+    }
+
+    @Test
+    fun recoverInterruptedFailsEveryNonTerminalRowNotJustTheNewest() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-zombie",
+                input = "旧僵尸",
+                status = TaskStatus.TOOL_PENDING,
+                conversationId = "window-a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "done",
+                input = "完成",
+                status = TaskStatus.COMPLETED,
+                finalAnswer = "好了",
+                conversationId = "window-a",
+            ),
+        )
+        store.upsert(
+            AgentTask(
+                taskId = "new-zombie",
+                input = "新僵尸",
+                status = TaskStatus.THINKING,
+                conversationId = "window-b",
+            ),
+        )
+        val recovered = recoverInterrupted(store)
+        assertEquals(setOf("old-zombie", "new-zombie"), recovered.map { it.taskId }.toSet())
+        assertTrue(
+            recovered.all {
+                it.status == TaskStatus.FAILED && it.lastError == UserFacingErrors.INTERRUPTED
+            },
+        )
+        val rows = store.listRecent(Int.MAX_VALUE)
+        assertEquals(
+            TaskStatus.COMPLETED,
+            rows.single { it.taskId == "done" }.status,
+        )
+        assertTrue(
+            rows.none { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.FAILED },
+        )
+        assertTrue(recoverInterrupted(store).isEmpty())
     }
 
     @Test
@@ -116,8 +161,7 @@ class TaskStoreTest {
                 status = TaskStatus.THINKING,
             ),
         )
-        val recovered = recoverInterrupted(store)
-        requireNotNull(recovered)
+        val recovered = recoverInterrupted(store).single()
         val manager = TaskManager(
             loopEngine = LoopEngine(
                 llm = llm,

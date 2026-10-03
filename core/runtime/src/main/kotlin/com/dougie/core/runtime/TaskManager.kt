@@ -11,11 +11,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class TaskManager(
@@ -27,6 +29,7 @@ class TaskManager(
     private val onTaskFinished: () -> Unit = {},
     private val conversation: ConversationPointer = InMemoryConversationPointer(),
     private val titles: ConversationTitles? = null,
+    private val persistIntervalMs: Long = DEFAULT_PERSIST_INTERVAL_MS,
 ) {
     private val _task = MutableStateFlow<AgentTask?>(null)
     val task: StateFlow<AgentTask?> = _task.asStateFlow()
@@ -35,6 +38,7 @@ class TaskManager(
     val transcript: StateFlow<List<AgentTask>> = _transcript.asStateFlow()
 
     private var running: Job? = null
+    private var lastPersistAtMs = 0L
 
     fun seed(task: AgentTask) {
         _task.value = task
@@ -77,7 +81,7 @@ class TaskManager(
                 loopEngine.run(created) { snapshot ->
                     val stamped = snapshot.stampEndedAtIfTerminal()
                     _task.value = stamped
-                    persist(stamped)
+                    if (shouldPersist(stamped)) persist(stamped)
                 }
             } catch (e: CancellationException) {
                 markCancelled()
@@ -214,8 +218,22 @@ class TaskManager(
             confirmDeadlineAt = null,
         ).stampEndedAtIfTerminal()
         _task.value = failed
-        persist(failed)
-        reloadTranscript()
+        // Runs inside an already-cancelled coroutine: without NonCancellable the terminal
+        // state never reaches the store and the row stays non-terminal forever.
+        withContext(NonCancellable) {
+            persist(failed)
+            reloadTranscript()
+        }
+    }
+
+    private fun shouldPersist(task: AgentTask): Boolean {
+        if (isTerminal(task.status)) return true
+        val now = System.currentTimeMillis()
+        if (lastPersistAtMs == 0L || now - lastPersistAtMs >= persistIntervalMs) {
+            lastPersistAtMs = now
+            return true
+        }
+        return false
     }
 
     private suspend fun persist(task: AgentTask) {
@@ -231,4 +249,8 @@ class TaskManager(
 
     private fun isTerminal(status: TaskStatus): Boolean =
         status == TaskStatus.COMPLETED || status == TaskStatus.FAILED
+
+    companion object {
+        const val DEFAULT_PERSIST_INTERVAL_MS = 250L
+    }
 }
