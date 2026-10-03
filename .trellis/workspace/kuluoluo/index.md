@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 108
+- **Total Sessions**: 109
 - **Last Active**: 2026-10-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~473 | Active |
+| `journal-2.md` | ~494 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 109 | 2026-10-03 | 数据与输入卫生（P1）落地 | `0fd112c` | `master` |
 | 108 | 2026-10-03 | 任务终态一致性（P0）修复落地 | `fd2699a` | `master` |
 | 107 | 2026-10-02 | 树状态提取器与短信编辑验证落地 | `d747b40` | `master` |
 | 106 | 2026-10-02 | 动作验证层（Verification Layer）落地 | `91669c4` | `master` |

@@ -471,3 +471,24 @@ State Extractor 段落地：TreeSnapshot/TreeSnapshotPort（活动窗口文本�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 109: 数据与输入卫生（P1）落地
+
+**Date**: 2026-10-03
+**Task**: 数据与输入卫生（P1）落地
+**Branch**: `master`
+
+### Summary
+
+深度审查第二个修复任务：idempotency 表 DB v1→2 增量迁移（加 created_at，废除 DROP 全表）+ 24h TTL 惰性清理、audit_log 行数上限 500 惰性清理、任务/会话删除级联清理幂等行（LIKE 前缀同事务）；ToolCallSanitizer STRING>10K 拒绝、OBJECT>64K 或深度>8 拒绝（拒绝不截断，js/py 32KiB 自限保持其下）；LocalToolCallParser 重复检测改结构化比较（键序/空白无关，勘误发现 ChatLlmProvider.kt:84 是活调用方）。Sanitizer/Parser 新测试均红→绿验证。检查代理 PASS 零阻断；spec 数据库约定五处同步更新，真机走查清单落任务目录。待办：prompt 预算与注入防护、tap 验证真机证据。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0fd112c` | (see git log) |
+
+### Status
+
+[OK] **Completed**
