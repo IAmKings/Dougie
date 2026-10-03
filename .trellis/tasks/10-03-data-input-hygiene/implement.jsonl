@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "JVM/core conventions for sanitizer and parser changes"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Test conventions and gradle validation matrix"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "SQLite/FTS conventions and migration rules for the dougie_tasks.db schema bump"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Audit retention rules that the row-cap prune must respect"}
