@@ -55,10 +55,25 @@ class ToolCallSanitizer(
     }
 
     private fun coerce(value: JsonElement, type: ToolParamType): JsonElement? {
-        if (type == ToolParamType.OBJECT) return value
+        if (type == ToolParamType.OBJECT) {
+            if (value.toString().length > MAX_OBJECT_CHARS) {
+                throw AgentException(UserFacingErrors.INVALID_TOOL_ARGS)
+            }
+            if (jsonDepth(value) > MAX_OBJECT_DEPTH) {
+                throw AgentException(UserFacingErrors.INVALID_TOOL_ARGS)
+            }
+            return value
+        }
         val prim = value as? JsonPrimitive ?: return null
         return when (type) {
-            ToolParamType.STRING -> JsonPrimitive(prim.content)
+            ToolParamType.STRING -> {
+                // Reject rather than truncate: silently shortening a user payload
+                // (SMS body, clipboard text) would corrupt the action.
+                if (prim.content.length > MAX_STRING_CHARS) {
+                    throw AgentException(UserFacingErrors.INVALID_TOOL_ARGS)
+                }
+                JsonPrimitive(prim.content)
+            }
             ToolParamType.INTEGER -> {
                 prim.intOrNull?.let { JsonPrimitive(it) }
                     ?: prim.contentOrNull?.toIntOrNull()?.let { JsonPrimitive(it) }
@@ -79,7 +94,19 @@ class ToolCallSanitizer(
         }
     }
 
+    private fun jsonDepth(value: JsonElement): Int = when (value) {
+        is JsonObject -> 1 + (value.values.maxOfOrNull { jsonDepth(it) } ?: 0)
+        is kotlinx.serialization.json.JsonArray -> 1 + (value.maxOfOrNull { jsonDepth(it) } ?: 0)
+        else -> 0
+    }
+
     companion object {
         private const val EMPTY_OBJECT = "{}"
+
+        // js_eval/py_eval enforce their own 32KiB data budget; this sits above it and
+        // only stops pathological multi-megabyte payloads from reaching any layer.
+        private const val MAX_STRING_CHARS = 10_000
+        private const val MAX_OBJECT_CHARS = 64_000
+        private const val MAX_OBJECT_DEPTH = 8
     }
 }

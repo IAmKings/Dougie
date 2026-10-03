@@ -11,6 +11,7 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ToolCallSanitizerTest {
@@ -116,5 +117,75 @@ class ToolCallSanitizerTest {
         )
         val obj = Json.parseToJsonElement(json).jsonObject
         assertEquals("[1,2]", obj.getValue("data").toString())
+    }
+
+    @Test
+    fun oversizedStringParamIsRejected() {
+        val sanitizer = ToolCallSanitizer(
+            mapOf(
+                "probe" to ToolDescriptor(
+                    name = "probe",
+                    properties = mapOf("text" to ToolParamSpec(ToolParamType.STRING)),
+                ),
+            ),
+        )
+        try {
+            sanitizer.sanitize("probe", """{"text":"${"字".repeat(10_001)}"}""")
+            throw AssertionError("expected oversize reject")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, e.userMessage)
+        }
+        val ok = sanitizer.sanitize("probe", """{"text":"${"字".repeat(10_000)}"}""")
+        assertEquals(10_000, Json.parseToJsonElement(ok).jsonObject.getValue("text").jsonPrimitive.content.length)
+    }
+
+    @Test
+    fun oversizedObjectParamIsRejected() {
+        val sanitizer = ToolCallSanitizer(
+            mapOf(
+                "probe" to ToolDescriptor(
+                    name = "probe",
+                    properties = mapOf("data" to ToolParamSpec(ToolParamType.OBJECT)),
+                ),
+            ),
+        )
+        val bigList = (0 until 20_000).joinToString(",", "[", "]")
+        try {
+            sanitizer.sanitize("probe", """{"data":$bigList}""")
+            throw AssertionError("expected oversize reject")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, e.userMessage)
+        }
+        // js_eval-sized payloads (own 32KiB cap) still pass the 64K sanitizer budget.
+        val legal = (0 until 8_000).joinToString(",", "[", "]")
+        val json = sanitizer.sanitize("probe", """{"data":$legal}""")
+        assertTrue(Json.parseToJsonElement(json).jsonObject.getValue("data").toString().length > 30_000)
+    }
+
+    @Test
+    fun overlyDeepObjectParamIsRejected() {
+        val sanitizer = ToolCallSanitizer(
+            mapOf(
+                "probe" to ToolDescriptor(
+                    name = "probe",
+                    properties = mapOf("data" to ToolParamSpec(ToolParamType.OBJECT)),
+                ),
+            ),
+        )
+        val deep = buildString {
+            append("{\"a\":")
+            repeat(9) { append("[") }
+            append("1")
+            repeat(9) { append("]") }
+            append("}")
+        }
+        try {
+            sanitizer.sanitize("probe", """{"data":$deep}""")
+            throw AssertionError("expected depth reject")
+        } catch (e: AgentException) {
+            assertEquals(UserFacingErrors.INVALID_TOOL_ARGS, e.userMessage)
+        }
+        val shallow = sanitizer.sanitize("probe", """{"data":{"a":[1,2]}}""")
+        assertEquals("""{"a":[1,2]}""", Json.parseToJsonElement(shallow).jsonObject.getValue("data").toString())
     }
 }

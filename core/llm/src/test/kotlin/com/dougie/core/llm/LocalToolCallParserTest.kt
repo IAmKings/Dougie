@@ -112,4 +112,50 @@ class LocalToolCallParserTest {
             ),
         )
     }
+
+    @Test
+    fun repeatIsDetectedAcrossKeyOrderAndWhitespace() {
+        val call = LocalToolCallParser.parse(
+            """{"name":"clipboard_write","args":{"text":"你好","extra":1}}""",
+        ) as LlmEvent.ToolCall
+        val task = AgentTask(
+            taskId = "t",
+            input = "复制",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "clipboard_write",
+                    argsSummary = """{"extra":1,  "text":"你好" }""",
+                    resultJson = """{"ok":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        assertTrue(LocalToolCallParser.isRepeatOfSuccessfulCall(task, call))
+        val different = LocalToolCallParser.parse(
+            """{"name":"clipboard_write","args":{"text":"再见","extra":1}}""",
+        ) as LlmEvent.ToolCall
+        assertTrue(!LocalToolCallParser.isRepeatOfSuccessfulCall(task, different))
+    }
+
+    @Test
+    fun unparseableArgsFallBackToStringComparison() {
+        val task = AgentTask(
+            taskId = "t",
+            input = "复制",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "probe",
+                    argsSummary = "raw-args",
+                    resultJson = """{"ok":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val same = LlmEvent.ToolCall(id = "", name = "probe", argsJson = " raw-args ")
+        val other = LlmEvent.ToolCall(id = "", name = "probe", argsJson = "other")
+        assertTrue(LocalToolCallParser.isRepeatOfSuccessfulCall(task, same))
+        assertTrue(!LocalToolCallParser.isRepeatOfSuccessfulCall(task, other))
+    }
 }

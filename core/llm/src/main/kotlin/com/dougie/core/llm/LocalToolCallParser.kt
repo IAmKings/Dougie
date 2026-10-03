@@ -39,12 +39,26 @@ object LocalToolCallParser {
     }
 
     fun isRepeatOfSuccessfulCall(task: AgentTask, call: LlmEvent.ToolCall): Boolean {
-        val args = call.argsJson.trim()
+        val incoming = canonicalJsonOrNull(call.argsJson)
         return task.toolTrace.any { trace ->
             trace.status == ToolTraceStatus.SUCCESS &&
                 trace.toolName == call.name &&
-                trace.argsSummary.trim() == args
+                argsMatch(trace.argsSummary, incoming, call.argsJson)
         }
+    }
+
+    /** Structural compare (key order / whitespace insensitive); falls back to raw string
+     *  equality when either side is not JSON, matching the pre-structural behavior. */
+    private fun argsMatch(argsSummary: String, incoming: JsonElement?, rawArgs: String): Boolean {
+        if (incoming == null) return argsSummary.trim() == rawArgs.trim()
+        val summarized = canonicalJsonOrNull(argsSummary) ?: return argsSummary.trim() == rawArgs.trim()
+        return summarized == incoming
+    }
+
+    private fun canonicalJsonOrNull(raw: String): JsonElement? = try {
+        Json.parseToJsonElement(raw.trim())
+    } catch (_: Exception) {
+        null
     }
 
     private fun unwrapMarkdownFence(text: String): String {
