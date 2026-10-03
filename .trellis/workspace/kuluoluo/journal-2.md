@@ -450,3 +450,24 @@ State Extractor 段落地：TreeSnapshot/TreeSnapshotPort（活动窗口文本�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 108: 任务终态一致性（P0）修复落地
+
+**Date**: 2026-10-03
+**Task**: 任务终态一致性（P0）修复落地
+**Branch**: `master`
+
+### Summary
+
+深度审查后第一个修复任务：markCancelled 包 NonCancellable（取消终态落库，红→绿验证）、recoverInterrupted 全量翻 FAILED（不再只救最新一条）、流式 persist 节流（interval 构造参数默认 250ms，终态必落盘，60 delta 写盘从 60+ 次降到常数次）、lastPersistAtMs 按任务重置；VerifiedResultJson helper 去重、toolCallId 常量化、MAX_VERIFY_FAILURES 跨工具语义注释；新增 src/testSideload 变体专属 bridge 接线测试（ContextWrapper(null) 技巧，防 SAM 接线类回归）。三个 work commits（a4e573b/e783d74/fd2699a+加固），全量测试+checkChannelLeak+play 变体编译全绿，检查代理总裁决 PASS 零必须修复。待办：数据保留任务（idempotency/audit TTL）、prompt 预算与注入防护任务、tap 验证真机证据。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fd2699a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
