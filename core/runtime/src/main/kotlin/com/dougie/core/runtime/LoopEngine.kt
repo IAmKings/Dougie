@@ -201,7 +201,7 @@ class LoopEngine(
                 task = routed,
                 toolName = ScreenMatchTool.NAME,
                 argsJson = """{"template_id":"solid"}""",
-                toolCallId = "match-then-tap-1",
+                toolCallId = MATCH_THEN_TAP_MATCH_CALL_ID,
                 emit = emit,
             )
         ) {
@@ -221,7 +221,7 @@ class LoopEngine(
                 task = matched,
                 toolName = IntentRouteAnswers.TAP_SWIPE,
                 argsJson = tapArgs,
-                toolCallId = "match-then-tap-2",
+                toolCallId = MATCH_THEN_TAP_TAP_CALL_ID,
                 emit = emit,
             )
         ) {
@@ -307,7 +307,7 @@ class LoopEngine(
         emit: suspend (AgentTask) -> Unit,
     ): AgentTask {
         val entries = openAppEntries()
-        val first = runConfirmedShortcut(start, toolName, argsJson, "intent-route-1", emit)
+        val first = runConfirmedShortcut(start, toolName, argsJson, INTENT_ROUTE_CALL_ID, emit)
         if (first.halted) return first.task
         val settled = if (first.verified == false) {
             // Shortcut path has no LLM to replan: re-run the confirmed action once with a
@@ -316,7 +316,7 @@ class LoopEngine(
                 start = first.task,
                 toolName = toolName,
                 argsJson = argsJson,
-                toolCallId = "intent-route-retry-1",
+                toolCallId = INTENT_ROUTE_RETRY_CALL_ID,
                 emit = emit,
                 skipConfirmation = true,
             )
@@ -784,6 +784,13 @@ class LoopEngine(
         private const val MAX_CONVERSATION_HITS = 3
         private const val MAX_CONVERSATION_CHARS = 800
         private const val HIT_SOURCE_SUMMARY_CHARS = 40
+
+        // Counts verified==false entries across the whole task trace — two failures from
+        // two different tools exhaust the budget just like two retries of one tool.
         private const val MAX_VERIFY_FAILURES = 2
+        private const val MATCH_THEN_TAP_MATCH_CALL_ID = "match-then-tap-1"
+        private const val MATCH_THEN_TAP_TAP_CALL_ID = "match-then-tap-2"
+        private const val INTENT_ROUTE_CALL_ID = "intent-route-1"
+        private const val INTENT_ROUTE_RETRY_CALL_ID = "intent-route-retry-1"
     }
 }

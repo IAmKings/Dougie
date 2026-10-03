@@ -9,8 +9,6 @@ import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
@@ -49,7 +47,7 @@ class AppIntentTool(
             )
         }
         idempotencyStore.get(context.idempotencyKey)?.let {
-            return ToolResult(json = it, verified = verifiedFromJson(it))
+            return ToolResult(json = it, verified = VerifiedResultJson.fromJson(it))
         }
         val json = port.launchView(canonical, parsed.packageName)
         if (!isOk(json)) {
@@ -81,7 +79,7 @@ class AppIntentTool(
                 verified = false,
             )
         }
-        val resultJson = if (verified == null) json else withVerified(json, verified)
+        val resultJson = if (verified == null) json else VerifiedResultJson.withFlag(json, verified)
         idempotencyStore.put(context.idempotencyKey, resultJson)
         val stored = idempotencyStore.get(context.idempotencyKey) ?: resultJson
         return ToolResult(json = stored, verified = verified)
@@ -91,23 +89,6 @@ class AppIntentTool(
         packageName?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
         if (!canonical.startsWith("package:")) return null
         return canonical.removePrefix("package:").takeIf { it.isNotEmpty() }
-    }
-
-    private fun withVerified(json: String, verified: Boolean): String {
-        val obj = try {
-            Json.parseToJsonElement(json).jsonObject
-        } catch (_: Exception) {
-            return json
-        }
-        return JsonObject(obj + ("verified" to JsonPrimitive(verified))).toString()
-    }
-
-    private fun verifiedFromJson(json: String): Boolean? {
-        return try {
-            Json.parseToJsonElement(json).jsonObject["verified"]?.jsonPrimitive?.booleanOrNull
-        } catch (_: Exception) {
-            null
-        }
     }
 
     private fun parseArgs(argumentsJson: String): Parsed {
