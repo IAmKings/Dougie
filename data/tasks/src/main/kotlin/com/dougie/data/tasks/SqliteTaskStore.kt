@@ -121,6 +121,11 @@ internal class SqliteTaskStore(
                     "task_id IN ($placeholders)",
                     ids.toTypedArray(),
                 )
+                for (id in ids) {
+                    // Cascade: replay-guard rows are keyed `taskId + toolCallId`; UUID ids
+                    // contain no LIKE wildcards so a prefix match is exact.
+                    db.delete("idempotency", "idempotency_key LIKE ?", arrayOf("$id%"))
+                }
                 db.setTransactionSuccessful()
                 deleted
             } finally {
@@ -130,7 +135,16 @@ internal class SqliteTaskStore(
 
     override suspend fun deleteByTaskId(taskId: String): Int = withContext(Dispatchers.IO) {
         if (taskId.isBlank()) return@withContext 0
-        helper.writableDatabase.delete("agent_tasks", "task_id = ?", arrayOf(taskId))
+        val db = helper.writableDatabase
+        db.beginTransaction()
+        try {
+            val deleted = db.delete("agent_tasks", "task_id = ?", arrayOf(taskId))
+            db.delete("idempotency", "idempotency_key LIKE ?", arrayOf("$taskId%"))
+            db.setTransactionSuccessful()
+            deleted
+        } finally {
+            db.endTransaction()
+        }
     }
 
     override suspend fun searchCompletedTurns(

@@ -10,6 +10,7 @@ internal class SqliteAuditLog(
     private val helper: TaskDbHelper,
 ) : AuditLog {
     override fun record(taskId: String, toolName: String, outcome: String) {
+        maybePrune()
         val values = ContentValues().apply {
             put("task_id", taskId)
             put("tool_name", toolName)
@@ -43,5 +44,29 @@ internal class SqliteAuditLog(
                 }
             }
         }
+    }
+
+    private fun maybePrune() {
+        val now = System.currentTimeMillis()
+        if (now - lastPruneAtMs < PRUNE_INTERVAL_MS) return
+        lastPruneAtMs = now
+        try {
+            helper.writableDatabase.execSQL(
+                """
+                DELETE FROM audit_log
+                WHERE id NOT IN (SELECT id FROM audit_log ORDER BY id DESC LIMIT $AUDIT_MAX_ROWS)
+                """.trimIndent(),
+            )
+        } catch (_: Exception) {
+            // Hygiene cleanup must never block the audit path.
+        }
+    }
+
+    companion object {
+        private const val PRUNE_INTERVAL_MS = 60 * 60 * 1000L
+        private const val AUDIT_MAX_ROWS = 500
+
+        @Volatile
+        private var lastPruneAtMs = 0L
     }
 }

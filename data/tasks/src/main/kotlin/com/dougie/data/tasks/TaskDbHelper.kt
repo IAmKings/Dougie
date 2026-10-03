@@ -25,7 +25,8 @@ internal class TaskDbHelper(context: Context) : SQLiteOpenHelper(
             """
             CREATE TABLE idempotency (
               idempotency_key TEXT PRIMARY KEY NOT NULL,
-              result_json TEXT NOT NULL
+              result_json TEXT NOT NULL,
+              created_at INTEGER NOT NULL DEFAULT 0
             )
             """.trimIndent(),
         )
@@ -43,14 +44,16 @@ internal class TaskDbHelper(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS audit_log")
-        db.execSQL("DROP TABLE IF EXISTS idempotency")
-        db.execSQL("DROP TABLE IF EXISTS agent_tasks")
-        onCreate(db)
+        // Incremental migrations only — dropping tables wipes user task history.
+        if (oldVersion < 2) {
+            db.execSQL(
+                "ALTER TABLE idempotency ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0",
+            )
+        }
     }
 
     companion object {
         const val DB_NAME = "dougie_tasks.db"
-        const val DB_VERSION = 1
+        const val DB_VERSION = 2
     }
 }
