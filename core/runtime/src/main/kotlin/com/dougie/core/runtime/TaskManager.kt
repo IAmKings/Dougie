@@ -74,6 +74,7 @@ class TaskManager(
             conversationId = conversation.currentId(),
         )
         _task.value = created
+        lastPersistAtMs = 0L
         running = scope.launch(dispatcher) {
             persist(created)
             reloadTranscript()

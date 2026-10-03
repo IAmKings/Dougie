@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "JVM/core conventions for runtime and tool changes"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "JUnit4 + coroutines-test conventions and gradle validation matrix"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Play/sideload test source set isolation for the bridge wiring test"}
