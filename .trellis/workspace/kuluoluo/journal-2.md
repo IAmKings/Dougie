@@ -492,3 +492,24 @@ State Extractor 段落地：TreeSnapshot/TreeSnapshotPort（活动窗口文本�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 110: prompt 预算与注入防护（P1，方案 A）落地
+
+**Date**: 2026-10-03
+**Task**: prompt 预算与注入防护（P1，方案 A）落地
+**Branch**: `master`
+
+### Summary
+
+深度审查第三个修复任务：clampToolResult 2000 字符截断接入本地 traces 与云端 role=tool content 双路径；systemPrefix 的 Known facts/相关历史对话 各自前置 UNTRUSTED_DATA_NOTE（一处改动双路径生效）；localPrompt 按用户方案 A 保留用户原输入（「用户这次的提问：」+ 800 字符截断，userBlock 两分支合并，LOCAL_AFTER_TOOL_RESULTS 文案同步）；2 处冲突断言按新契约更新，新增 3 项测试均红→绿验证；14 条冻结契约不动全绿。检查代理 PASS 零阻断。至此深度审查的全部 P0/P1 修复完成；剩余：各项真机走查（各任务 device-checklist.md）+ tap 验证谓词证据。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4fa5bbe` | (see git log) |
+
+### Status
+
+[OK] **Completed**
