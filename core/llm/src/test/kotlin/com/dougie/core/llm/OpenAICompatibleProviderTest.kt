@@ -520,6 +520,35 @@ class OpenAICompatibleProviderTest {
     }
 
     @Test
+    fun requestJsonClampsOversizedToolResultContent() {
+        val bigResult = """{"ok":true,"text":"${"长".repeat(3_000)}"}"""
+        val json = testProvider().buildRequestJson(
+            model = "gpt-4o-mini",
+            task = AgentTask(
+                taskId = "t3",
+                input = "总结",
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "call_js_1",
+                        toolName = "js_eval",
+                        argsSummary = "{}",
+                        resultJson = bigResult,
+                        status = ToolTraceStatus.SUCCESS,
+                    ),
+                ),
+            ),
+        )
+        val messages = Json.parseToJsonElement(json).jsonObject["messages"]!!.jsonArray
+        val toolContent = messages
+            .map { it.jsonObject }
+            .single { it.jsonObject["role"]!!.jsonPrimitive.content == "tool" }
+            .jsonObject["content"]!!.jsonPrimitive.content
+        assertTrue(toolContent.contains("工具结果过长，已截断"))
+        assertTrue(toolContent.length < 2_100)
+        assertTrue(!toolContent.contains("长".repeat(2_100)))
+    }
+
+    @Test
     fun requestJsonOmitsPriorTurnsWhenNewConversation() {
         val json = testProvider().buildRequestJson(
             model = "gpt-4o-mini",

@@ -226,7 +226,7 @@ class OpenAICompatibleProvider(
                     buildJsonObject {
                         put("role", "tool")
                         put("tool_call_id", trace.toolCallId)
-                        put("content", result)
+                        put("content", ChatPromptAssembler.clampToolResult(result))
                     },
                 )
             }
