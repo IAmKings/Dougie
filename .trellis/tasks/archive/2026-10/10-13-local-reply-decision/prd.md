@@ -26,6 +26,12 @@
 - [x] AC4 `:core:llm:test` + `:app:compileSideloadDebugKotlin` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约测试不动全绿。
 - [x] AC5 真机四测 E1（0.6B 与 2B 都测）：任何情况下气泡里不出现原始工具 JSON；结果记回 device-checklist（AC5 待真机四测；红态：提取逻辑回退后 2 项夹带测试失败）
 
+## Follow-up（四测后追加，同任务闭环）
+
+真机四测仍显示原始 JSON；拉取设备 DB 取证：finalAnswer 为**截断的多行 JSON**（`toolTrace=[]`，首轮断流，缺外层收尾括号），整段解析与完整对象提取都接不住。追加 R6：`repairTruncatedJsonObject`——以 `{` 开头且含 `"name"` 的不平衡文本按括号深度补齐收尾（必要时先补引号、去尾逗号）重解析，成功则按既定分类（复读/放行/优雅文案），失败给优雅文案；永不显示原文。AC 追加：
+
+- [x] AC6 真机精确载荷（截断多行 calendar_query JSON）→ 放行 ToolCall；截断复读 → 已获得工具结果；截断未教学/不可修复 → 优雅文案（4 项测试，红态：摘除修复分支后 3 项失败）。
+
 ## Out of scope
 
 - 「已获得工具结果。」作为复读终答的措辞优化；args 渐变的同名工具重复执行限流（maxLoops 兜底）；云端路径。
