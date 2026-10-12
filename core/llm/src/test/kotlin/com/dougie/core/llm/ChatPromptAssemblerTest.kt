@@ -722,6 +722,65 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
+    fun truncatedMultilineJsonFromDeviceCaseIsRepairedAndExecuted() {
+        // Exact payload from the 2026-10-13 device DB: MiniCPM-2B stopped generating
+        // before the outer closing brace; the inner args object is complete.
+        val truncated = "{\n  \"name\": \"calendar_query\",\n  \"args\": {}"
+        val task = AgentTask(taskId = "t-t1", input = "现在几点了？另外明天提醒我开会")
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read time."),
+            ToolDescriptor("calendar_query", description = "Query events."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(task, descriptors, truncated)
+        assertEquals("calendar_query", (event as LlmEvent.ToolCall).name)
+    }
+
+    @Test
+    fun truncatedRepeatIsAcknowledgedNotExecuted() {
+        val truncated = "{\n  \"name\": \"calendar_query\",\n  \"args\": {}"
+        val task = AgentTask(
+            taskId = "t-t2",
+            input = "现在几点了？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c2",
+                    toolName = "calendar_query",
+                    argsSummary = "{}",
+                    resultJson = """{"events":[]}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(
+            ToolDescriptor("calendar_query", description = "Query events."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(task, descriptors, truncated)
+        assertEquals("已获得工具结果。", (event as LlmEvent.TextDelta).text)
+    }
+
+    @Test
+    fun truncatedUntaughtJsonBecomesNoticeInsteadOfRawJson() {
+        val truncated = "{\n  \"name\": \"tap_swipe\",\n  \"args\": {\"x\": 1}"
+        val task = AgentTask(taskId = "t-t3", input = "帮我看看")
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val event = ChatPromptAssembler.decideLocalReply(task, descriptors, truncated)
+        val text = (event as LlmEvent.TextDelta).text
+        assertTrue(!text.contains("tap_swipe"))
+        assertTrue(!text.contains("\"name\""))
+    }
+
+    @Test
+    fun unrepairableJsonShapeAlsoNeverDisplaysRaw() {
+        val broken = """{"name":"calendar_query","args":{"limit": """"
+        val task = AgentTask(taskId = "t-t4", input = "帮我看看")
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val event = ChatPromptAssembler.decideLocalReply(task, descriptors, broken)
+        val text = (event as LlmEvent.TextDelta).text
+        assertTrue(!text.contains("calendar_query"))
+        assertTrue(text.contains("暂不支持"))
+    }
+
+    @Test
     fun plainTextReplyKeepsStripLeadingQuestionBehavior() {
         val task = AgentTask(taskId = "t-p", input = "现在几点了")
         val event = ChatPromptAssembler.decideLocalReply(

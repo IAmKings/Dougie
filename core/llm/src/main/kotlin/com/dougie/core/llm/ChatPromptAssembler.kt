@@ -117,22 +117,66 @@ object ChatPromptAssembler {
         if (trimmed.isEmpty()) return null
         LocalToolCallParser.parse(trimmed)?.let { return classifyLocalCall(task, descriptors, it) }
         val span = firstJsonObjectWithName(trimmed)
-            ?: return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
-        val call = LocalToolCallParser.parse(span)
-            ?: return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
-        val leftover = trimmed.replace(span, " ").trim()
-        if (LocalToolCallParser.isRepeatOfSuccessfulCall(task, call)) {
-            return LlmEvent.TextDelta(REPEAT_ACKNOWLEDGEMENT)
+        if (span != null) {
+            val call = LocalToolCallParser.parse(span)
+                ?: return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
+            val leftover = trimmed.replace(span, " ").trim()
+            if (LocalToolCallParser.isRepeatOfSuccessfulCall(task, call)) {
+                return LlmEvent.TextDelta(REPEAT_ACKNOWLEDGEMENT)
+            }
+            if (localToolProtocolActive(task, descriptors) ||
+                localAfterToolToolCallAllowed(descriptors, call)
+            ) {
+                return call
+            }
+            return if (leftover.isNotEmpty()) {
+                LlmEvent.TextDelta(stripLeadingQuestion(leftover, task.input))
+            } else {
+                LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
+            }
         }
-        if (localToolProtocolActive(task, descriptors) ||
-            localAfterToolToolCallAllowed(descriptors, call)
-        ) {
-            return call
+        // Small models sometimes stop generating mid-JSON (unbalanced braces). If the
+        // reply is a bare JSON-shaped object naming a tool, repair the tail and classify
+        // the repaired call — raw JSON never reaches the user as text.
+        if (trimmed.startsWith("{") && trimmed.contains("\"name\"")) {
+            val repaired = repairTruncatedJsonObject(trimmed)
+            val call = repaired?.let { LocalToolCallParser.parse(it) }
+            if (call != null) return classifyLocalCall(task, descriptors, call)
+            return LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
         }
-        return if (leftover.isNotEmpty()) {
-            LlmEvent.TextDelta(stripLeadingQuestion(leftover, task.input))
-        } else {
-            LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
+        return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
+    }
+
+    /** Append the missing closers of an unterminated JSON object and return the repaired
+     *  text, or null when the text is balanced or cannot be repaired into valid JSON. */
+    private fun repairTruncatedJsonObject(text: String): String? {
+        var depth = 0
+        var inString = false
+        var escaped = false
+        for (ch in text) {
+            if (escaped) {
+                escaped = false
+                continue
+            }
+            when {
+                ch == '\\' && inString -> escaped = true
+                ch == '"' -> inString = !inString
+                inString -> Unit
+                ch == '{' -> depth++
+                ch == '}' -> depth--
+            }
+        }
+        if (depth <= 0 && !inString) return null
+        val base = text.trimEnd().trimEnd(',').trimEnd()
+        val sb = StringBuilder(base)
+        if (inString) sb.append('"')
+        repeat(depth.coerceAtLeast(0)) { sb.append('}') }
+        val repaired = sb.toString()
+        return try {
+            Json.parseToJsonElement(repaired)
+            repaired
+        } catch (_: Exception) {
+            null
         }
     }
 
