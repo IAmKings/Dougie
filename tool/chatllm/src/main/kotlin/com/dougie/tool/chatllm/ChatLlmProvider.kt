@@ -3,7 +3,6 @@ package com.dougie.tool.chatllm
 import android.content.Context
 import com.dougie.core.llm.ChatPromptAssembler
 import com.dougie.core.llm.LlmProvider
-import com.dougie.core.llm.LocalToolCallParser
 import com.dougie.core.llm.toLlmResponse
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.AgentTask
@@ -77,25 +76,12 @@ class ChatLlmProvider private constructor(
                 }
 
                 override fun onDone() {
-                    val text = buffer.toString()
-                    val tool = LocalToolCallParser.parse(text)
-                    when {
-                        tool != null &&
-                            LocalToolCallParser.isRepeatOfSuccessfulCall(context.task, tool) -> {
-                            trySendBlocking(LlmEvent.TextDelta("已获得工具结果。"))
-                        }
-                        tool != null && (
-                            ChatPromptAssembler.localToolProtocolActive(context.task, descriptors) ||
-                                ChatPromptAssembler.localAfterToolToolCallAllowed(descriptors, tool)
-                            ) -> {
-                            trySendBlocking(tool)
-                        }
-                        text.isNotEmpty() -> trySendBlocking(
-                            LlmEvent.TextDelta(
-                                ChatPromptAssembler.stripLeadingQuestion(text, context.task.input),
-                            ),
-                        )
-                    }
+                    val event = ChatPromptAssembler.decideLocalReply(
+                        context.task,
+                        descriptors,
+                        buffer.toString(),
+                    )
+                    if (event != null) trySendBlocking(event)
                     close()
                 }
 

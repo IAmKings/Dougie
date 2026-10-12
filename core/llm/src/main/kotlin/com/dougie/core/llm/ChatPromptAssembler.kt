@@ -6,6 +6,10 @@ import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ToolDescriptor
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 import kotlin.math.ceil
 
 /** Shared Chat identity + task context. Do not log the assembled string. */
@@ -96,6 +100,96 @@ object ChatPromptAssembler {
     ): Boolean {
         if (descriptors.isEmpty()) return false
         return localTeachable(descriptors).any { it.name == call.name }
+    }
+
+    /**
+     * Single decision point for local-model replies. Raw tool JSON must never reach the
+     * user: a parseable call is either executed (protocol round or taught inventory),
+     * acknowledged as a repeat, or reduced to a notice; text wrapped around a JSON
+     * object is extracted and classified the same way, and plain text goes out as-is.
+     */
+    fun decideLocalReply(
+        task: AgentTask,
+        descriptors: List<ToolDescriptor>,
+        reply: String,
+    ): LlmEvent? {
+        val trimmed = reply.trim()
+        if (trimmed.isEmpty()) return null
+        LocalToolCallParser.parse(trimmed)?.let { return classifyLocalCall(task, descriptors, it) }
+        val span = firstJsonObjectWithName(trimmed)
+            ?: return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
+        val call = LocalToolCallParser.parse(span)
+            ?: return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
+        val leftover = trimmed.replace(span, " ").trim()
+        if (LocalToolCallParser.isRepeatOfSuccessfulCall(task, call)) {
+            return LlmEvent.TextDelta(REPEAT_ACKNOWLEDGEMENT)
+        }
+        if (localToolProtocolActive(task, descriptors) ||
+            localAfterToolToolCallAllowed(descriptors, call)
+        ) {
+            return call
+        }
+        return if (leftover.isNotEmpty()) {
+            LlmEvent.TextDelta(stripLeadingQuestion(leftover, task.input))
+        } else {
+            LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
+        }
+    }
+
+    private fun classifyLocalCall(
+        task: AgentTask,
+        descriptors: List<ToolDescriptor>,
+        call: LlmEvent.ToolCall,
+    ): LlmEvent {
+        if (LocalToolCallParser.isRepeatOfSuccessfulCall(task, call)) {
+            return LlmEvent.TextDelta(REPEAT_ACKNOWLEDGEMENT)
+        }
+        if (localToolProtocolActive(task, descriptors) ||
+            localAfterToolToolCallAllowed(descriptors, call)
+        ) {
+            return call
+        }
+        return LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
+    }
+
+    /** First `{…}` span whose JSON object carries a non-blank "name" field, or null. */
+    private fun firstJsonObjectWithName(text: String): String? {
+        var start = text.indexOf('{')
+        while (start >= 0) {
+            var depth = 0
+            var inString = false
+            var escaped = false
+            for (i in start until text.length) {
+                val ch = text[i]
+                if (escaped) {
+                    escaped = false
+                    continue
+                }
+                when {
+                    ch == '\\' && inString -> escaped = true
+                    ch == '"' -> inString = !inString
+                    inString -> Unit
+                    ch == '{' -> depth++
+                    ch == '}' -> {
+                        depth--
+                        if (depth == 0) {
+                            val span = text.substring(start, i + 1)
+                            if (hasNameField(span)) return span
+                            break
+                        }
+                    }
+                }
+            }
+            start = text.indexOf('{', start + 1)
+        }
+        return null
+    }
+
+    private fun hasNameField(span: String): Boolean = try {
+        val obj = Json.parseToJsonElement(span).jsonObject
+        (obj["name"] as? JsonPrimitive)?.contentOrNull?.trim()?.isNotEmpty() == true
+    } catch (_: Exception) {
+        false
     }
 
     /** Truncated tool results are context data only — the model never parses them back. */
@@ -372,6 +466,9 @@ object ChatPromptAssembler {
     private const val LOCAL_AFTER_TOOL_RESULTS =
         "上面已有用户这次的提问和对应的工具结果。若还需要调用工具才能完整回答提问，就输出一行工具 JSON；" +
             "否则用一两句中文直接回答提问，不要复述问题。"
+
+    private const val REPEAT_ACKNOWLEDGEMENT = "已获得工具结果。"
+    private const val UNTAUGHT_TOOL_NOTICE = "（该操作暂不支持自动执行，已忽略。）"
 
     private const val LOCAL_IDLE_SUFFIX =
         "直接用一两句中文回答。不要输出 JSON。不要罗列工具。不要自称其它模型或厂商。"

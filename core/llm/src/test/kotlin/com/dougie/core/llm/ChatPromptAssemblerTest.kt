@@ -611,6 +611,140 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
+    fun afterToolRoundBareTaughtJsonIsEmittedAsToolCall() {
+        val task = AgentTask(
+            taskId = "t-e1",
+            input = "现在几点？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"iso_local":"2026-10-13T10:00:00","zone":"Asia/Shanghai"}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read time."),
+            ToolDescriptor("calendar_query", description = "Query events."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"calendar_query","args":{}}""",
+        )
+        val call = event as LlmEvent.ToolCall
+        assertEquals("calendar_query", call.name)
+    }
+
+    @Test
+    fun wrappedTaughtJsonIsExtractedAndExecuted() {
+        val task = AgentTask(
+            taskId = "t-e1",
+            input = "现在几点？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"ok":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read time."),
+            ToolDescriptor("calendar_query", description = "Query events."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            "好的，我查一下日程 {\"name\":\"calendar_query\",\"args\":{}}",
+        )
+        val call = event as LlmEvent.ToolCall
+        assertEquals("calendar_query", call.name)
+    }
+
+    @Test
+    fun wrappedUntaughtJsonNeverReachesUserAsRawJson() {
+        val task = AgentTask(taskId = "t-u", input = "帮我看看")
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            "这是你发的内容 {\"name\":\"tap_swipe\",\"args\":{}} 请查收",
+        )
+        val text = (event as LlmEvent.TextDelta).text
+        assertTrue(!text.contains("\"name\""))
+        assertTrue(!text.contains("tap_swipe"))
+        assertTrue(text.contains("请查收"))
+    }
+
+    @Test
+    fun wholeUntaughtJsonBecomesNoticeInsteadOfRawJson() {
+        val task = AgentTask(taskId = "t-u2", input = "帮我看看")
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"tap_swipe","args":{"x":1}}""",
+        )
+        val text = (event as LlmEvent.TextDelta).text
+        assertTrue(!text.contains("tap_swipe"))
+        assertTrue(text.contains("暂不支持"))
+    }
+
+    @Test
+    fun exactRepeatOfSuccessfulCallIsAcknowledgedNotExecuted() {
+        val task = AgentTask(
+            taskId = "t-r",
+            input = "现在几点？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c2",
+                    toolName = "calendar_query",
+                    argsSummary = "{}",
+                    resultJson = """{"events":[]}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(
+            ToolDescriptor("calendar_query", description = "Query events."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"calendar_query","args":{}}""",
+        )
+        assertEquals("已获得工具结果。", (event as LlmEvent.TextDelta).text)
+    }
+
+    @Test
+    fun plainTextReplyKeepsStripLeadingQuestionBehavior() {
+        val task = AgentTask(taskId = "t-p", input = "现在几点了")
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            emptyList(),
+            "现在是 10 点。",
+        )
+        assertEquals("现在是 10 点。", (event as LlmEvent.TextDelta).text)
+    }
+
+    @Test
+    fun firstRoundProtocolJsonStillExecutes() {
+        val task = AgentTask(taskId = "t-p1", input = "现在几点了")
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"time","args":{}}""",
+        )
+        assertEquals("time", (event as LlmEvent.ToolCall).name)
+    }
+
+    @Test
     fun retrievalBlocksAreLabeledAsNonInstructionData() {
         val prefix = ChatPromptAssembler.systemPrefix(
             AgentTask(
