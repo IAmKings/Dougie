@@ -534,3 +534,24 @@ State Extractor 段落地：TreeSnapshot/TreeSnapshotPort（活动窗口文本�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 112: 本地多步工具轮放行（E1 二次反馈）
+
+**Date**: 2026-10-12
+**Task**: 本地多步工具轮放行（E1 二次反馈）
+**Branch**: `master`
+
+### Summary
+
+E1 复测：0.6B 第二轮输出 calendar_create JSON（语义正确）被当文本显示，2B 用文字回应通过。修复：ChatLlmProvider 工具调用分支改为 protocolActive || localAfterToolToolCallAllowed（新助手，教学名单为闸，tap_swipe/sms_compose/未知名不放行）；LOCAL_AFTER_TOOL_RESULTS 措辞允许按需二轮调用。calendar_create 走既有 L2 确认卡，sanitizer/幂等/maxLoops=8/repeat 守卫全部既有把关；冻结契约（纯首轮）不动。红态验证措辞断言。已重建安装 APK（23:54:05），待真机三测：预期 0.6B 的「提醒开会」触发确认卡。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `867c1e1` | (see git log) |
+
+### Status
+
+[OK] **Completed**
