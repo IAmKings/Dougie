@@ -576,3 +576,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 114: 截断 JSON 修复（E1 四测取证）
+
+**Date**: 2026-10-13
+**Task**: 截断 JSON 修复（E1 四测取证）
+**Branch**: `master`
+
+### Summary
+
+四测仍现原始 JSON；不再盲猜，直接 run-as 拉取设备 DB 取证：completionPath=LOCAL_LLM、toolTrace=[]（首轮断流）、finalAnswer 为截断多行 JSON（缺外层收尾括号）——整段解析与完整对象提取都接不住，落纯文本显示。修复：repairTruncatedJsonObject 按括号深度补齐（含补引号/去尾逗号）重解析后走既定分类（复读守卫/protocolActive/教学名单/优雅文案），永不显示原文；4 项以真机精确载荷为蓝本的测试，红态验证摘除修复分支后 3 项失败。APK 已重装（00:18:42），待五测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `918c362` | (see git log) |
+
+### Status
+
+[OK] **Completed**
