@@ -21,10 +21,10 @@ prompt-budget-guard 方案 A 真机验收（E1 场景）发现缺陷：本地最
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：工具结果 + taught 描述符的 prompt 中，指令行 indexOf 大于提问 indexOf 与结果 indexOf（prompt 不以提问结尾）。
-- [ ] AC2 JVM 测试：既有精确等值断言更新为新布局且通过；协议态/空闲态路径断言不变仍绿。
-- [ ] AC3 红态验证：新断言在未修复实现上失败。
-- [ ] AC4 全量 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；真机复测 E1 记回 device-checklist。
+- [x] AC1 JVM 测试：工具结果 + taught 描述符的 prompt 中，指令行 indexOf 大于提问 indexOf 与结果 indexOf（prompt 不以提问结尾）。
+- [x] AC2 JVM 测试：既有精确等值断言更新为新布局且通过；协议态/空闲态路径断言不变仍绿。
+- [x] AC3 红态验证：新断言在未修复实现上失败。
+- [x] AC4 全量 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；真机复测 E1 记回 device-checklist（待复测；红态验证已由临时回退执行：2 项布局断言在旧布局上失败）。
 
 ## Out of scope
 
