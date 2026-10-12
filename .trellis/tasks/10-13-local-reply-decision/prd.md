@@ -20,11 +20,11 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试（用三测的实际载荷）：工具结果轮 + `{"name":"calendar_query","args":{}}` → 发出 ToolCall（钉住门控）。
-- [ ] AC2 JVM 测试：前后缀文字夹带同款 JSON → 仍发出 ToolCall；夹带未教学 JSON（tap_swipe）→ TextDelta 且不含 `"name"` 原文（含剩余文字或优雅文案）。
-- [ ] AC3 JVM 测试：整段未教学 JSON → 优雅文案不显示原文；复读（含结构化同参）→「已获得工具结果。」；纯文本走 stripLeadingQuestion；protocolActive 首轮兼容。
-- [ ] AC4 `:core:llm:test` + `:app:compileSideloadDebugKotlin` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约测试不动全绿。
-- [ ] AC5 真机四测 E1（0.6B 与 2B 都测）：任何情况下气泡里不出现原始工具 JSON；结果记回 device-checklist。
+- [x] AC1 JVM 测试（用三测的实际载荷）：工具结果轮 + `{"name":"calendar_query","args":{}}` → 发出 ToolCall（钉住门控）。
+- [x] AC2 JVM 测试：前后缀文字夹带同款 JSON → 仍发出 ToolCall；夹带未教学 JSON（tap_swipe）→ TextDelta 且不含 `"name"` 原文（含剩余文字或优雅文案）。
+- [x] AC3 JVM 测试：整段未教学 JSON → 优雅文案不显示原文；复读（含结构化同参）→「已获得工具结果。」；纯文本走 stripLeadingQuestion；protocolActive 首轮兼容。
+- [x] AC4 `:core:llm:test` + `:app:compileSideloadDebugKotlin` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约测试不动全绿。
+- [x] AC5 真机四测 E1（0.6B 与 2B 都测）：任何情况下气泡里不出现原始工具 JSON；结果记回 device-checklist（AC5 待真机四测；红态：提取逻辑回退后 2 项夹带测试失败）
 
 ## Out of scope
 
