@@ -513,3 +513,24 @@ State Extractor 段落地：TreeSnapshot/TreeSnapshotPort（活动窗口文本�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 111: E1 复读缺陷修复（真机验收反馈）
+
+**Date**: 2026-10-12
+**Task**: E1 复读缺陷修复（真机验收反馈）
+**Branch**: `master`
+
+### Summary
+
+真机验收 E1 发现：方案 A 后工具结果轮 prompt 以裸提问结尾，0.6B 最小档复读用户原话（指令在提问之前失去近因约束，stripLeadingQuestion 对整句复读无效）。修复：localPrompt 工具结果轮改为提问前置→工具结果居中→LOCAL_AFTER_TOOL_RESULTS 指令收尾（措辞改「上面已有…」）；协议态/空闲态路径不动；既有 2 处断言更新 + 新增收尾位置断言，红态验证 2 项在旧布局上失败。已重建并安装 APK 到真机（1fc6056b），待用户复测 E1/E2。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3ad47d6` | (see git log) |
+
+### Status
+
+[OK] **Completed**
