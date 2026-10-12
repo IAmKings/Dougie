@@ -6,6 +6,7 @@ import com.dougie.core.model.ConversationTurn
 import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ToolDescriptor
+import com.dougie.core.model.UserFacingErrors
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -144,7 +145,21 @@ object ChatPromptAssembler {
             if (call != null) return classifyLocalCall(task, descriptors, call)
             return LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
         }
-        return LlmEvent.TextDelta(stripLeadingQuestion(trimmed, task.input))
+        return textEvent(task, stripLeadingQuestion(trimmed, task.input))
+    }
+
+    /** An echo of the user's own words is not an answer: tiny models sometimes parrot the
+     *  question back; surface the honest retry copy instead of the echoed input. */
+    private fun textEvent(task: AgentTask, text: String): LlmEvent.TextDelta {
+        val body = text.trim()
+        val stripped = body.removePrefix("用户这次的提问：").trim()
+        val normalizedInput = task.input.trim().filter { it.isLetterOrDigit() }
+        if (normalizedInput.isNotEmpty() &&
+            stripped.filter { it.isLetterOrDigit() } == normalizedInput
+        ) {
+            return LlmEvent.TextDelta(UserFacingErrors.LLM_EMPTY_REPLY)
+        }
+        return LlmEvent.TextDelta(body)
     }
 
     /** Append the missing closers of an unterminated JSON object and return the repaired
@@ -508,8 +523,8 @@ object ChatPromptAssembler {
     )
 
     private const val LOCAL_AFTER_TOOL_RESULTS =
-        "上面已有用户这次的提问和对应的工具结果。若还需要调用工具才能完整回答提问，就输出一行工具 JSON；" +
-            "否则用一两句中文直接回答提问，不要复述问题。"
+        "上面已有用户这次的提问和对应的工具结果。提问里还需要执行的部分（例如建日程、打开应用），" +
+            "必须输出一行工具 JSON 去完成，不要只用文字承诺会做；其余用一两句中文直接回答，不要复述问题。"
 
     private const val REPEAT_ACKNOWLEDGEMENT = "已获得工具结果。"
     private const val UNTAUGHT_TOOL_NOTICE = "（该操作暂不支持自动执行，已忽略。）"

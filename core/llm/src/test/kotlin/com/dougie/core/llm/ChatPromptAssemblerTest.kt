@@ -10,6 +10,7 @@ import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.ToolTraceStatus
+import com.dougie.core.model.UserFacingErrors
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -550,6 +551,7 @@ class ChatPromptAssemblerTest {
         assertTrue(prompt.contains("time:"))
         assertTrue(prompt.contains("上面已有用户这次的提问和对应的工具结果"))
         assertTrue(prompt.contains("用户这次的提问：现在几点了"))
+        assertTrue(prompt.contains("不要只用文字承诺"))
         assertTrue(prompt.contains("不要复述"))
         // The instruction must come after both the question and the results so the
         // prompt never ends with the bare user text (small models parrot it).
@@ -801,6 +803,65 @@ class ChatPromptAssemblerTest {
             """{"name":"time","args":{}}""",
         )
         assertEquals("time", (event as LlmEvent.ToolCall).name)
+    }
+
+    @Test
+    fun echoOfUserInputBecomesHonestRetryCopy() {
+        val task = AgentTask(
+            taskId = "t-echo",
+            input = "现在几点？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"iso_local":"2026-10-13T10:00:00","zone":"Asia/Shanghai"}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val bare = ChatPromptAssembler.decideLocalReply(task, descriptors, task.input)
+        assertEquals(
+            UserFacingErrors.LLM_EMPTY_REPLY,
+            (bare as LlmEvent.TextDelta).text,
+        )
+        val quoted = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            "用户这次的提问：" + task.input,
+        )
+        assertEquals(
+            UserFacingErrors.LLM_EMPTY_REPLY,
+            (quoted as LlmEvent.TextDelta).text,
+        )
+    }
+
+    @Test
+    fun substantiveAnswerIsNotMistakenForEcho() {
+        val task = AgentTask(
+            taskId = "t-sub",
+            input = "现在几点？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"ok":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            "现在是 10 点。关于明天的提醒我再确认一下。",
+        )
+        assertEquals(
+            "现在是 10 点。关于明天的提醒我再确认一下。",
+            (event as LlmEvent.TextDelta).text,
+        )
     }
 
     @Test
