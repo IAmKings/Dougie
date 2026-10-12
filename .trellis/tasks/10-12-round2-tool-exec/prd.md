@@ -22,10 +22,10 @@ E1 真机复测：0.6B 在工具结果轮输出 calendar_create JSON（语义正
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：taught 工具（calendar_create）→ allowed；未教学（tap_swipe/sms_compose/未知名）→ false；descriptors 空 → false。
-- [ ] AC2 JVM 测试：更新后的 after-tool prompt 断言（新措辞、收尾位置不变）全绿。
-- [ ] AC3 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` + `:app:compileSideloadDebugKotlin` 绿；冻结契约测试不动全绿。
-- [ ] AC4 真机复测 E1（0.6B）：时间被回答，「提醒开会」触发 calendar_create 确认卡，确认后日程创建、终答覆盖两件事；结果记回 device-checklist。
+- [x] AC1 JVM 测试：taught 工具（calendar_create）→ allowed；未教学（tap_swipe/sms_compose/未知名）→ false；descriptors 空 → false。
+- [x] AC2 JVM 测试：更新后的 after-tool prompt 断言（新措辞、收尾位置不变）全绿。
+- [x] AC3 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` + `:app:compileSideloadDebugKotlin` 绿；冻结契约测试不动全绿。
+- [x] AC4 真机复测 E1（0.6B）：时间被回答，「提醒开会」触发 calendar_create 确认卡，确认后日程创建、终答覆盖两件事；结果记回 device-checklist（AC4 待真机三测；红态验证已做：措辞断言在旧文案上失败）
 
 ## Out of scope
 
