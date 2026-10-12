@@ -84,8 +84,10 @@ class ChatLlmProvider private constructor(
                             LocalToolCallParser.isRepeatOfSuccessfulCall(context.task, tool) -> {
                             trySendBlocking(LlmEvent.TextDelta("已获得工具结果。"))
                         }
-                        tool != null &&
-                            ChatPromptAssembler.localToolProtocolActive(context.task, descriptors) -> {
+                        tool != null && (
+                            ChatPromptAssembler.localToolProtocolActive(context.task, descriptors) ||
+                                ChatPromptAssembler.localAfterToolToolCallAllowed(descriptors, tool)
+                            ) -> {
                             trySendBlocking(tool)
                         }
                         text.isNotEmpty() -> trySendBlocking(

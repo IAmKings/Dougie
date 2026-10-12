@@ -5,6 +5,7 @@ import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.ConversationHit
 import com.dougie.core.model.ConversationTurn
+import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.MemoryEntry
 import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.ToolTraceEntry
@@ -556,7 +557,7 @@ class ChatPromptAssemblerTest {
         val questionIndex = prompt.indexOf("用户这次的提问：现在几点了")
         val resultIndex = prompt.indexOf("time:")
         assertTrue(noteIndex > questionIndex && noteIndex > resultIndex)
-        assertTrue(prompt.trim().endsWith("不要再输出工具 JSON。"))
+        assertTrue(prompt.trim().endsWith("不要复述问题。"))
         assertTrue(!prompt.contains("可用工具"))
         assertTrue(!prompt.contains("一行 JSON"))
         assertTrue(!prompt.contains("不要自称"))
@@ -592,6 +593,21 @@ class ChatPromptAssemblerTest {
         )
         val small = """{"ok":true}"""
         assertEquals(small, ChatPromptAssembler.clampToolResult(small))
+    }
+
+    @Test
+    fun afterToolToolCallAllowedOnlyForTaughtInventory() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("calendar_create", description = "Create an event."),
+        )
+        val calendar = LlmEvent.ToolCall(id = "", name = "calendar_create", argsJson = "{}")
+        val tapSwipe = LlmEvent.ToolCall(id = "", name = "tap_swipe", argsJson = "{}")
+        val unknown = LlmEvent.ToolCall(id = "", name = "not_a_tool", argsJson = "{}")
+        assertTrue(ChatPromptAssembler.localAfterToolToolCallAllowed(descriptors, calendar))
+        assertTrue(!ChatPromptAssembler.localAfterToolToolCallAllowed(descriptors, tapSwipe))
+        assertTrue(!ChatPromptAssembler.localAfterToolToolCallAllowed(descriptors, unknown))
+        assertTrue(!ChatPromptAssembler.localAfterToolToolCallAllowed(emptyList(), calendar))
     }
 
     @Test

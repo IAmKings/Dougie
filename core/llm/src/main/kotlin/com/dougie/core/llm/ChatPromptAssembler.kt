@@ -3,6 +3,7 @@ package com.dougie.core.llm
 import com.dougie.core.model.AgentTask
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.ConversationTurn
+import com.dougie.core.model.LlmEvent
 import com.dougie.core.model.StandingRules
 import com.dougie.core.model.ToolDescriptor
 import kotlin.math.ceil
@@ -82,6 +83,19 @@ object ChatPromptAssembler {
         if (localTeachable(descriptors).isEmpty()) return false
         val hasResult = task.toolTrace.any { it.resultJson != null }
         return !hasResult && looksLikeLocalToolAsk(task.input)
+    }
+
+    /**
+     * After-tool rounds may continue a multi-step request: a parsed call is emitted to the
+     * loop only when its tool is in the taught inventory (sanitizer/confirm/idempotency
+     * still gate it there). Untaught names keep the legacy display-as-text behavior.
+     */
+    fun localAfterToolToolCallAllowed(
+        descriptors: List<ToolDescriptor>,
+        call: LlmEvent.ToolCall,
+    ): Boolean {
+        if (descriptors.isEmpty()) return false
+        return localTeachable(descriptors).any { it.name == call.name }
     }
 
     /** Truncated tool results are context data only — the model never parses them back. */
@@ -356,7 +370,8 @@ object ChatPromptAssembler {
     )
 
     private const val LOCAL_AFTER_TOOL_RESULTS =
-        "上面已有用户这次的提问和对应的工具结果。用一两句中文直接回答提问，不要复述问题，不要再输出工具 JSON。"
+        "上面已有用户这次的提问和对应的工具结果。若还需要调用工具才能完整回答提问，就输出一行工具 JSON；" +
+            "否则用一两句中文直接回答提问，不要复述问题。"
 
     private const val LOCAL_IDLE_SUFFIX =
         "直接用一两句中文回答。不要输出 JSON。不要罗列工具。不要自称其它模型或厂商。"

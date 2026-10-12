@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Test conventions for core/llm"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "ChatLlmProvider is sideload-runtime-only; gate helper belongs in core/llm"}
