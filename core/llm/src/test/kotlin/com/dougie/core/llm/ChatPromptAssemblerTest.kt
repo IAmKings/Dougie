@@ -392,8 +392,8 @@ class ChatPromptAssemblerTest {
         val prefix = ChatPromptAssembler.systemPrefix(task)
         assertEquals(
             prefix + "\n\n" +
-                "time: {\"iso\":\"2026-09-06T12:00:00\"}" +
-                "\n\n用户这次的提问：你是什么模型",
+                "用户这次的提问：你是什么模型\n\n工具结果：\n" +
+                "time: {\"iso\":\"2026-09-06T12:00:00\"}",
             prompt,
         )
         assertTrue(prompt.contains("Known facts"))
@@ -547,9 +547,16 @@ class ChatPromptAssemblerTest {
         )
         val prompt = ChatPromptAssembler.localPrompt(task, descriptors)
         assertTrue(prompt.contains("time:"))
-        assertTrue(prompt.contains("工具结果和用户这次的提问"))
+        assertTrue(prompt.contains("上面已有用户这次的提问和对应的工具结果"))
         assertTrue(prompt.contains("用户这次的提问：现在几点了"))
         assertTrue(prompt.contains("不要复述"))
+        // The instruction must come after both the question and the results so the
+        // prompt never ends with the bare user text (small models parrot it).
+        val noteIndex = prompt.indexOf("上面已有")
+        val questionIndex = prompt.indexOf("用户这次的提问：现在几点了")
+        val resultIndex = prompt.indexOf("time:")
+        assertTrue(noteIndex > questionIndex && noteIndex > resultIndex)
+        assertTrue(prompt.trim().endsWith("不要再输出工具 JSON。"))
         assertTrue(!prompt.contains("可用工具"))
         assertTrue(!prompt.contains("一行 JSON"))
         assertTrue(!prompt.contains("不要自称"))

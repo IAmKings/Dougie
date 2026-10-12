@@ -102,6 +102,8 @@ object ChatPromptAssembler {
             val result = trace.resultJson ?: return@mapNotNull null
             "${trace.toolName}: ${clampToolResult(result)}"
         }
+        // Question first, results in the middle, instruction last: small on-device models
+        // parrot a prompt that ends with the bare user text.
         val userBlock = when {
             traces.isEmpty() -> task.input
             else -> {
@@ -109,8 +111,8 @@ object ChatPromptAssembler {
                 if (input.isEmpty()) {
                     traces.joinToString("\n")
                 } else {
-                    traces.joinToString("\n") +
-                        "\n\n用户这次的提问：" + input.take(LOCAL_MAX_INPUT_CHARS)
+                    "用户这次的提问：" + input.take(LOCAL_MAX_INPUT_CHARS) +
+                        "\n\n工具结果：\n" + traces.joinToString("\n")
                 }
             }
         }
@@ -122,7 +124,6 @@ object ChatPromptAssembler {
         )
         val followUp = when {
             protocolActive -> prefix + "\n\n" + localToolProtocol(taught, task.input)
-            traces.isNotEmpty() && taught.isNotEmpty() -> prefix + "\n\n" + LOCAL_AFTER_TOOL_RESULTS
             traces.isNotEmpty() -> prefix
             else -> prefix + "\n\n" + LOCAL_IDLE_SUFFIX
         }
@@ -135,6 +136,10 @@ object ChatPromptAssembler {
             }
             append("\n\n")
             append(userBlock)
+            if (traces.isNotEmpty() && taught.isNotEmpty()) {
+                append("\n\n")
+                append(LOCAL_AFTER_TOOL_RESULTS)
+            }
         }
         return if (
             !protocolActive &&
@@ -351,7 +356,7 @@ object ChatPromptAssembler {
     )
 
     private const val LOCAL_AFTER_TOOL_RESULTS =
-        "下面已有工具结果和用户这次的提问。用一两句中文直接回答提问，不要复述问题，不要再输出工具 JSON。"
+        "上面已有用户这次的提问和对应的工具结果。用一两句中文直接回答提问，不要复述问题，不要再输出工具 JSON。"
 
     private const val LOCAL_IDLE_SUFFIX =
         "直接用一两句中文回答。不要输出 JSON。不要罗列工具。不要自称其它模型或厂商。"
