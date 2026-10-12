@@ -20,10 +20,10 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：工具结果轮回复与原话全等（含带「用户这次的提问：」前缀形态）→ TextDelta(LLM_EMPTY_REPLY)；正常回答（含引用问题的长回答）不受影响。
-- [ ] AC2 JVM 测试：新指令文案在 prompt 中（含「不要只用文字承诺」），以「不要复述问题。」结尾；红态：摘除复读兜底后 AC1 失败。
-- [ ] AC3 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约不动。
-- [ ] AC4 真机六测：0.6B 不再把原话当回答；2B 建日程走确认卡（args 无效时诚实报错也算过）；结果记回 device-checklist。
+- [x] AC1 JVM 测试：工具结果轮回复与原话全等（含带「用户这次的提问：」前缀形态）→ TextDelta(LLM_EMPTY_REPLY)；正常回答（含引用问题的长回答）不受影响。
+- [x] AC2 JVM 测试：新指令文案在 prompt 中（含「不要只用文字承诺」），以「不要复述问题。」结尾；红态：摘除复读兜底后 AC1 失败。
+- [x] AC3 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约不动。
+- [x] AC4 真机六测：0.6B 不再把原话当回答；2B 建日程走确认卡（args 无效时诚实报错也算过）；结果记回 device-checklist（AC4 待六测；红态：摘除复读兜底后 echo 测试失败）
 
 ## Out of scope
 
