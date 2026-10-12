@@ -555,3 +555,24 @@ E1 复测：0.6B 第二轮输出 calendar_create JSON（语义正确）被当文
 ### Status
 
 [OK] **Completed**
+
+
+## Session 113: 本地回复决策纯函数化（E1 三测缺陷）
+
+**Date**: 2026-10-13
+**Task**: 本地回复决策纯函数化（E1 三测缺陷）
+**Branch**: `master`
+
+### Summary
+
+E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名单内、裸 JSON 本应放行执行，判定实际输出夹带前后缀文字致整段解析失败落显示兜底——属「工具 JSON 原样显示」类缺口。修复：新增 ChatPromptAssembler.decideLocalReply 纯函数统一四路径（整段可解析/夹带提取/纯文本/空），裸与夹带的名单内 JSON 均提取放行（L2 确认卡把关）、复读拦截、未教学工具优雅文案永不显示原文；ChatLlmProvider.onDone 单点调用。7 项决策测试，红态验证提取逻辑（回退后 2 项失败）。已重建安装 APK（00:07:09），待真机四测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `247c969` | (see git log) |
+
+### Status
+
+[OK] **Completed**

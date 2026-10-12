@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 112
-- **Last Active**: 2026-10-12
+- **Total Sessions**: 113
+- **Last Active**: 2026-10-13
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~557 | Active |
+| `journal-2.md` | ~578 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 113 | 2026-10-13 | 本地回复决策纯函数化（E1 三测缺陷） | `247c969` | `master` |
 | 112 | 2026-10-12 | 本地多步工具轮放行（E1 二次反馈） | `867c1e1` | `master` |
 | 111 | 2026-10-12 | E1 复读缺陷修复（真机验收反馈） | `3ad47d6` | `master` |
 | 110 | 2026-10-03 | prompt 预算与注入防护（P1，方案 A）落地 | `4fa5bbe` | `master` |
