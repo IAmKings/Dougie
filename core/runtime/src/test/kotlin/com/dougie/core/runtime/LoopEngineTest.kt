@@ -1632,6 +1632,107 @@ class LoopEngineTest {
     }
 
     @Test
+    fun localResultEchoIsReplacedByDeterministicAnswer() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val clip = FakeClipboardPort()
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(
+                        id = "cw-1",
+                        name = ClipboardWriteTool.NAME,
+                        argsJson = """{"text":"你好"}""",
+                    )
+                } else {
+                    LlmResponse.FinalAnswer("{\"ok\":true")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf(ClipboardWriteTool.NAME to ClipboardWriteTool(clip)),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-echo-w", input = "帮我复制“你好”")) { snapshot ->
+            if (snapshot.status == TaskStatus.AWAITING_CONFIRMATION) engine.confirm()
+        }
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("已写入剪贴板。", result.finalAnswer)
+        assertEquals("你好", clip.text)
+    }
+
+    @Test
+    fun localResultEchoAfterTimeToolAnswersWithFormattedTime() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "t-1", name = "time", argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer("{\"ok\":true")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("time" to SystemTimeTool()),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-echo-t", input = "现在几点了")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertTrue(result.finalAnswer!!.startsWith("现在是"))
+        assertTrue(!result.finalAnswer!!.contains("{"))
+    }
+
+    @Test
+    fun localResultEchoWithoutAnyToolBecomesHonestRetryCopy() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.FinalAnswer("{\"ok\":true")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-echo-n", input = "你好")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals(UserFacingErrors.LLM_EMPTY_REPLY, result.finalAnswer)
+    }
+
+    @Test
+    fun remotePathJsonReplyIsNotGuarded() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = false
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return LlmResponse.FinalAnswer("{\"ok\":true}")
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = emptyMap(),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+            gateway = EgressGateway(
+                policy = { EgressPolicy(allowCloud = true) },
+                apiKey = { "sk-test" },
+            ),
+        )
+        val result = engine.run(AgentTask(taskId = "t-remote", input = "你好")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("{\"ok\":true}", result.finalAnswer)
+    }
+
+    @Test
     fun llmPackageNotOnListFailsBeforeLaunch() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val port = FakeAppIntentPort()

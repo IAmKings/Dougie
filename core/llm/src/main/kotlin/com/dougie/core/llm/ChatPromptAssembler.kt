@@ -504,10 +504,18 @@ object ChatPromptAssembler {
 
     private fun localToolProtocol(taught: List<ToolDescriptor>, input: String): String {
         val openApp = input.contains("打开") && taught.any { it.name == "app_intent" }
-        val ordered = if (openApp) {
-            taught.sortedBy { if (it.name == "app_intent") 0 else 1 }
-        } else {
-            taught
+        val clipboardAsk = (input.contains("复制") || input.contains("剪贴板")) &&
+            taught.any { it.name == "clipboard_read" }
+        val ordered = when {
+            openApp -> taught.sortedBy { if (it.name == "app_intent") 0 else 1 }
+            clipboardAsk -> taught.sortedBy {
+                when (it.name) {
+                    "clipboard_read" -> 0
+                    "clipboard_write" -> 1
+                    else -> 2
+                }
+            }
+            else -> taught
         }
         val examples = ordered.joinToString("。") { descriptor ->
             val label = when (descriptor.name) {

@@ -905,6 +905,22 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
+    fun clipboardAskSortsClipboardToolsFirstInProtocol() {
+        val descriptors = listOf(
+            ToolDescriptor("time", description = "Read the current local date and time."),
+            ToolDescriptor("clipboard_read", description = "Read clipboard text."),
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
+        )
+        val prompt = ChatPromptAssembler.localPrompt(
+            AgentTask(taskId = "t-sort", input = "刚才复制了什么"),
+            descriptors,
+        )
+        val clipIndex = prompt.indexOf("clipboard_read")
+        val timeIndex = prompt.indexOf("\"time\"")
+        assertTrue(clipIndex in 0 until timeIndex)
+    }
+
+    @Test
     fun plainTextReplyKeepsStripLeadingQuestionBehavior() {
         val task = AgentTask(taskId = "t-p", input = "现在几点了")
         val event = ChatPromptAssembler.decideLocalReply(
