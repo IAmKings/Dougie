@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 121
+- **Total Sessions**: 122
 - **Last Active**: 2026-10-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~746 | Active |
+| `journal-2.md` | ~767 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 122 | 2026-10-13 | 复合指令点击捷径劫持修复（十测取证） | `22a3450` | `master` |
 | 121 | 2026-10-13 | tap_swipe 单边验证落地（证据驱动） | `b8ae531` | `master` |
 | 120 | 2026-10-13 | 真机验收收口：E1/E2 验证通过 | `753b362` | `master` |
 | 119 | 2026-10-13 | 混合回显守卫（E2 九测取证） | `025a462` | `master` |

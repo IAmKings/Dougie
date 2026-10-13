@@ -744,3 +744,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 122: 复合指令点击捷径劫持修复（十测取证）
+
+**Date**: 2026-10-13
+**Task**: 复合指令点击捷径劫持修复（十测取证）
+**Branch**: `master`
+
+### Summary
+
+十测「打开Anchor，点击底部的记录tab」未走规划器；拉 DB 取证：两条复合任务均为 LOCAL_INTENT + screen_match(found:false) FAILED——looksLikeMatchThenTap 以「含点击即命中」劫持复合句进 match-then-tap 评测捷径（合成模板必失败），云端 LLM 零参与。修复：收紧为裸点击短语精确匹配（点/点击/点一下/按一下/这里/这个等 12 个），复合句放行 Action Planner（app_intent→tap_swipe 序列）；既有测试全为裸短语零冲突，新增复合句负例断言红→绿。APK 已重装（23:48:54）。复测前置：Anchor 需加入可打开名单；预期链路 app_intent→tap_swipe 确认卡，坐标为模型估算（点偏落 verified=null 属设计内）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `22a3450` | (see git log) |
+
+### Status
+
+[OK] **Completed**
