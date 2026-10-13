@@ -25,6 +25,7 @@ object ChannelTools {
         idempotencyStore: IdempotencyStore,
         scriptPrivileged: () -> Boolean = { false },
         context: Context,
+        selfPackage: String? = null,
     ) {
         tools[JsEvalTool.NAME] = JsEvalTool(AndroidJsEvalPort(), scriptPrivileged)
         if (scriptPrivileged()) {
@@ -45,6 +46,7 @@ object ChannelTools {
             port = gesturePort,
             idempotencyStore = idempotencyStore,
             treeProbe = { TreeProbeBridge.provider },
+            selfPackage = selfPackage,
         )
         tools[TapByTextTool.NAME] = TapByTextTool(
             consentGranted = consentGranted,
@@ -52,6 +54,7 @@ object ChannelTools {
             tapSource = AccessibilityTapSource { DougieAccessibilityService.instance },
             treeProbe = { TreeProbeBridge.provider },
             idempotencyStore = idempotencyStore,
+            selfPackage = selfPackage,
         )
     }
 }

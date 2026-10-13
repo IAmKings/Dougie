@@ -14,6 +14,7 @@ object UserFacingErrors {
     const val INVALID_TOOL_ARGS = "工具参数无效，已拒绝执行。"
     const val VERIFY_FAILED = "已执行操作，但未能确认是否成功。"
     const val TAP_TEXT_NOT_FOUND = "屏幕上没有找到匹配的文字控件，可以换个说法再试。"
+    const val TAP_SELF_FOREGROUND = "Dougie 自己在前台，请先打开目标应用再执行点击。"
     const val CALENDAR_INVALID_START = "日程时间无法识别，请再说一次具体钟点。"
     const val CALENDAR_NONE = "没有可用的日历账本，请先在系统日历里添加账户。"
     const val CANCELLED = "任务已取消。"

@@ -33,6 +33,7 @@ class TapSwipeTool(
     private val treeProbe: () -> TreeSnapshotPort? = { null },
     private val verifyTimeoutMs: Long = TreeVerifier.DEFAULT_STATE_CHANGE_TIMEOUT_MS,
     private val verifyPollMs: Long = TreeVerifier.DEFAULT_POLL_INTERVAL_MS,
+    private val selfPackage: String? = null,
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
@@ -56,6 +57,12 @@ class TapSwipeTool(
         }
         if (HighRiskForeground.isBlocked(foreground)) {
             return fail(BLOCKED_APP)
+        }
+        // Tapping inside Dougie's own tree can never be the intent of a tap task; a
+        // self-foreground state means the target app is not in front (often because the
+        // user was pulled back here to confirm).
+        if (selfPackage != null && foreground == selfPackage) {
+            return fail(SELF_FOREGROUND)
         }
         idempotencyStore.get(context.idempotencyKey)?.let {
             return ToolResult(json = it, verified = VerifiedResultJson.fromJson(it))
@@ -155,6 +162,7 @@ class TapSwipeTool(
         const val SERVICE_REQUIRED = UserFacingErrors.TAP_SWIPE_SERVICE
         const val BLOCKED_APP = UserFacingErrors.TAP_SWIPE_BLOCKED
         const val FOREGROUND_UNKNOWN = UserFacingErrors.TAP_SWIPE_FOREGROUND_UNKNOWN
+        const val SELF_FOREGROUND = UserFacingErrors.TAP_SELF_FOREGROUND
         private const val TAP_MS = 50
         private const val DEFAULT_SWIPE_MS = 300
         private const val MIN_DURATION_MS = 50

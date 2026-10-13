@@ -36,6 +36,7 @@ class TapByTextTool(
     private val idempotencyStore: IdempotencyStore = InMemoryIdempotencyStore(),
     private val verifyTimeoutMs: Long = TreeVerifier.DEFAULT_STATE_CHANGE_TIMEOUT_MS,
     private val verifyPollMs: Long = TreeVerifier.DEFAULT_POLL_INTERVAL_MS,
+    private val selfPackage: String? = null,
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
@@ -59,6 +60,11 @@ class TapByTextTool(
         }
         if (HighRiskForeground.isBlocked(foreground)) {
             return fail(TapSwipeTool.BLOCKED_APP)
+        }
+        // Same self-foreground guard as tap_swipe: searching Dougie's own tree (its chat
+        // contains the needle text) would tap inside Dougie instead of the target app.
+        if (selfPackage != null && foreground == selfPackage) {
+            return fail(TapSwipeTool.SELF_FOREGROUND)
         }
         idempotencyStore.get(context.idempotencyKey)?.let {
             return ToolResult(json = it, verified = VerifiedResultJson.fromJson(it))

@@ -12,6 +12,7 @@ object ChannelTools {
         idempotencyStore: IdempotencyStore,
         scriptPrivileged: () -> Boolean = { false },
         context: Context,
+        selfPackage: String? = null,
     ) {
         // Play must not register or compile accessibility / Python types.
     }

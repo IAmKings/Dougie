@@ -241,6 +241,7 @@ class DougieApplication : Application() {
             taskStores.idempotencyStore,
             { ChannelHooks.scriptPrivileged(this) },
             this,
+            packageName,
         )
         val toolDescriptors = { tools.values.map { it.descriptor } }
         val cloud = OpenAICompatibleProvider(
@@ -394,6 +395,7 @@ class DougieApplication : Application() {
             taskStores.idempotencyStore,
             { ChannelHooks.scriptPrivileged(this) },
             this,
+            packageName,
         )
     }
 

@@ -11,6 +11,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TapByTextToolTest {
+    @Test
+    fun selfForegroundTapByTextIsRefusedHonestly() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.dougie.app.sideload")
+        val tool = TapByTextTool(
+            consentGranted = { true },
+            port = port,
+            tapSource = com.dougie.core.tool.FakeTapSourcePort(candidates()),
+            selfPackage = "com.dougie.app.sideload",
+        )
+        val result = tool.execute("""{"text":"记录"}""", ctx())
+        assertEquals(TapSwipeTool.SELF_FOREGROUND, result.error)
+        assertTrue(!result.json.contains("tap_by_text"))
+        assertEquals(0, port.taps)
+    }
+
     private fun ctx() = ToolContext(taskId = "tbt", toolCallId = "c")
 
     private fun candidates() = listOf(
@@ -280,6 +295,19 @@ class TapSwipeToolTest {
         assertEquals(true, second.verified)
         assertEquals(first.json, second.json)
         assertEquals(1, port.taps)
+    }
+
+    @Test
+    fun selfForegroundIsRefusedHonestly() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.dougie.app.sideload")
+        val tool = TapSwipeTool(
+            consentGranted = { true },
+            port = port,
+            selfPackage = "com.dougie.app.sideload",
+        )
+        val result = tool.execute(TAP_JSON, ctx())
+        assertEquals(TapSwipeTool.SELF_FOREGROUND, result.error)
+        assertEquals(0, port.taps)
     }
 
     private fun ctx() = ToolContext(taskId = "t", toolCallId = "c")
