@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 119
+- **Total Sessions**: 120
 - **Last Active**: 2026-10-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~704 | Active |
+| `journal-2.md` | ~725 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 120 | 2026-10-13 | 真机验收收口：E1/E2 验证通过 | `753b362` | `master` |
 | 119 | 2026-10-13 | 混合回显守卫（E2 九测取证） | `025a462` | `master` |
 | 118 | 2026-10-13 | 结果回显守卫（E1/E2 八测取证） | `86a6ec3` | `master` |
 | 117 | 2026-10-13 | 剪贴板方向纠正（E2 七测取证） | `624fa0a` | `master` |

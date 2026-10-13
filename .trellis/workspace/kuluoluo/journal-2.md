@@ -702,3 +702,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 120: 真机验收收口：E1/E2 验证通过
+
+**Date**: 2026-10-13
+**Task**: 真机验收收口：E1/E2 验证通过
+**Branch**: `master`
+
+### Summary
+
+用户确认十轮真机走查后 E1/E2 验证通过。本地小模型链路终态：2B 多步=确认卡真实执行+声明门披露；0.6B=单步模型（多步诚实拦截）；复制/剪贴板全链路确定性可用；四类 JSON 显示泄漏（裸调用/夹带/截断/结果回显含混合）全部封死。验收结论写入归档任务清单。剩余开放项：tap 验证谓词真机证据采集（10-02-tap-verification 阶段四）、已知改进候选（声明门强制重规划轮、startIso 日期上下文）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `753b362` | (see git log) |
+
+### Status
+
+[OK] **Completed**
