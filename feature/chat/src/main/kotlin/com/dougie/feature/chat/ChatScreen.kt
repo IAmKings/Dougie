@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -242,9 +243,12 @@ fun ChatRoute(
             visible.isNotEmpty() && visible.last().index >= feedItems.lastIndex
         }.collect { lastMessageOnScreen = it }
     }
-    val imeVisible = WindowInsets.isImeVisible
-    LaunchedEffect(imeVisible, feedItems.size) {
-        if (imeVisible && lastMessageOnScreen && feedItems.isNotEmpty()) {
+    // Re-pin on EVERY animated inset frame: a single scroll at IME-open gets invalidated
+    // by the ~300ms of subsequent shrink frames. Pinning stops once the inset settles,
+    // so the user never fights the list afterwards.
+    val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(imeBottom, feedItems.size, lastMessageOnScreen) {
+        if (imeBottom > 0 && lastMessageOnScreen && feedItems.isNotEmpty()) {
             listState.scrollToItem(feedItems.lastIndex)
         }
     }
