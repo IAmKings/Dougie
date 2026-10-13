@@ -22,11 +22,11 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试（选择器）：精确/包含匹配、clickable 优先、文档序最后（底部优先）、无命中 null、needle 空白不敏感。
-- [ ] AC2 JVM 测试（TapByTextTool）：命中点击成功+边界正确+verified 注入；未命中非致命 found:false 不点不缓存；幂等重放保留标志；确认/高危/未连服务各门保持。
-- [ ] AC3 红态：选择器规则测试在空实现上失败。
-- [ ] AC4 全量 `:core:tool:test :tool:accessibility:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动。
-- [ ] AC5 真机复测：「打开Anchor，点击底部的记录tab」→ app_intent 后模型调用 tap_by_text(text=记录) → 确认卡 → 真实点击并 verified=true（若 Anchor tab 文本可及）。
+- [x] AC1 JVM 测试（选择器）：精确/包含匹配、clickable 优先、文档序最后（底部优先）、无命中 null、needle 空白不敏感。
+- [x] AC2 JVM 测试（TapByTextTool）：命中点击成功+边界正确+verified 注入；未命中非致命 found:false 不点不缓存；幂等重放保留标志；确认/高危/未连服务各门保持。
+- [x] AC3 红态：选择器规则测试在空实现上失败。
+- [x] AC4 全量 `:core:tool:test :tool:accessibility:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动。
+- [x] AC5 真机复测：「打开Anchor，点击底部的记录tab」→ app_intent 后模型调用 tap_by_text(text=记录) → 确认卡 → 真实点击并 verified=true（若 Anchor tab 文本可及）。
 
 ## Out of scope
 
