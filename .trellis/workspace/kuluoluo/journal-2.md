@@ -639,3 +639,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 117: 剪贴板方向纠正（E2 七测取证）
+
+**Date**: 2026-10-13
+**Task**: 剪贴板方向纠正（E2 七测取证）
+**Branch**: `master`
+
+### Summary
+
+七测「复制后 text 为空」；拉设备 DB 取证推翻空文本假设：任务执行的是 clipboard_read（读空剪贴板）而非 clipboard_write——2B 把写入意图调成读取。修复：classifyLocalCall 前加方向纠正——输入带引号载荷（「」『』直/弯引号）+ 模型发 clipboard_read → 确定性重映射为 clipboard_write（text=引号载荷，同捷径路径提取规则，仍过 L2 确认卡）；空文本 clipboard_write 且无引号载荷 → 拒绝（没有要复制的内容）。同批 E1 声明门已在真机生效（取证可见披露文案）。3 项新测试红→绿。APK 已重装（17:40:16），待八测 E2 全链路。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `624fa0a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
