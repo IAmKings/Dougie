@@ -18,9 +18,9 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：环境块含 package 定向规则句；700 上限生效。
-- [ ] AC2 `:core:llm:test :core:tool:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动。
-- [ ] AC3 真机复测：「打开Anchor」→ app_intent 收到 package:fm.anchor.android → 打开成功且（若前台验证通过）verified=true。
+- [x] AC1 JVM 测试：环境块含 package 定向规则句；700 上限生效。
+- [x] AC2 `:core:llm:test :core:tool:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动。
+- [x] AC3 真机复测：「打开Anchor」→ app_intent 收到 package:fm.anchor.android → 打开成功且（若前台验证通过）verified=true。
 
 ## Out of scope
 
