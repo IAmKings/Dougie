@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 135
+- **Total Sessions**: 136
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1040 | Active |
+| `journal-2.md` | ~1061 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 136 | 2026-10-14 | 微信式点按收起键盘 | `ea9eaa5` | `master` |
 | 135 | 2026-10-14 | 键盘跟随截图取证 + 底栏隐藏（终验） | `a8ee0e5` | `master` |
 | 134 | 2026-10-14 | 键盘跟随 v4（根因：inset 消费导致效果从未触发） | `025a462` | `master` |
 | 133 | 2026-10-14 | 键盘跟随逐帧重钉（终版） | `4d11c97` | `master` |

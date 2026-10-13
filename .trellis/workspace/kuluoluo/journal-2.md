@@ -1038,3 +1038,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 136: 微信式点按收起键盘
+
+**Date**: 2026-10-14
+**Task**: 微信式点按收起键盘
+**Branch**: `master`
+
+### Summary
+
+体验优化：点击聊天内容（列表背景与任一气泡）收起输入法，微信式标准行为；长按复制不受影响。实现：LazyColumn 背景 clickable（无 indication）+ 双气泡 combinedClickable onClick 统一走 onChatAreaTap→keyboardController.hide()。APK 已重装（03:12:18）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ea9eaa5` | (see git log) |
+
+### Status
+
+[OK] **Completed**
