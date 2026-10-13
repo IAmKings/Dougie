@@ -1017,3 +1017,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 135: 键盘跟随截图取证 + 底栏隐藏（终验）
+
+**Date**: 2026-10-14
+**Task**: 键盘跟随截图取证 + 底栏隐藏（终验）
+**Branch**: `master`
+
+### Summary
+
+改用 adb 截图+uiautomator dump 亲自取证：v4 内容跟随已生效（用户此前测的是消费 bug 期 v3 包）；发现键盘弹出后 DougieBottomBar 夹在输入框与键盘之间占约 80dp → raised 时 AnimatedVisibility 隐藏底栏，输入框直接贴键盘。重大确认：设备截图里模型自述复合指令两步均返回 ok:true + verified:true——验证层端到端真机成功。APK 已重装（03:06:07）。方法沉淀：UI 缺陷先 adb 截图/uiautomator 拿第一手证据再动手，已替代纯推理。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a8ee0e5` | (see git log) |
+
+### Status
+
+[OK] **Completed**
