@@ -20,11 +20,11 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：输入含弯引号载荷 + 模型发 clipboard_read → 放行 ToolCall(clipboard_write, text=载荷)（直引号/「」同）。
-- [ ] AC2 JVM 测试：无引号输入的 clipboard_read 保持原样；空文本 clipboard_write 且无引号载荷 → 优雅文案不执行。
-- [ ] AC3 红态：AC1/AC2 在未修复实现上失败。
-- [ ] AC4 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约不动。
-- [ ] AC5 真机八测 E2：复制→确认卡（显示你好）→ 确认 → 追问读到「你好」；记回 device-checklist。
+- [x] AC1 JVM 测试：输入含弯引号载荷 + 模型发 clipboard_read → 放行 ToolCall(clipboard_write, text=载荷)（直引号/「」同）。
+- [x] AC2 JVM 测试：无引号输入的 clipboard_read 保持原样；空文本 clipboard_write 且无引号载荷 → 优雅文案不执行。
+- [x] AC3 红态：AC1/AC2 在未修复实现上失败。
+- [x] AC4 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约不动。
+- [x] AC5 真机八测 E2：复制→确认卡（显示你好）→ 确认 → 追问读到「你好」；记回 device-checklist（AC5 待八测；红态：摘除重映射后 AC1 失败）
 
 ## Out of scope
 
