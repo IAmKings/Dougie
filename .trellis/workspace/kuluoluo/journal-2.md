@@ -912,3 +912,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 130: UI 体验修复四项（设置滚动/Splash/历史重放/长按复制）
+
+**Date**: 2026-10-14
+**Task**: UI 体验修复四项（设置滚动/Splash/历史重放/长按复制）
+**Branch**: `master`
+
+### Summary
+
+四项 UI 体验修复：①设置主列表 ScrollState 提升到路由宿主，子页返回不再回顶；②浅色主题补 windowBackground #F8FAF9，Splash 底色随系统深浅（冷启动由系统渲染属平台限制，应用内偏好经 wrapThemeContext 已生效）；③聊天打字机进度提升到屏幕级 SnapshotStateMap，历史消息滚回即整段显示不再逐字重放；④Agent/User 气泡长按复制全文+「已复制」Toast。双 flavor 测试与 checkChannelLeak 绿，APK 已重装（02:24:40）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `111f976` | (see git log) |
+
+### Status
+
+[OK] **Completed**

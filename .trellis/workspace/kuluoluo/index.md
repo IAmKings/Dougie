@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 129
+- **Total Sessions**: 130
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~914 | Active |
+| `journal-2.md` | ~935 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 130 | 2026-10-14 | UI 体验修复四项（设置滚动/Splash/历史重放/长按复制） | `111f976` | `master` |
 | 129 | 2026-10-14 | 真机验收全通过 | `f4dfbd9` | `master` |
 | 128 | 2026-10-14 | 确认面打磨与去重 + 完全操作模式立项 | `636f33b` | `master` |
 | 127 | 2026-10-14 | 悬浮框确认菜单与自指守卫（确认面重构） | `42bb985` | `master` |
