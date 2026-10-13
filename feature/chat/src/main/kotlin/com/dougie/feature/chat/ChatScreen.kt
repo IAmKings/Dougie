@@ -116,6 +116,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -230,27 +232,6 @@ fun ChatRoute(
             }
         }
         viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
-    }
-    // Keyboard: shrink + keep the latest message pinned above the composer — but only
-    // when the last message was already on screen; reading history must not be
-    // interrupted. Tracked continuously (not checked at IME-open time): the viewport
-    // shrinks before the visibility flip is observed, so a point-in-time "am I at the
-    // bottom" check would always miss.
-    var lastMessageOnScreen by remember { mutableStateOf(true) }
-    LaunchedEffect(listState, feedItems.size) {
-        snapshotFlow {
-            val visible = listState.layoutInfo.visibleItemsInfo
-            visible.isNotEmpty() && visible.last().index >= feedItems.lastIndex
-        }.collect { lastMessageOnScreen = it }
-    }
-    // Re-pin on EVERY animated inset frame: a single scroll at IME-open gets invalidated
-    // by the ~300ms of subsequent shrink frames. Pinning stops once the inset settles,
-    // so the user never fights the list afterwards.
-    val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
-    LaunchedEffect(imeBottom, feedItems.size, lastMessageOnScreen) {
-        if (imeBottom > 0 && lastMessageOnScreen && feedItems.isNotEmpty()) {
-            listState.scrollToItem(feedItems.lastIndex)
-        }
     }
     ChatTerminalSkin(enabled = terminalTheme) {
     ChatScreen(
@@ -395,6 +376,14 @@ fun ChatScreen(
             onOpenPermissions = onOpenPermissions,
             conversationTitle = conversationTitle,
         )
+            // Keyboard follow, driven by the composer's PHYSICAL position (immune to
+            // inset-consumption tricks): while raised, re-pin per frame so the latest
+            // message stays above the input bar; on close, restore the bottom once.
+            var composerBottom by remember { mutableStateOf(Int.MAX_VALUE) }
+            var composerBaseline by remember { mutableStateOf(0) }
+            var lastMessageOnScreen by remember { mutableStateOf(true) }
+            var prevRaised by remember { mutableStateOf(false) }
+            val density = LocalDensity.current
         Box(modifier = Modifier.weight(1f)) {
             var seenKeys by remember { mutableStateOf<Set<String>?>(null) }
             // Per-message typewriter progress hoisted above the lazy list: completed
@@ -409,6 +398,26 @@ fun ChatScreen(
             var exitingCard by remember { mutableStateOf<ChatItem.ConfirmCard?>(null) }
             val enter = nextChatItemEnter(uiState.items, seenKeys)
             val feedItems = chatFeedItemsWithoutConfirm(uiState.items)
+            // Keyboard follow, driven by the composer's PHYSICAL position (immune to
+            // inset-consumption tricks): while raised, re-pin per frame so the latest
+            // message stays above the input bar; on close, restore the bottom once.
+            LaunchedEffect(listState, feedItems.size) {
+                snapshotFlow {
+                    val visible = listState.layoutInfo.visibleItemsInfo
+                    visible.isNotEmpty() && visible.last().index >= feedItems.lastIndex
+                }.collect { lastMessageOnScreen = it }
+            }
+            val raised = composerBaseline > 0 &&
+                (composerBaseline - composerBottom) > 64 * density.density
+            LaunchedEffect(composerBottom, feedItems.size, lastMessageOnScreen, raised) {
+                if (!lastMessageOnScreen || feedItems.isEmpty()) return@LaunchedEffect
+                if (raised) {
+                    listState.scrollToItem(feedItems.lastIndex)
+                } else if (prevRaised) {
+                    listState.scrollToItem(feedItems.lastIndex)
+                }
+                prevRaised = raised
+            }
             val feedFirstKey = feedItems.firstOrNull()?.listKey
             val snapKeys = nextTypewriterSnapKeys(
                 items = uiState.items,
@@ -490,6 +499,13 @@ fun ChatScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         }
+        Box(
+            modifier = Modifier.onGloballyPositioned { coordinates ->
+                val bottom = coordinates.boundsInWindow().bottom.toInt()
+                composerBottom = bottom
+                composerBaseline = maxOf(composerBaseline, bottom)
+            },
+        ) {
         ChatInputBar(
             enabled = uiState.inputEnabled,
             canCancel = uiState.canCancel,
@@ -514,6 +530,7 @@ fun ChatScreen(
             onOpenSettings = onOpenSettings,
             onOpenPermissions = onOpenPermissions,
         )
+        }
         DougieBottomBar(
             onOpenSettings = onOpenSettings,
             onOpenMemory = onOpenMemory,
