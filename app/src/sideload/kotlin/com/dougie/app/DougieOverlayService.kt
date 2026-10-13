@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import com.dougie.core.model.TaskStatus
 import kotlinx.coroutines.withContext
 
 class DougieOverlayService : Service() {
@@ -35,12 +36,67 @@ class DougieOverlayService : Service() {
     private var params: WindowManager.LayoutParams? = null
     private var scrim: View? = null
     private var menu: View? = null
+    private var confirmMenu: View? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     @Volatile
     private var capturing = false
     private var expanded = false
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun observeConfirmations() {
+        val app = applicationContext as? DougieApplication ?: return
+        scope.launch {
+            app.taskManager.task.collect { task ->
+                if (task?.status == TaskStatus.AWAITING_CONFIRMATION) {
+                    showConfirmMenu(task.toolTrace.lastOrNull()?.toolName.orEmpty())
+                } else {
+                    removeConfirmMenu()
+                }
+            }
+        }
+    }
+
+    private fun showConfirmMenu(tool: String) {
+        if (confirmMenu != null) return
+        val wm = windowManager ?: return
+        val density = resources.displayMetrics.density
+        val panel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0xEE3D5198.toInt())
+            setPadding(
+                (12 * density).toInt(),
+                (10 * density).toInt(),
+                (12 * density).toInt(),
+                (10 * density).toInt(),
+            )
+        }
+        panel.addView(actionRow("确认 · $tool") {
+            (applicationContext as? DougieApplication)?.taskManager?.confirm()
+            removeConfirmMenu()
+        })
+        panel.addView(actionRow("拒绝") {
+            (applicationContext as? DougieApplication)?.taskManager?.reject()
+            removeConfirmMenu()
+        })
+        val lp = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT,
+        ).apply { gravity = Gravity.CENTER }
+        if (runCatching { wm.addView(panel, lp) }.isSuccess) {
+            confirmMenu = panel
+        }
+    }
+
+    private fun removeConfirmMenu() {
+        confirmMenu?.let { menu ->
+            runCatching { windowManager?.removeView(menu) }
+        }
+        confirmMenu = null
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -307,10 +363,14 @@ class DougieOverlayService : Service() {
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        observeConfirmations()
+        return START_STICKY
+    }
 
     override fun onDestroy() {
         scope.cancel()
+        removeConfirmMenu()
         collapse()
         ball?.let { view ->
             runCatching { windowManager?.removeView(view) }
