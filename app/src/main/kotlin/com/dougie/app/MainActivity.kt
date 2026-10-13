@@ -24,7 +24,9 @@ import com.dougie.feature.chat.ChatAttachmentUi
 import com.dougie.feature.chat.toUi
 import java.io.File
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
@@ -252,6 +254,7 @@ class MainActivity : ComponentActivity() {
                 val chatViewModel: ChatViewModel = viewModel(
                     factory = ChatViewModel.Factory(app.taskManager),
                 )
+                val settingsScrollState = rememberScrollState()
                 when (route) {
                     AppRoute.Chat, AppRoute.History -> {
                         ChatHistoryTransition(
@@ -444,6 +447,7 @@ class MainActivity : ComponentActivity() {
                         }
                         SettingsRoute(
                             viewModel = viewModel,
+                            scrollState = settingsScrollState,
                             onBack = { route = AppRoute.Chat },
                             onOpenDebug = { route = AppRoute.Debug },
                             onOpenOpenApps = { route = AppRoute.OpenApps },

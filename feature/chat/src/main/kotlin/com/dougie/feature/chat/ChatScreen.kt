@@ -2,6 +2,7 @@ package com.dougie.feature.chat
 
 import android.os.SystemClock
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
@@ -57,6 +58,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachFile
@@ -95,7 +98,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -106,11 +111,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontFamily
@@ -363,6 +370,9 @@ fun ChatScreen(
         )
         Box(modifier = Modifier.weight(1f)) {
             var seenKeys by remember { mutableStateOf<Set<String>?>(null) }
+            // Per-message typewriter progress hoisted above the lazy list: completed
+            // messages must not re-animate when scrolled out and back into composition.
+            val typewriterProgress = remember { mutableStateMapOf<String, String>() }
             var typewriterSnapKeys by remember { mutableStateOf<Set<String>?>(null) }
             var typewriterFeedFirstKey by remember { mutableStateOf<String?>(null) }
             var confirmEnter by remember {
@@ -421,6 +431,7 @@ fun ChatScreen(
                     canSpeakReply = uiState.canSpeakReply,
                     ttsReady = ttsReady,
                     speakingReply = speakingReply,
+                    typewriterProgress = typewriterProgress,
                     typewriterSnapKeys = snapKeys,
                     onRetry = onRetry,
                     onStopReply = onStopReply,
@@ -734,6 +745,7 @@ private fun ChatFeed(
     canSpeakReply: Boolean,
     ttsReady: Boolean,
     speakingReply: Boolean,
+    typewriterProgress: SnapshotStateMap<String, String>,
     typewriterSnapKeys: Set<String>,
     onRetry: () -> Unit,
     onStopReply: () -> Unit,
@@ -774,6 +786,7 @@ private fun ChatFeed(
                             text = item.text,
                             listKey = item.listKey,
                             typewriterSnap = item.listKey in typewriterSnapKeys,
+                            progressMap = typewriterProgress,
                             memorySources = item.memorySources,
                             durationLabel = item.durationLabel,
                             showRetry = showRetry,
@@ -950,6 +963,7 @@ private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modi
             fontSize = 16.sp,
             fontFamily = chatBodyFontFamily(terminal),
             modifier = modifier
+                .copyOnLongPress(text)
                 .widthIn(max = 320.dp)
                 .clip(RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))
                 .border(1.dp, DougieColors.Primary, RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))
@@ -968,11 +982,26 @@ private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modi
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Modifier.copyOnLongPress(text: String): Modifier {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+    return combinedClickable(
+        onClick = {},
+        onLongClick = {
+            clipboard.setText(AnnotatedString(text))
+            Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+        },
+    )
+}
+
 @Composable
 private fun AgentBubble(
     text: String,
     listKey: String,
     typewriterSnap: Boolean = false,
+    progressMap: SnapshotStateMap<String, String> = mutableStateMapOf(),
     memorySources: List<String> = emptyList(),
     durationLabel: String? = null,
     showRetry: Boolean = false,
@@ -988,15 +1017,18 @@ private fun AgentBubble(
         1f,
     ) == 0f
     val snap = typewriterSnap || reduceMotion || snapsAgentTypewriter(text)
+    // Restores from the screen-level map so a completed message re-composed after
+    // scrolling shows its full text instantly instead of re-streaming.
     var displayed by remember(listKey) {
         mutableStateOf(
-            nextTypewriterShown(
-                shown = "",
-                target = text,
-                firstFrame = snap,
-                reduceMotion = false,
-                elapsedMs = 0L,
-            ),
+            progressMap[listKey]
+                ?: nextTypewriterShown(
+                    shown = "",
+                    target = text,
+                    firstFrame = snap,
+                    reduceMotion = false,
+                    elapsedMs = 0L,
+                ),
         )
     }
     LaunchedEffect(listKey, text, snap) {
@@ -1013,6 +1045,7 @@ private fun AgentBubble(
                 elapsedMs = elapsed,
             )
             displayed = next
+            progressMap[listKey] = next
             if (next == text) break
             delay(TYPEWRITER_TICK_MS)
         }
@@ -1030,6 +1063,7 @@ private fun AgentBubble(
                 fontSize = 16.sp,
                 fontFamily = chatBodyFontFamily(terminal),
                 modifier = Modifier
+                    .copyOnLongPress(text)
                     .widthIn(max = 320.dp)
                     .padding(start = 16.dp)
                     .clip(RoundedCornerShape(16.dp).copy(topStart = androidx.compose.foundation.shape.CornerSize(4.dp)))

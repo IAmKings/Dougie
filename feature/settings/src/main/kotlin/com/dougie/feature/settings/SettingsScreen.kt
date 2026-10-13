@@ -76,6 +76,7 @@ val PRIVACY_PARAGRAPHS = listOf(
 @Composable
 fun SettingsRoute(
     viewModel: SettingsViewModel,
+    scrollState: androidx.compose.foundation.ScrollState,
     onBack: () -> Unit,
     onOpenDebug: () -> Unit,
     onOpenOpenApps: () -> Unit,
@@ -92,6 +93,7 @@ fun SettingsRoute(
     val standingRulesEnabled by viewModel.standingRulesEnabled.collectAsStateWithLifecycle()
     val standingRules by viewModel.standingRules.collectAsStateWithLifecycle()
     SettingsScreen(
+        scrollState = scrollState,
         form = form,
         models = models,
         ttsSpeakerId = ttsSpeakerId,
@@ -131,6 +133,7 @@ fun SettingsRoute(
 
 @Composable
 fun SettingsScreen(
+    scrollState: androidx.compose.foundation.ScrollState,
     form: SettingsFormState,
     models: OfflineModelsUi,
     ttsSpeakerId: Int = 0,
@@ -198,7 +201,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

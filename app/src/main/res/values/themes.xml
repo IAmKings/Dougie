@@ -1,5 +1,6 @@
 <resources>
     <style name="Theme.Dougie" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#F8FAF9</item>
         <item name="android:statusBarColor">#EDEEED</item>
         <item name="android:navigationBarColor">#F8FAF9</item>
         <item name="android:windowLightStatusBar">true</item>
