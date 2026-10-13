@@ -933,3 +933,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 131: 键盘弹出聊天跟随（IME 视口收缩+底部钉住）
+
+**Date**: 2026-10-14
+**Task**: 键盘弹出聊天跟随（IME 视口收缩+底部钉住）
+**Branch**: `master`
+
+### Summary
+
+体验判断与落地：聊天内容应随键盘收缩视口并保持最新消息钉在输入框上方（主流聊天标准行为），细化——仅在用户本在底部附近时自动跟随，回看历史不被打断（wasAtBottom=!canScrollForward 检查）。实现：ChatRoute 观察 WindowInsets.isImeVisible，弹出时 scrollToItem(last)。与既有 imePadding 视口收缩、新内容自动滚动互补。APK 已重装（02:30:38）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e862759` | (see git log) |
+
+### Status
+
+[OK] **Completed**
