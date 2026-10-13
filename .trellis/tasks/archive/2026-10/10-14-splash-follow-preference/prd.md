@@ -34,6 +34,19 @@
 
 **保留**：setApplicationNightMode 代码保留（原生系统有效、ColorOS 无害）；应用内体验（wrapThemeContext 跟随偏好）不受影响。
 
+## Follow-up 2（应用户要求深挖 Anchor 代码后的终版结论）
+
+应用户要求完整审阅 Anchor 全部代码（47 个 Kotlin 文件清单化、MainActivity 949 行主题相关全部命中、四套 styles + colors + manifest + 无 Application 类 + 无 splash 库 + 无 attachBaseContext / windowDisablePreview）：**Anchor 没有任何 Dougie 未实现的机制**。其启动窗跟随偏好依赖 setApplicationNightMode（与 Dougie 落地方式逐行等价）。
+
+设备侧取证闭环：Dougie 与 Anchor 冷启动后进程配置均为 night（系统深色）；ColorOS 的 dumpsys uimode / cmd uimode 均无按应用覆盖接口；调用无异常但无效果——ColorOS 静默忽略该 API（两者同被忽略）。
+
+「Anchor 跟随、Dougie 不跟随」感知差异的真实来源（按可能性排序）：
+1. 暖启动观察：进程存活时切主题，Anchor 界面即时变化（configChanges=uiMode + Compose 状态），随即重开看到的是应用内画面而非系统启动窗；
+2. 测试时系统恰为浅色（跟随系统与跟随偏好不可区分）；
+3. 启动速度差异：Anchor 轻量启动窗一闪而过不可感知；DougieApplication 重初始化使黑底+Logo 停留数秒格外显眼——这才是 Dougie 侧真正可做的改善点（启动性能优化，独立任务）。
+
+**终态**：启动窗配色跟随系统深浅为 OEM 平台行为，应用代码不可覆盖；Dougie 保留 setApplicationNightMode（原生系统有效）；可选改善=启动性能优化缩短启动窗可见时长；用户侧可选 ColorOS 按应用深色设置（如有）。
+
 ## Out of scope
 
 - API 33 以下设备（跟随系统，维持现状）；core-splashscreen 品牌化启动窗（可另立）。
