@@ -681,3 +681,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 119: 混合回显守卫（E2 九测取证）
+
+**Date**: 2026-10-13
+**Task**: 混合回显守卫（E2 九测取证）
+**Branch**: `master`
+
+### Summary
+
+九测：回答为「已读取剪贴板：{完整结果 JSON}」——模型产出前缀文字+结果 JSON 混合体，不以 { 开头，旧 startsWith 守卫未接（设备 DB 取证确认 finalAnswer 原文）。修复：guardedLocalAnswer 改内容级——回答含最后一次成功工具的 resultJson 原文即视为回显，优先 formatFinalAnswer 确定性文案（剪贴板内容：你好），无文案保留剥离 JSON 剩余文字，再退诚实重试；不含回显的正常回答原样不动。2 项新测试，红态（回退 startsWith）混合用例失败。APK 已重装（22:04:49，注意曾漏 assemble 已补），待十测。另：同轮发现 APK 忘重建的链条断点，已补流程教训。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `025a462` | (see git log) |
+
+### Status
+
+[OK] **Completed**
