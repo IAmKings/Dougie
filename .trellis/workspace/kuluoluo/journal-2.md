@@ -828,3 +828,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 126: 后台确认通知（复合指令结构性断点修复）
+
+**Date**: 2026-10-14
+**Task**: 后台确认通知（复合指令结构性断点修复）
+**Branch**: `master`
+
+### Summary
+
+用户指认结构性断点：app_intent 打开第三方应用后 Dougie 退后台，确认卡不可见且 60s 超时；切回 Dougie 点确认又会让前台变成 Dougie，tap_by_text 会在自己的控件树里找目标——确认动作与目标前台互斥。修复：TaskConfirmReceiver（静态注册，无 trampoline）+ TaskProgressNotifier 在 AWAITING_CONFIRMATION 时通知带「确认/拒绝」动作按钮（PRIORITY_HIGH），任意前台应用下下拉通知即可完成确认；状态离开自动恢复无按钮形态，60s 超时语义不变。双 flavor 编译+测试+checkChannelLeak 绿。APK 已重装，待真机验证复合指令第二步的后台确认。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5e6a6e9` | (see git log) |
+
+### Status
+
+[OK] **Completed**
