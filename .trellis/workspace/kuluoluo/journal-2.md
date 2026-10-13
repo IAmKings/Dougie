@@ -870,3 +870,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 128: 确认面打磨与去重 + 完全操作模式立项
+
+**Date**: 2026-10-14
+**Task**: 确认面打磨与去重 + 完全操作模式立项
+**Branch**: `master`
+
+### Summary
+
+验证通过后四点反馈落地：①悬浮框确认菜单卡片化（圆角、标题「Dougie 请求确认」、明细行、✓确认绿/✕拒绝红）；②透明度——confirmSummary 纯 JVM 助手从 trace args 提取点击标准，全部确认面显示「点击“记录”」而非裸工具名；③去重——Dougie 自己前台时不弹悬浮框菜单（聊天确认卡已覆盖）；④「完全操作模式」立项为规划任务（任务级一次性授权、工具族白名单、验证照跑、可打断——安全模型待产品拍板，未开工）。app 补 serialization-json 依赖。APK 已重装，待真机复测确认面。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `636f33b` | (see git log) |
+
+### Status
+
+[OK] **Completed**

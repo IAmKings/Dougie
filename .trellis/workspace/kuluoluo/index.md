@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 127
+- **Total Sessions**: 128
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~872 | Active |
+| `journal-2.md` | ~893 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 128 | 2026-10-14 | 确认面打磨与去重 + 完全操作模式立项 | `636f33b` | `master` |
 | 127 | 2026-10-14 | 悬浮框确认菜单与自指守卫（确认面重构） | `42bb985` | `master` |
 | 126 | 2026-10-14 | 后台确认通知（复合指令结构性断点修复） | `5e6a6e9` | `master` |
 | 125 | 2026-10-14 | tap_by_text 按文字点击控件落地 | `b8ae531` | `master` |
