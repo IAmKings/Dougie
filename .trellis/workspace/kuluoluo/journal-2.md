@@ -765,3 +765,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 123: 规划器环境上下文注入（复合指令反问修复）
+
+**Date**: 2026-10-14
+**Task**: 规划器环境上下文注入（复合指令反问修复）
+**Branch**: `master`
+
+### Summary
+
+复测发现路由修复后云端模型反问包名与 tab 位置而不调工具——诚实但缺信息：别名→包名清单从未进模型上下文、无屏幕分辨率可估坐标。修复：照 standingRules 通路新增 environment 通道（systemPrefix/localPrompt 增参、双 provider 穿线、ChatLlmProvider companion get 同步），app 层 PlannerEnvironment.build 渲染可打开名单（前15条 别名=包名）+ 屏幕分辨率 + 底部Tab 估算提示 + 自主执行指令（上限600字符）。隐私记录：名单与分辨率随云端 prompt 出境，与工具清单同级。3 项新测试。APK 已重装（00:09:36），待复测复合指令自主执行。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3aa83df` | (see git log) |
+
+### Status
+
+[OK] **Completed**
