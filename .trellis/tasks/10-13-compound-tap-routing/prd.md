@@ -19,9 +19,9 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：两条真机复合句 isMatchThenTapPhrase==false；裸短语集全部 ==true；既有负例（现在几点了/匹配一下/地点/明天三点开会）仍 false。
-- [ ] AC2 红态：AC1 复合句断言在旧实现上失败。
-- [ ] AC3 `:core:runtime:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；APK 重装后真机复测：复合句到达云端规划器（trace 出现 app_intent/tap_swipe 或相应诚实错误）。
+- [x] AC1 JVM 测试：两条真机复合句 isMatchThenTapPhrase==false；裸短语集全部 ==true；既有负例（现在几点了/匹配一下/地点/明天三点开会）仍 false。
+- [x] AC2 红态：AC1 复合句断言在旧实现上失败。
+- [x] AC3 `:core:runtime:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；APK 重装后真机复测：复合句到达云端规划器（trace 出现 app_intent/tap_swipe 或相应诚实错误）。
 
 ## Out of scope
 
