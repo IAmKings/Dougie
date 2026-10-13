@@ -1664,6 +1664,55 @@ class LoopEngineTest {
     }
 
     @Test
+    fun embeddedResultJsonEchoInAnswerIsReplacedByFormattedContent() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "cr-1", name = "clipboard_read", argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer(
+                        "已读取剪贴板：{\"ok\":true,\"text\":\"你好\"}",
+                    )
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("clipboard_read" to ClipboardReadTool(FakeClipboardPort(text = "你好"))),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-echo-mix", input = "刚才复制了什么")) {}
+        assertEquals(TaskStatus.COMPLETED, result.status)
+        assertEquals("剪贴板内容：你好", result.finalAnswer)
+    }
+
+    @Test
+    fun answerWithoutResultJsonEchoIsUntouched() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val provider = object : LlmProvider {
+            override val isLocal: Boolean = true
+            override suspend fun generate(context: LoopContext): LlmResponse {
+                return if (context.task.toolTrace.isEmpty()) {
+                    LlmResponse.ToolCall(id = "cr-2", name = "clipboard_read", argsJson = "{}")
+                } else {
+                    LlmResponse.FinalAnswer("剪贴板里是「你好」这三个字。")
+                }
+            }
+        }
+        val engine = LoopEngine(
+            llm = provider,
+            tools = mapOf("clipboard_read" to ClipboardReadTool(FakeClipboardPort(text = "你好"))),
+            dispatcher = dispatcher,
+            stepDelayMs = 0,
+        )
+        val result = engine.run(AgentTask(taskId = "t-echo-clean", input = "刚才复制了什么")) {}
+        assertEquals("剪贴板里是「你好」这三个字。", result.finalAnswer)
+    }
+
+    @Test
     fun localResultEchoAfterTimeToolAnswersWithFormattedTime() = runTest {
         val dispatcher = StandardTestDispatcher(testScheduler)
         val provider = object : LlmProvider {

@@ -721,18 +721,30 @@ class LoopEngine(
     }
 
     /**
-     * Small local models sometimes echo the raw tool-result JSON back as their "answer".
-     * A JSON-shaped reply on the local path is never trusted: derive the deterministic
-     * Chinese answer from the last successful tool result instead.
+     * Small local models sometimes echo the raw tool-result JSON back as their "answer" —
+     * bare, truncated, or wrapped in their own words. A reply that contains the last
+     * successful tool's resultJson verbatim is never trusted: the deterministic Chinese
+     * answer is derived from that result instead, falling back to the surrounding words
+     * and finally to the honest retry copy.
      */
     private fun guardedLocalAnswer(task: AgentTask, answer: String): String {
         if (task.completionPath != CompletionPath.LOCAL_LLM) return answer
-        if (!answer.startsWith("{")) return answer
+        val trimmed = answer.trim()
+        if (!trimmed.contains("{")) return trimmed
         val last = task.toolTrace.lastOrNull {
             it.status == ToolTraceStatus.SUCCESS && it.resultJson != null
-        } ?: return UserFacingErrors.LLM_EMPTY_REPLY
-        return IntentRouteAnswers.formatFinalAnswer(last.toolName, last.resultJson ?: "")
-            ?: UserFacingErrors.LLM_EMPTY_REPLY
+        } ?: return if (trimmed.startsWith("{")) {
+            UserFacingErrors.LLM_EMPTY_REPLY
+        } else {
+            trimmed
+        }
+        val formatted = IntentRouteAnswers.formatFinalAnswer(last.toolName, last.resultJson ?: "")
+        if (trimmed.startsWith("{")) return formatted ?: UserFacingErrors.LLM_EMPTY_REPLY
+        val resultJson = last.resultJson ?: return formatted ?: trimmed
+        if (!trimmed.contains(resultJson)) return trimmed
+        if (formatted != null) return formatted
+        val remainder = trimmed.replace(resultJson, " ").trim().trimEnd('：', ':', '，', ',')
+        return remainder.ifBlank { UserFacingErrors.LLM_EMPTY_REPLY }
     }
 
     private suspend fun fail(
