@@ -24,6 +24,16 @@
 - [x] AC2 双 flavor 编译 + 既有测试绿。
 - [x] AC3 真机：系统深色 + App 浅色 → 冷启动启动窗为浅色底（第二次启动起生效；首次启动完成同步）；设置内切换偏好后启动窗跟随。
 
+## Follow-up（验收失败终审：对照实验）
+
+用户验收失败（仍黑底）。adb 取证三重确认：①冷启动后 Dougie 进程系统侧配置 = `port night`（浅色覆盖未落地）；②`dumpsys uimode` 无任何按应用覆盖记录；③`cmd uimode` 无按应用子命令。**对照实验**：同设备冷启动 Anchor（同款 setApplicationNightMode 实现），其进程配置同样 `port night`——Anchor 在此 ColorOS 上冷启动启动窗同样跟随系统、不跟随偏好。
+
+**终审结论**：ColorOS（PJZ110, Android 16）的 UiModeManager 静默忽略 setApplicationNightMode（无持久化、无配置生效、无异常）。 Dougie 实现与 Anchor 同款、无误；启动窗跟随系统深浅为 OEM 平台行为，应用代码不可覆盖。用户对「Anchor 可跟随」的观察可能来自暖启动（进程内存活时应用内即时切换，两家均支持）或测试时系统恰为浅色。
+
+**自助验证步骤**（供用户复核）：Anchor 偏好设为「浅色」+ 系统保持深色 + 强杀后冷启动 Anchor → 预期启动窗仍为黑色。若实际为白色，请截图，再深挖两应用差异。
+
+**保留**：setApplicationNightMode 代码保留（原生系统有效、ColorOS 无害）；应用内体验（wrapThemeContext 跟随偏好）不受影响。
+
 ## Out of scope
 
 - API 33 以下设备（跟随系统，维持现状）；core-splashscreen 品牌化启动窗（可另立）。
