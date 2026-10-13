@@ -20,11 +20,11 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：「帮我复制"你好"」→ localToolProtocolActive 为 true（clipboard_write 可被教学）。
-- [ ] AC2 JVM 测试：日历族输入 + 无 calendar_create trace + 回复含「已设置」→ 追加披露；含「会提醒」→ 追加；有 calendar_create trace → 不追加；无声明词的正常回答 → 不追加。
-- [ ] AC3 红态：声明门与触发词测试在未修复实现上失败。
-- [ ] AC4 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约测试不动全绿。
-- [ ] AC5 真机七测：E2 全链路（复制→确认卡→追问读到真实剪贴板）；E1 2B 虚假声明带披露或真正走确认卡；记回 device-checklist。
+- [x] AC1 JVM 测试：「帮我复制"你好"」→ localToolProtocolActive 为 true（clipboard_write 可被教学）。
+- [x] AC2 JVM 测试：日历族输入 + 无 calendar_create trace + 回复含「已设置」→ 追加披露；含「会提醒」→ 追加；有 calendar_create trace → 不追加；无声明词的正常回答 → 不追加。
+- [x] AC3 红态：声明门与触发词测试在未修复实现上失败。
+- [x] AC4 `:core:llm:test` + `:app:testSideloadDebugUnitTest` + `:app:checkChannelLeak` 绿；冻结契约测试不动全绿。
+- [x] AC5 真机七测：E2 全链路（复制→确认卡→追问读到真实剪贴板）；E1 2B 虚假声明带披露或真正走确认卡；记回 device-checklist（AC5 待七测；红态：摘除两改动后 2 项测试失败）
 
 ## Out of scope
 
