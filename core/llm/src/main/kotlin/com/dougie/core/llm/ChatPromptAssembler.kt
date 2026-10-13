@@ -159,7 +159,18 @@ object ChatPromptAssembler {
         ) {
             return LlmEvent.TextDelta(UserFacingErrors.LLM_EMPTY_REPLY)
         }
-        return LlmEvent.TextDelta(body)
+        return LlmEvent.TextDelta(appendUnexecutedActionDisclosure(task, body))
+    }
+
+    /** A text answer that claims a calendar action was completed while no calendar_create
+     *  ever ran is a false-completion claim; disclose it instead of trusting the model. */
+    private fun appendUnexecutedActionDisclosure(task: AgentTask, body: String): String {
+        val calendarIntent = DISCLOSURE_INPUT_NEEDLES.any { task.input.contains(it) }
+        if (!calendarIntent) return body
+        if (task.toolTrace.any { it.toolName == "calendar_create" }) return body
+        val claims = COMPLETION_CLAIM_WORDS.any { body.contains(it) }
+        if (!claims) return body
+        return "$body\n（注意：我还没有真正创建这个日程或提醒。）"
     }
 
     /** Append the missing closers of an unterminated JSON object and return the repaired
@@ -502,6 +513,7 @@ object ChatPromptAssembler {
         "几点",
         "电量",
         "剪贴板",
+        "复制",
         "打开",
         "念出来",
         "日历",
@@ -528,6 +540,12 @@ object ChatPromptAssembler {
 
     private const val REPEAT_ACKNOWLEDGEMENT = "已获得工具结果。"
     private const val UNTAUGHT_TOOL_NOTICE = "（该操作暂不支持自动执行，已忽略。）"
+
+    private val DISCLOSURE_INPUT_NEEDLES = listOf("提醒", "日程", "日历", "开会")
+    private val COMPLETION_CLAIM_WORDS = listOf(
+        "已设置", "已经设置", "已创建", "已经创建", "已添加", "已经添加", "已提醒",
+        "会提醒", "我会提醒", "帮你设置", "帮你创建", "帮你加",
+    )
 
     private const val LOCAL_IDLE_SUFFIX =
         "直接用一两句中文回答。不要输出 JSON。不要罗列工具。不要自称其它模型或厂商。"

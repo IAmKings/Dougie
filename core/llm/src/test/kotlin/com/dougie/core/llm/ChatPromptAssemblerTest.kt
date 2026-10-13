@@ -783,6 +783,82 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
+    fun copyPhraseNowEntersLocalToolProtocol() {
+        val task = AgentTask(taskId = "t-copy", input = "帮我复制\"你好\"")
+        val descriptors = listOf(
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
+            ToolDescriptor("time", description = "Read time."),
+        )
+        assertTrue(ChatPromptAssembler.localToolProtocolActive(task, descriptors))
+        val followUp = AgentTask(taskId = "t-copy2", input = "刚才复制了什么")
+        assertTrue(ChatPromptAssembler.localToolProtocolActive(followUp, descriptors))
+    }
+
+    @Test
+    fun falseCompletionClaimGetsHonestDisclosure() {
+        val task = AgentTask(
+            taskId = "t-claim",
+            input = "现在几点？另外明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "time",
+                    argsSummary = "{}",
+                    resultJson = """{"ok":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(ToolDescriptor("time", description = "Read time."))
+        val claim = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            "现在是 10 点。提醒已经设置好了。",
+        )
+        val claimText = (claim as LlmEvent.TextDelta).text
+        assertTrue(claimText.contains("还没有真正创建"))
+        val futureClaim = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            "现在是 10 点。我会提醒你开会。",
+        )
+        assertTrue((futureClaim as LlmEvent.TextDelta).text.contains("还没有真正创建"))
+    }
+
+    @Test
+    fun realCalendarCreationAndPlainAnswersGetNoDisclosure() {
+        val created = AgentTask(
+            taskId = "t-real",
+            input = "明天提醒我开会",
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "c1",
+                    toolName = "calendar_create",
+                    argsSummary = "{}",
+                    resultJson = """{"ok":true}""",
+                    status = ToolTraceStatus.SUCCESS,
+                ),
+            ),
+        )
+        val descriptors = listOf(
+            ToolDescriptor("calendar_create", description = "Create an event."),
+        )
+        val withTool = ChatPromptAssembler.decideLocalReply(
+            created,
+            descriptors,
+            "已创建日程：开会。",
+        )
+        assertTrue(!(withTool as LlmEvent.TextDelta).text.contains("还没有真正创建"))
+        val plainTask = AgentTask(taskId = "t-plain", input = "明天有什么日程？")
+        val plain = ChatPromptAssembler.decideLocalReply(
+            plainTask,
+            descriptors,
+            "明天没有日程。",
+        )
+        assertTrue(!(plain as LlmEvent.TextDelta).text.contains("还没有真正创建"))
+    }
+
+    @Test
     fun plainTextReplyKeepsStripLeadingQuestionBehavior() {
         val task = AgentTask(taskId = "t-p", input = "现在几点了")
         val event = ChatPromptAssembler.decideLocalReply(
