@@ -975,3 +975,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 133: 键盘跟随逐帧重钉（终版）
+
+**Date**: 2026-10-14
+**Task**: 键盘跟随逐帧重钉（终版）
+**Branch**: `master`
+
+### Summary
+
+再复测仍不跟随——根因二次修正：imePadding 收缩是约 300ms 逐帧动画，弹出一瞬间的单次滚动会被后续收缩帧重新压回。终版：以 WindowInsets.ime 实时插值为 LaunchedEffect key，动画期间每帧 scrollToItem 重钉最新消息，inset 稳定后停止干预不与用户抢滚动；配合 snapshotFlow 连续追踪最后一条可见性作为资格条件（翻历史不打扰）。APK 已重装（02:44:46）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4d11c97` | (see git log) |
+
+### Status
+
+[OK] **Completed**

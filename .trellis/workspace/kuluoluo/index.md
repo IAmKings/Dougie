@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 132
+- **Total Sessions**: 133
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~977 | Active |
+| `journal-2.md` | ~998 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 133 | 2026-10-14 | 键盘跟随逐帧重钉（终版） | `4d11c97` | `master` |
 | 132 | 2026-10-14 | 键盘跟随竞态修正 | `96a1eec` | `master` |
 | 131 | 2026-10-14 | 键盘弹出聊天跟随（IME 视口收缩+底部钉住） | `e862759` | `master` |
 | 130 | 2026-10-14 | UI 体验修复四项（设置滚动/Splash/历史重放/长按复制） | `111f976` | `master` |
