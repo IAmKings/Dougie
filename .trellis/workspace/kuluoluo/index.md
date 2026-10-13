@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 136
+- **Total Sessions**: 137
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1061 | Active |
+| `journal-2.md` | ~1082 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 137 | 2026-10-14 | 启动窗跟随应用主题偏好（回答 DayNight 疑问并落地正解） | `0fe5577` | `master` |
 | 136 | 2026-10-14 | 微信式点按收起键盘 | `ea9eaa5` | `master` |
 | 135 | 2026-10-14 | 键盘跟随截图取证 + 底栏隐藏（终验） | `a8ee0e5` | `master` |
 | 134 | 2026-10-14 | 键盘跟随 v4（根因：inset 消费导致效果从未触发） | `025a462` | `master` |

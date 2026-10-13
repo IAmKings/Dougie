@@ -1059,3 +1059,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 137: 启动窗跟随应用主题偏好（回答 DayNight 疑问并落地正解）
+
+**Date**: 2026-10-14
+**Task**: 启动窗跟随应用主题偏好（回答 DayNight 疑问并落地正解）
+**Branch**: `master`
+
+### Summary
+
+回答用户疑问：DayNight 迁移修复不了冷启动系统启动窗（进程启动前由系统按系统深浅绘制），且项目已用 wrapThemeContext 实现 DayNight 等效能力。正解：API 33+ UiModeManager.setApplicationNightMode 把应用偏好写入系统级按应用深浅模式——写入后系统连启动窗都按偏好渲染。实现 systemNightModeFor 映射（LIGHT→NO/DARK→YES/SYSTEM→AUTO）+ onCreate 末尾与偏好变更时同步（过程修正：误插 super.onCreate() 之前已修复）。映射测试 1 项。APK 已重装，待真机复测：系统深色+App浅色 → 冷启动启动窗应为浅色（第二次启动起）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0fe5577` | (see git log) |
+
+### Status
+
+[OK] **Completed**
