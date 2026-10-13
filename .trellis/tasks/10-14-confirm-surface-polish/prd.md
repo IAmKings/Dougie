@@ -14,10 +14,10 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：confirmSummary 对含 text 的 argsSummary 返回「点击“记录”」；无 text/坏 JSON 返回 null；formatTaskNotice 待确认行含 detail。
-- [ ] AC2 悬浮框 UI 改造编译通过（Android UI 真机验证）。
-- [ ] AC3 全量 `:app:testSideloadDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak` 绿。
-- [ ] AC4 真机验证：第三方前台时悬浮框确认带「点击“记录”」明细；Dougie 前台时不重复弹。
+- [x] AC1 JVM 测试：confirmSummary 对含 text 的 argsSummary 返回「点击“记录”」；无 text/坏 JSON 返回 null；formatTaskNotice 待确认行含 detail。
+- [x] AC2 悬浮框 UI 改造编译通过（Android UI 真机验证）。
+- [x] AC3 全量 `:app:testSideloadDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak` 绿。
+- [x] AC4 真机验证：第三方前台时悬浮框确认带「点击“记录”」明细；Dougie 前台时不重复弹。
 
 ## Out of scope
 
