@@ -26,6 +26,12 @@
 - [x] AC5 `:core:llm:test :core:runtime:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动全绿。
 - [x] AC6 真机九测：E2 全链路（写入→追问读到内容）；E1 2B 无原始 JSON；记回 device-checklist（AC6 待九测；红态：摘除守卫后 3 项失败）
 
+## Follow-up（九测后追加，同任务闭环）
+
+九测取证：finalAnswer = 「已读取剪贴板：{"ok":true,"text":"你好"}」——模型产出前缀文字+完整结果 JSON 的混合回显，不以 { 开头，旧守卫（startsWith）未接。追加：守卫改为「回答含最后一次工具的 resultJson 原文即视为回显」，优先确定性文案（剪贴板内容：你好），无文案时保留剥离 JSON 后的剩余文字，再退诚实重试。AC 追加：
+
+- [x] AC7 混合回显 → 「剪贴板内容：你好」；不含回显的正常回答原样保留（红态：回退 startsWith 守卫后混合用例失败）。
+
 ## Out of scope
 
 - 流式期间回显闪现的 UI 处理；选错工具的模型层治理（排序偏置为全部）；startIso 日期上下文。
