@@ -120,6 +120,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -380,6 +381,8 @@ fun ChatScreen(
             // Keyboard follow, driven by the composer's PHYSICAL position (immune to
             // inset-consumption tricks): while raised, re-pin per frame so the latest
             // message stays above the input bar; on close, restore the bottom once.
+            val keyboardController = LocalSoftwareKeyboardController.current
+            val onChatAreaTap: () -> Unit = { keyboardController?.hide() }
             var composerBottom by remember { mutableStateOf(Int.MAX_VALUE) }
             var composerBaseline by remember { mutableStateOf(0) }
             var lastMessageOnScreen by remember { mutableStateOf(true) }
@@ -470,6 +473,7 @@ fun ChatScreen(
                     speakingReply = speakingReply,
                     typewriterProgress = typewriterProgress,
                     typewriterSnapKeys = snapKeys,
+                    onChatAreaTap = onChatAreaTap,
                     onRetry = onRetry,
                     onStopReply = onStopReply,
                     onSpeakReply = onSpeakReply,
@@ -795,6 +799,7 @@ private fun ChatFeed(
     speakingReply: Boolean,
     typewriterProgress: SnapshotStateMap<String, String>,
     typewriterSnapKeys: Set<String>,
+    onChatAreaTap: () -> Unit,
     onRetry: () -> Unit,
     onStopReply: () -> Unit,
     onSpeakReply: (String) -> Unit,
@@ -802,7 +807,12 @@ private fun ChatFeed(
 ) {
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onChatAreaTap() },
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -817,6 +827,7 @@ private fun ChatFeed(
                         text = item.text,
                         sourceLabel = item.sourceLabel,
                         modifier = sharedBoundsFor(userBubbleSharedKey(item.listKey)),
+                        onChatAreaTap = onChatAreaTap,
                     )
                 }
                 is ChatItem.Thinking -> ChatItemEnterMotion(playEnter) {
@@ -835,6 +846,7 @@ private fun ChatFeed(
                             listKey = item.listKey,
                             typewriterSnap = item.listKey in typewriterSnapKeys,
                             progressMap = typewriterProgress,
+                            onChatAreaTap = onChatAreaTap,
                             memorySources = item.memorySources,
                             durationLabel = item.durationLabel,
                             showRetry = showRetry,
@@ -1002,7 +1014,12 @@ private fun ConfirmCardOverlay(
 }
 
 @Composable
-private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modifier = Modifier) {
+private fun UserBubble(
+    text: String,
+    sourceLabel: String? = null,
+    modifier: Modifier = Modifier,
+    onChatAreaTap: () -> Unit = {},
+) {
     val terminal = LocalTerminalTheme.current
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
         Text(
@@ -1011,7 +1028,7 @@ private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modi
             fontSize = 16.sp,
             fontFamily = chatBodyFontFamily(terminal),
             modifier = modifier
-                .copyOnLongPress(text)
+                .copyOnLongPress(text, onChatAreaTap)
                 .widthIn(max = 320.dp)
                 .clip(RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))
                 .border(1.dp, DougieColors.Primary, RoundedCornerShape(16.dp).copy(topEnd = androidx.compose.foundation.shape.CornerSize(4.dp)))
@@ -1032,11 +1049,11 @@ private fun UserBubble(text: String, sourceLabel: String? = null, modifier: Modi
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Modifier.copyOnLongPress(text: String): Modifier {
+private fun Modifier.copyOnLongPress(text: String, onChatAreaTap: () -> Unit = {}): Modifier {
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
     return combinedClickable(
-        onClick = {},
+        onClick = onChatAreaTap,
         onLongClick = {
             clipboard.setText(AnnotatedString(text))
             Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
@@ -1050,6 +1067,7 @@ private fun AgentBubble(
     listKey: String,
     typewriterSnap: Boolean = false,
     progressMap: SnapshotStateMap<String, String> = mutableStateMapOf(),
+    onChatAreaTap: () -> Unit = {},
     memorySources: List<String> = emptyList(),
     durationLabel: String? = null,
     showRetry: Boolean = false,
@@ -1111,7 +1129,7 @@ private fun AgentBubble(
                 fontSize = 16.sp,
                 fontFamily = chatBodyFontFamily(terminal),
                 modifier = Modifier
-                    .copyOnLongPress(text)
+                    .copyOnLongPress(text, onChatAreaTap)
                     .widthIn(max = 320.dp)
                     .padding(start = 16.dp)
                     .clip(RoundedCornerShape(16.dp).copy(topStart = androidx.compose.foundation.shape.CornerSize(4.dp)))
