@@ -23,6 +23,13 @@
 - [x] AC1 1 编译双 flavor + `:app:testSideloadDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak` 绿；既有通知行为不回归。
 - [x] AC1 2 真机验证：复合指令第二步确认卡期间，下拉通知出现「确认/拒绝」，点确认后流程继续（tap_by_text 在目标应用前台执行并验证）；点拒绝任务 CONFIRM_REJECTED。结果记回 device-checklist（AC2 真机待验证）
 
+## Follow-up（真机反馈后追加，同任务闭环）
+
+真机反馈两点：①通知动作按钮不切前台（广播直达），但通知本体跳回 Dougie——保留按钮，改由悬浮框主动弹确认菜单（DougieOverlayService 观察 AWAITING_CONFIRMATION，居中显示「确认 · 工具名 / 拒绝」行）；②自指漏洞实锤：确认拉回 Dougie 后 tap_by_text 在自己的聊天树里搜到「记录」并点击、还 verified:true。修复：TapSwipeTool/TapByTextTool 增加 selfPackage 守卫（前台==自身包名 → 诚实报 TAP_SELF_FOREGROUND「Dougie 自己在前台，请先打开目标应用再执行点击。」），register 经 selfPackage 显式参数传入（ContextWrapper(null) 测试技巧保持）。AC 追加：
+
+- [x] AC3 双工具自指守卫 JVM 测试；
+- [x] AC4 悬浮框确认菜单（Android UI，真机验证）。
+
 ## Out of scope
 
 - 悬浮框确认按钮（候选后续）；批量确认（一次放行整个任务计划——削弱逐步同意的安全模型，需产品决策）；确认超时时长调整。
