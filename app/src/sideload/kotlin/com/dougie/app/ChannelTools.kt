@@ -6,9 +6,11 @@ import com.dougie.core.tool.IdempotencyStore
 import com.dougie.core.tool.JsEvalTool
 import com.dougie.core.tool.PyEvalTool
 import com.dougie.tool.accessibility.AccessibilityForegroundProbe
+import com.dougie.tool.accessibility.AccessibilityTapSource
 import com.dougie.tool.accessibility.AccessibilityTreeSnapshotPort
 import com.dougie.tool.accessibility.AndroidGesturePort
 import com.dougie.tool.accessibility.DougieAccessibilityService
+import com.dougie.tool.accessibility.TapByTextTool
 import com.dougie.tool.accessibility.TapSwipeTool
 import com.dougie.tool.js.AndroidJsEvalPort
 import com.dougie.tool.py.AndroidPyEvalPort
@@ -43,6 +45,13 @@ object ChannelTools {
             port = gesturePort,
             idempotencyStore = idempotencyStore,
             treeProbe = { TreeProbeBridge.provider },
+        )
+        tools[TapByTextTool.NAME] = TapByTextTool(
+            consentGranted = consentGranted,
+            port = gesturePort,
+            tapSource = AccessibilityTapSource { DougieAccessibilityService.instance },
+            treeProbe = { TreeProbeBridge.provider },
+            idempotencyStore = idempotencyStore,
         )
     }
 }

@@ -10,6 +10,100 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+class TapByTextToolTest {
+    private fun ctx() = ToolContext(taskId = "tbt", toolCallId = "c")
+
+    private fun candidates() = listOf(
+        com.dougie.core.tool.TapCandidate("消息", "", true, 360, 2200),
+        com.dougie.core.tool.TapCandidate("记录", "", true, 540, 2300),
+        com.dougie.core.tool.TapCandidate("我的", "", true, 720, 2200),
+    )
+
+    @Test
+    fun hitTapsBoundsCenterAndMarksVerifiedTrue() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val source = com.dougie.core.tool.FakeTapSourcePort(candidates())
+        val probe = com.dougie.core.tool.FakeTreeSnapshotPort()
+        probe.enqueue(
+            com.dougie.core.tool.TreeSnapshot(listOf("设置"), checkedCount = 0),
+            com.dougie.core.tool.TreeSnapshot(listOf("记录页"), checkedCount = 0),
+        )
+        val tool = TapByTextTool(
+            consentGranted = { true },
+            port = port,
+            tapSource = source,
+            treeProbe = { probe },
+            verifyTimeoutMs = 1_000,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute("""{"text":"记录"}""", ctx())
+        assertEquals(true, result.verified)
+        assertTrue(result.json.contains("tap_by_text"))
+        assertTrue(result.json.contains("\"verified\":true"))
+        assertEquals(540, port.lastTapX)
+        assertEquals(2300, port.lastTapY)
+    }
+
+    @Test
+    fun missIsNonFatalObservationWithoutTapOrCache() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val store = InMemoryIdempotencyStore()
+        val source = com.dougie.core.tool.FakeTapSourcePort(candidates())
+        val tool = TapByTextTool(
+            consentGranted = { true },
+            port = port,
+            tapSource = source,
+            treeProbe = { null },
+            idempotencyStore = store,
+        )
+        val result = tool.execute("""{"text":"不存在的按钮"}""", ctx())
+        assertEquals(false, result.isFatal)
+        assertEquals(UserFacingErrors.TAP_TEXT_NOT_FOUND, result.error)
+        assertTrue(result.json.contains("\"found\":false"))
+        assertEquals(0, port.taps)
+        assertEquals(null, store.get("tbtc"))
+    }
+
+    @Test
+    fun gatesMirrorTapSwipe() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.eg.android.AlipayGphone")
+        val tool = TapByTextTool(
+            consentGranted = { true },
+            port = port,
+            tapSource = com.dougie.core.tool.FakeTapSourcePort(candidates()),
+        )
+        val result = tool.execute("""{"text":"记录"}""", ctx())
+        assertEquals(TapSwipeTool.BLOCKED_APP, result.error)
+        assertEquals(0, port.taps)
+    }
+
+    @Test
+    fun replayKeepsVerifiedFlag() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val store = InMemoryIdempotencyStore()
+        val probe = com.dougie.core.tool.FakeTreeSnapshotPort()
+        probe.enqueue(
+            com.dougie.core.tool.TreeSnapshot(listOf("设置")),
+            com.dougie.core.tool.TreeSnapshot(listOf("记录页")),
+        )
+        val tool = TapByTextTool(
+            consentGranted = { true },
+            port = port,
+            tapSource = com.dougie.core.tool.FakeTapSourcePort(candidates()),
+            treeProbe = { probe },
+            idempotencyStore = store,
+            verifyTimeoutMs = 1_000,
+            verifyPollMs = 100,
+        )
+        val first = tool.execute("""{"text":"记录"}""", ctx())
+        val second = tool.execute("""{"text":"记录"}""", ctx())
+        assertEquals(true, first.verified)
+        assertEquals(true, second.verified)
+        assertEquals(first.json, second.json)
+        assertEquals(1, port.taps)
+    }
+}
+
 class TapSwipeToolTest {
     @Test
     fun executeWithoutConsentDoesNotTap() = runBlocking {
@@ -190,30 +284,34 @@ class TapSwipeToolTest {
 
     private fun ctx() = ToolContext(taskId = "t", toolCallId = "c")
 
-    private class FakeGesturePort(
-        private val connected: Boolean = true,
-        private val foreground: String? = "com.android.chrome",
-        var succeed: Boolean = true,
-    ) : GesturePort {
-        var taps = 0
-        var swipes = 0
-        var lastSwipe: List<Int> = emptyList()
-
-        override fun isConnected(): Boolean = connected
-        override fun foregroundPackage(): String? = foreground
-        override suspend fun tap(x: Int, y: Int): Boolean {
-            taps += 1
-            return succeed
-        }
-
-        override suspend fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int): Boolean {
-            swipes += 1
-            lastSwipe = listOf(x1, y1, x2, y2, durationMs)
-            return succeed
-        }
-    }
-
     companion object {
         private const val TAP_JSON = """{"action":"tap","x":8,"y":12}"""
+    }
+}
+
+private class FakeGesturePort(
+    private val connected: Boolean = true,
+    private val foreground: String? = "com.android.chrome",
+    var succeed: Boolean = true,
+) : GesturePort {
+    var taps = 0
+    var swipes = 0
+    var lastSwipe: List<Int> = emptyList()
+    var lastTapX = 0
+    var lastTapY = 0
+
+    override fun isConnected(): Boolean = connected
+    override fun foregroundPackage(): String? = foreground
+    override suspend fun tap(x: Int, y: Int): Boolean {
+        taps += 1
+        lastTapX = x
+        lastTapY = y
+        return succeed
+    }
+
+    override suspend fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int): Boolean {
+        swipes += 1
+        lastSwipe = listOf(x1, y1, x2, y2, durationMs)
+        return succeed
     }
 }
