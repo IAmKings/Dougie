@@ -996,3 +996,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 134: 键盘跟随 v4（根因：inset 消费导致效果从未触发）
+
+**Date**: 2026-10-14
+**Task**: 键盘跟随 v4（根因：inset 消费导致效果从未触发）
+**Branch**: `master`
+
+### Summary
+
+三轮不生效的真正根因：ChatScreen 内层 imePadding 消费 IME insets，v1 的 isImeVisible / v3 的 imeBottom 在列内读恒为 0——效果从未触发（v2 竞态分析仅是次要因素）。v4 终版：完全脱离 insets，观测 ChatInputBar 物理位置（onGloballyPositioned），composerBaseline 记录收起基线，抬起>64dp 即 raised 逐帧重钉最新消息，收起复位一次。过程失误记录：块曾插错函数作用域两次、误编辑无关测试文件（均已修复）。APK 已重装待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `025a462` | (see git log) |
+
+### Status
+
+[OK] **Completed**
