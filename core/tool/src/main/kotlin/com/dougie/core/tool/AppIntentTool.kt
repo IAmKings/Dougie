@@ -122,7 +122,9 @@ class AppIntentTool(
         const val NAME = "app_intent"
         val DESCRIPTOR = ToolDescriptor(
             name = NAME,
-            description = "Open an allowed http(s)/geo link or launch an installed app. Requires user confirmation. Forbidden: tel, sms, file, javascript, content, intent.",
+            description = "Open an allowed http(s)/geo link or launch an installed app. Requires user confirmation. " +
+                "For apps named in the user's openable-apps list, use their package: URI, never a web link. " +
+                "Forbidden: tel, sms, file, javascript, content, intent.",
             properties = mapOf(
                 "uri" to ToolParamSpec(ToolParamType.STRING),
                 "package" to ToolParamSpec(ToolParamType.STRING, defaultJson = "\"\""),

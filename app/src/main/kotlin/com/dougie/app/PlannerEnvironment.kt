@@ -9,13 +9,17 @@ import com.dougie.core.tool.OpenAppEntries
  */
 object PlannerEnvironment {
     const val MAX_ENTRIES = 15
-    const val MAX_LENGTH = 600
+    const val MAX_LENGTH = 700
 
     fun build(openAppsJson: String, widthPixels: Int, heightPixels: Int): String {
         val apps = OpenAppEntries.parse(openAppsJson).take(MAX_ENTRIES)
         val parts = buildList {
             if (apps.isNotEmpty()) {
                 add("可打开的应用（别名=包名）：" + apps.joinToString("、") { "${it.alias}=${it.packageName}" } + "。")
+                add(
+                    "用户提到的应用在此清单中时，必须用其包名构造 package: URI 打开" +
+                        "（如 package:fm.anchor.android），不要改用链接；清单外的网址才用 https。",
+                )
             }
             if (widthPixels > 0 && heightPixels > 0) {
                 add(

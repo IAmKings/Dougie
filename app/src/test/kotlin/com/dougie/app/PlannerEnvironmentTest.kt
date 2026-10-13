@@ -14,7 +14,8 @@ class PlannerEnvironmentTest {
         assertTrue(block.contains("微信=com.tencent.mm"))
         assertTrue(block.contains("1080x2340"))
         assertTrue(block.contains("底部 Tab"))
-        assertTrue(block.contains("无需向用户询问"))
+        assertTrue(block.contains("必须用其包名构造 package: URI"))
+        assertTrue(block.contains("不要改用链接"))
         assertTrue(block.length <= PlannerEnvironment.MAX_LENGTH)
     }
 
