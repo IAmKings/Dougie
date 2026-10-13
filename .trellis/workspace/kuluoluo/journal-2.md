@@ -849,3 +849,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 127: 悬浮框确认菜单与自指守卫（确认面重构）
+
+**Date**: 2026-10-14
+**Task**: 悬浮框确认菜单与自指守卫（确认面重构）
+**Branch**: `master`
+
+### Summary
+
+用户复核双发现：①通知本体点回 Dougie 的陷阱（动作按钮不切前台但本体跳转）→ 悬浮框升级为主动确认面：DougieOverlayService 观察 AWAITING_CONFIRMATION，居中弹出「确认·工具名/拒绝」行（任意前台可用，state 离开自动撤除）；②自指漏洞实锤：确认拉回 Dougie 后 tap_by_text 在自己聊天树搜到「记录」并点击还 verified:true → 双工具（tap_swipe/tap_by_text）加 selfPackage 守卫（前台==自身包名→诚实报「Dougie 自己在前台，请先打开目标应用再执行点击。」），register 显式 selfPackage 参数（保 ContextWrapper(null) 测试技巧）。2 项守卫测试。过程教训：漏提交悬浮框文件+APK 未重建即安装，均已补救并确认（01:33:28）。待真机验证复合指令全链路。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `42bb985` | (see git log) |
+
+### Status
+
+[OK] **Completed**
