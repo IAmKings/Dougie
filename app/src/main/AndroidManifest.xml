@@ -52,6 +52,14 @@
             android:name=".DougieScheduleReceiver"
             android:exported="false" />
         <receiver
+            android:name=".TaskConfirmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.dougie.app.action.CONFIRM_TASK" />
+                <action android:name="com.dougie.app.action.REJECT_TASK" />
+            </intent-filter>
+        </receiver>
+        <receiver
             android:name=".DougieBootReceiver"
             android:exported="true"
             android:permission="android.permission.RECEIVE_BOOT_COMPLETED">

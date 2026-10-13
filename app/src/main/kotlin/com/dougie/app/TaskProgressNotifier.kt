@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
@@ -62,12 +63,31 @@ class TaskProgressNotifier(private val context: Context) {
             .setOnlyAlertOnce(true)
             .setOngoing(ongoing)
             .setAutoCancel(!ongoing)
+        if (task?.status == TaskStatus.AWAITING_CONFIRMATION) {
+            // The in-app confirm card is unreachable while a third-party app is foreground
+            // (and switching back would break tap-by-text targeting), so the shade carries
+            // the confirmation actions instead.
+            builder
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .addAction(0, "确认", actionPending(TaskConfirmReceiver.ACTION_CONFIRM, REQUEST_CODE_CONFIRM))
+                .addAction(0, "拒绝", actionPending(TaskConfirmReceiver.ACTION_REJECT, REQUEST_CODE_REJECT))
+        }
         attachPlayBubble(builder, bubblePending)
         runCatching { manager.notify(NOTIFICATION_ID, builder.build()) }
             .onFailure {
                 builder.setBubbleMetadata(null)
                 runCatching { manager.notify(NOTIFICATION_ID, builder.build()) }
             }
+    }
+
+    private fun actionPending(action: String, requestCode: Int): PendingIntent {
+        val intent = Intent(context, TaskConfirmReceiver::class.java).setAction(action)
+        return PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
     }
 
     private fun attachPlayBubble(builder: NotificationCompat.Builder, pending: PendingIntent) {
@@ -103,5 +123,7 @@ class TaskProgressNotifier(private val context: Context) {
         const val NOTIFICATION_ID = 48
         private const val REQUEST_CODE = 48
         private const val REQUEST_CODE_BUBBLE = 49
+        private const val REQUEST_CODE_CONFIRM = 50
+        private const val REQUEST_CODE_REJECT = 51
     }
 }
