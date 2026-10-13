@@ -19,12 +19,12 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试（LoopEngineTest）：本地两轮任务（clipboard_write 成功后模型回显 `{"ok":true`）→ finalAnswer=「已写入剪贴板。」；time 成功后回显 → finalAnswer 以「现在是」开头。
-- [ ] AC2 JVM 测试：本地无工具任务回显 JSON → finalAnswer=LLM_EMPTY_REPLY；云端路径（REMOTE_LLM）回显不守卫。
-- [ ] AC3 JVM 测试：输入含复制 → 协议例句中 clipboard 工具排在 time 之前。
-- [ ] AC4 红态：AC1/AC3 在未修复实现上失败。
-- [ ] AC5 `:core:llm:test :core:runtime:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动全绿。
-- [ ] AC6 真机九测：E2 全链路（写入→追问读到内容）；E1 2B 无原始 JSON；记回 device-checklist。
+- [x] AC1 JVM 测试（LoopEngineTest）：本地两轮任务（clipboard_write 成功后模型回显 `{"ok":true`）→ finalAnswer=「已写入剪贴板。」；time 成功后回显 → finalAnswer 以「现在是」开头。
+- [x] AC2 JVM 测试：本地无工具任务回显 JSON → finalAnswer=LLM_EMPTY_REPLY；云端路径（REMOTE_LLM）回显不守卫。
+- [x] AC3 JVM 测试：输入含复制 → 协议例句中 clipboard 工具排在 time 之前。
+- [x] AC4 红态：AC1/AC3 在未修复实现上失败。
+- [x] AC5 `:core:llm:test :core:runtime:test :app:testSideloadDebugUnitTest :app:checkChannelLeak` 绿；冻结契约不动全绿。
+- [x] AC6 真机九测：E2 全链路（写入→追问读到内容）；E1 2B 无原始 JSON；记回 device-checklist（AC6 待九测；红态：摘除守卫后 3 项失败）
 
 ## Out of scope
 
