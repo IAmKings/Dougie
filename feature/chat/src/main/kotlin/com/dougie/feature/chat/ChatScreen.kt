@@ -38,7 +38,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -134,6 +137,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun ChatRoute(
     viewModel: ChatViewModel,
     allowCloud: Boolean = false,
@@ -224,6 +228,16 @@ fun ChatRoute(
             }
         }
         viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
+    }
+    // Keyboard: shrink + keep the latest message pinned above the composer — but only
+    // when the user is already near the bottom; reading history must not be interrupted.
+    val imeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(imeVisible, feedItems.size) {
+        if (!imeVisible || feedItems.isEmpty()) return@LaunchedEffect
+        val wasAtBottom = !listState.canScrollForward
+        if (wasAtBottom) {
+            listState.scrollToItem(feedItems.lastIndex)
+        }
     }
     ChatTerminalSkin(enabled = terminalTheme) {
     ChatScreen(
