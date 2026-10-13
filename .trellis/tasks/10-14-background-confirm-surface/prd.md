@@ -20,8 +20,8 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 编译双 flavor + `:app:testSideloadDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak` 绿；既有通知行为不回归。
-- [ ] AC2 真机验证：复合指令第二步确认卡期间，下拉通知出现「确认/拒绝」，点确认后流程继续（tap_by_text 在目标应用前台执行并验证）；点拒绝任务 CONFIRM_REJECTED。结果记回 device-checklist。
+- [x] AC1 1 编译双 flavor + `:app:testSideloadDebugUnitTest :app:testPlayDebugUnitTest :app:checkChannelLeak` 绿；既有通知行为不回归。
+- [x] AC1 2 真机验证：复合指令第二步确认卡期间，下拉通知出现「确认/拒绝」，点确认后流程继续（tap_by_text 在目标应用前台执行并验证）；点拒绝任务 CONFIRM_REJECTED。结果记回 device-checklist（AC2 真机待验证）
 
 ## Out of scope
 
