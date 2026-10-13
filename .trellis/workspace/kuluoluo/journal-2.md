@@ -723,3 +723,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 121: tap_swipe 单边验证落地（证据驱动）
+
+**Date**: 2026-10-13
+**Task**: tap_swipe 单边验证落地（证据驱动）
+**Branch**: `master`
+
+### Summary
+
+10-02-tap-verification 从规划转实现并交付：九场景 22 份真机快照 + 属性级复检裁决——纯文本集不可行（开关 3/3 不可见），状态指纹（text∪checked∪selected）可行（开关 checkedΔ=-1、导航/对话框/Tab 可检、负例全零）。落地：TreeSnapshot+checked/selectedCount、AccessibilityTreeSnapshotPort 属性计数、TreeVerifier.awaitStateChange、TapSwipeTool 单边验证（有变化→verified=true 注入 JSON 并缓存；无变化→verified=null 诚实未知，永不报 false 避免有害重试如开关拨回）；sideload 接线 TreeProbeBridge，Play 零改动。9 项新测试红→绿验证。APK 已重装（23:14:33），待真机十测：开关拨动应见 verified=true，相册翻页应无 verified 键。残余盲区（像素类效果）为设计内 null 终态。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b8ae531` | (see git log) |
+
+### Status
+
+[OK] **Completed**
