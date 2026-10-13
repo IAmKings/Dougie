@@ -9,8 +9,10 @@ import com.dougie.core.model.ToolDescriptor
 import com.dougie.core.model.UserFacingErrors
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.put
 import kotlin.math.ceil
 
 /** Shared Chat identity + task context. Do not log the assembled string. */
@@ -211,15 +213,68 @@ object ChatPromptAssembler {
         descriptors: List<ToolDescriptor>,
         call: LlmEvent.ToolCall,
     ): LlmEvent {
-        if (LocalToolCallParser.isRepeatOfSuccessfulCall(task, call)) {
+        if (call.name == "clipboard_write" &&
+            clipboardWriteText(call).isNullOrBlank() &&
+            firstQuotedText(task.input) == null
+        ) {
+            return LlmEvent.TextDelta(BLANK_WRITE_NOTICE)
+        }
+        val corrected = correctClipboardDirection(task, call)
+        if (LocalToolCallParser.isRepeatOfSuccessfulCall(task, corrected)) {
             return LlmEvent.TextDelta(REPEAT_ACKNOWLEDGEMENT)
         }
         if (localToolProtocolActive(task, descriptors) ||
-            localAfterToolToolCallAllowed(descriptors, call)
+            localAfterToolToolCallAllowed(descriptors, corrected)
         ) {
-            return call
+            return corrected
         }
         return LlmEvent.TextDelta(UNTAUGHT_TOOL_NOTICE)
+    }
+
+    private fun clipboardWriteText(call: LlmEvent.ToolCall): String? = try {
+        Json.parseToJsonElement(call.argsJson).jsonObject["text"]
+            ?.let { (it as? JsonPrimitive)?.contentOrNull }
+    } catch (_: Exception) {
+        null
+    }
+
+    /**
+     * "复制 X" with a quoted payload is a write intent; small models sometimes emit
+     * clipboard_read instead. The quoted payload in the input is deterministic evidence
+     * of the direction (same extraction rule as the intent shortcut path), and the
+     * remapped write still goes through its L2 confirm card. A blank write with no
+     * quoted payload is meaningless and is refused.
+     */
+    private fun correctClipboardDirection(
+        task: AgentTask,
+        call: LlmEvent.ToolCall,
+    ): LlmEvent.ToolCall {
+        if (call.name != "clipboard_read") return call
+        val quoted = firstQuotedText(task.input) ?: return call
+        return LlmEvent.ToolCall(
+            id = call.id,
+            name = "clipboard_write",
+            argsJson = buildJsonObject { put("text", JsonPrimitive(quoted)) }.toString(),
+        )
+    }
+
+    private fun firstQuotedText(input: String): String? {
+        val pairs = listOf(
+            '「' to '」', '『' to '』', '"' to '"', '\'' to '\'', '“' to '”', '‘' to '’',
+        )
+        var i = 0
+        while (i < input.length) {
+            val close = pairs.firstOrNull { it.first == input[i] }?.second
+            if (close != null) {
+                val j = input.indexOf(close, startIndex = i + 1)
+                if (j > i + 1) {
+                    val inner = input.substring(i + 1, j).trim()
+                    if (inner.isNotEmpty()) return inner
+                }
+            }
+            i++
+        }
+        return null
     }
 
     /** First `{…}` span whose JSON object carries a non-blank "name" field, or null. */
@@ -540,6 +595,7 @@ object ChatPromptAssembler {
 
     private const val REPEAT_ACKNOWLEDGEMENT = "已获得工具结果。"
     private const val UNTAUGHT_TOOL_NOTICE = "（该操作暂不支持自动执行，已忽略。）"
+    private const val BLANK_WRITE_NOTICE = "（没有要复制的内容，已忽略。）"
 
     private val DISCLOSURE_INPUT_NEEDLES = listOf("提醒", "日程", "日历", "开会")
     private val COMPLETION_CLAIM_WORDS = listOf(

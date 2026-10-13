@@ -859,6 +859,52 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
+    fun clipboardReadWithQuotedPayloadIsRemappedToWrite() {
+        val task = AgentTask(taskId = "t-dir", input = "帮我复制“你好”")
+        val descriptors = listOf(
+            ToolDescriptor("clipboard_read", description = "Read clipboard."),
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"clipboard_read","args":{}}""",
+        )
+        val call = event as LlmEvent.ToolCall
+        assertEquals("clipboard_write", call.name)
+        assertTrue(call.argsJson.contains("你好"))
+    }
+
+    @Test
+    fun clipboardReadWithoutQuotedPayloadStaysRead() {
+        val task = AgentTask(taskId = "t-dir2", input = "刚才复制了什么")
+        val descriptors = listOf(
+            ToolDescriptor("clipboard_read", description = "Read clipboard."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"clipboard_read","args":{}}""",
+        )
+        assertEquals("clipboard_read", (event as LlmEvent.ToolCall).name)
+    }
+
+    @Test
+    fun blankClipboardWriteWithoutPayloadIsRefused() {
+        val task = AgentTask(taskId = "t-blank", input = "帮我复制一下")
+        val descriptors = listOf(
+            ToolDescriptor("clipboard_write", description = "Write clipboard."),
+        )
+        val event = ChatPromptAssembler.decideLocalReply(
+            task,
+            descriptors,
+            """{"name":"clipboard_write","args":{"text":""}}""",
+        )
+        val text = (event as LlmEvent.TextDelta).text
+        assertTrue(text.contains("没有要复制的内容"))
+    }
+
+    @Test
     fun plainTextReplyKeepsStripLeadingQuestionBehavior() {
         val task = AgentTask(taskId = "t-p", input = "现在几点了")
         val event = ChatPromptAssembler.decideLocalReply(
