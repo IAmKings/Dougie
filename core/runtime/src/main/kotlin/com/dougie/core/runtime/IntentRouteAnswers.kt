@@ -202,13 +202,18 @@ internal object IntentRouteAnswers {
         }.toString()
     }
 
+    /**
+     * The match-then-tap scaffold only serves BARE tap phrases over a pinned frame
+     * ("点击这里"). Sentences that merely contain 点击 (e.g. "打开X，点击Y") must reach
+     * the Action Planner instead of being hijacked into a template match that always fails.
+     */
     private fun looksLikeMatchThenTap(normalized: String): Boolean {
-        if (normalized.contains("几点")) return false
-        if (normalized.contains("点击") || normalized.contains("按一下") || normalized.contains("点一下")) {
-            return true
-        }
-        val core = normalized.removePrefix("请").removePrefix("帮我").trim()
-        return core == "点"
+        val core = normalized
+            .removePrefix("请")
+            .removePrefix("帮我")
+            .removePrefix("麻烦")
+            .trim()
+        return core in BARE_TAP_PHRASES
     }
 
     private fun formatSpeechOutput(obj: JsonObject): String? {
@@ -372,6 +377,12 @@ internal object IntentRouteAnswers {
     private val SPEAK_PATTERNS = listOf(
         Regex("""^(?:请)?把(.+?)(?:念出来|读出来|播报出来)$"""),
         Regex("""^(?:请)?念一下(.+)$"""),
+    )
+    private val BARE_TAP_PHRASES = setOf(
+        "点", "点击", "点一下", "按一下",
+        "点这里", "点击这里", "按这里",
+        "点这个", "点击这个", "按这个",
+        "点它", "点击它",
     )
     private val PERIODS = listOf("今早", "今晚", "傍晚", "晚上", "下午", "上午", "早上", "中午")
     private val TITLE_NOISE = listOf(

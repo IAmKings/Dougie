@@ -195,11 +195,16 @@ class IntentRouteAnswersTest {
         assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("点击"))
         assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("按一下。"))
         assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("点"))
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("点击这里"))
+        assertEquals(true, IntentRouteAnswers.isMatchThenTapPhrase("麻烦点这个"))
         assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("现在几点了"))
         assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("现在几点了？"))
         assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("匹配一下"))
         assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("明天三点开会"))
         assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("地点"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("打开Anchor，点击底部的记录tab"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("打开微信，点击底部的联系人tab"))
+        assertEquals(false, IntentRouteAnswers.isMatchThenTapPhrase("点击设置里的开关"))
     }
 
     @Test
