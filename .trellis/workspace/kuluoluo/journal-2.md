@@ -660,3 +660,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 118: 结果回显守卫（E1/E2 八测取证）
+
+**Date**: 2026-10-13
+**Task**: 结果回显守卫（E1/E2 八测取证）
+**Branch**: `master`
+
+### Summary
+
+八测取证：clipboard_write 已成功（text=你好，L2 确认——方向纠正生效✓），但两任务 finalAnswer 均为模型回显的截断结果 JSON {"ok":true——无 name 字段，调用形态门按设计不接，属最后一类显示泄漏「结果回显」。修复：LoopEngine 本地路径（LOCAL_LLM）文本完成时 JSON 形态回答不信回显，取 trace 最后成功工具 resultJson 走 formatFinalAnswer 确定性中文文案（已写入剪贴板/现在是…），失败给诚实重试文案；另加剪贴板/复制提问的协议例句置顶偏置。4 项 LoopEngine 测试+1 项排序测试，红态摘守卫后 3 项失败。APK 已重装（17:51:53），待九测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `86a6ec3` | (see git log) |
+
+### Status
+
+[OK] **Completed**
