@@ -954,3 +954,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 132: 键盘跟随竞态修正
+
+**Date**: 2026-10-14
+**Task**: 键盘跟随竞态修正
+**Branch**: `master`
+
+### Summary
+
+复测发现首版键盘跟随不生效：isImeVisible 翻真时视口已收缩，点查 canScrollForward 恒判不在底部而漏滚（竞态）。修正：snapshotFlow 连续追踪「最后一条消息是否在屏幕上」，键盘弹出读弹之前的状态，竞态消除。已重装 APK（02:37:21）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `96a1eec` | (see git log) |
+
+### Status
+
+[OK] **Completed**
