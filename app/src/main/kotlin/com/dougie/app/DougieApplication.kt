@@ -330,6 +330,7 @@ class DougieApplication : Application() {
         TaskProgressNotifier(this).also { taskProgressNotifier = it }
             .start(appScope, taskManager.task)
         ChannelHooks.syncOverlay(this)
+        syncSystemNightMode(this, themePreference())
         ScheduleAlarms.sync(this)
         appScope.launch {
             combine(preferenceStore.settings, preferenceStore.activeChatSku) { settings, sku ->

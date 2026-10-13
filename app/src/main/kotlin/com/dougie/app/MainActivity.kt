@@ -455,6 +455,7 @@ class MainActivity : ComponentActivity() {
                             onThemePreferenceChange = { mode ->
                                 if (app.preferenceStore.settings.value.themePreference != mode) {
                                     viewModel.setThemePreference(mode)
+                                    syncSystemNightMode(this@MainActivity, mode)
                                     recreate()
                                 }
                             },
