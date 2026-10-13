@@ -261,6 +261,14 @@ class DougieApplication : Application() {
                 val prefs = preferenceStore.settings.value
                 if (prefs.standingRulesEnabled) prefs.standingRules else ""
             },
+            environment = {
+                val metrics = resources.displayMetrics
+                PlannerEnvironment.build(
+                    preferenceStore.openAppsJson.value,
+                    metrics.widthPixels,
+                    metrics.heightPixels,
+                )
+            },
         )
         val provider = SelectingLlmProvider(
             cloud = cloud,

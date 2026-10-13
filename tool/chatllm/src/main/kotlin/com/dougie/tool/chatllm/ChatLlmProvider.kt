@@ -35,6 +35,7 @@ class ChatLlmProvider private constructor(
     private val toolDescriptors: () -> List<ToolDescriptor>,
     private val activeSku: () -> String?,
     private var standingRules: () -> String,
+    private var environment: () -> String,
 ) : LlmProvider {
     override val isLocal: Boolean = true
 
@@ -65,7 +66,7 @@ class ChatLlmProvider private constructor(
         }
         val descriptors = toolDescriptors()
         conversation.sendMessageAsync(
-            promptFor(context.task, descriptors, standingRules()),
+            promptFor(context.task, descriptors, standingRules(), environment()),
             object : MessageCallback {
                 private val buffer = StringBuilder()
 
@@ -179,19 +180,25 @@ class ChatLlmProvider private constructor(
             toolDescriptors: () -> List<ToolDescriptor> = { emptyList() },
             activeSku: () -> String? = { null },
             standingRules: () -> String = { "" },
+            environment: () -> String = { "" },
         ): ChatLlmProvider {
             instance?.let { existing ->
                 existing.standingRules = standingRules
+                existing.environment = environment
                 return existing
             }
             return synchronized(this) {
-                instance?.also { it.standingRules = standingRules } ?: ChatLlmProvider(
+                instance?.also {
+                    it.standingRules = standingRules
+                    it.environment = environment
+                } ?: ChatLlmProvider(
                     filesDir = context.applicationContext.filesDir,
                     extraRoot = context.applicationContext.getExternalFilesDir(null),
                     cacheDir = context.applicationContext.cacheDir,
                     toolDescriptors = toolDescriptors,
                     activeSku = activeSku,
                     standingRules = standingRules,
+                    environment = environment,
                 ).also { instance = it }
             }
         }
@@ -202,4 +209,5 @@ internal fun promptFor(
     task: AgentTask,
     descriptors: List<ToolDescriptor> = emptyList(),
     standingRules: String = "",
-): String = ChatPromptAssembler.localPrompt(task, descriptors, standingRules)
+    environment: String = "",
+): String = ChatPromptAssembler.localPrompt(task, descriptors, standingRules, environment)

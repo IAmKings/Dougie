@@ -85,6 +85,11 @@ object ChannelHooks {
                 val prefs = (app as? DougieApplication)?.preferenceStore?.settings?.value
                 if (prefs != null && prefs.standingRulesEnabled) prefs.standingRules else ""
             },
+            environment = {
+                val prefs = (app as? DougieApplication)?.preferenceStore?.openAppsJson?.value ?: "[]"
+                val metrics = app.resources.displayMetrics
+                PlannerEnvironment.build(prefs, metrics.widthPixels, metrics.heightPixels)
+            },
         )
     }
 

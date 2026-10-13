@@ -30,11 +30,15 @@ object ChatPromptAssembler {
         task: AgentTask,
         descriptors: List<ToolDescriptor> = emptyList(),
         standingRules: String = "",
+        environment: String = "",
     ): String {
         val parts = mutableListOf(IDENTITY)
         val rules = StandingRules.clamp(standingRules)
         if (rules.isNotEmpty()) {
             parts += "常驻规则：\n$rules"
+        }
+        if (environment.isNotBlank()) {
+            parts += environment
         }
         if (descriptors.isNotEmpty()) {
             parts += toolsInventory(descriptors)
@@ -329,6 +333,7 @@ object ChatPromptAssembler {
         task: AgentTask,
         descriptors: List<ToolDescriptor> = emptyList(),
         standingRules: String = "",
+        environment: String = "",
     ): String {
         val taught = localTeachable(descriptors)
         val traces = task.toolTrace.mapNotNull { trace ->
@@ -354,6 +359,7 @@ object ChatPromptAssembler {
             task,
             if (protocolActive) taught else emptyList(),
             standingRules,
+            environment,
         )
         val followUp = when {
             protocolActive -> prefix + "\n\n" + localToolProtocol(taught, task.input)

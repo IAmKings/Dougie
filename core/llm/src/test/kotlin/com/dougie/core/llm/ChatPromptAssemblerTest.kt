@@ -921,6 +921,27 @@ class ChatPromptAssemblerTest {
     }
 
     @Test
+    fun environmentBlockSitsBetweenRulesAndToolInventory() {
+        val prefix = ChatPromptAssembler.systemPrefix(
+            AgentTask(taskId = "t-env", input = "打开Anchor，点击底部的记录tab"),
+            listOf(ToolDescriptor("app_intent", description = "Open an app.")),
+            standingRules = "回复保持简短。",
+            environment = "环境信息：可打开的应用（别名=包名）：Anchor=fm.anchor.android。",
+        )
+        assertTrue(prefix.contains("环境信息"))
+        assertTrue(prefix.contains("Anchor=fm.anchor.android"))
+        val rulesIndex = prefix.indexOf("常驻规则")
+        val envIndex = prefix.indexOf("环境信息")
+        val toolsIndex = prefix.indexOf("可用工具")
+        assertTrue(rulesIndex in 0 until envIndex)
+        assertTrue(envIndex < toolsIndex)
+        val bare = ChatPromptAssembler.systemPrefix(
+            AgentTask(taskId = "t-bare", input = "你好"),
+        )
+        assertTrue(!bare.contains("环境信息"))
+    }
+
+    @Test
     fun plainTextReplyKeepsStripLeadingQuestionBehavior() {
         val task = AgentTask(taskId = "t-p", input = "现在几点了")
         val event = ChatPromptAssembler.decideLocalReply(
