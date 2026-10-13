@@ -47,12 +47,12 @@
 
 ## Acceptance Criteria
 
-- [ ] AC1 JVM 测试：有状态变化（text 集或 checked 计数变化）→ verified==true 且 JSON 含 "verified":true；swipe 同。
-- [ ] AC2 JVM 测试：无变化 → verified==null 且成功 JSON 与改动前字节一致；无探针 → 同。
-- [ ] AC3 JVM 测试：awaitStateChange 轮询语义（立即变化/N 次后变化/超时不变）。
-- [ ] AC4 幂等重放保留 verified=true。
-- [ ] AC5 红态：摘除 verify 调用后 AC1 失败。
-- [ ] AC6 全量 :core:tool:test :tool:accessibility:test :app:checkChannelLeak :app:testSideloadDebugUnitTest 绿；真机十测 tap 场景记回 device-checklist。
+- [x] AC1 JVM 测试：有状态变化（text 集或 checked 计数变化）→ verified==true 且 JSON 含 "verified":true；swipe 同。
+- [x] AC2 JVM 测试：无变化 → verified==null 且成功 JSON 与改动前字节一致；无探针 → 同。
+- [x] AC3 JVM 测试：awaitStateChange 轮询语义（立即变化/N 次后变化/超时不变）。
+- [x] AC4 幂等重放保留 verified=true。
+- [x] AC5 红态：摘除 verify 调用后 AC1 失败。
+- [x] AC6 全量 :core:tool:test :tool:accessibility:test :app:checkChannelLeak :app:testSideloadDebugUnitTest 绿；真机十测 tap 场景记回 device-checklist（AC6 真机部分待十测；红态：摘除 verify 后 3 项失败）
 
 ## Out of scope
 
