@@ -891,3 +891,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 129: 真机验收全通过
+
+**Date**: 2026-10-14
+**Task**: 真机验收全通过
+**Branch**: `master`
+
+### Summary
+
+用户确认复合指令全链路验收通过（路由→环境上下文→tap_by_text 文本定位→悬浮框确认→单边验证→声明门），确认面打磨四项反馈亦验收通过。验证层四段架构（Observer→State Extractor→Verification→PASS/FAIL）全部真实落地。本次推送包含自验证层立项以来全部工作。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f4dfbd9` | (see git log) |
+
+### Status
+
+[OK] **Completed**
