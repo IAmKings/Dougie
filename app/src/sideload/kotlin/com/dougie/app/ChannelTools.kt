@@ -42,6 +42,7 @@ object ChannelTools {
             consentGranted = consentGranted,
             port = gesturePort,
             idempotencyStore = idempotencyStore,
+            treeProbe = { TreeProbeBridge.provider },
         )
     }
 }

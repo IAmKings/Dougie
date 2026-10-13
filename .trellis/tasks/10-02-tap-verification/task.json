@@ -3,7 +3,7 @@
   "name": "tap-verification",
   "title": "tap_swipe 点击后验证",
   "description": "点击效果验证：树文本集差分 vs 模板消失，需真机证据选定谓词",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

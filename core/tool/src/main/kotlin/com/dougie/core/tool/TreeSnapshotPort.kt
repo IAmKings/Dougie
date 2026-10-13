@@ -2,10 +2,15 @@ package com.dougie.core.tool
 
 /**
  * State-extractor primitive of the verification layer: the visible text of the active
- * window (node text + contentDescription). The snapshot lives only inside the consuming
- * tool's call stack — it must never enter tool JSON, traces, logs, or LLM context.
+ * window (node text + contentDescription) plus observable control-state counters
+ * (checked/selected). The snapshot lives only inside the consuming tool's call stack —
+ * it must never enter tool JSON, traces, logs, or LLM context.
  */
-data class TreeSnapshot(val texts: List<String>)
+data class TreeSnapshot(
+    val texts: List<String>,
+    val checkedCount: Int = 0,
+    val selectedCount: Int = 0,
+)
 
 /**
  * Returns the current active-window snapshot, or null when there is no observer

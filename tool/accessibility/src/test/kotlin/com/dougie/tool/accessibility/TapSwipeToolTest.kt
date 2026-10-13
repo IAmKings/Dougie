@@ -93,6 +93,101 @@ class TapSwipeToolTest {
         assertFalse(HighRiskForeground.isBlocked("com.android.chrome"))
     }
 
+    @Test
+    fun tapWithObservableStateChangeMarksVerifiedTrue() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val before = com.dougie.core.tool.TreeSnapshot(listOf("设置"), checkedCount = 1)
+        val after = com.dougie.core.tool.TreeSnapshot(listOf("设置"), checkedCount = 0)
+        val probe = com.dougie.core.tool.FakeTreeSnapshotPort(current = after)
+        probe.enqueue(before, after)
+        val tool = TapSwipeTool(
+            consentGranted = { true },
+            port = port,
+            treeProbe = { probe },
+            verifyTimeoutMs = 1_000,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute(TAP_JSON, ctx())
+        assertEquals(true, result.verified)
+        assertTrue(result.json.contains("\"verified\":true"))
+        assertEquals(1, port.taps)
+    }
+
+    @Test
+    fun tapWithoutObservableChangeStaysUnverifiedAndJsonByteIdentical() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val same = com.dougie.core.tool.TreeSnapshot(listOf("设置"), checkedCount = 1)
+        val probe = com.dougie.core.tool.FakeTreeSnapshotPort(current = same)
+        val tool = TapSwipeTool(
+            consentGranted = { true },
+            port = port,
+            treeProbe = { probe },
+            verifyTimeoutMs = 300,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute(TAP_JSON, ctx())
+        assertEquals(null, result.verified)
+        assertEquals(false, result.isFatal)
+        assertEquals("""{"ok":true,"action":"tap","x":8,"y":12}""", result.json)
+    }
+
+    @Test
+    fun tapWithoutTreeProbeKeepsLegacyBehavior() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val tool = TapSwipeTool(consentGranted = { true }, port = port)
+        val result = tool.execute(TAP_JSON, ctx())
+        assertEquals(null, result.verified)
+        assertEquals("""{"ok":true,"action":"tap","x":8,"y":12}""", result.json)
+    }
+
+    @Test
+    fun swipeWithObservableStateChangeMarksVerifiedTrue() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val probe = com.dougie.core.tool.FakeTreeSnapshotPort()
+        probe.enqueue(
+            com.dougie.core.tool.TreeSnapshot(listOf("顶部")),
+            com.dougie.core.tool.TreeSnapshot(listOf("底部")),
+        )
+        val tool = TapSwipeTool(
+            consentGranted = { true },
+            port = port,
+            treeProbe = { probe },
+            verifyTimeoutMs = 1_000,
+            verifyPollMs = 100,
+        )
+        val result = tool.execute(
+            """{"action":"swipe","x":10,"y":20,"x2":30,"y2":40,"durationMs":120}""",
+            ctx(),
+        )
+        assertEquals(true, result.verified)
+        assertTrue(result.json.contains("\"verified\":true"))
+    }
+
+    @Test
+    fun tapReplayKeepsVerifiedFlagAndDoesNotRetap() = runBlocking {
+        val port = FakeGesturePort(foreground = "com.android.chrome")
+        val store = InMemoryIdempotencyStore()
+        val probe = com.dougie.core.tool.FakeTreeSnapshotPort()
+        probe.enqueue(
+            com.dougie.core.tool.TreeSnapshot(listOf("设置"), checkedCount = 1),
+            com.dougie.core.tool.TreeSnapshot(listOf("设置"), checkedCount = 0),
+        )
+        val tool = TapSwipeTool(
+            consentGranted = { true },
+            port = port,
+            idempotencyStore = store,
+            treeProbe = { probe },
+            verifyTimeoutMs = 1_000,
+            verifyPollMs = 100,
+        )
+        val first = tool.execute(TAP_JSON, ctx())
+        val second = tool.execute(TAP_JSON, ctx())
+        assertEquals(true, first.verified)
+        assertEquals(true, second.verified)
+        assertEquals(first.json, second.json)
+        assertEquals(1, port.taps)
+    }
+
     private fun ctx() = ToolContext(taskId = "t", toolCallId = "c")
 
     private class FakeGesturePort(

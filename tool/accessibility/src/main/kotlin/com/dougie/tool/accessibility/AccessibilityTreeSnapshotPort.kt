@@ -16,6 +16,8 @@ class AccessibilityTreeSnapshotPort(
     override suspend fun snapshot(): TreeSnapshot? {
         val root = service()?.rootInActiveWindow ?: return null
         val texts = ArrayList<String>()
+        var checkedCount = 0
+        var selectedCount = 0
         val queue = ArrayDeque<AccessibilityNodeInfo>()
         queue.add(root)
         var visited = 0
@@ -24,11 +26,13 @@ class AccessibilityTreeSnapshotPort(
             visited++
             node.text?.toString()?.takeIf { it.isNotBlank() }?.let { texts.add(it) }
             node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { texts.add(it) }
+            if (node.isChecked) checkedCount++
+            if (node.isSelected) selectedCount++
             for (i in 0 until node.childCount) {
                 node.getChild(i)?.let { queue.add(it) }
             }
         }
-        return TreeSnapshot(texts)
+        return TreeSnapshot(texts, checkedCount, selectedCount)
     }
 
     companion object {

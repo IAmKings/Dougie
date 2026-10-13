@@ -11,6 +11,9 @@ import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
 import com.dougie.core.tool.IdempotencyStore
 import com.dougie.core.tool.InMemoryIdempotencyStore
+import com.dougie.core.tool.TreeSnapshotPort
+import com.dougie.core.tool.TreeVerifier
+import com.dougie.core.tool.VerifiedResultJson
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
@@ -21,6 +24,15 @@ class TapSwipeTool(
     private val consentGranted: () -> Boolean,
     private val port: GesturePort,
     private val idempotencyStore: IdempotencyStore = InMemoryIdempotencyStore(),
+    /**
+     * Per-call tree observer for the one-sided tap verification: a state fingerprint
+     * change (text set ∪ checked ∪ selected) after the gesture confirms verified=true;
+     * no change stays verified=null (honest unknown) and must never become a failure —
+     * pixel-only effects are invisible here and a false failure would retry harmful.
+     */
+    private val treeProbe: () -> TreeSnapshotPort? = { null },
+    private val verifyTimeoutMs: Long = TreeVerifier.DEFAULT_STATE_CHANGE_TIMEOUT_MS,
+    private val verifyPollMs: Long = TreeVerifier.DEFAULT_POLL_INTERVAL_MS,
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
@@ -45,7 +57,10 @@ class TapSwipeTool(
         if (HighRiskForeground.isBlocked(foreground)) {
             return fail(BLOCKED_APP)
         }
-        idempotencyStore.get(context.idempotencyKey)?.let { return ToolResult(json = it) }
+        idempotencyStore.get(context.idempotencyKey)?.let {
+            return ToolResult(json = it, verified = VerifiedResultJson.fromJson(it))
+        }
+        val beforeSnapshot = treeProbe()?.snapshot()
         val dispatched = when (parsed.action) {
             Action.TAP -> port.tap(parsed.x, parsed.y)
             Action.SWIPE -> port.swipe(parsed.x, parsed.y, parsed.x2, parsed.y2, parsed.durationMs)
@@ -53,9 +68,28 @@ class TapSwipeTool(
         if (!dispatched) {
             return fail(UserFacingErrors.TOOL_FAILED)
         }
-        val json = successJson(parsed)
+        val verified = if (beforeSnapshot != null) {
+            val probe = treeProbe()
+            if (probe != null &&
+                TreeVerifier.awaitStateChange(
+                    before = beforeSnapshot,
+                    port = probe,
+                    timeoutMs = verifyTimeoutMs,
+                    pollIntervalMs = verifyPollMs,
+                )
+            ) {
+                true
+            } else {
+                null
+            }
+        } else {
+            null
+        }
+        val raw = successJson(parsed)
+        val json = if (verified == null) raw else VerifiedResultJson.withFlag(raw, verified)
         idempotencyStore.put(context.idempotencyKey, json)
-        return ToolResult(json = idempotencyStore.get(context.idempotencyKey) ?: json)
+        val stored = idempotencyStore.get(context.idempotencyKey) ?: json
+        return ToolResult(json = stored, verified = verified)
     }
 
     private fun parseArgs(argumentsJson: String): Parsed {

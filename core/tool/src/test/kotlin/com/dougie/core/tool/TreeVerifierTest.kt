@@ -86,4 +86,48 @@ class TreeVerifierTest {
         assertTrue(verified)
         assertEquals(3, probe.callCount)
     }
+
+    @Test
+    fun awaitStateChangeDetectsTextSetChangeImmediately() = runTest {
+        val before = TreeSnapshot(listOf("页面一"))
+        val probe = FakeTreeSnapshotPort(current = TreeSnapshot(listOf("页面二")))
+        assertTrue(TreeVerifier.awaitStateChange(before, probe, timeoutMs = 1_000, pollIntervalMs = 100))
+        assertEquals(1, probe.callCount)
+    }
+
+    @Test
+    fun awaitStateChangeDetectsCheckedCountChange() = runTest {
+        val before = TreeSnapshot(listOf("设置"), checkedCount = 1, selectedCount = 0)
+        val probe = FakeTreeSnapshotPort(current = TreeSnapshot(listOf("设置"), checkedCount = 0, selectedCount = 0))
+        assertTrue(TreeVerifier.awaitStateChange(before, probe, timeoutMs = 1_000, pollIntervalMs = 100))
+    }
+
+    @Test
+    fun awaitStateChangePollsUntilChangeAppears() = runTest {
+        val before = TreeSnapshot(listOf("页面一"))
+        val probe = FakeTreeSnapshotPort(current = TreeSnapshot(listOf("页面一")))
+        probe.enqueue(
+            TreeSnapshot(listOf("页面一")),
+            TreeSnapshot(listOf("页面一"), checkedCount = 1),
+        )
+        assertTrue(TreeVerifier.awaitStateChange(before, probe, timeoutMs = 5_000, pollIntervalMs = 250))
+        assertEquals(2, probe.callCount)
+    }
+
+    @Test
+    fun awaitStateChangeReturnsFalseWhenNothingChanges() = runTest {
+        val before = TreeSnapshot(listOf("页面一"), checkedCount = 2, selectedCount = 1)
+        val probe = FakeTreeSnapshotPort(current = TreeSnapshot(listOf("页面一"), checkedCount = 2, selectedCount = 1))
+        assertFalse(
+            TreeVerifier.awaitStateChange(before, probe, timeoutMs = 500, pollIntervalMs = 250),
+        )
+    }
+
+    @Test
+    fun awaitStateChangeTreatsNullSnapshotAsNoChangeAndKeepsPolling() = runTest {
+        val before = TreeSnapshot(listOf("页面一"))
+        val probe = FakeTreeSnapshotPort(current = null)
+        probe.enqueue(null, TreeSnapshot(listOf("页面二")))
+        assertTrue(TreeVerifier.awaitStateChange(before, probe, timeoutMs = 5_000, pollIntervalMs = 250))
+    }
 }
