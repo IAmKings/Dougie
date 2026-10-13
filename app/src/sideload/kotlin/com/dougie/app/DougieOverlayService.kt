@@ -27,7 +27,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import com.dougie.core.model.AgentTask
 import com.dougie.core.model.TaskStatus
+import com.dougie.tool.accessibility.DougieAccessibilityService
 import kotlinx.coroutines.withContext
 
 class DougieOverlayService : Service() {
@@ -49,7 +51,7 @@ class DougieOverlayService : Service() {
         scope.launch {
             app.taskManager.task.collect { task ->
                 if (task?.status == TaskStatus.AWAITING_CONFIRMATION) {
-                    showConfirmMenu(task.toolTrace.lastOrNull()?.toolName.orEmpty())
+                    showConfirmMenu(task)
                 } else {
                     removeConfirmMenu()
                 }
@@ -57,25 +59,46 @@ class DougieOverlayService : Service() {
         }
     }
 
-    private fun showConfirmMenu(tool: String) {
+    private fun showConfirmMenu(task: AgentTask) {
         if (confirmMenu != null) return
+        // Dougie foreground: the in-app confirm card already covers it — no duplicate.
+        val foreground = DougieAccessibilityService.instance
+            ?.rootInActiveWindow?.packageName?.toString()
+        if (foreground == packageName) return
         val wm = windowManager ?: return
         val density = resources.displayMetrics.density
-        val panel = LinearLayout(this).apply {
+        val detail = confirmSummary(task) ?: ("工具：" + (task.toolTrace.lastOrNull()?.toolName ?: ""))
+        val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(0xEE3D5198.toInt())
+            background = GradientDrawable().apply {
+                setColor(0xF21B2A4A.toInt())
+                cornerRadius = 20 * density
+            }
             setPadding(
-                (12 * density).toInt(),
-                (10 * density).toInt(),
-                (12 * density).toInt(),
-                (10 * density).toInt(),
+                (18 * density).toInt(),
+                (14 * density).toInt(),
+                (18 * density).toInt(),
+                (14 * density).toInt(),
             )
         }
-        panel.addView(actionRow("确认 · $tool") {
+        val title = TextView(this).apply {
+            text = "Dougie 请求确认"
+            textSize = 15f
+            setTextColor(0xFFFFFFFF.toInt())
+        }
+        val subtitle = TextView(this).apply {
+            text = detail
+            textSize = 13f
+            setTextColor(0xFFB8C4E0.toInt())
+            setPadding(0, (4 * density).toInt(), 0, (10 * density).toInt())
+        }
+        card.addView(title)
+        card.addView(subtitle)
+        card.addView(actionRow("✓ 确认", 0xFF8BC7A8.toInt()) {
             (applicationContext as? DougieApplication)?.taskManager?.confirm()
             removeConfirmMenu()
         })
-        panel.addView(actionRow("拒绝") {
+        card.addView(actionRow("✕ 拒绝", 0xFFE08A8A.toInt()) {
             (applicationContext as? DougieApplication)?.taskManager?.reject()
             removeConfirmMenu()
         })
@@ -86,8 +109,8 @@ class DougieOverlayService : Service() {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT,
         ).apply { gravity = Gravity.CENTER }
-        if (runCatching { wm.addView(panel, lp) }.isSuccess) {
-            confirmMenu = panel
+        if (runCatching { wm.addView(card, lp) }.isSuccess) {
+            confirmMenu = card
         }
     }
 
@@ -238,12 +261,15 @@ class DougieOverlayService : Service() {
         expanded = true
     }
 
-    private fun actionRow(label: String, onClick: () -> Unit): TextView {
+    private fun actionRow(label: String, onClick: () -> Unit): TextView =
+        actionRow(label, 0xFFFFFFFF.toInt(), onClick)
+
+    private fun actionRow(label: String, accent: Int, onClick: () -> Unit): TextView {
         val density = resources.displayMetrics.density
         return TextView(this).apply {
             text = label
             textSize = 16f
-            setTextColor(0xFFFFFFFF.toInt())
+            setTextColor(accent)
             setPadding(
                 (8 * density).toInt(),
                 (10 * density).toInt(),

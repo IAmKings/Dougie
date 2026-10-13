@@ -128,6 +128,7 @@ dependencies {
     implementation(project(":feature:debug"))
     implementation(project(":feature:permissions"))
     implementation(project(":data:preferences"))
+    implementation(libs.kotlinx.serialization.json)
     implementation(project(":data:memory"))
     implementation(project(":data:tasks"))
     implementation(project(":tool:system"))
