@@ -102,6 +102,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.runtime.remember
@@ -230,12 +231,20 @@ fun ChatRoute(
         viewModel.rememberFeedFollow(items.size, firstKey, lastAgent)
     }
     // Keyboard: shrink + keep the latest message pinned above the composer — but only
-    // when the user is already near the bottom; reading history must not be interrupted.
+    // when the last message was already on screen; reading history must not be
+    // interrupted. Tracked continuously (not checked at IME-open time): the viewport
+    // shrinks before the visibility flip is observed, so a point-in-time "am I at the
+    // bottom" check would always miss.
+    var lastMessageOnScreen by remember { mutableStateOf(true) }
+    LaunchedEffect(listState, feedItems.size) {
+        snapshotFlow {
+            val visible = listState.layoutInfo.visibleItemsInfo
+            visible.isNotEmpty() && visible.last().index >= feedItems.lastIndex
+        }.collect { lastMessageOnScreen = it }
+    }
     val imeVisible = WindowInsets.isImeVisible
     LaunchedEffect(imeVisible, feedItems.size) {
-        if (!imeVisible || feedItems.isEmpty()) return@LaunchedEffect
-        val wasAtBottom = !listState.canScrollForward
-        if (wasAtBottom) {
+        if (imeVisible && lastMessageOnScreen && feedItems.isNotEmpty()) {
             listState.scrollToItem(feedItems.lastIndex)
         }
     }
