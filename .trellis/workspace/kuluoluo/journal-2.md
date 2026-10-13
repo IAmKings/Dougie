@@ -786,3 +786,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 124: 清单内应用强制 package 打开（复测修复）
+
+**Date**: 2026-10-14
+**Task**: 清单内应用强制 package 打开（复测修复）
+**Branch**: `master`
+
+### Summary
+
+复测：模型凭世界知识把 Anchor 当 https://anchor.fm 链接打开失败，无视环境块清单（验证层未撒谎，https 无包名落 verified=null）。修复：环境块追加定向规则（清单内应用必须 package: URI，清单外网址才 https，上限 600→700）+ app_intent 工具描述写明 package 优先；不动 https 校验（避免误伤打开网页场景）。测试更新后全量绿。APK 已重装，待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `676ea84` | (see git log) |
+
+### Status
+
+[OK] **Completed**
