@@ -807,3 +807,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 125: tap_by_text 按文字点击控件落地
+
+**Date**: 2026-10-14
+**Task**: tap_by_text 按文字点击控件落地
+**Branch**: `master`
+
+### Summary
+
+响应用户设计提案：点击文字描述的控件不再让模型猜坐标——新增 sideload 工具 tap_by_text（L3 确认卡）：无障碍树 BFS 收集候选（text/desc/clickable/边界中心，300 节点上限），TapTargetSelector 纯 JVM 选择（空白不敏感包含匹配→clickable 优先→文档序最后者≈底部，天然契合「底部 tab」），命中后 GesturePort 边界中心真实手势 + 单边状态指纹验证；未命中非致命观察（TAP_TEXT_NOT_FOUND）供模型换词重试。核心逻辑全 JVM 可测（选择器红态验证），Play 零改动。APK 已重装，待真机验证「打开Anchor，点击底部的记录tab」全链路。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b8ae531` | (see git log) |
+
+### Status
+
+[OK] **Completed**

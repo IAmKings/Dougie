@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 124
+- **Total Sessions**: 125
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~809 | Active |
+| `journal-2.md` | ~830 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 125 | 2026-10-14 | tap_by_text 按文字点击控件落地 | `b8ae531` | `master` |
 | 124 | 2026-10-14 | 清单内应用强制 package 打开（复测修复） | `676ea84` | `master` |
 | 123 | 2026-10-14 | 规划器环境上下文注入（复合指令反问修复） | `3aa83df` | `master` |
 | 122 | 2026-10-13 | 复合指令点击捷径劫持修复（十测取证） | `22a3450` | `master` |
