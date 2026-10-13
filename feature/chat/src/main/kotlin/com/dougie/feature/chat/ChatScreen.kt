@@ -4,6 +4,7 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -384,6 +385,8 @@ fun ChatScreen(
             var lastMessageOnScreen by remember { mutableStateOf(true) }
             var prevRaised by remember { mutableStateOf(false) }
             val density = LocalDensity.current
+            val raised = composerBaseline > 0 &&
+                (composerBaseline - composerBottom) > 64 * density.density
         Box(modifier = Modifier.weight(1f)) {
             var seenKeys by remember { mutableStateOf<Set<String>?>(null) }
             // Per-message typewriter progress hoisted above the lazy list: completed
@@ -407,8 +410,6 @@ fun ChatScreen(
                     visible.isNotEmpty() && visible.last().index >= feedItems.lastIndex
                 }.collect { lastMessageOnScreen = it }
             }
-            val raised = composerBaseline > 0 &&
-                (composerBaseline - composerBottom) > 64 * density.density
             LaunchedEffect(composerBottom, feedItems.size, lastMessageOnScreen, raised) {
                 if (!lastMessageOnScreen || feedItems.isEmpty()) return@LaunchedEffect
                 if (raised) {
@@ -531,11 +532,14 @@ fun ChatScreen(
             onOpenPermissions = onOpenPermissions,
         )
         }
-        DougieBottomBar(
-            onOpenSettings = onOpenSettings,
-            onOpenMemory = onOpenMemory,
-            onOpenHistory = onOpenHistory,
-        )
+        // 键盘弹出时隐藏底部导航——它夹在输入框与键盘之间既无用又挤压聊天区。
+        AnimatedVisibility(visible = !raised) {
+            DougieBottomBar(
+                onOpenSettings = onOpenSettings,
+                onOpenMemory = onOpenMemory,
+                onOpenHistory = onOpenHistory,
+            )
+        }
     }
     if (holdingMic || transcribingVoice) {
         VoiceRecordOverlay(
