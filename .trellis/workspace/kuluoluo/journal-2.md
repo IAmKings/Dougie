@@ -1080,3 +1080,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 138: 启动体验：品牌化启动窗 + 重初始化延迟
+
+**Date**: 2026-10-14
+**Task**: 启动体验：品牌化启动窗 + 重初始化延迟
+**Branch**: `master`
+
+### Summary
+
+两项启动体验改善落地：①v31 SplashScreen 主题属性（windowSplashScreenBackground=主题底色、AnimatedIcon=@mipmap/ic_launcher、IconBackgroundColor），启动窗从「黑屏+Logo」变为品牌化呈现；②DougieApplication 重初始化（任务恢复全表解码+转录重载、悬浮框同步、系统深浅同步、告警）延迟到首帧后 appScope，onCreate 同步路径只剩轻量工作。基线/优化对比：TotalTime 715-729 → 673-827ms（旗舰机噪声内；收益主体在低端机与任务库大场景）。APK 已重装，待真机验收。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `563fbe4` | (see git log) |
+
+### Status
+
+[OK] **Completed**
