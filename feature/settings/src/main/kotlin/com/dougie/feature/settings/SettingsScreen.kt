@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,6 +31,8 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import android.util.Log
+import android.os.SystemClock
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -88,6 +92,12 @@ fun SettingsRoute(
     val form by viewModel.form.collectAsStateWithLifecycle()
     val models by viewModel.models.collectAsStateWithLifecycle()
     val ttsSpeakerId by viewModel.ttsSpeakerId.collectAsStateWithLifecycle()
+    val debugSurface = DougieColors.Surface
+    SideEffect {
+        if (true) {  // TODO: 临时埋点，验收后移除
+            Log.d("ThemeSwitch", "settings resolved surface t=${SystemClock.elapsedRealtime()}")
+        }
+    }
     val themePreference by viewModel.themePreference.collectAsStateWithLifecycle()
     val terminalTheme by viewModel.terminalTheme.collectAsStateWithLifecycle()
     val standingRulesEnabled by viewModel.standingRulesEnabled.collectAsStateWithLifecycle()
@@ -874,6 +884,17 @@ private fun TtsVoiceDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = TtsVoices.label(speakerId)
+    val resolvedContainer = DougieColors.Surface
+    LaunchedEffect(resolvedContainer) {
+        if (true) {  // TODO: 临时埋点，验收后移除
+            Log.d("ThemeSwitch", "tts resolved surface changed t=${SystemClock.elapsedRealtime()}")
+        }
+    }
+    LaunchedEffect(expanded) {
+        if (true) {  // TODO: 临时埋点，验收后移除
+            Log.d("ThemeSwitch", "tts expanded=$expanded t=${SystemClock.elapsedRealtime()}")
+        }
+    }
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = selected,

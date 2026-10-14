@@ -1,6 +1,8 @@
 package com.dougie.app
 
 import android.app.UiModeManager
+import android.util.Log
+import android.os.SystemClock
 import android.content.Context
 import android.os.Build
 import com.dougie.core.model.ThemePreference
@@ -18,6 +20,9 @@ fun systemNightModeFor(mode: ThemePreference): Int = when (mode) {
  * by the system before the process exists and cannot read app-private preferences).
  */
 fun syncSystemNightMode(context: Context, mode: ThemePreference) {
+    if (BuildConfig.DEBUG) {
+        Log.d("ThemeSwitch", "syncSystemNightMode mode=$mode t=${SystemClock.elapsedRealtime()}")
+    }
     if (Build.VERSION.SDK_INT < 33) return
     val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager ?: return
     runCatching { uiModeManager.setApplicationNightMode(systemNightModeFor(mode)) }

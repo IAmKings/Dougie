@@ -22,6 +22,8 @@ import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.feature.chat.ChatAttachmentUi
 import com.dougie.feature.chat.toUi
+import android.util.Log
+import android.os.SystemClock
 import java.io.File
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -35,6 +37,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -152,6 +155,11 @@ class MainActivity : ComponentActivity() {
                 ThemePreference.LIGHT -> false
                 ThemePreference.DARK -> true
                 ThemePreference.SYSTEM -> sysDark
+            }
+            SideEffect {
+                if (BuildConfig.DEBUG) {
+                    Log.d("ThemeSwitch", "content dark=$dark t=${SystemClock.elapsedRealtime()}")
+                }
             }
             val colorScheme = if (dark) {
                 val p = DougieColors.Dark
