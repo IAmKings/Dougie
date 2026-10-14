@@ -1185,3 +1185,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 143: 只读下拉去 M3 动画层——配色同帧切换
+
+**Date**: 2026-10-14
+**Task**: 只读下拉去 M3 动画层——配色同帧切换
+**Branch**: `master`
+
+### Summary
+
+音色/厂商两个只读下拉的 OutlinedTextField 替换为 Surface+Row+Text+Icon 直接组合——所有颜色（底/边框/文字/箭头）直接读 DougieColors token，无 M3 内部动画层，主题翻转同帧变色。音色下拉的 DropdownMenu 选项列表保留（从 Box 内移到 Row 后面）。全量测试绿，APK 已重装（15:07:14）待用户复测：切主题时下拉框是否与其他组件同帧变色。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `96a04b6` | (see git log) |
+
+### Status
+
+[OK] **Completed**
