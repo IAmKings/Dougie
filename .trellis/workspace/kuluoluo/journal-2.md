@@ -1248,3 +1248,24 @@ PreferenceStore 从 lateinit var + onCreate 同步初始化改为 nullable 背�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 146: spec 沉淀：启动窗跟随偏好机制 + ColorOS 限制
+
+**Date**: 2026-10-14
+**Task**: spec 沉淀：启动窗跟随偏好机制 + ColorOS 限制
+**Branch**: `master`
+
+### Summary
+
+应用户要求将启动窗主题联动机制沉淀到 spec：①启动窗由 system_server 在进程存在前绘制，配色取自系统深浅 + per-app night mode override（setApplicationNightMode API 33+ 写入、系统持久化、冷启动时生效）；②ColorOS（PJZ110/Android 16）静默忽略该 API（进程配置实验证实）——启动窗始终跟随系统深浅，App 偏好仅影响应用内渲染；③core-splashscreen 的 setKeepOnScreenCondition + 退场动画已接入。规则：不尝试 AppCompat DayNight 迁移（进程启动后才生效）；启动窗跟随系统是 OEM 平台行为。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3808119` | (see git log) |
+
+### Status
+
+[OK] **Completed**

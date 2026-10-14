@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 145
+- **Total Sessions**: 146
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1250 | Active |
+| `journal-2.md` | ~1271 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 146 | 2026-10-14 | spec 沉淀：启动窗跟随偏好机制 + ColorOS 限制 | `3808119` | `master` |
 | 145 | 2026-10-14 | PreferenceStore 延迟化 | `2361fee` chore(task) | `master` |
 | 144 | 2026-10-14 | UI 体验修复沉淀到 spec + 推送 | `d34d97c` docs(spec) | `master` |
 | 143 | 2026-10-14 | 只读下拉去 M3 动画层——配色同帧切换 | `96a04b6` | `master` |
