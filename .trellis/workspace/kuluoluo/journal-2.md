@@ -1269,3 +1269,24 @@ PreferenceStore 从 lateinit var + onCreate 同步初始化改为 nullable 背�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 147: ToolCallCard 操作摘要化 + 主题渐变 + 埋点
+
+**Date**: 2026-10-14
+**Task**: ToolCallCard 操作摘要化 + 主题渐变 + 埋点
+**Branch**: `master`
+
+### Summary
+
+ToolCallCard SUCCESS 渲染改造：actionSummary 函数（中文操作摘要如「打开 anchor」「点击「记录」」替代「已调用 app_intent (L2)」），verified 徽章（✓/✗/--），主题切换 250ms 颜色渐变（animateColorAsState 10 角色）消除瞬变残影。临时埋点（ThemeSwitch tag，验收后移除）。测试更新（电池工具→查询电量）+ 通过。APK 已重装（23:18:56）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ddde2d1` | (see git log) |
+
+### Status
+
+[OK] **Completed**
