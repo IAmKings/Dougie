@@ -85,8 +85,11 @@ class DougieApplication : Application() {
 
     lateinit var taskManager: TaskManager
         private set
-    lateinit var preferenceStore: PreferenceStore
-        private set
+    // EncryptedSharedPreferences 初始化开销大（AndroidKeyStore + 全量读取），
+    // 延迟到首次实际访问；attachBaseContext 阶段 themePreference() 读 null 返回 SYSTEM。
+    private var _preferenceStore: PreferenceStore? = null
+    val preferenceStore: PreferenceStore
+        get() = _preferenceStore ?: PreferenceStore(this).also { _preferenceStore = it }
     lateinit var conversationTitles: ConversationTitles
         private set
     lateinit var memoryStore: MemoryStore
@@ -119,14 +122,13 @@ class DougieApplication : Application() {
         if (::tools.isInitialized) tools.values.map { it.descriptor } else emptyList()
 
     fun themePreference(): ThemePreference {
-        if (!::preferenceStore.isInitialized) return ThemePreference.SYSTEM
-        return preferenceStore.settings.value.themePreference
+        // attachBaseContext 阶段 _preferenceStore 尚为 null，不触发 EncryptedSharedPreferences 初始化
+        return _preferenceStore?.settings?.value?.themePreference ?: ThemePreference.SYSTEM
     }
 
     override fun onCreate() {
         super.onCreate()
         ChannelHooks.seedBundledModels(this)
-        preferenceStore = PreferenceStore(this)
         conversationTitles = object : ConversationTitles {
             override fun titles(): Map<String, String> = preferenceStore.conversationTitles.value
             override fun setTitle(conversationId: String, raw: String) {
