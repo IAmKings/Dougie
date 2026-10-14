@@ -1164,3 +1164,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 142: 主题切换 250ms 颜色渐变（残影观感修复）
+
+**Date**: 2026-10-14
+**Task**: 主题切换 250ms 颜色渐变（残影观感修复）
+**Branch**: `master`
+
+### Summary
+
+用户反馈切主题时音色下拉框有一帧白底残影（其余组件同帧切换）。取证：切深色 1 秒后静态截图下拉框已正确深色——残影为切换瞬变的一帧过渡伪影。修复：MaterialTheme 配色改用 animateColorAsState 250ms 渐变（10 个颜色角色），主题切换平滑过渡、残影不可感知；settings 流驱动与覆写 LocalConfiguration 机制不变。APK 已重装（14:09:24）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ff9ac36` | (see git log) |
+
+### Status
+
+[OK] **Completed**

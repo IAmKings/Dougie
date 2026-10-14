@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 141
+- **Total Sessions**: 142
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1166 | Active |
+| `journal-2.md` | ~1187 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 142 | 2026-10-14 | 主题切换 250ms 颜色渐变（残影观感修复） | `ff9ac36` | `master` |
 | 141 | 2026-10-14 | 主题切换黑闪终修：uiMode 配置自处理 | `247b00f` | `master` |
 | 140 | 2026-10-14 | 主题切换去 recreate（黑闪修复）+ 启动窗取证链收口 | `66da3fb` | `master` |
 | 139 | 2026-10-14 | 恢复竞态边界修复（延迟化引入问题的闭环） | `9f2e9b1` | `master` |
