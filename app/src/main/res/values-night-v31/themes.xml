@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Dougie" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowSplashScreenBackground">#191C1C</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/ic_launcher_background</item>
+        <item name="android:windowBackground">#191C1C</item>
+        <item name="android:statusBarColor">#1D2121</item>
+        <item name="android:navigationBarColor">#191C1C</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

@@ -64,7 +64,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -321,7 +320,9 @@ class DougieApplication : Application() {
             },
             titles = conversationTitles,
         )
-        runBlocking {
+        // 恢复与转录重载是全表解码级 IO，放在首帧之后执行——启动窗（黑/白底+Logo）
+        // 的可见时长由 onCreate 的同步耗时决定，这里每省一毫秒都直接可见。
+        appScope.launch {
             val recovered = recoverInterrupted(taskStores.taskStore)
             recovered.lastOrNull { it.conversationId == preferenceStore.currentConversationId() }
                 ?.let { taskManager.seed(it) }
@@ -329,9 +330,11 @@ class DougieApplication : Application() {
         }
         TaskProgressNotifier(this).also { taskProgressNotifier = it }
             .start(appScope, taskManager.task)
-        ChannelHooks.syncOverlay(this)
-        syncSystemNightMode(this, themePreference())
-        ScheduleAlarms.sync(this)
+        appScope.launch {
+            ChannelHooks.syncOverlay(this@DougieApplication)
+            syncSystemNightMode(this@DougieApplication, themePreference())
+            ScheduleAlarms.sync(this@DougieApplication)
+        }
         appScope.launch {
             combine(preferenceStore.settings, preferenceStore.activeChatSku) { settings, sku ->
                 val cloudConfigured = settings.allowCloud && settings.apiKey.isNotBlank()
