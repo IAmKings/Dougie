@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.FileProvider
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.dougie.core.model.AttachmentKind
 import com.dougie.core.model.AttachmentLimits
 import com.dougie.feature.chat.ChatAttachmentUi
@@ -131,7 +132,12 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // 恢复/转录重载延迟在 appScope，启动窗保持到转录加载完成遮住空白间隙
+        splashScreen.setKeepOnScreenCondition {
+            (application as? DougieApplication)?.transcriptLoaded != true
+        }
         savedInstanceState?.getString(KEY_CHAT_DRAFT)?.let { chatDraftState.value = draftAtEnd(it) }
         voiceUsedThisDraftState.value =
             savedInstanceState?.getBoolean(KEY_VOICE_USED_THIS_DRAFT, false) == true

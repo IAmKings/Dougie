@@ -83,6 +83,9 @@ class DougieApplication : Application() {
     // 本进程的墙钟起点：恢复逻辑只处理上一进程遗留的中断行，绝不触碰本进程新建的任务
     private val processStartedAtMs = System.currentTimeMillis()
 
+    @Volatile
+    var transcriptLoaded = false
+
     lateinit var taskManager: TaskManager
         private set
     // EncryptedSharedPreferences 初始化开销大（AndroidKeyStore + 全量读取），
@@ -333,6 +336,7 @@ class DougieApplication : Application() {
             recovered.lastOrNull { it.conversationId == preferenceStore.currentConversationId() }
                 ?.let { taskManager.seed(it) }
             taskManager.reloadTranscript()
+            transcriptLoaded = true
         }
         TaskProgressNotifier(this).also { taskProgressNotifier = it }
             .start(appScope, taskManager.task)
