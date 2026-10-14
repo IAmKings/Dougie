@@ -1122,3 +1122,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 140: 主题切换去 recreate（黑闪修复）+ 启动窗取证链收口
+
+**Date**: 2026-10-14
+**Task**: 主题切换去 recreate（黑闪修复）+ 启动窗取证链收口
+**Branch**: `master`
+
+### Summary
+
+切主题黑闪根因=recreate() 销毁重建。修复：setContent 改 settings 流驱动 dark（LIGHT/DARK 直取、SYSTEM 用 isSystemInDarkTheme），覆写 uiMode 的 LocalConfiguration 提供内容树使 DougieColors.token()/资源解析即时跟随，系统栏图标 insets controller SideEffect 同步；recreate 仅保留于备份恢复/清空数据场景。另：设备截图取证确认 v4 内容跟随生效 + 复合指令链路 verified:true 端到端成功 + 底栏键盘期隐藏。APK 已重装（13:37:34）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `66da3fb` | (see git log) |
+
+### Status
+
+[OK] **Completed**

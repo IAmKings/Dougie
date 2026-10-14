@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 139
+- **Total Sessions**: 140
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1124 | Active |
+| `journal-2.md` | ~1145 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 140 | 2026-10-14 | 主题切换去 recreate（黑闪修复）+ 启动窗取证链收口 | `66da3fb` | `master` |
 | 139 | 2026-10-14 | 恢复竞态边界修复（延迟化引入问题的闭环） | `9f2e9b1` | `master` |
 | 138 | 2026-10-14 | 启动体验：品牌化启动窗 + 重初始化延迟 | `563fbe4` | `master` |
 | 137 | 2026-10-14 | 启动窗跟随应用主题偏好（回答 DayNight 疑问并落地正解） | `0fe5577` | `master` |
