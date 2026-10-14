@@ -1101,3 +1101,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 139: 恢复竞态边界修复（延迟化引入问题的闭环）
+
+**Date**: 2026-10-14
+**Task**: 恢复竞态边界修复（延迟化引入问题的闭环）
+**Branch**: `master`
+
+### Summary
+
+自审发现延迟化的真实竞态：恢复异步执行后，本进程在恢复完成前创建的新任务（非终态）会被误翻 FAILED(任务已中断)。修复：recoverInterrupted 增加 startedBeforeMs 边界（只恢复 startedAt 早于进程起点或无 startedAt 的遗留行），DougieApplication 捕获 processStartedAtMs 传入；2 项边界测试 + 既有调用方补参。APK 已重装（12:59:37）。附：setApplicationNightMode 在 ColorOS 被静默忽略的对照实验终审已记录（Anchor 对照：进程配置同为 night）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9f2e9b1` | (see git log) |
+
+### Status
+
+[OK] **Completed**
