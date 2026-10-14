@@ -877,6 +877,40 @@ private fun TtsVoiceSection(
 }
 
 @Composable
+private fun DropdownDisplayBox(
+    value: String,
+    contentDescription: String,
+    enabled: Boolean = true,
+    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
+    val borderColor = if (enabled) DougieColors.OutlineVariant else DougieColors.OutlineVariant.copy(alpha = 0.38f)
+    val textColor = if (enabled) DougieColors.OnSurface else DougieColors.OnSurface.copy(alpha = 0.38f)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(DougieColors.Surface)
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = value,
+            color = textColor,
+            fontSize = 16.sp,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.Filled.ArrowDropDown,
+            contentDescription = contentDescription,
+            tint = DougieColors.OnSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
+        )
+    }
+}
+
+@Composable
 private fun TtsVoiceDropdown(
     speakerId: Int,
     enabled: Boolean,
@@ -896,22 +930,28 @@ private fun TtsVoiceDropdown(
         }
     }
     Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = selected,
-            onValueChange = {},
-            readOnly = true,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                Icon(
-                    Icons.Filled.ArrowDropDown,
-                    contentDescription = "选择音色",
-                    tint = DougieColors.OnSurfaceVariant,
-                )
-            },
-            colors = fieldColors(),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(DougieColors.Surface)
+                .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(8.dp))
+                .clickable(enabled = enabled) { expanded = true }
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selected,
+                color = DougieColors.OnSurface,
+                fontSize = 16.sp,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                contentDescription = "选择音色",
+                tint = DougieColors.OnSurfaceVariant,
+            )
+        }
         if (enabled) {
             Box(
                 modifier = Modifier
@@ -949,26 +989,28 @@ private fun VendorDropdown(vendorId: String, onVendorChange: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val selected = LlmVendors.byId(vendorId)
     Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = selected.label,
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                Icon(
-                    Icons.Filled.ArrowDropDown,
-                    contentDescription = "选择厂商",
-                    tint = DougieColors.OnSurfaceVariant,
-                )
-            },
-            colors = fieldColors(),
-        )
-        Box(
+        Row(
             modifier = Modifier
-                .matchParentSize()
-                .clickable { expanded = true },
-        )
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(DougieColors.Surface)
+                .border(1.dp, DougieColors.OutlineVariant, RoundedCornerShape(8.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 16.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selected.label,
+                color = DougieColors.OnSurface,
+                fontSize = 16.sp,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                Icons.Filled.ArrowDropDown,
+                contentDescription = "选择厂商",
+                tint = DougieColors.OnSurfaceVariant,
+            )
+        }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             LlmVendors.ALL.forEach { preset ->
                 DropdownMenuItem(
