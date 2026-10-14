@@ -80,6 +80,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.zIndex
+import com.dougie.core.model.ToolTraceEntry
 import com.dougie.core.model.AttachmentMeta
 import com.dougie.core.model.RiskLevel
 import androidx.compose.material.icons.filled.Psychology
@@ -141,6 +142,10 @@ import com.dougie.feature.chat.R as ChatR
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
@@ -1265,13 +1270,19 @@ private fun ToolCallCard(item: ChatItem.ToolCard) {
         ToolTraceStatus.EXECUTING, ToolTraceStatus.PENDING -> DougieColors.StatusExecuting
         ToolTraceStatus.FAILED -> DougieColors.Error
     }
+    val summary = actionSummary(entry)
     val toolLabel = toolDisplayName(entry.toolName)
     val risk = entry.riskLevel.name
+    val verifiedBadge = when (entry.verified) {
+        true -> " ✓"
+        false -> " ✗"
+        null -> ""
+    }
     val label = when (entry.status) {
-        ToolTraceStatus.SUCCESS -> "已调用 $toolLabel ($risk)"
-        ToolTraceStatus.EXECUTING -> "正在调用 $toolLabel ($risk)"
-        ToolTraceStatus.PENDING -> "准备调用 $toolLabel ($risk)"
-        ToolTraceStatus.FAILED -> "$toolLabel 失败 ($risk)"
+        ToolTraceStatus.SUCCESS -> "$summary$verifiedBadge"
+        ToolTraceStatus.EXECUTING -> "正在 $summary"
+        ToolTraceStatus.PENDING -> "准备 $summary"
+        ToolTraceStatus.FAILED -> "$summary 失败"
     }
     val resultJson = entry.resultJson
     val collapsedSummary = if (entry.status == ToolTraceStatus.SUCCESS) {
@@ -1801,6 +1812,43 @@ private fun BottomItem(
     ) {
         Icon(icon, contentDescription = label, tint = tint)
         Text(label, color = tint, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+    }
+}
+
+internal fun actionSummary(entry: ToolTraceEntry): String {
+    val args: kotlinx.serialization.json.JsonObject? = try {
+        Json.parseToJsonElement(entry.argsSummary).jsonObject
+    } catch (e: Exception) { null }
+    fun arg(key: String): String {
+        val v = args?.get(key)
+        return (v as? JsonPrimitive)?.contentOrNull ?: ""
+    }
+    return when (entry.toolName) {
+        "app_intent" -> {
+            val pkg = arg("package").ifBlank { arg("uri").removePrefix("package:") }
+            val short = pkg.substringAfterLast('.')
+            if (short.isNotBlank()) "打开 $short" else "打开应用"
+        }
+        "tap_by_text" -> {
+            val text = arg("text")
+            if (text.isNotBlank()) "点击「$text」" else "点击控件"
+        }
+        "clipboard_write" -> "写入剪贴板"
+        "clipboard_read" -> "读取剪贴板"
+        "time" -> "查询时间"
+        "battery" -> "查询电量"
+        "calendar_query" -> "查询日程"
+        "calendar_create" -> {
+            val title = arg("title")
+            if (title.isNotBlank()) "创建日程：$title" else "创建日程"
+        }
+        "sms_compose" -> "编辑短信"
+        "phone_dial" -> "拨打电话"
+        "screen_capture" -> "截取屏幕"
+        "speech_output" -> "语音播报"
+        "js_eval" -> "运行脚本"
+        "py_eval" -> "运行 Python"
+        else -> toolDisplayName(entry.toolName)
     }
 }
 

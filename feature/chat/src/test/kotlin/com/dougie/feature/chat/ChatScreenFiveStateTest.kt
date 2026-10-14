@@ -79,7 +79,7 @@ class ChatScreenFiveStateTest {
                 finalAnswer = "你现在的手机电量是 63%。",
             ).toChatUiState(),
         )
-        compose.onNodeWithText("电池工具", substring = true).assertExists()
+        compose.onNodeWithText("查询电量", substring = true).assertExists()
         compose.onNodeWithText("展开").assertExists()
         compose.onAllNodesWithText("battery_percent", substring = true).assertCountEquals(0)
         compose.onAllNodesWithText("secret_arg", substring = true).assertCountEquals(0)
