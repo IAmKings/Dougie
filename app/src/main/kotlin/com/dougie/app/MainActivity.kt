@@ -141,7 +141,29 @@ class MainActivity : ComponentActivity() {
         val app = application as DougieApplication
         refreshVoicePacks()
         setContent {
-            val dark = isSystemInDarkTheme()
+            // 主题即时切换：偏好经 settings 流驱动，无需 recreate。
+            // 覆写 LocalConfiguration，使所有 isSystemInDarkTheme()/资源解析跟随偏好。
+            val app = application as DougieApplication
+            val settings by app.preferenceStore.settings.collectAsStateWithLifecycle()
+            val sysDark = isSystemInDarkTheme()
+            val dark = when (settings.themePreference) {
+                ThemePreference.LIGHT -> false
+                ThemePreference.DARK -> true
+                ThemePreference.SYSTEM -> sysDark
+            }
+            val overriddenConfig = remember(dark) {
+                android.content.res.Configuration(application.resources.configuration).apply {
+                    uiMode = (uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                        (if (dark) {
+                            android.content.res.Configuration.UI_MODE_NIGHT_YES
+                        } else {
+                            android.content.res.Configuration.UI_MODE_NIGHT_NO
+                        })
+                }
+            }
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalConfiguration provides overriddenConfig,
+            ) {
             MaterialTheme(
                 colorScheme = if (dark) {
                     val p = DougieColors.Dark
@@ -454,9 +476,10 @@ class MainActivity : ComponentActivity() {
                             onPickModelTree = { treePicker.launch(null) },
                             onThemePreferenceChange = { mode ->
                                 if (app.preferenceStore.settings.value.themePreference != mode) {
+                                    // 不 recreate：settings 流驱动 Compose 即时切换主题，
+                                    // 系统级按应用深浅同步照常写入（供下次冷启动的启动窗使用）。
                                     viewModel.setThemePreference(mode)
                                     syncSystemNightMode(this@MainActivity, mode)
-                                    recreate()
                                 }
                             },
                             shortcutLayer = { ChannelHooks.ShortcutLayerSettings() },
@@ -537,6 +560,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 }
+            }
             }
             }
         }
