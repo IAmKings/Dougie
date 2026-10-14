@@ -143,7 +143,7 @@ class ConversationTaskManagerTest {
                 conversationId = "other-thread",
             ),
         )
-        val recovered = recoverInterrupted(store).single()
+        val recovered = recoverInterrupted(store, startedBeforeMs = Long.MAX_VALUE).single()
         assertEquals("other-thread", recovered.conversationId)
         assertEquals(TaskStatus.FAILED, recovered.status)
         val manager = manager(dispatcher, store, pointer, this)

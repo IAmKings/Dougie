@@ -56,7 +56,7 @@ class TaskStoreTest {
                 confirmDeadlineAt = 1_700_000_060_000L,
             ),
         )
-        val recovered = recoverInterrupted(store).single()
+        val recovered = recoverInterrupted(store, startedBeforeMs = Long.MAX_VALUE).single()
         assertEquals("live", recovered.taskId)
         assertEquals(TaskStatus.FAILED, recovered.status)
         assertEquals(UserFacingErrors.INTERRUPTED, recovered.lastError)
@@ -67,7 +67,47 @@ class TaskStoreTest {
         assertTrue(recoveredEnded != null && recoveredEnded >= 1_000L)
         assertEquals(TaskStatus.FAILED, store.listRecent(1).single().status)
         assertEquals(recoveredEnded, store.listRecent(1).single().endedAt)
-        assertTrue(recoverInterrupted(store).isEmpty())
+        assertTrue(recoverInterrupted(store, startedBeforeMs = Long.MAX_VALUE).isEmpty())
+    }
+
+    @Test
+    fun recoverInterruptedNeverTouchesTasksCreatedThisProcess() = runTest {
+        // 竞态边界：本进程新建的任务（startedAt >= 进程起点）不得被恢复逻辑翻成 FAILED
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "old-zombie",
+                input = "上一进程遗留",
+                status = TaskStatus.THINKING,
+                startedAt = 1_000L,
+            ),
+        )
+        val recovered = recoverInterrupted(store, startedBeforeMs = 5_000L)
+        assertEquals(listOf("old-zombie"), recovered.map { it.taskId })
+        val fresh = AgentTask(
+            taskId = "fresh",
+            input = "本进程新建",
+            status = TaskStatus.THINKING,
+            startedAt = 9_000L,
+        )
+        store.upsert(fresh)
+        assertTrue(recoverInterrupted(store, startedBeforeMs = 5_000L).isEmpty())
+        assertEquals(TaskStatus.THINKING, store.listRecent(1).single { it.taskId == "fresh" }.status)
+    }
+
+    @Test
+    fun recoverInterruptedIncludesLegacyRowsWithoutStartedAt() = runTest {
+        val store = InMemoryTaskStore()
+        store.upsert(
+            AgentTask(
+                taskId = "legacy",
+                input = "无 startedAt 的旧行",
+                status = TaskStatus.TOOL_PENDING,
+                startedAt = null,
+            ),
+        )
+        val recovered = recoverInterrupted(store, startedBeforeMs = 5_000L)
+        assertEquals(listOf("legacy"), recovered.map { it.taskId })
     }
 
     @Test
@@ -98,7 +138,7 @@ class TaskStoreTest {
                 conversationId = "window-b",
             ),
         )
-        val recovered = recoverInterrupted(store)
+        val recovered = recoverInterrupted(store, startedBeforeMs = Long.MAX_VALUE)
         assertEquals(setOf("old-zombie", "new-zombie"), recovered.map { it.taskId }.toSet())
         assertTrue(
             recovered.all {
@@ -113,7 +153,7 @@ class TaskStoreTest {
         assertTrue(
             rows.none { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.FAILED },
         )
-        assertTrue(recoverInterrupted(store).isEmpty())
+        assertTrue(recoverInterrupted(store, startedBeforeMs = Long.MAX_VALUE).isEmpty())
     }
 
     @Test
@@ -161,7 +201,7 @@ class TaskStoreTest {
                 status = TaskStatus.THINKING,
             ),
         )
-        val recovered = recoverInterrupted(store).single()
+        val recovered = recoverInterrupted(store, startedBeforeMs = Long.MAX_VALUE).single()
         val manager = TaskManager(
             loopEngine = LoopEngine(
                 llm = llm,

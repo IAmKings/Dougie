@@ -79,6 +79,10 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 class DougieApplication : Application() {
+
+    // 本进程的墙钟起点：恢复逻辑只处理上一进程遗留的中断行，绝不触碰本进程新建的任务
+    private val processStartedAtMs = System.currentTimeMillis()
+
     lateinit var taskManager: TaskManager
         private set
     lateinit var preferenceStore: PreferenceStore
@@ -323,7 +327,7 @@ class DougieApplication : Application() {
         // 恢复与转录重载是全表解码级 IO，放在首帧之后执行——启动窗（黑/白底+Logo）
         // 的可见时长由 onCreate 的同步耗时决定，这里每省一毫秒都直接可见。
         appScope.launch {
-            val recovered = recoverInterrupted(taskStores.taskStore)
+            val recovered = recoverInterrupted(taskStores.taskStore, processStartedAtMs)
             recovered.lastOrNull { it.conversationId == preferenceStore.currentConversationId() }
                 ?.let { taskManager.seed(it) }
             taskManager.reloadTranscript()

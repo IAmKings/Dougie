@@ -129,9 +129,13 @@ fun AgentTask.matchesHistoryNeedles(needles: List<String>): Boolean {
  * recent first. Recovery used to inspect only the newest row, so a zombie row pushed
  * down by newer tasks stayed non-terminal forever.
  */
-suspend fun recoverInterrupted(store: TaskStore): List<AgentTask> {
+suspend fun recoverInterrupted(store: TaskStore, startedBeforeMs: Long): List<AgentTask> {
     val stale = store.listRecent(Int.MAX_VALUE)
         .filter { it.status != TaskStatus.COMPLETED && it.status != TaskStatus.FAILED }
+        // Only rows from PREVIOUS process runs are interrupted-legacy. A task created
+        // after this process started (e.g. submitted while recovery is still decoding)
+        // must never be flipped — the timestamp filter makes that race impossible.
+        .filter { (it.startedAt ?: 0L) < startedBeforeMs }
     val recovered = stale.map { row ->
         row.copy(
             status = TaskStatus.FAILED,
