@@ -1206,3 +1206,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 144: UI 体验修复沉淀到 spec + 推送
+
+**Date**: 2026-10-14
+**Task**: UI 体验修复沉淀到 spec + 推送
+**Branch**: `master`
+
+### Summary
+
+主题切换/splash/只读下拉三条规范写入 component-guidelines.md；全量验证绿后推送远程。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d34d97c docs(spec)` | (see git log) |
+
+### Status
+
+[OK] **Completed**
