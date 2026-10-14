@@ -23,6 +23,8 @@ import com.dougie.core.model.AttachmentLimits
 import com.dougie.feature.chat.ChatAttachmentUi
 import com.dougie.feature.chat.toUi
 import java.io.File
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxSize
@@ -151,6 +153,48 @@ class MainActivity : ComponentActivity() {
                 ThemePreference.DARK -> true
                 ThemePreference.SYSTEM -> sysDark
             }
+            val colorScheme = if (dark) {
+                val p = DougieColors.Dark
+                darkColorScheme(
+                    primary = p.Primary,
+                    onPrimary = p.OnPrimary,
+                    primaryContainer = p.PrimaryContainer,
+                    onPrimaryContainer = p.OnPrimaryContainer,
+                    surface = p.Surface,
+                    onSurface = p.OnSurface,
+                    onSurfaceVariant = p.OnSurfaceVariant,
+                    error = p.Error,
+                    outline = p.Outline,
+                    outlineVariant = p.OutlineVariant,
+                )
+            } else {
+                val p = DougieColors.Light
+                lightColorScheme(
+                    primary = p.Primary,
+                    onPrimary = p.OnPrimary,
+                    primaryContainer = p.PrimaryContainer,
+                    onPrimaryContainer = p.OnPrimaryContainer,
+                    surface = p.Surface,
+                    onSurface = p.OnSurface,
+                    onSurfaceVariant = p.OnSurfaceVariant,
+                    error = p.Error,
+                    outline = p.Outline,
+                    outlineVariant = p.OutlineVariant,
+                )
+            }
+            // 主题切换做 250ms 颜色渐变：消除瞬变残影，观感更平滑
+            val animatedScheme = colorScheme.copy(
+                primary = animateColorAsState(colorScheme.primary, tween(250), label = "primary").value,
+                onPrimary = animateColorAsState(colorScheme.onPrimary, tween(250), label = "onPrimary").value,
+                primaryContainer = animateColorAsState(colorScheme.primaryContainer, tween(250), label = "primaryContainer").value,
+                onPrimaryContainer = animateColorAsState(colorScheme.onPrimaryContainer, tween(250), label = "onPrimaryContainer").value,
+                surface = animateColorAsState(colorScheme.surface, tween(250), label = "surface").value,
+                onSurface = animateColorAsState(colorScheme.onSurface, tween(250), label = "onSurface").value,
+                onSurfaceVariant = animateColorAsState(colorScheme.onSurfaceVariant, tween(250), label = "onSurfaceVariant").value,
+                error = animateColorAsState(colorScheme.error, tween(250), label = "error").value,
+                outline = animateColorAsState(colorScheme.outline, tween(250), label = "outline").value,
+                outlineVariant = animateColorAsState(colorScheme.outlineVariant, tween(250), label = "outlineVariant").value,
+            )
             val overriddenConfig = remember(dark) {
                 android.content.res.Configuration(application.resources.configuration).apply {
                     uiMode = (uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
@@ -165,35 +209,7 @@ class MainActivity : ComponentActivity() {
                 androidx.compose.ui.platform.LocalConfiguration provides overriddenConfig,
             ) {
             MaterialTheme(
-                colorScheme = if (dark) {
-                    val p = DougieColors.Dark
-                    darkColorScheme(
-                        primary = p.Primary,
-                        onPrimary = p.OnPrimary,
-                        primaryContainer = p.PrimaryContainer,
-                        onPrimaryContainer = p.OnPrimaryContainer,
-                        surface = p.Surface,
-                        onSurface = p.OnSurface,
-                        onSurfaceVariant = p.OnSurfaceVariant,
-                        error = p.Error,
-                        outline = p.Outline,
-                        outlineVariant = p.OutlineVariant,
-                    )
-                } else {
-                    val p = DougieColors.Light
-                    lightColorScheme(
-                        primary = p.Primary,
-                        onPrimary = p.OnPrimary,
-                        primaryContainer = p.PrimaryContainer,
-                        onPrimaryContainer = p.OnPrimaryContainer,
-                        surface = p.Surface,
-                        onSurface = p.OnSurface,
-                        onSurfaceVariant = p.OnSurfaceVariant,
-                        error = p.Error,
-                        outline = p.Outline,
-                        outlineVariant = p.OutlineVariant,
-                    )
-                },
+                colorScheme = animatedScheme,
             ) {
             ChannelHooks.Root {
                 Surface(
