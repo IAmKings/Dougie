@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 144
+- **Total Sessions**: 145
 - **Last Active**: 2026-10-14
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~1229 | Active |
+| `journal-2.md` | ~1250 | Active |
 | `journal-1.md` | ~1995 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 145 | 2026-10-14 | PreferenceStore 延迟化 | `2361fee` chore(task) | `master` |
 | 144 | 2026-10-14 | UI 体验修复沉淀到 spec + 推送 | `d34d97c` docs(spec) | `master` |
 | 143 | 2026-10-14 | 只读下拉去 M3 动画层——配色同帧切换 | `96a04b6` | `master` |
 | 142 | 2026-10-14 | 主题切换 250ms 颜色渐变（残影观感修复） | `ff9ac36` | `master` |

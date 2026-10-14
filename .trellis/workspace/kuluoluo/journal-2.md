@@ -1227,3 +1227,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 145: PreferenceStore 延迟化
+
+**Date**: 2026-10-14
+**Task**: PreferenceStore 延迟化
+**Branch**: `master`
+
+### Summary
+
+PreferenceStore 从 lateinit var + onCreate 同步初始化改为 nullable 背投 + 惰性 getter——EncryptedSharedPreferences（AndroidKeyStore + 全量读取）延迟到首次实际访问。themePreference() 在 attachBaseContext 阶段走 null 路径返回 SYSTEM，不触发初始化。旗舰机 TotalTime 715-729 → 649-706ms（~30-50ms 下降，低端机收益更大）。APK 已重装待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2361fee chore(task)` | (see git log) |
+
+### Status
+
+[OK] **Completed**
