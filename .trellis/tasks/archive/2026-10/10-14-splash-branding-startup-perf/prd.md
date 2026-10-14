@@ -18,6 +18,12 @@
 - [x] AC3 真机：启动窗为品牌化呈现（图标+主题底色）。
 - [ ] AC4 用户真机验收：启动观感与功能回归。
 
+## Follow-up（验收问题修复：恢复竞态边界）
+
+延迟化引入的真实竞态：恢复逻辑异步执行后，若本进程在恢复完成前创建了新任务（快速提交/Intent 自动触发），该新任务（非终态）会被误翻 FAILED(任务已中断)。修复：recoverInterrupted 增加 startedBeforeMs 边界——只恢复 startedAt 早于进程起点（或无 startedAt 的遗留行）的中断行，本进程新建任务在机制上不可能被触碰。DougieApplication 捕获 processStartedAtMs 传入。既有测试调用方全部补 startedBeforeMs = Long.MAX_VALUE。AC 追加：
+
+- [x] AC5 竞态边界 JVM 测试（旧僵尸恢复、本进程新任务不被触碰、无 startedAt 遗留行恢复）。
+
 ## Out of scope
 
 - PreferenceStore（EncryptedSharedPreferences）延迟化评估；启动窗跟随应用偏好的 OEM 限制（已终审，见 splash-follow-preference）。
