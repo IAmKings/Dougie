@@ -1143,3 +1143,24 @@ E1 三测：MiniCPM-2B 返回原始 JSON 给用户。calendar_query 在教学名
 ### Status
 
 [OK] **Completed**
+
+
+## Session 141: 主题切换黑闪终修：uiMode 配置自处理
+
+**Date**: 2026-10-14
+**Task**: 主题切换黑闪终修：uiMode 配置自处理
+**Branch**: `master`
+
+### Summary
+
+去 recreate 后仍黑闪的真凶：syncSystemNightMode 写入系统按应用深浅后，系统更新 Dougie 有效 uiMode 配置，MainActivity 未声明 configChanges=uiMode → 系统销毁重建 Activity（黑闪）。修复：Manifest 声明 uiMode 自处理——「跟随系统」档在系统翻转时也平滑跟随（onConfigurationChanged 更新资源，Compose LocalConfiguration 重组），偏好切换则由 settings 流即时驱动。APK 已重装（13:44:23）待复测。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `247b00f` | (see git log) |
+
+### Status
+
+[OK] **Completed**
