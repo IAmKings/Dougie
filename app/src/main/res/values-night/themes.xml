@@ -3,6 +3,7 @@
         <item name="android:statusBarColor">#1D2121</item>
         <item name="android:navigationBarColor">#191C1C</item>
         <item name="android:windowBackground">#191C1C</item>
+        <item name="android:colorBackground">#191C1C</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
