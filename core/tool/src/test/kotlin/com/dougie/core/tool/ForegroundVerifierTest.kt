@@ -59,4 +59,59 @@ class ForegroundVerifierTest {
         )
         assertTrue(verified)
     }
+
+    @Test
+    fun awaitNotForegroundReturnsTrueWhenForeignPackageImmediate() = runTest {
+        val probe = FakeForegroundProbe(current = "com.example.app")
+        val returned = ForegroundVerifier.awaitNotForeground(
+            "com.dougie.app.sideload",
+            probe,
+            timeoutMs = 1_000,
+            pollIntervalMs = 100,
+        )
+        assertTrue(returned)
+        assertEquals(1, probe.callCount)
+    }
+
+    @Test
+    fun awaitNotForegroundKeepsPollingWhileSelfInFront() = runTest {
+        val probe = FakeForegroundProbe(current = "com.dougie.app.sideload")
+        probe.enqueue("com.dougie.app.sideload", "com.dougie.app.sideload", "com.example.app")
+        val returned = ForegroundVerifier.awaitNotForeground(
+            "com.dougie.app.sideload",
+            probe,
+            timeoutMs = 5_000,
+            pollIntervalMs = 250,
+        )
+        assertTrue(returned)
+        assertEquals(3, probe.callCount)
+    }
+
+    @Test
+    fun awaitNotForegroundFalseWhenSelfPersistsWithinBudget() = runTest {
+        val probe = FakeForegroundProbe(current = "com.dougie.app.sideload")
+        val returned = ForegroundVerifier.awaitNotForeground(
+            "com.dougie.app.sideload",
+            probe,
+            timeoutMs = 1_000,
+            pollIntervalMs = 250,
+        )
+        assertFalse(returned)
+        assertEquals(5, probe.callCount)
+    }
+
+    @Test
+    fun awaitNotForegroundTreatsEmptyReadingsAsTransitionsNotForeign() = runTest {
+        val probe = FakeForegroundProbe(current = "com.dougie.app.sideload")
+        probe.enqueue("com.dougie.app.sideload", null, "", "com.example.app")
+        val returned = ForegroundVerifier.awaitNotForeground(
+            "com.dougie.app.sideload",
+            probe,
+            timeoutMs = 5_000,
+            pollIntervalMs = 250,
+        )
+        // 空读数是切换过渡：继续等，直到出现真实的前台包。
+        assertTrue(returned)
+        assertEquals(4, probe.callCount)
+    }
 }

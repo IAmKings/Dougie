@@ -9,6 +9,8 @@ import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.ForegroundProbePort
+import com.dougie.core.tool.ForegroundVerifier
 import com.dougie.core.tool.IdempotencyStore
 import com.dougie.core.tool.InMemoryIdempotencyStore
 import com.dougie.core.tool.TapSourcePort
@@ -37,6 +39,7 @@ class TapByTextTool(
     private val verifyTimeoutMs: Long = TreeVerifier.DEFAULT_STATE_CHANGE_TIMEOUT_MS,
     private val verifyPollMs: Long = TreeVerifier.DEFAULT_POLL_INTERVAL_MS,
     private val selfPackage: String? = null,
+    private val selfForegroundGraceMs: Long = ForegroundVerifier.SELF_FOREGROUND_GRACE_MS,
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
@@ -54,17 +57,29 @@ class TapByTextTool(
         if (!port.isConnected()) {
             return fail(TapSwipeTool.SERVICE_REQUIRED)
         }
-        val foreground = port.foregroundPackage()?.trim().orEmpty()
+        var foreground = port.foregroundPackage()?.trim().orEmpty()
+        // Same self-foreground guard as tap_swipe: searching Dougie's own tree (its chat
+        // contains the needle text) would tap inside Dougie instead of the target app.
+        // The confirm may have been tapped from the overlay while Dougie is front — hold
+        // a grace window for the user to walk back to the target app, then proceed. If
+        // they never leave, a NON-FATAL observation goes back to the model (replan, e.g.
+        // re-open the app); a fumble must not kill the whole chain.
+        if (selfPackage != null && foreground == selfPackage) {
+            val returned = ForegroundVerifier.awaitNotForeground(
+                blockedPackage = selfPackage,
+                probe = ForegroundProbePort { port.foregroundPackage() },
+                timeoutMs = selfForegroundGraceMs,
+            )
+            foreground = port.foregroundPackage()?.trim().orEmpty()
+            if (!returned || foreground == selfPackage) {
+                return selfForeground()
+            }
+        }
         if (foreground.isEmpty()) {
             return fail(TapSwipeTool.FOREGROUND_UNKNOWN)
         }
         if (HighRiskForeground.isBlocked(foreground)) {
             return fail(TapSwipeTool.BLOCKED_APP)
-        }
-        // Same self-foreground guard as tap_swipe: searching Dougie's own tree (its chat
-        // contains the needle text) would tap inside Dougie instead of the target app.
-        if (selfPackage != null && foreground == selfPackage) {
-            return fail(TapSwipeTool.SELF_FOREGROUND)
         }
         idempotencyStore.get(context.idempotencyKey)?.let {
             return ToolResult(json = it, verified = VerifiedResultJson.fromJson(it))
@@ -116,6 +131,13 @@ class TapByTextTool(
         json = """{"ok":false,"found":false,"text":"$needle","error":"${UserFacingErrors.TAP_TEXT_NOT_FOUND}"}""",
         isFatal = false,
         error = UserFacingErrors.TAP_TEXT_NOT_FOUND,
+    )
+
+    /** Non-fatal: nothing was tapped; the model gets the observation and can replan. */
+    private fun selfForeground(): ToolResult = ToolResult(
+        json = """{"ok":false,"selfForeground":true,"error":"${TapSwipeTool.SELF_FOREGROUND}"}""",
+        isFatal = false,
+        error = TapSwipeTool.SELF_FOREGROUND,
     )
 
     private fun fail(message: String): ToolResult =

@@ -12,8 +12,30 @@ import org.junit.Test
 
 class TapByTextToolTest {
     @Test
-    fun selfForegroundTapByTextIsRefusedHonestly() = runBlocking {
+    fun selfForegroundStuckIsNonFatalObservationWithoutTap() = runBlocking {
         val port = FakeGesturePort(foreground = "com.dougie.app.sideload")
+        val tool = TapByTextTool(
+            consentGranted = { true },
+            port = port,
+            tapSource = com.dougie.core.tool.FakeTapSourcePort(candidates()),
+            selfPackage = "com.dougie.app.sideload",
+            selfForegroundGraceMs = 60,
+        )
+        val result = tool.execute("""{"text":"记录"}""", ctx())
+        // 困在自前台是可重规划的观察，不是任务死刑：非致命回给模型。
+        assertEquals(TapSwipeTool.SELF_FOREGROUND, result.error)
+        assertEquals(false, result.isFatal)
+        assertTrue(result.json.contains("\"selfForeground\":true"))
+        assertTrue(!result.json.contains("tap_by_text"))
+        assertEquals(0, port.taps)
+    }
+
+    @Test
+    fun selfForegroundGraceRecoversWhenUserWalksBackToTarget() = runBlocking {
+        val port = FakeGesturePort(
+            foreground = "com.dougie.app.sideload",
+            foregroundAfterPolls = 2 to "com.kaleai.anchor",
+        )
         val tool = TapByTextTool(
             consentGranted = { true },
             port = port,
@@ -21,9 +43,11 @@ class TapByTextToolTest {
             selfPackage = "com.dougie.app.sideload",
         )
         val result = tool.execute("""{"text":"记录"}""", ctx())
-        assertEquals(TapSwipeTool.SELF_FOREGROUND, result.error)
-        assertTrue(!result.json.contains("tap_by_text"))
-        assertEquals(0, port.taps)
+        // 宽限期内回到目标应用：确认仍然生效，链路继续而不是判死。
+        assertTrue(result.json.contains("\"ok\":true"))
+        assertEquals(1, port.taps)
+        assertEquals(540, port.lastTapX)
+        assertEquals(2300, port.lastTapY)
     }
 
     private fun ctx() = ToolContext(taskId = "tbt", toolCallId = "c")
@@ -298,16 +322,35 @@ class TapSwipeToolTest {
     }
 
     @Test
-    fun selfForegroundIsRefusedHonestly() = runBlocking {
+    fun selfForegroundStuckIsNonFatalObservationWithoutTap() = runBlocking {
         val port = FakeGesturePort(foreground = "com.dougie.app.sideload")
+        val tool = TapSwipeTool(
+            consentGranted = { true },
+            port = port,
+            selfPackage = "com.dougie.app.sideload",
+            selfForegroundGraceMs = 60,
+        )
+        val result = tool.execute(TAP_JSON, ctx())
+        assertEquals(TapSwipeTool.SELF_FOREGROUND, result.error)
+        assertEquals(false, result.isFatal)
+        assertTrue(result.json.contains("\"selfForeground\":true"))
+        assertEquals(0, port.taps)
+    }
+
+    @Test
+    fun selfForegroundGraceRecoversWhenUserWalksBackToTarget() = runBlocking {
+        val port = FakeGesturePort(
+            foreground = "com.dougie.app.sideload",
+            foregroundAfterPolls = 2 to "com.android.chrome",
+        )
         val tool = TapSwipeTool(
             consentGranted = { true },
             port = port,
             selfPackage = "com.dougie.app.sideload",
         )
         val result = tool.execute(TAP_JSON, ctx())
-        assertEquals(TapSwipeTool.SELF_FOREGROUND, result.error)
-        assertEquals(0, port.taps)
+        assertTrue(result.json.contains("\"ok\":true"))
+        assertEquals(1, port.taps)
     }
 
     private fun ctx() = ToolContext(taskId = "t", toolCallId = "c")
@@ -321,15 +364,22 @@ private class FakeGesturePort(
     private val connected: Boolean = true,
     private val foreground: String? = "com.android.chrome",
     var succeed: Boolean = true,
+    /** (poll-call threshold, value): foreground flips once foregroundPackage() passes the threshold. */
+    private val foregroundAfterPolls: Pair<Int, String?>? = null,
 ) : GesturePort {
     var taps = 0
     var swipes = 0
     var lastSwipe: List<Int> = emptyList()
     var lastTapX = 0
     var lastTapY = 0
+    var foregroundPolls = 0
 
     override fun isConnected(): Boolean = connected
-    override fun foregroundPackage(): String? = foreground
+    override fun foregroundPackage(): String? {
+        foregroundPolls += 1
+        val script = foregroundAfterPolls
+        return if (script != null && foregroundPolls > script.first) script.second else foreground
+    }
     override suspend fun tap(x: Int, y: Int): Boolean {
         taps += 1
         lastTapX = x

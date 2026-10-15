@@ -9,6 +9,8 @@ import com.dougie.core.model.ToolParamType
 import com.dougie.core.model.ToolResult
 import com.dougie.core.model.UserFacingErrors
 import com.dougie.core.tool.AgentTool
+import com.dougie.core.tool.ForegroundProbePort
+import com.dougie.core.tool.ForegroundVerifier
 import com.dougie.core.tool.IdempotencyStore
 import com.dougie.core.tool.InMemoryIdempotencyStore
 import com.dougie.core.tool.TreeSnapshotPort
@@ -34,6 +36,7 @@ class TapSwipeTool(
     private val verifyTimeoutMs: Long = TreeVerifier.DEFAULT_STATE_CHANGE_TIMEOUT_MS,
     private val verifyPollMs: Long = TreeVerifier.DEFAULT_POLL_INTERVAL_MS,
     private val selfPackage: String? = null,
+    private val selfForegroundGraceMs: Long = ForegroundVerifier.SELF_FOREGROUND_GRACE_MS,
 ) : AgentTool {
     override val name: String = NAME
     override val descriptor: ToolDescriptor = DESCRIPTOR
@@ -51,18 +54,28 @@ class TapSwipeTool(
         if (!port.isConnected()) {
             return fail(SERVICE_REQUIRED)
         }
-        val foreground = port.foregroundPackage()?.trim().orEmpty()
+        var foreground = port.foregroundPackage()?.trim().orEmpty()
+        // Tapping inside Dougie's own tree can never be the intent of a tap task; a
+        // self-foreground state means the target app is not in front (often because the
+        // user was pulled back here to confirm). Hold a grace window for them to walk
+        // back to the target app, then proceed; if they never leave, a NON-FATAL
+        // observation goes back to the model (replan) — a fumble must not kill the chain.
+        if (selfPackage != null && foreground == selfPackage) {
+            val returned = ForegroundVerifier.awaitNotForeground(
+                blockedPackage = selfPackage,
+                probe = ForegroundProbePort { port.foregroundPackage() },
+                timeoutMs = selfForegroundGraceMs,
+            )
+            foreground = port.foregroundPackage()?.trim().orEmpty()
+            if (!returned || foreground == selfPackage) {
+                return selfForeground()
+            }
+        }
         if (foreground.isEmpty()) {
             return fail(FOREGROUND_UNKNOWN)
         }
         if (HighRiskForeground.isBlocked(foreground)) {
             return fail(BLOCKED_APP)
-        }
-        // Tapping inside Dougie's own tree can never be the intent of a tap task; a
-        // self-foreground state means the target app is not in front (often because the
-        // user was pulled back here to confirm).
-        if (selfPackage != null && foreground == selfPackage) {
-            return fail(SELF_FOREGROUND)
         }
         idempotencyStore.get(context.idempotencyKey)?.let {
             return ToolResult(json = it, verified = VerifiedResultJson.fromJson(it))
@@ -137,6 +150,13 @@ class TapSwipeTool(
 
     private fun fail(message: String): ToolResult =
         ToolResult(json = """{"ok":false,"error":"$message"}""", isFatal = true, error = message)
+
+    /** Non-fatal: nothing was dispatched; the model gets the observation and can replan. */
+    private fun selfForeground(): ToolResult = ToolResult(
+        json = """{"ok":false,"selfForeground":true,"error":"$SELF_FOREGROUND"}""",
+        isFatal = false,
+        error = SELF_FOREGROUND,
+    )
 
     private fun successJson(parsed: Parsed): String = when (parsed.action) {
         Action.TAP ->
