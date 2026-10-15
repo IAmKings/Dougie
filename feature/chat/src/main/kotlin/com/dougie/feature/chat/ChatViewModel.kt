@@ -14,10 +14,11 @@ import kotlinx.coroutines.flow.stateIn
 
 class ChatViewModel(
     private val taskManager: TaskManager,
+    private val overlayConfirms: () -> Boolean = { false },
 ) : ViewModel() {
 
     val uiState: StateFlow<ChatUiState> = combine(taskManager.task, taskManager.transcript) { live, past ->
-        mergeChatUiState(live, past)
+        mergeChatUiState(live, past, overlayConfirms())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ChatUiState())
 
     var feedIndex: Int = 0
@@ -116,10 +117,11 @@ class ChatViewModel(
 
     class Factory(
         private val taskManager: TaskManager,
+        private val overlayConfirms: () -> Boolean = { false },
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ChatViewModel(taskManager) as T
+            return ChatViewModel(taskManager, overlayConfirms) as T
         }
     }
 }

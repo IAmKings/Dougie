@@ -66,7 +66,18 @@ sealed class ChatItem {
     ) : ChatItem()
 }
 
-fun AgentTask?.toChatUiState(): ChatUiState {
+/**
+ * 操作第三方应用控件的工具（tap_by_text / tap_swipe）。这类确认由悬浮框承载、应用内
+ * 不渲染确认卡：动作目标在第三方应用，应用内确认卡会把用户拉回 Dougie，前台一切换
+ * 点击目标就失效（自指）。即使切回 Dougie 悬浮框也照弹；在 Dougie 前台确认会得到
+ * TAP_SELF_FOREGROUND 的诚实提示。app_intent（打开应用）与应用内动作工具不在此列：
+ * 确认仍走原来的应用内确认卡。
+ */
+val OVERLAY_CONFIRM_TOOL_NAMES = setOf("tap_by_text", "tap_swipe")
+
+fun ToolTraceEntry.confirmsViaOverlay(): Boolean = toolName in OVERLAY_CONFIRM_TOOL_NAMES
+
+fun AgentTask?.toChatUiState(overlayConfirms: Boolean = false): ChatUiState {
     if (this == null) {
         return ChatUiState(isEmpty = true, inputEnabled = true, canCancel = false)
     }
@@ -76,7 +87,7 @@ fun AgentTask?.toChatUiState(): ChatUiState {
             val loop = index + 1
             add(ChatItem.Thinking(loopNumber = loop, live = false, listKey = itemKey("thinking-$loop")))
             val awaitingThis = status == TaskStatus.AWAITING_CONFIRMATION && index == toolTrace.lastIndex
-            if (awaitingThis) {
+            if (awaitingThis && !(overlayConfirms && entry.confirmsViaOverlay())) {
                 add(
                     ChatItem.ConfirmCard(
                         toolName = entry.toolName,
@@ -134,8 +145,12 @@ fun AgentTask?.toChatUiState(): ChatUiState {
     )
 }
 
-fun mergeChatUiState(live: AgentTask?, past: List<AgentTask>): ChatUiState {
-    val liveState = live.toChatUiState()
+fun mergeChatUiState(
+    live: AgentTask?,
+    past: List<AgentTask>,
+    overlayConfirms: Boolean = false,
+): ChatUiState {
+    val liveState = live.toChatUiState(overlayConfirms)
     val liveId = live?.taskId
     val pastItems = past.filter { it.taskId != liveId }.flatMap { it.toPastChatItems() }
     val empty = pastItems.isEmpty() && liveState.isEmpty

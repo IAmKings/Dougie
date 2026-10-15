@@ -19,6 +19,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import com.dougie.feature.chat.R as ChatR
+import com.dougie.feature.chat.confirmsViaOverlay
 import com.dougie.core.model.AgentException
 import com.dougie.core.model.UserFacingErrors
 import kotlin.math.abs
@@ -62,9 +63,14 @@ class DougieOverlayService : Service() {
     private fun showConfirmMenu(task: AgentTask) {
         if (confirmMenu != null) return
         // Dougie foreground: the in-app confirm card already covers it — no duplicate.
-        val foreground = DougieAccessibilityService.instance
-            ?.rootInActiveWindow?.packageName?.toString()
-        if (foreground == packageName) return
+        // Tap tools (tap_by_text/tap_swipe) carry no in-app card at all, so the menu is
+        // their only confirmation surface and must show over Dougie itself too.
+        val overlayConfirmed = task.toolTrace.lastOrNull()?.confirmsViaOverlay() == true
+        if (!overlayConfirmed) {
+            val foreground = DougieAccessibilityService.instance
+                ?.rootInActiveWindow?.packageName?.toString()
+            if (foreground == packageName) return
+        }
         val wm = windowManager ?: return
         val density = resources.displayMetrics.density
         val detail = confirmSummary(task) ?: ("工具：" + (task.toolTrace.lastOrNull()?.toolName ?: ""))

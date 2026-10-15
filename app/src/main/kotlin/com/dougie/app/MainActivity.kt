@@ -80,6 +80,7 @@ import com.dougie.feature.settings.OpenAppsRoute
 import com.dougie.feature.settings.OpenAppsViewModel
 import com.dougie.feature.settings.SettingsRoute
 import com.dougie.feature.settings.SettingsViewModel
+import android.provider.Settings as AndroidSettings
 
 class MainActivity : ComponentActivity() {
     private val routeState = mutableStateOf(AppRoute.Chat)
@@ -304,7 +305,12 @@ class MainActivity : ComponentActivity() {
                     previousReplyStatus = current?.status
                 }
                 val chatViewModel: ChatViewModel = viewModel(
-                    factory = ChatViewModel.Factory(app.taskManager),
+                    // 悬浮框可用时，第三方控件操作（tap_by_text/tap_swipe）的确认由悬浮框
+                    // 承载，应用内不弹确认卡——应用内确认会把前台切回 Dougie，点击目标
+                    // 随即失效。app_intent 与应用内工具仍走原应用内确认卡。
+                    factory = ChatViewModel.Factory(app.taskManager) {
+                        BuildConfig.IS_SIDELOAD && AndroidSettings.canDrawOverlays(this@MainActivity)
+                    },
                 )
                 val settingsScrollState = rememberScrollState()
                 when (route) {

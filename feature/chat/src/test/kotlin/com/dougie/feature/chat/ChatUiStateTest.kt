@@ -603,6 +603,103 @@ class ChatUiStateTest {
     }
 
     @Test
+    fun overlayConfirmedToolAwaitingKeepsInAppCardWhenOverlayUnavailable() {
+        val task = AgentTask(
+            taskId = "t",
+            input = "打开 Anchor，点击底部的记录tab",
+            status = TaskStatus.AWAITING_CONFIRMATION,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "tap-1",
+                    toolName = "tap_by_text",
+                    argsSummary = """{"text":"记录"}""",
+                    status = ToolTraceStatus.PENDING,
+                    riskLevel = RiskLevel.L3,
+                ),
+            ),
+        )
+        // Play / 悬浮框不可用：应用内确认卡兜底（默认参数，行为不变）。
+        val state = task.toChatUiState()
+        assertEquals(listOf("user", "thinking-1", "confirm-tap-1"), state.items.map { it.kind() })
+    }
+
+    @Test
+    fun overlayConfirmedToolAwaitingDropsInAppCardWhenOverlayActive() {
+        listOf("tap_by_text", "tap_swipe").forEach { tool ->
+            val state = AgentTask(
+                taskId = "t",
+                input = "打开 Anchor，点击底部的记录tab",
+                status = TaskStatus.AWAITING_CONFIRMATION,
+                toolTrace = listOf(
+                    ToolTraceEntry(
+                        toolCallId = "tap-1",
+                        toolName = tool,
+                        argsSummary = """{"text":"记录"}""",
+                        status = ToolTraceStatus.PENDING,
+                        riskLevel = RiskLevel.L3,
+                    ),
+                ),
+            ).toChatUiState(overlayConfirms = true)
+            // 第三方控件操作不弹应用内确认卡：feed 保留 PENDING 工具卡展示当前步骤，
+            // 确认由悬浮框承载（切回 Dougie 也由悬浮框确认）。
+            assertEquals(listOf("user", "thinking-1", "tool-tap-1"), state.items.map { it.kind() })
+            val card = state.items.last() as ChatItem.ToolCard
+            assertEquals(ToolTraceStatus.PENDING, card.entry.status)
+            assertEquals(false, state.inputEnabled)
+            assertEquals(true, state.canCancel)
+        }
+    }
+
+    @Test
+    fun appIntentAwaitingKeepsInAppCardEvenWhenOverlayActive() {
+        val state = AgentTask(
+            taskId = "t",
+            input = "打开 Anchor",
+            status = TaskStatus.AWAITING_CONFIRMATION,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "open-1",
+                    toolName = "app_intent",
+                    argsSummary = """{"uri":"package:com.kaleai.anchor"}""",
+                    status = ToolTraceStatus.PENDING,
+                    riskLevel = RiskLevel.L2,
+                ),
+            ),
+        ).toChatUiState(overlayConfirms = true)
+        // 打开应用发生在 Dougie 前台：走原来的应用内确认卡，不归悬浮框。
+        assertEquals(listOf("user", "thinking-1", "confirm-open-1"), state.items.map { it.kind() })
+    }
+
+    @Test
+    fun inAppToolAwaitingKeepsConfirmCardEvenWhenOverlayActive() {
+        val state = AgentTask(
+            taskId = "t",
+            input = "帮我约明天下午开会",
+            status = TaskStatus.AWAITING_CONFIRMATION,
+            toolTrace = listOf(
+                ToolTraceEntry(
+                    toolCallId = "cal-1",
+                    toolName = "calendar_create",
+                    argsSummary = "{}",
+                    status = ToolTraceStatus.PENDING,
+                    riskLevel = RiskLevel.L2,
+                ),
+            ),
+        ).toChatUiState(overlayConfirms = true)
+        // 应用内动作类工具（calendar_create 等）不受悬浮框接管影响。
+        assertEquals(listOf("user", "thinking-1", "confirm-cal-1"), state.items.map { it.kind() })
+    }
+
+    @Test
+    fun confirmsViaOverlayMatchesThirdPartyTapToolsOnly() {
+        assertEquals(true, OVERLAY_CONFIRM_TOOL_NAMES.contains("tap_by_text"))
+        assertEquals(true, OVERLAY_CONFIRM_TOOL_NAMES.contains("tap_swipe"))
+        assertEquals(false, OVERLAY_CONFIRM_TOOL_NAMES.contains("app_intent"))
+        assertEquals(false, OVERLAY_CONFIRM_TOOL_NAMES.contains("calendar_create"))
+        assertEquals(false, OVERLAY_CONFIRM_TOOL_NAMES.contains("sms_compose"))
+    }
+
+    @Test
     fun canCancelMatchesBusyIncludingAwaitingConfirmation() {
         listOf(
             TaskStatus.PREPARING,
